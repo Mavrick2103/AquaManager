@@ -1,0 +1,137 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: linear-gradient(160deg, #e6f7ff, #f8fff8);
+  font-family: 'Montserrat', 'Open Sans', sans-serif;
+  color: #1F3522;
+}
+
+/* ====== Topbar ====== */
+.topbar {
+  background: linear-gradient(135deg, #009FE3, #39B54A);
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .logo-img {
+    height: 150px; /* ✅ plus grand */
+    width: auto;
+  }
+
+  .appname {
+    font-weight: 800;
+    font-size: 1.3rem;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+
+  .user-email {
+    margin-left: 1rem;
+    font-size: 0.9rem;
+    color: #f0f9f0;
+  }
+}
+
+/* ====== Hero ====== */
+.hero {
+  text-align: center;
+  padding: 40px 20px;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: #1F3522;
+  }
+
+  .subtitle {
+    color: #4b5a54;
+    margin-bottom: 1.5rem;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+
+    button[mat-raised-button] {
+      border-radius: 12px;
+      background: linear-gradient(135deg, #009FE3, #39B54A);
+      color: #fff;
+      font-weight: 600;
+      padding: 0.6rem 1.4rem;
+    }
+  }
+}
+
+/* ====== Grid + Cards ====== */
+.grid {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 2rem auto;
+  flex-wrap: wrap;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  min-width: 220px;
+}
+
+.kpi-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #009FE3;
+}
+
+.kpi-label {
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
+  color: #1F3522;
+}
+
+.activity {
+  max-width: 700px;
+  margin: 0 auto 3rem;
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #e7f0ee;
+
+      mat-icon {
+        color: #009FE3;
+      }
+
+      .time {
+        margin-left: auto;
+        color: #39B54A;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}

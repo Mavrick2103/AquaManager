@@ -1,0 +1,81 @@
+<mat-toolbar class="topbar">
+  <div class="brand">
+    <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo-img" />
+  </div>
+
+  <span class="spacer"></span>
+
+  <!-- Icône paramètres -->
+  <button mat-icon-button aria-label="Paramètres" routerLink="/settings">
+    <mat-icon>settings</mat-icon>
+  </button>
+
+  <!-- Icône profil -->
+  <button mat-icon-button aria-label="Profil" routerLink="/profile">
+    <mat-icon>account_circle</mat-icon>
+  </button>
+
+  <!-- Email + Déconnexion -->
+  <button mat-stroked-button color="warn" class="logout-btn" (click)="logout()">
+    <mat-icon>logout</mat-icon>
+    <span>Déconnexion</span>
+  </button>
+</mat-toolbar>
+
+<main class="home-main">
+  <!-- Hero -->
+  <section class="hero">
+    <h1>Gérez vos aquariums en toute clarté</h1>
+    <p class="subtitle">
+      Suivi des paramètres, entretiens planifiés, historique — tout au même endroit.
+    </p>
+    <div class="cta-row">
+      <button mat-raised-button routerLink="/aquariums">Mes aquariums</button>
+      <button mat-raised-button routerLink="/journal">Journal d’entretien</button>
+      <button mat-raised-button routerLink="/charts">Graphiques</button>
+    </div>
+  </section>
+
+  <!-- Grid -->
+  <section class="grid">
+    <div class="card kpi">
+      <div class="kpi-value">3</div>
+      <div class="kpi-label">Entretiens</div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-value">2</div>
+      <div class="kpi-label">Changements d’eau</div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-value">0</div>
+      <div class="kpi-label">Alertes</div>
+    </div>
+  </section>
+
+  <!-- Activités -->
+  <section class="card activity">
+    <h2>Dernières activités</h2>
+    <ul class="activity-list">
+      <li>
+        <mat-icon>opacity</mat-icon>
+        pH mesuré sur <strong>Aqua #1</strong>
+        <span class="time">il y a 2h</span>
+      </li>
+      <li>
+        <mat-icon>water_drop</mat-icon>
+        Changement d’eau planifié
+        <span class="time">demain</span>
+      </li>
+      <li>
+        <mat-icon>eco</mat-icon>
+        Ajout d’engrais
+        <span class="time">lundi</span>
+      </li>
+    </ul>
+  </section>
+</main>
+
+<!-- FAB paramètres (mobile) -->
+<a class="fab-settings" mat-fab routerLink="/settings" matTooltip="Paramètres">
+  <mat-icon>settings</mat-icon>
+</a>

@@ -1,0 +1,3 @@
+<h2>Profil</h2>
+<pre *ngIf="me as m">{{ m | json }}</pre>
+<button (click)="auth.logout()">Déconnexion</button>

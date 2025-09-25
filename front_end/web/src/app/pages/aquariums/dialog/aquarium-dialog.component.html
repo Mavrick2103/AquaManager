@@ -1,0 +1,58 @@
+<h2 mat-dialog-title>Nouvel aquarium</h2>
+
+<div mat-dialog-content>
+  <form [formGroup]="form" class="form">
+    <!-- Nom -->
+    <mat-form-field appearance="outline" class="w100">
+      <mat-label>Nom de l’aquarium*</mat-label>
+      <input matInput formControlName="name">
+    </mat-form-field>
+
+    <!-- Dimensions -->
+    <div class="dims">
+      <mat-form-field appearance="outline">
+        <mat-label>Longueur (cm)*</mat-label>
+        <input matInput type="number" formControlName="lengthCm">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Largeur (cm)*</mat-label>
+        <input matInput type="number" formControlName="widthCm">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Hauteur (cm)*</mat-label>
+        <input matInput type="number" formControlName="heightCm">
+      </mat-form-field>
+
+      <div class="liters">
+        <div class="liters-value">{{ liters() }} L</div>
+        <div class="liters-label">Litrage estimé</div>
+      </div>
+    </div>
+
+    <!-- Type d’eau & Date -->
+    <div class="inline">
+      <mat-form-field appearance="outline">
+        <mat-label>Type d’eau*</mat-label>
+        <mat-select formControlName="waterType">
+          <mat-option value="EAU_DOUCE">Eau douce</mat-option>
+          <mat-option value="EAU_DE_MER">Eau de mer</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date de mise en eau*</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="startDate">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+    </div>
+  </form>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Annuler</button>
+  <button mat-raised-button color="primary" [disabled]="submitting()" (click)="submit()">
+    <mat-icon>save</mat-icon>
+    Enregistrer
+  </button>
+</div>

@@ -1,0 +1,186 @@
+/* ---------- Fond & grille générale (hero aquatique) ---------- */
+.register-wrap {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 3vw, 40px);
+  background:
+    radial-gradient(900px 480px at 15% 20%, rgba(0,159,227,.10), transparent 60%),
+    radial-gradient(700px 420px at 85% 15%, rgba(57,181,74,.10), transparent 70%),
+    linear-gradient(180deg, #f7fcff 0%, #f8fff9 100%);
+}
+
+.hero {
+  width: min(1120px, 100%);
+  display: grid;
+  grid-template-columns: 420px 1fr; /* Gauche: logo — Droite: carte */
+  gap: clamp(22px, 4vw, 48px);
+  align-items: center;
+
+  @media (max-width: 920px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Colonne gauche (logo) ---------- */
+.side {
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+
+  @media (max-width: 920px) {
+    order: -1;            /* passe le logo au-dessus sur mobile */
+    min-height: 0;
+  }
+}
+
+.side-logo {
+  width: clamp(140px, 30vw, 220px);
+  height: auto;
+  display: block;
+  border-radius: 26px;
+  background: #fff;              /* lisible sur tous fonds */
+  box-shadow: var(--shadow-md);
+  object-fit: contain;
+}
+
+/* ---------- Carte Material ---------- */
+.register-card {
+  padding: 26px 24px 20px;
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+
+  h2 {
+    margin: 2px 0 6px;
+    font-family: var(--font-title);
+    font-weight: 800;
+    letter-spacing: .2px;
+    color: var(--am-deep);
+  }
+
+  .subtitle {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: .95rem;
+  }
+}
+
+/* ---------- Champs & Material fine-tuning ---------- */
+.field {
+  width: 100%;
+  margin-top: 14px;
+}
+
+/* Couleurs focus / contour des champs */
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-caret-color: var(--am-aqua);
+  --mdc-outlined-text-field-focus-outline-color: var(--am-aqua);
+  --mdc-outlined-text-field-outline-color: #cfe9ff;
+  --mdc-outlined-text-field-label-text-color: #587b72;
+}
+
+.mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-text-field__input {
+  caret-color: var(--am-aqua);
+}
+
+/* ---------- Barre de robustesse du mot de passe ---------- */
+.strength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 2px 2px;
+
+  .bar {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: #e8f3ff;
+    overflow: hidden;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      transition: width .28s ease-in-out;
+      background: linear-gradient(90deg, var(--am-aqua), var(--am-green));
+    }
+
+    &.lv1::after { width: 20%; }
+    &.lv2::after { width: 40%; }
+    &.lv3::after { width: 60%; }
+    &.lv4::after { width: 80%; }
+    &.lv5::after { width: 100%; }
+  }
+
+  .label {
+    min-width: 78px;
+    text-align: right;
+    font-size: .85rem;
+    color: var(--muted);
+    font-family: var(--font-title);
+  }
+}
+
+/* ---------- Ligne options (CGU + lien connexion) ---------- */
+.row {
+  margin: 10px 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  .link {
+    color: var(--am-aqua);
+    text-decoration: none;
+    font-weight: 700;
+
+    &:hover { text-decoration: underline; }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+}
+
+/* ---------- CTA principal ---------- */
+.btn-primary {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--am-aqua), var(--am-green));
+  color: #fff !important;
+  box-shadow: var(--shadow-md);
+  font-weight: 800;
+  letter-spacing: .2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  &:hover { filter: brightness(1.03); }
+  &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+}
+
+/* ---------- Aide & erreurs ---------- */
+.helper {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.error {
+  margin: 12px 0 0;
+  color: #b00020;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- Accessibilité : réduit les animations si demandé ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .register-wrap {
+    background: linear-gradient(180deg, #f7fcff 0%, #f8fff9 100%);
+  }
+}

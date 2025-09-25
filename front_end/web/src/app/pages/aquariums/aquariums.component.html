@@ -1,0 +1,60 @@
+<section class="toolbar">
+  <!-- Logo cliquable vers l’accueil -->
+  <a class="brand" routerLink="/">
+    <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
+  </a>
+
+  <!-- Titre centré -->
+  <h1>Mes aquariums</h1>
+
+  <!-- Bouton à droite -->
+  <button mat-raised-button class="btn-primary" (click)="openCreate()">
+    <mat-icon>add</mat-icon>
+    <span>Nouvel aquarium</span>
+  </button>
+</section>
+
+<ng-container *ngIf="!loading; else loadingTpl">
+  <section class="grid" *ngIf="items.length; else empty">
+    <mat-card class="card" *ngFor="let a of items">
+      <mat-card-header>
+        <mat-card-title>{{ a.name }}</mat-card-title>
+        <mat-card-subtitle>
+          {{ a.lengthCm }}×{{ a.widthCm }}×{{ a.heightCm }} cm • ≈ {{ litersOf(a) }} L
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="row">
+          <span class="label">Type d'eau</span>
+          <mat-chip-set>
+            <mat-chip [ngClass]="a.waterType === 'EAU_DE_MER' ? 'mer' : 'douce'">
+              {{ a.waterType === 'EAU_DE_MER' ? 'Eau de mer' : 'Eau douce' }}
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+        <div class="row">
+          <span class="label">Mise en eau</span>
+          <span class="value">{{ a.startDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </section>
+
+  <ng-template #empty>
+    <mat-card class="empty">
+      <mat-card-content>
+        <p>Vous n’avez pas encore d’aquarium.</p>
+        <button mat-raised-button class="btn-primary" (click)="openCreate()">
+          <mat-icon>add</mat-icon> Créer mon premier aquarium
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </ng-template>
+</ng-container>
+
+<ng-template #loadingTpl>
+  <div class="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+</ng-template>
