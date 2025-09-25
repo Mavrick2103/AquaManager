@@ -1,47 +1,47 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 
-/* Angular Material */
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AquariumsService, Aquarium } from '../../core/aquariums.service';
 import { firstValueFrom } from 'rxjs';
-// ❌ NE PAS importer AquariumDialogComponent ici (pas utilisé dans le template)
+import { AquariumDialogComponent } from './dialog/aquarium-dialog.component';
 
-/**
- * Page "Mes aquariums"
- */
 @Component({
   selector: 'app-aquariums',
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
 
-    // Material utilisés dans le TEMPLATE
+    // Angular Material utilisés dans le template
     MatDialogModule,
-    MatIconModule,
     MatCardModule,
     MatChipsModule,
-    MatProgressSpinnerModule,
+    MatIconModule,
     MatButtonModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './aquariums.component.html',
   styleUrls: ['./aquariums.component.scss'],
 })
-export class AquariumsComponent {
+export class AquariumsComponent implements OnInit {
   items: Aquarium[] = [];
   loading = false;
 
-  constructor(private dialog: MatDialog, private api: AquariumsService) {}
+  constructor(
+    private dialog: MatDialog,
+    private api: AquariumsService,
+    private router: Router
+  ) {}
 
-  ngOnInit() {
-    this.load();
-  }
+  ngOnInit() { this.load(); }
 
   async load() {
     this.loading = true;
@@ -49,22 +49,21 @@ export class AquariumsComponent {
     this.loading = false;
   }
 
-  // Appelé depuis le template
-  litersOf(a: Aquarium): number {
-    // (L × l × h) cm³  → litres (÷1000), arrondi
-    return Math.round((a.lengthCm * a.widthCm * a.heightCm) / 1000);
+  openCreate() {
+    const ref = this.dialog.open(AquariumDialogComponent, {
+      width: '720px',
+      autoFocus: false,
+    });
+    ref.afterClosed().subscribe(ok => { if (ok) this.load(); });
   }
 
-  openCreate() {
-    // Lazy import pour le dialog standalone (pas besoin de l'avoir dans imports)
-    import('./dialog/aquarium-dialog.component').then(m => {
-      const ref = this.dialog.open(m.AquariumDialogComponent, {
-        width: '720px',
-        autoFocus: false,
-      });
-      ref.afterClosed().subscribe(ok => {
-        if (ok) this.load();
-      });
-    });
+  // Navigation vers la fiche
+  goTo(a: Aquarium) {
+    this.router.navigate(['/aquariums', a.id]);
+  }
+
+  // Utilisé dans le template (si tu préfères, remplace par a.volumeL)
+  litersOf(a: Aquarium): number {
+    return Math.round((a.lengthCm * a.widthCm * a.heightCm) / 1000);
   }
 }

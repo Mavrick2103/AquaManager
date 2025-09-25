@@ -22,6 +22,13 @@ export const routes: Routes = [
       import('./pages/aquariums/aquariums.component').then(m => m.AquariumsComponent),
     canActivate: [AuthGuard], // ✅ fonction
   },
+  {
+  path: 'aquariums/:id',
+  loadComponent: () =>
+    import('./pages/aquariums/detail/aquarium-detail.component')
+      .then(m => m.AquariumDetailComponent),
+  canActivate: [AuthGuard],
+},
   
   { path: '**', redirectTo: '' },
 ];

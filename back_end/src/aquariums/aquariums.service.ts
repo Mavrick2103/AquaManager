@@ -41,4 +41,12 @@ export class AquariumsService {
     // INSERT (pas d'UPDATE)
     return this.repo.save(aquarium);
   }
+  async findOne(id: number) {
+  const aquarium = await this.repo.findOne({ where: { id } });
+  if (!aquarium) {
+    throw new NotFoundException(`Aquarium ${id} introuvable`);
+  }
+  return aquarium;
+}
+
 }

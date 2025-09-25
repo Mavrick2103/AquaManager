@@ -16,11 +16,15 @@
 
 <ng-container *ngIf="!loading; else loadingTpl">
   <section class="grid" *ngIf="items.length; else empty">
-    <mat-card class="card" *ngFor="let a of items">
+    <mat-card class="card"
+              *ngFor="let a of items"
+              (click)="goTo(a)"
+              style="cursor:pointer;">
       <mat-card-header>
         <mat-card-title>{{ a.name }}</mat-card-title>
         <mat-card-subtitle>
           {{ a.lengthCm }}×{{ a.widthCm }}×{{ a.heightCm }} cm • ≈ {{ litersOf(a) }} L
+          <!-- ou utilise directement: • ≈ {{ a.volumeL }} L -->
         </mat-card-subtitle>
       </mat-card-header>
 
@@ -33,6 +37,7 @@
             </mat-chip>
           </mat-chip-set>
         </div>
+
         <div class="row">
           <span class="label">Mise en eau</span>
           <span class="value">{{ a.startDate | date:'dd/MM/yyyy' }}</span>
