@@ -1,8 +1,10 @@
-// src/aquariums/aquariums.controller.ts
-import { Controller, Get, Post, Body, UseGuards, Request, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller, Get, Post, Put, Delete,
+  Body, Param, Request, UseGuards, ParseIntPipe
+} from '@nestjs/common';
 import { AquariumsService } from './aquariums.service';
-import { CreateAquariumDto } from './dto/create-aquarium.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateAquariumDto } from './dto/create-aquarium.dto';
 
 @Controller('aquariums')
 @UseGuards(JwtAuthGuard)
@@ -20,7 +22,21 @@ export class AquariumsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
+  findOne(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.service.findOne(req.user.userId, id);
+  }
+
+  @Put(':id')
+  update(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: Partial<CreateAquariumDto>,
+  ) {
+    return this.service.update(req.user.userId, id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.service.remove(req.user.userId, id);
   }
 }

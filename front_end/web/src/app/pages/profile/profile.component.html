@@ -1,3 +1,60 @@
-<h2>Profil</h2>
-<pre *ngIf="me as m">{{ m | json }}</pre>
-<button (click)="auth.logout()">Déconnexion</button>
+<section class="toolbar">
+  <a class="brand" routerLink="/">
+    <img src="/Logo_AquaManger.png" class="logo" alt="AquaManager" />
+  </a>
+  <h1>Mon profil</h1>
+  <div></div>
+</section>
+
+<mat-card class="sheet" *ngIf="!loading; else loader">
+  <mat-card-content class="grid">
+    <section class="block">
+      <h2>Informations personnelles</h2>
+      <form [formGroup]="infoForm" class="form">
+        <mat-form-field appearance="outline">
+          <mat-label>Prénom</mat-label>
+          <input matInput formControlName="firstName">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nom</mat-label>
+          <input matInput formControlName="lastName">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email">
+        </mat-form-field>
+
+        <div class="actions">
+          <button mat-raised-button class="btn-primary"
+                  (click)="saveInfo()" [disabled]="saving || infoForm.invalid">
+            <mat-icon>save</mat-icon> Enregistrer
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="block">
+      <h2>Sécurité</h2>
+      <form [formGroup]="pwdForm" class="form">
+        <mat-form-field appearance="outline">
+          <mat-label>Mot de passe actuel</mat-label>
+          <input matInput type="password" formControlName="currentPassword">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nouveau mot de passe</mat-label>
+          <input matInput type="password" formControlName="newPassword">
+        </mat-form-field>
+        <div class="actions">
+          <button mat-stroked-button color="primary"
+                  (click)="changePassword()" [disabled]="saving || pwdForm.invalid">
+            <mat-icon>key</mat-icon> Mettre à jour le mot de passe
+          </button>
+        </div>
+      </form>
+    </section>
+  </mat-card-content>
+</mat-card>
+
+<ng-template #loader>
+  <div class="loading"><mat-progress-spinner diameter="56"></mat-progress-spinner></div>
+</ng-template>

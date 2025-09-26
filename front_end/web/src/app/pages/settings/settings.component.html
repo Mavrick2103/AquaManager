@@ -1,0 +1,51 @@
+<section class="toolbar">
+  <!-- Logo cliquable -->
+  <a class="brand" routerLink="/">
+    <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
+  </a>
+  <h1>Paramètres</h1>
+  <div></div>
+</section>
+
+<mat-card class="sheet" *ngIf="!loading; else loader">
+  <mat-card-content class="grid" [formGroup]="form">
+    <mat-form-field appearance="outline">
+      <mat-label>Unités</mat-label>
+      <mat-select formControlName="unit">
+        <mat-option value="metric">Métrique (cm, L)</mat-option>
+        <mat-option value="imperial">Impérial (in, gal)</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Thème</mat-label>
+      <mat-select formControlName="theme">
+        <mat-option value="system">Système</mat-option>
+        <mat-option value="light">Clair</mat-option>
+        <mat-option value="dark">Sombre</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Langue</mat-label>
+      <mat-select formControlName="language">
+        <mat-option value="fr">Français</mat-option>
+        <mat-option value="en">English</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-slide-toggle formControlName="notifications">
+      Notifications
+    </mat-slide-toggle>
+
+    <div class="actions">
+      <button mat-raised-button class="btn-primary" (click)="save()" [disabled]="saving">
+        <mat-icon>save</mat-icon> Enregistrer
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<ng-template #loader>
+  <div class="loading"><mat-progress-spinner diameter="56"></mat-progress-spinner></div>
+</ng-template>
