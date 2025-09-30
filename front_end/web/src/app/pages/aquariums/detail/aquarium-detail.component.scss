@@ -101,5 +101,13 @@ mat-chip{
   &.douce{ background: rgba(57,181,74,.18); color:#236a33; }
 }
 
+.add-measure-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+}
+
+
 /* Loader */
 .loading{ display:grid; place-items:center; padding:60px 0; }

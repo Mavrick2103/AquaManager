@@ -6,8 +6,7 @@ import { typeOrmConfig } from './config/typeorm.config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { AquariumsModule } from './aquariums/aquariums.module';
-import { WaterMeasurementsModule } from './water-measurement/water.measurement.module';
-
+import { WaterMeasurementModule } from './water-measurement/water-measurement.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,7 +25,7 @@ import { WaterMeasurementsModule } from './water-measurement/water.measurement.m
     TypeOrmModule.forRoot(typeOrmConfig()),
     UsersModule,
     AquariumsModule, // ✅
-    AuthModule, WaterMeasurementsModule,
+    AuthModule, WaterMeasurementModule,
   ],
 })
 export class AppModule {}

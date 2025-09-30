@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WaterMeasurement } from './water-measurement.entity';
+import { Aquarium } from '../aquariums/aquariums.entity';
 import { WaterMeasurementService } from './water-measurement.service';
 import { WaterMeasurementController } from './water-measurement.controller';
-import { Aquarium } from '../aquariums/aquariums.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([WaterMeasurement, Aquarium])],
@@ -11,4 +11,4 @@ import { Aquarium } from '../aquariums/aquariums.entity';
   controllers: [WaterMeasurementController],
   exports: [WaterMeasurementService],
 })
-export class WaterMeasurementsModule {}
+export class WaterMeasurementModule {}

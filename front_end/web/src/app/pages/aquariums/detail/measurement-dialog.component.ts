@@ -1,104 +1,105 @@
-import { Component, inject } from '@angular/core';
+import { Component, Inject, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MeasurementsService, MeasurementCreateDto } from '../../../core/water.service';
+
+export type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER';
+
+export interface MeasurementDialogData {
+  aquariumId: number;
+  type: WaterType;   // déjà connu → on ne redemande pas
+  name?: string;
+}
 
 @Component({
   selector: 'app-measurement-dialog',
   standalone: true,
   imports: [
-    CommonModule, MatDialogModule, ReactiveFormsModule,
-    MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatDatepickerModule, MatNativeDateModule
+    CommonModule, ReactiveFormsModule, MatDialogModule,
+    MatButtonModule, MatFormFieldModule, MatInputModule,
+    MatDatepickerModule, MatNativeDateModule, MatIconModule,
+    MatSnackBarModule, MatProgressSpinnerModule,
   ],
-  template: `
-    <h2 mat-dialog-title>Nouvelle mesure</h2>
-    <div mat-dialog-content [formGroup]="form" class="grid">
-      <mat-form-field appearance="outline">
-        <mat-label>Date</mat-label>
-        <input matInput [matDatepicker]="dp" formControlName="date">
-        <mat-datepicker-toggle matIconSuffix [for]="dp"></mat-datepicker-toggle>
-        <mat-datepicker #dp></mat-datepicker>
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>Heure</mat-label>
-        <input matInput type="time" formControlName="time">
-      </mat-form-field>
-
-      <ng-container *ngFor="let f of fields">
-        <mat-form-field appearance="outline">
-          <mat-label>{{ f.label }}</mat-label>
-          <input matInput type="number" step="0.01" [formControlName]="f.key">
-        </mat-form-field>
-      </ng-container>
-    </div>
-
-    <div mat-dialog-actions style="display:flex;gap:10px;justify-content:flex-end;">
-      <button mat-stroked-button (click)="ref.close()">Annuler</button>
-      <button mat-flat-button color="primary" (click)="save()">Enregistrer</button>
-    </div>
-  `,
-  styles: [`
-    .grid{ display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:12px; }
-    @media (max-width: 760px){ .grid{ grid-template-columns: 1fr; } }
-    button[color="primary"]{ background:linear-gradient(135deg,#009FE3,#39B54A); color:#fff; font-weight:700; }
-  `]
+  templateUrl: './measurement-dialog.component.html',
+  styleUrls: ['./measurement-dialog.component.scss'],
 })
 export class MeasurementDialogComponent {
-  ref = inject(MatDialogRef<MeasurementDialogComponent>);
-  data = inject(MAT_DIALOG_DATA) as { };
+  private fb = inject(FormBuilder);
+  private svc = inject(MeasurementsService);
+  private snack = inject(MatSnackBar);
 
-  private fb = inject(NonNullableFormBuilder);
+  loading = false;
+  form: FormGroup;
 
-  fields = [
-    { key: 'ph', label: 'pH' }, { key: 'kh', label: 'KH' }, { key: 'gh', label: 'GH' },
-    { key: 'co2', label: 'CO₂ (mg/L)' }, { key: 'k', label: 'Potassium K (mg/L)' },
-    { key: 'no2', label: 'NO₂ (mg/L)' }, { key: 'no3', label: 'NO₃ (mg/L)' },
-    { key: 'amn', label: 'Ammoniaque (mg/L)' }, { key: 'fe', label: 'Fer Fe (mg/L)' },
-    { key: 'temp', label: 'Température (°C)' }, { key: 'po4', label: 'Phosphates PO₄ (mg/L)' },
-  ] as const;
+  constructor(
+    private ref: MatDialogRef<MeasurementDialogComponent, boolean>,
+    @Inject(MAT_DIALOG_DATA) public data: MeasurementDialogData,
+  ) {
+    const base = {
+      measuredAt: [new Date(), [Validators.required]],
+      ph:   [7.0, [Validators.min(0), Validators.max(14)]],
+      temp: [25,  [Validators.min(0), Validators.max(40)]],
+      comment: [''],
+    };
 
-  form = this.fb.group({
-    date: [new Date(), Validators.required],
-    time: ['12:00', Validators.required],
-    ph: [null as number | null],
-    kh: [null as number | null],
-    gh: [null as number | null],
-    co2: [null as number | null],
-    k: [null as number | null],
-    no2: [null as number | null],
-    no3: [null as number | null],
-    amn: [null as number | null],
-    fe: [null as number | null],
-    temp: [null as number | null],
-    po4: [null as number | null],
-  });
+    const eauDouce = {
+      kh:  [5,   [Validators.min(0), Validators.max(30)]],
+      gh:  [8,   [Validators.min(0), Validators.max(40)]],
+      no2: [0,   [Validators.min(0), Validators.max(5)]],
+      no3: [10,  [Validators.min(0), Validators.max(300)]],
+    };
 
-  private toIsoLocal(d: Date, time: string): string {
-    const [hh, mm] = time.split(':').map(Number);
-    const dt = new Date(d);
-    dt.setHours(hh ?? 0, mm ?? 0, 0, 0);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:00`;
+    const eauDeMer = {
+      dkh:     [8,    [Validators.min(0), Validators.max(20)]],
+      salinity:[35,   [Validators.min(0), Validators.max(45)]], // ppt
+      ca:      [420,  [Validators.min(0), Validators.max(600)]],
+      mg:      [1300, [Validators.min(0), Validators.max(1800)]],
+      no3:     [10,   [Validators.min(0), Validators.max(300)]],
+      po4:     [0.05, [Validators.min(0), Validators.max(5)]],
+    };
+
+    this.form = this.fb.group({
+      ...base,
+      ...(this.data.type === 'EAU_DOUCE' ? eauDouce : eauDeMer),
+    });
   }
 
-  save() {
-    if (this.form.invalid) return;
-    const raw = this.form.getRawValue();
-    const takenAt = this.toIsoLocal(raw.date, raw.time);
-    const payload: any = { takenAt };
+  close() { this.ref.close(false); }
 
-    // ne garde que les champs renseignés
-    for (const k of Object.keys(raw) as (keyof typeof raw)[]) {
-      if (['date','time'].includes(k as any)) continue;
-      const v = raw[k];
-      if (v !== null && v !== undefined && v !== '') (payload as any)[k] = Number(v);
+  async save() {
+    if (this.form.invalid) return;
+    this.loading = true;
+    try {
+      const v = this.form.value;
+      const measuredAtIso =
+        v.measuredAt instanceof Date ? v.measuredAt.toISOString() : new Date(v.measuredAt).toISOString();
+
+      const dto: MeasurementCreateDto = {
+        measuredAt: measuredAtIso,
+        ph:   v.ph ?? null,
+        temp: v.temp ?? null,
+        comment: v.comment?.toString().trim() || null,
+        ...(this.data.type === 'EAU_DOUCE'
+          ? { kh: v.kh ?? null, gh: v.gh ?? null, no2: v.no2 ?? null, no3: v.no3 ?? null }
+          : { dkh: v.dkh ?? null, salinity: v.salinity ?? null, ca: v.ca ?? null,
+              mg: v.mg ?? null, no3: v.no3 ?? null, po4: v.po4 ?? null }),
+      };
+
+      await this.svc.createForAquarium(this.data.aquariumId, dto);
+      this.ref.close(true);
+    } catch (e: any) {
+      this.snack.open(e?.error?.message || 'Échec de l’enregistrement', 'Fermer', { duration: 3500 });
+    } finally {
+      this.loading = false;
     }
-    this.ref.close(payload);
   }
 }

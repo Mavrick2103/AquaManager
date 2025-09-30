@@ -1,0 +1,100 @@
+<h2 mat-dialog-title>
+  <mat-icon>science</mat-icon>
+  Nouvelle mesure d’eau
+</h2>
+
+<div mat-dialog-content>
+  <form [formGroup]="form" class="grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Date de mesure</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="measuredAt">
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+
+    <div class="row-3">
+      <mat-form-field appearance="outline">
+        <mat-label>pH</mat-label>
+        <input matInput type="number" step="0.1" formControlName="ph">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Température (°C)</mat-label>
+        <input matInput type="number" step="0.1" formControlName="temp">
+      </mat-form-field>
+    </div>
+
+    <!-- Eau douce -->
+    <div class="row-3" *ngIf="data.type === 'EAU_DOUCE'">
+      <mat-form-field appearance="outline">
+        <mat-label>KH (°d)</mat-label>
+        <input matInput type="number" step="1" formControlName="kh">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>GH (°d)</mat-label>
+        <input matInput type="number" step="1" formControlName="gh">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>NO₂ (mg/L)</mat-label>
+        <input matInput type="number" step="0.01" formControlName="no2">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>NO₃ (mg/L)</mat-label>
+        <input matInput type="number" step="1" formControlName="no3">
+      </mat-form-field>
+    </div>
+
+    <!-- Eau de mer -->
+    <div class="row-3" *ngIf="data.type === 'EAU_DE_MER'">
+      <mat-form-field appearance="outline">
+        <mat-label>Alcalinité (dKH)</mat-label>
+        <input matInput type="number" step="0.1" formControlName="dkh">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Salinité (ppt)</mat-label>
+        <input matInput type="number" step="0.1" formControlName="salinity">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Calcium (mg/L)</mat-label>
+        <input matInput type="number" step="1" formControlName="ca">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Magnésium (mg/L)</mat-label>
+        <input matInput type="number" step="1" formControlName="mg">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>NO₃ (mg/L)</mat-label>
+        <input matInput type="number" step="1" formControlName="no3">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>PO₄ (mg/L)</mat-label>
+        <input matInput type="number" step="0.01" formControlName="po4">
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Commentaire (optionnel)</mat-label>
+      <input matInput formControlName="comment" maxlength="120">
+      <mat-hint align="end">{{ form.value.comment?.length || 0 }} / 120</mat-hint>
+    </mat-form-field>
+  </form>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="close()" [disabled]="loading">
+    <mat-icon>close</mat-icon> Annuler
+  </button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="loading || form.invalid">
+    <mat-icon *ngIf="!loading">save</mat-icon>
+    <mat-progress-spinner *ngIf="loading" mode="indeterminate" diameter="18"></mat-progress-spinner>
+    Enregistrer
+  </button>
+</div>

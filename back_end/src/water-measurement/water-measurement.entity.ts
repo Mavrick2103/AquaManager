@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, JoinColumn } from 'typeorm';
 import { Aquarium } from '../aquariums/aquariums.entity';
 
 @Entity('water_measurements')
@@ -6,25 +6,35 @@ export class WaterMeasurement {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Aquarium, a => a.id, { onDelete: 'CASCADE', eager: false })
+  @Column()
+  aquariumId: number;
+
+  @ManyToOne(() => Aquarium, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'aquariumId' })
   aquarium: Aquarium;
 
-  // Date/heure de prélèvement (local → stockée en datetime)
-  @Column({ type: 'datetime' })
-  takenAt: Date;
+  @Column({ type: 'timestamp' })
+  measuredAt: Date;
 
-  // Valeurs scientifiques : nullables (tu peux ne pas tout mesurer à chaque fois)
+  // communs
   @Column({ type: 'float', nullable: true }) ph: number | null;
+  @Column({ type: 'float', nullable: true }) temp: number | null;
+
+  // eau douce
   @Column({ type: 'float', nullable: true }) kh: number | null;
   @Column({ type: 'float', nullable: true }) gh: number | null;
-  @Column({ type: 'float', nullable: true }) co2: number | null;
-  @Column({ type: 'float', nullable: true }) k: number | null;       // Potassium
   @Column({ type: 'float', nullable: true }) no2: number | null;
   @Column({ type: 'float', nullable: true }) no3: number | null;
-  @Column({ type: 'float', nullable: true }) amn: number | null;     // Ammoniaque/NH3–NH4
-  @Column({ type: 'float', nullable: true }) fe: number | null;      // Fer
-  @Column({ type: 'float', nullable: true }) temp: number | null;    // °C
-  @Column({ type: 'float', nullable: true }) po4: number | null;     // Phosphates
+
+  // eau de mer
+  @Column({ type: 'float', nullable: true }) dkh: number | null;
+  @Column({ type: 'float', nullable: true }) salinity: number | null;
+  @Column({ type: 'float', nullable: true }) ca: number | null;
+  @Column({ type: 'float', nullable: true }) mg: number | null;
+  @Column({ type: 'float', nullable: true }) po4: number | null;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  comment: string | null;
 
   @CreateDateColumn()
   createdAt: Date;
