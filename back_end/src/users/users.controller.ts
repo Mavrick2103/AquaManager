@@ -1,7 +1,4 @@
-import {
-  Controller, Get, Put, Post, Param, Body, Request,
-  UseGuards, BadRequestException, NotFoundException
-} from '@nestjs/common';
+import { Controller, Get, Put, Post, Delete, Body, Request, UseGuards, BadRequestException, NotFoundException, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateMeDto } from './dto/update-me.dto';
@@ -36,4 +33,10 @@ export class UsersController {
     if (!ok) throw new BadRequestException('Mot de passe actuel invalide');
     return { ok: true };
   }
+ @Delete('me')
+async removeMe(@Req() req: any) {
+  const userId = Number(req.user?.userId ?? req.user?.sub);
+  await this.users.deleteById(userId);
+  return { ok: true };
+}
 }

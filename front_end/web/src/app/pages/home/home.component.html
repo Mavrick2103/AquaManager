@@ -5,15 +5,34 @@
 
   <span class="spacer"></span>
 
-  <!-- Icône paramètres -->
-  <button mat-icon-button aria-label="Paramètres" routerLink="/settings">
-    <mat-icon>settings</mat-icon>
-  </button>
-
-  <!-- Icône profil -->
-  <button mat-icon-button aria-label="Profil" routerLink="/profile">
+  <!-- Icône profil avec menu au survol -->
+  <button
+    mat-icon-button
+    aria-label="Profil"
+    [matMenuTriggerFor]="profileMenu"
+    [matMenuTriggerRestoreFocus]="false"
+    #menuTrigger="matMenuTrigger"
+    (mouseenter)="openMenu(menuTrigger)"
+  >
     <mat-icon>account_circle</mat-icon>
   </button>
+
+  <mat-menu
+    #profileMenu="matMenu"
+    (mouseenter)="keepOpen(menuTrigger)"
+    (mouseleave)="closeMenu(menuTrigger)"
+    xPosition="before"
+    yPosition="below"
+  >
+    <button mat-menu-item [routerLink]="'/profile'">
+      <mat-icon>person</mat-icon>
+      <span>Profil utilisateur</span>
+    </button>
+    <button mat-menu-item [routerLink]="'/settings'">
+      <mat-icon>settings</mat-icon>
+      <span>Paramètres</span>
+    </button>
+  </mat-menu>
 
   <!-- Email + Déconnexion -->
   <button mat-stroked-button color="warn" class="logout-btn" (click)="logout()">
@@ -31,8 +50,7 @@
     </p>
     <div class="cta-row">
       <button mat-raised-button routerLink="/aquariums">Mes aquariums</button>
-      <button mat-raised-button routerLink="/journal">Journal d’entretien</button>
-      <button mat-raised-button routerLink="/charts">Graphiques</button>
+      <button mat-raised-button routerLink="/calendar">Calendrier</button>
     </div>
   </section>
 
@@ -50,6 +68,10 @@
       <div class="kpi-value">0</div>
       <div class="kpi-label">Alertes</div>
     </div>
+  </section>
+
+  <section class="card">
+    <h2 style="margin:0 0 8px;">Planning</h2>
   </section>
 
   <!-- Activités -->

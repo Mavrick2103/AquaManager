@@ -68,5 +68,9 @@ export class UsersService {
 
     return this.repo.save(user);
   }
+  async deleteById(id: number) {
+  await this.repo.delete(id);
+}
+
 
 }
