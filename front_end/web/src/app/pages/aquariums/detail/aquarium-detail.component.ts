@@ -18,7 +18,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { AquariumsService, Aquarium } from '../../../core/aquariums.service';
 import type { WaterType } from '../../../core/water.service';
-
+import { WaterMeasurementsChartComponent } from '../../../pages/aquariums/detail/chart/chart.component';
 // ✅ Dialog de saisie de mesure (à créer si pas encore fait)
 import { MeasurementDialogComponent } from './measurement-dialog.component';
 
@@ -29,7 +29,7 @@ import { MeasurementDialogComponent } from './measurement-dialog.component';
     CommonModule, ReactiveFormsModule, RouterLink,
     MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatSnackBarModule, MatDividerModule,
-    MatProgressSpinnerModule, MatChipsModule, MatDialogModule, // ✅ nécessaire pour ouvrir le dialog
+    MatProgressSpinnerModule, MatChipsModule, MatDialogModule, WaterMeasurementsChartComponent,
   ],
   templateUrl: './aquarium-detail.component.html',
   styleUrls: ['./aquarium-detail.component.scss']
@@ -142,5 +142,10 @@ export class AquariumDetailComponent implements OnInit {
     //   this.measurements = data;
     //   this.updateCharts();
     // });
+  }
+  // ✅ Getter propre pour le binding
+  get waterType(): 'EAU_DOUCE' | 'EAU_DE_MER' {
+    // on renvoie juste la valeur du form, sans cast dans le template
+    return (this.form.value.waterType as 'EAU_DOUCE' | 'EAU_DE_MER') ?? 'EAU_DOUCE';
   }
 }

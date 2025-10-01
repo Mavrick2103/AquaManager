@@ -1,0 +1,23 @@
+<mat-card class="chart-card">
+  <div class="header">
+    <h3><mat-icon>show_chart</mat-icon> Paramètres de l’eau</h3>
+  </div>
+
+  <div class="chart-wrapper">
+    <!-- toujours présent -->
+    <canvas #canvas></canvas>
+
+    <!-- overlays -->
+    <div class="overlay loading" *ngIf="loading">
+      <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+    </div>
+
+    <div class="overlay empty" *ngIf="!loading && !hasData">
+      Aucune mesure à afficher pour l’instant.
+    </div>
+  </div>
+
+  <p class="hint">
+    Astuce : cliquez sur les éléments de la <strong>légende</strong> pour afficher/masquer des courbes.
+  </p>
+</mat-card>

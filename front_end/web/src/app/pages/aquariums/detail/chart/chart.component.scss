@@ -1,0 +1,8 @@
+.chart-card { margin-top: 12px; }
+.header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  h3 { display: flex; align-items: center; gap: 6px; margin: 0; } }
+.chart-wrapper { position: relative; width: 100%; height: 420px;
+  canvas { width: 100%; height: 100%; } }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.empty { color: #607d8b; }
+.hint { color: #607d8b; font-size: 12px; margin: 8px 0 0; }
