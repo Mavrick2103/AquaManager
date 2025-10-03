@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService, Me } from '../../core/auth.service';
+import { WeekCalendarComponent } from './week-calendar.component';
 
 /* Angular Material */
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -20,7 +21,7 @@ import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
     CommonModule, RouterLink,
     MatToolbarModule, MatButtonModule, MatIconModule,
     MatCardModule, MatDividerModule, MatChipsModule,
-    MatTooltipModule, MatMenuModule,
+    MatTooltipModule, MatMenuModule, WeekCalendarComponent,
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],

@@ -1,4 +1,4 @@
-<!-- Toolbar : logo | titre | actions -->
+<!-- Toolbar / actions -->
 <section class="toolbar">
   <a class="brand" [routerLink]="['/aquariums']" aria-label="Retour à la liste">
     <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
@@ -7,6 +7,12 @@
   <h1>Fiche aquarium</h1>
 
   <div class="actions">
+    <!-- Ouvre la fenêtre avec les champs (Nom, Type d’eau, L/L/H, Date) -->
+    <button mat-flat-button color="primary" type="button" (click)="openEditDialog()" [disabled]="saving">
+      <mat-icon>edit</mat-icon>
+      <span>Modifier l’aquarium</span>
+    </button>
+
     <button mat-stroked-button color="warn" type="button"
             (click)="remove()" [disabled]="saving">
       <mat-icon>delete</mat-icon>
@@ -20,7 +26,7 @@
   </div>
 </section>
 
-<!-- Bandeau résumé -->
+<!-- Bandeau résumé (inchangé) -->
 <section class="hero" *ngIf="!loading">
   <div class="left">
     <div class="avatar">
@@ -29,7 +35,7 @@
     <div class="headings">
       <div class="title">{{ form.value.name || '—' }}</div>
       <div class="meta">
-        ~ {{ liters }} L
+        {{ liters }} L
         <span class="dot"></span>
         <mat-chip-set>
           <mat-chip [ngClass]="form.value.waterType === 'EAU_DE_MER' ? 'mer' : 'douce'">
@@ -54,59 +60,53 @@
   </div>
 </section>
 
-<!-- Carte formulaire -->
-<ng-container *ngIf="!loading; else loader">
-  <mat-card class="sheet">
-    <mat-card-content>
-      <form [formGroup]="form" class="grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Nom</mat-label>
-          <input matInput formControlName="name" />
-          <mat-hint align="end">{{ form.get('name')?.value?.length || 0 }}/255</mat-hint>
-        </mat-form-field>
+<!-- ========= Onglets en bas de page ========= -->
+<mat-tab-group dynamicHeight>
+  <!-- Onglet MESURES -->
+  <mat-tab label="Mesures">
+    <div class="tab-section">
+      <div class="tab-actions">
+        <button mat-raised-button color="primary" (click)="openMeasurementDialog()">
+          <mat-icon>add</mat-icon>
+          Ajouter une mesure
+        </button>
+      </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Type d’eau</mat-label>
-          <mat-select formControlName="waterType">
-            <mat-option value="EAU_DOUCE">Eau douce</mat-option>
-            <mat-option value="EAU_DE_MER">Eau de mer</mat-option>
-          </mat-select>
-        </mat-form-field>
+      <app-water-measurements-chart
+        [aquariumId]="id"
+        [waterType]="waterType">
+      </app-water-measurements-chart>
+    </div>
+  </mat-tab>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Longueur (cm)</mat-label>
-          <input matInput type="number" formControlName="lengthCm" />
-        </mat-form-field>
+  <!-- Onglet ESPÈCES -->
+  <mat-tab label="Espèces">
+    <div class="tab-section">
+      <div class="tab-actions">
+        <button mat-raised-button (click)="addSpecies()">
+          <mat-icon>add</mat-icon>
+          Ajouter une espèce
+        </button>
+      </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Largeur (cm)</mat-label>
-          <input matInput type="number" formControlName="widthCm" />
-        </mat-form-field>
+      <mat-list *ngIf="species.length; else emptySpecies">
+        <mat-list-item *ngFor="let s of species; let i = index">
+          <div matListItemTitle>{{ s.name }}</div>
+          <div matListItemLine>Quantité : {{ s.count }}</div>
+          <button mat-icon-button color="warn" (click)="removeSpecies(i)" aria-label="Supprimer">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-list-item>
+      </mat-list>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Hauteur (cm)</mat-label>
-          <input matInput type="number" formControlName="heightCm" />
-        </mat-form-field>
+      <ng-template #emptySpecies>
+        <p style="opacity:.7; margin:16px 0">Aucune espèce enregistrée pour le moment.</p>
+      </ng-template>
+    </div>
+  </mat-tab>
+</mat-tab-group>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Date de mise en eau</mat-label>
-          <input matInput type="date" formControlName="startDate" />
-        </mat-form-field>
-      </form>
-    </mat-card-content>
-  </mat-card>
-</ng-container>
-<button mat-fab color="primary" class="add-measure-fab" (click)="openMeasurementDialog()">
-  <mat-icon>add</mat-icon>
-</button>
-
-<app-water-measurements-chart
-  [aquariumId]="id"
-  [waterType]="waterType">
-</app-water-measurements-chart>
-
-
-
+<!-- (plus de formulaire ici : il est dans le dialog) -->
 
 <!-- Loader -->
 <ng-template #loader>

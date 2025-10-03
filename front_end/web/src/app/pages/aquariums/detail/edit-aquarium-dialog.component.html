@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>Modifier l’aquarium</h2>
+
+<div mat-dialog-content [formGroup]="form" class="grid">
+  <!-- même champs que ta page, sans changer le style Material -->
+  <div class="row two">
+    <mat-form-field appearance="outline">
+      <mat-label>Nom *</mat-label>
+      <input matInput formControlName="name" maxlength="255">
+      <mat-hint align="end">{{ form.value.name?.length || 0 }} / 255</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Type d’eau *</mat-label>
+      <mat-select formControlName="waterType">
+        <mat-option value="EAU_DOUCE">Eau douce</mat-option>
+        <mat-option value="EAU_DE_MER">Eau de mer</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="row three">
+    <mat-form-field appearance="outline">
+      <mat-label>Longueur (cm) *</mat-label>
+      <input matInput type="number" formControlName="lengthCm">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Largeur (cm) *</mat-label>
+      <input matInput type="number" formControlName="widthCm">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Hauteur (cm) *</mat-label>
+      <input matInput type="number" formControlName="heightCm">
+    </mat-form-field>
+  </div>
+
+  <div class="row one">
+    <mat-form-field appearance="outline">
+      <mat-label>Date de mise en eau</mat-label>
+      <input matInput type="date" formControlName="startDate">
+    </mat-form-field>
+  </div>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Annuler</button>
+  <button mat-raised-button color="primary" (click)="submit()">Enregistrer</button>
+</div>

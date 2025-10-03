@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Put, Delete,
-  Body, Param, Request, UseGuards, ParseIntPipe
+  Body, Param, Request, UseGuards, ParseIntPipe,
 } from '@nestjs/common';
 import { AquariumsService } from './aquariums.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';

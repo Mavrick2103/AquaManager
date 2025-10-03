@@ -35,22 +35,15 @@ export class UsersService {
     await this.repo.update({ id: userId }, { password: passwordHash });
     return true;
   }
-    /**
-   * Récupère un utilisateur par email en incluant le hash du mot de passe
-   * (pour AuthService.login / register + login).
-   */
+   
   async findByEmailWithPassword(email: string): Promise<User | null> {
     return this.repo
       .createQueryBuilder('u')
-      .addSelect('u.password')               // inclure le champ password (généralement exclu)
+      .addSelect('u.password')               
       .where('u.email = :email', { email })
       .getOne();
   }
 
-  /**
-   * Crée un utilisateur avec hash argon2.
-   * - lève ConflictException si l'email est déjà pris.
-   */
   async create(dto: CreateUserDto): Promise<User> {
     const exists = await this.repo.exist({ where: { email: dto.email } });
     if (exists) {

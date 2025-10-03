@@ -15,12 +15,15 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatListModule } from '@angular/material/list';
 
 import { AquariumsService, Aquarium } from '../../../core/aquariums.service';
-import type { WaterType } from '../../../core/water.service';
-import { WaterMeasurementsChartComponent } from '../../../pages/aquariums/detail/chart/chart.component';
-// ✅ Dialog de saisie de mesure (à créer si pas encore fait)
+import { WaterMeasurementsChartComponent } from './chart/chart.component';
 import { MeasurementDialogComponent } from './measurement-dialog.component';
+import { EditAquariumDialogComponent } from './edit-aquarium-dialog.component';
+
+type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER';
 
 @Component({
   selector: 'app-aquarium-detail',
@@ -29,10 +32,12 @@ import { MeasurementDialogComponent } from './measurement-dialog.component';
     CommonModule, ReactiveFormsModule, RouterLink,
     MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatSnackBarModule, MatDividerModule,
-    MatProgressSpinnerModule, MatChipsModule, MatDialogModule, WaterMeasurementsChartComponent,
+    MatProgressSpinnerModule, MatChipsModule, MatDialogModule,
+    MatTabsModule, MatListModule,
+    WaterMeasurementsChartComponent,
   ],
   templateUrl: './aquarium-detail.component.html',
-  styleUrls: ['./aquarium-detail.component.scss']
+  styleUrls: ['./aquarium-detail.component.scss'],
 })
 export class AquariumDetailComponent implements OnInit {
   private route  = inject(ActivatedRoute);
@@ -40,21 +45,24 @@ export class AquariumDetailComponent implements OnInit {
   private fb     = inject(FormBuilder);
   private snack  = inject(MatSnackBar);
   private router = inject(Router);
-  private dialog = inject(MatDialog);              // ✅ injection du dialog
+  private dialog = inject(MatDialog);
 
   id!: number;
   loading = true;
   saving  = false;
 
+  // Form utilisé pour afficher/resynchroniser les infos (dialog -> page)
   form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(255)]],
     lengthCm: [0, [Validators.required, Validators.min(1)]],
     widthCm:  [0, [Validators.required, Validators.min(1)]],
     heightCm: [0, [Validators.required, Validators.min(1)]],
-    // 🟩 Ton type existant (on ne redemande pas) : 'EAU_DOUCE' | 'EAU_DE_MER'
-    waterType: ['EAU_DOUCE' as 'EAU_DOUCE' | 'EAU_DE_MER', Validators.required],
+    waterType: ['EAU_DOUCE' as WaterType, Validators.required],
     startDate: ['']
   });
+
+  // ------- Onglet "Espèces" (local front seulement pour l'instant)
+  species: { name: string; count: number }[] = [];
 
   async ngOnInit() {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
@@ -71,6 +79,7 @@ export class AquariumDetailComponent implements OnInit {
     try {
       const a = await firstValueFrom(this.api.getById(this.id));
       if (a) this.form.patchValue(a as any);
+      // TODO: quand tu auras l’API espèces, charge-les ici
     } catch {
       this.snack.open('Impossible de charger cet aquarium', 'Fermer', { duration: 3000 });
       this.router.navigate(['/aquariums']);
@@ -85,6 +94,11 @@ export class AquariumDetailComponent implements OnInit {
     const W = Number(v.widthCm) || 0;
     const H = Number(v.heightCm) || 0;
     return Math.round((L * W * H) / 1000);
+  }
+
+  // utilisé par le chart
+  get waterType(): WaterType {
+    return (this.form?.value?.waterType ?? 'EAU_DOUCE') as WaterType;
   }
 
   async save() {
@@ -116,36 +130,64 @@ export class AquariumDetailComponent implements OnInit {
     }
   }
 
+  // --- Mesures
   openMeasurementDialog() {
-  const v = this.form.value;
-  const waterType = v.waterType as 'EAU_DOUCE' | 'EAU_DE_MER';
-
-  const ref = this.dialog.open(MeasurementDialogComponent, {
-    width: '560px',
-    disableClose: true,
-    data: { aquariumId: this.id, type: waterType, name: v.name || undefined },
-  });
-
-  ref.afterClosed().subscribe(saved => {
-    if (saved) {
-      this.snack.open('Paramètres enregistrés ✅', 'OK', { duration: 2000 });
-      this.reloadMeasurements();
-    }
-  });
-}
-
-
-  // 👉 Implémente ici l’appel à ton service de mesures pour recharger l’historique + MAJ des charts
-  reloadMeasurements() {
-    // ex:
-    // this.measurementsService.listForAquarium(this.id).then(data => {
-    //   this.measurements = data;
-    //   this.updateCharts();
-    // });
+    const wt = this.waterType;
+    const ref = this.dialog.open(MeasurementDialogComponent, {
+      width: '720px',
+      data: { aquariumId: this.id, type: wt }
+    });
+    ref.afterClosed().subscribe((saved: boolean) => {
+      if (saved) {
+        this.snack.open('Paramètres enregistrés ✅', 'OK', { duration: 2000 });
+        this.reloadMeasurements();
+      }
+    });
   }
-  // ✅ Getter propre pour le binding
-  get waterType(): 'EAU_DOUCE' | 'EAU_DE_MER' {
-    // on renvoie juste la valeur du form, sans cast dans le template
-    return (this.form.value.waterType as 'EAU_DOUCE' | 'EAU_DE_MER') ?? 'EAU_DOUCE';
+  reloadMeasurements() {
+    // à implémenter si besoin
+  }
+
+  // --- Dialog “Modifier l’aquarium” (les champs de ta capture)
+  openEditDialog() {
+    const v = this.form.getRawValue();
+    const ref = this.dialog.open(EditAquariumDialogComponent, {
+      width: '720px',
+      data: {
+        initial: {
+          name: v.name || '',
+          waterType: (v as any).waterType || 'EAU_DOUCE',
+          lengthCm: Number(v.lengthCm) || 0,
+          widthCm: Number(v.widthCm) || 0,
+          heightCm: Number(v.heightCm) || 0,
+          startDate: (v as any).startDate || '',
+        }
+      }
+    });
+
+    ref.afterClosed().subscribe((result) => {
+      if (!result) return; // annulé
+      this.form.patchValue({
+        name: result.name,
+        waterType: result.waterType,
+        lengthCm: Number(result.lengthCm) || 0,
+        widthCm: Number(result.widthCm) || 0,
+        heightCm: Number(result.heightCm) || 0,
+        startDate: result.startDate || '',
+      });
+      this.form.markAsDirty();
+    });
+  }
+
+  // --- Espèces (local / provisoire)
+  addSpecies() {
+    const name = (window.prompt('Nom de l’espèce :') || '').trim();
+    if (!name) return;
+    const countStr = window.prompt('Quantité :') || '1';
+    const count = Math.max(1, Number(countStr) || 1);
+    this.species = [...this.species, { name, count }];
+  }
+  removeSpecies(i: number) {
+    this.species = this.species.filter((_, idx) => idx !== i);
   }
 }

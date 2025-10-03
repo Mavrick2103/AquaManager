@@ -1,0 +1,46 @@
+<h2 mat-dialog-title>Nouvelle tâche</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()" class="form">
+  <mat-form-field appearance="outline">
+    <mat-label>Titre</mat-label>
+    <input matInput formControlName="title" placeholder="Ex. Changement d’eau">
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Description</mat-label>
+    <textarea matInput rows="3" formControlName="description" placeholder="Notes facultatives"></textarea>
+  </mat-form-field>
+
+  <div class="row">
+    <mat-form-field appearance="outline">
+      <mat-label>Date</mat-label>
+      <input matInput [matDatepicker]="dp" formControlName="date">
+      <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+      <mat-datepicker #dp startView="month"></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Heure</mat-label>
+      <input matInput type="time" formControlName="time">
+    </mat-form-field>
+  </div>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Aquarium</mat-label>
+    <mat-select formControlName="aquariumId">
+      <mat-option *ngFor="let a of aquariums()" [value]="a.id">{{ a.name }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Type de tâche</mat-label>
+    <mat-select formControlName="type">
+      <mat-option *ngFor="let t of types" [value]="t.value">{{ t.label }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <div class="actions">
+    <button mat-button mat-dialog-close>Annuler</button>
+    <button mat-flat-button color="primary" [disabled]="form.invalid">Enregistrer</button>
+  </div>
+</form>

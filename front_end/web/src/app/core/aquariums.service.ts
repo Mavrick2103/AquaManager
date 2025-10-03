@@ -48,6 +48,10 @@ export class AquariumsService {
     return this.http.put<Aquarium>(`${this.base}/${id}`, dto);
   }
 
+  listMine() {
+    return this.http.get<Aquarium[]>(this.base);
+  }
+
   remove(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
