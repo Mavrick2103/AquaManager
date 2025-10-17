@@ -13,7 +13,6 @@ export class AuthController {
     return this.auth.login(body.email, body.password);
   }
 
-  // ➕ Route d'inscription
   @Public()
   @Post('register')
   register(@Body() dto: CreateUserDto) {

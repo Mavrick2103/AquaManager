@@ -25,6 +25,10 @@ export class WaterMeasurement {
   @Column({ type: 'float', nullable: true }) gh: number | null;
   @Column({ type: 'float', nullable: true }) no2: number | null;
   @Column({ type: 'float', nullable: true }) no3: number | null;
+  @Column({ type: 'float', nullable: true }) fe: number | null;
+  @Column({ type: 'float', nullable: true }) k: number | null;
+  @Column({ type: 'float', nullable: true }) sio2: number | null;
+  @Column({ type: 'float', nullable: true }) nh3: number | null;
 
   // eau de mer
   @Column({ type: 'float', nullable: true }) dkh: number | null;

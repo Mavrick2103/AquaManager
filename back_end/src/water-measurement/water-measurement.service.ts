@@ -24,7 +24,7 @@ export class WaterMeasurementService {
 
     // a.waterType: 'EAU_DOUCE' | 'EAU_DE_MER'
     if (a.waterType === 'EAU_DOUCE') {
-      dto.dkh = dto.salinity = dto.ca = dto.mg = dto.po4 = undefined;
+      dto.dkh = dto.salinity = dto.ca = dto.mg =  undefined;
     } else {
       dto.kh = dto.gh = dto.no2 = undefined; // NO3 commun conservé
     }
@@ -36,6 +36,7 @@ export class WaterMeasurementService {
       kh: dto.kh ?? null, gh: dto.gh ?? null, no2: dto.no2 ?? null, no3: dto.no3 ?? null,
       dkh: dto.dkh ?? null, salinity: dto.salinity ?? null, ca: dto.ca ?? null,
       mg: dto.mg ?? null, po4: dto.po4 ?? null,
+      fe: dto.fe ?? null, k: dto.k ?? null, sio2: dto.sio2 ?? null, nh3: dto.nh3 ?? null,
       comment: dto.comment?.trim() || null,
     });
     return this.repo.save(m);

@@ -1,10 +1,38 @@
-<section class="cal">
+<!-- Toolbar façon Mesaquarium -->
+<section class="toolbar">
+  <!-- Logo cliquable -->
+  <a class="brand" routerLink="/">
+    <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
+  </a>
+
+  <!-- Titre centré -->
+  <h1>Mon calendrier</h1>
+
+  <!-- Bouton à droite -->
+  <button mat-raised-button class="btn-primary" (click)="openCreateQuick()">
+    <mat-icon>add</mat-icon>
+    <span>Nouvelle tâche</span>
+  </button>
+</section>
+
+
+<!-- Ton calendrier existant en dessous, inchangé -->
+<section class="cal -compact">
   <header class="cal__head">
-    <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()"><mat-icon>chevron_left</mat-icon></button>
-    <h1 class="cal__title">{{ fmt(currentMonth(),'MMMM yyyy') | titlecase }}</h1>
+    <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+
+    <h1 class="cal__title">
+      <span class="cal__title--month">{{ fmt(currentMonth(),'MMMM') | titlecase }}</span>
+      <span class="cal__title--year">{{ fmt(currentMonth(),'yyyy') }}</span>
+    </h1>
+
     <div class="cal__actions">
       <button mat-stroked-button (click)="thisMonth()">Aujourd’hui</button>
-      <button mat-icon-button aria-label="Mois suivant" (click)="nextMonth()"><mat-icon>chevron_right</mat-icon></button>
+      <button mat-icon-button aria-label="Mois suivant" (click)="nextMonth()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
     </div>
   </header>
 
@@ -18,10 +46,26 @@
               [class.-out]="!isSameMonth(day)"
               [class.-today]="isToday(day)"
               (click)="openCreate(day)">
-        <span class="cal__day">{{ fmt(day,'d') }}</span>
+        <div class="cal__cell-head">
+          <span class="cal__day">{{ fmt(day,'d') }}</span>
+          <span class="cal__today-pill" *ngIf="isToday(day)">Aujourd’hui</span>
+        </div>
+
         <ul class="cal__tasks">
-          <li *ngFor="let t of dayTasks(day)" [title]="t.title + ' – ' + (t.aquarium?.name || '')">
-            <span class="dot"></span> {{ t.title }}
+          <li *ngFor="let t of dayTasks(day) | slice:0:2"
+              class="cal__task"
+              [ngClass]="{
+                '-water': t.type === 'WATER_CHANGE',
+                '-fert':  t.type === 'FERTILIZATION',
+                '-trim':  t.type === 'TRIM',
+                '-test':  t.type === 'WATER_TEST'
+              }"
+              [title]="t.title + (t.aquarium?.name ? ' – ' + t.aquarium?.name : '')">
+            <span class="dot"></span><span class="txt">{{ t.title }}</span>
+          </li>
+
+          <li *ngIf="dayTasks(day).length > 2" class="cal__more">
+            +{{ dayTasks(day).length - 2 }}…
           </li>
         </ul>
       </button>

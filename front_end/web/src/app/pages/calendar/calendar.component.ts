@@ -5,7 +5,6 @@ import { TasksService, Task } from '../../core/tasks.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-// On importe le dialog pour l'utiliser avec MatDialog.open()
 import { TaskDialogComponent } from './task-dialog/task-dialog.component';
 import { format, startOfMonth, endOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -13,7 +12,6 @@ import { fr } from 'date-fns/locale';
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  // ✅ TaskDialogComponent retiré des imports pour éviter NG8113
   imports: [CommonModule, MatIconModule, MatButtonModule, MatDialogModule],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
@@ -57,6 +55,11 @@ export class CalendarComponent {
   prevMonth() { this.currentMonth.set(addMonths(this.currentMonth(), -1)); }
   nextMonth() { this.currentMonth.set(addMonths(this.currentMonth(), 1)); }
   thisMonth() { this.currentMonth.set(new Date(this.today.getFullYear(), this.today.getMonth(), 1)); }
+
+  /** Bouton de la toolbar (ouvre à la date d’aujourd’hui) */
+  openCreateQuick(): void {
+    this.openCreate(this.today);
+  }
 
   openCreate(day: Date) {
     this.dialog.open(TaskDialogComponent, {

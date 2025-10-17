@@ -48,23 +48,30 @@ export class MeasurementDialogComponent {
       measuredAt: [new Date(), [Validators.required]],
       ph:   [7.0, [Validators.min(0), Validators.max(14)]],
       temp: [25,  [Validators.min(0), Validators.max(40)]],
+      po4:  [0.05, [Validators.min(0), Validators.max(5)]],
+      no2:  [0,   [Validators.min(0), Validators.max(5)]],
+      no3:  [10,  [Validators.min(0), Validators.max(300)]],
+      kh:   [5,   [Validators.min(0), Validators.max(30)]],
+
+
+
+
       comment: [''],
     };
 
     const eauDouce = {
-      kh:  [5,   [Validators.min(0), Validators.max(30)]],
       gh:  [8,   [Validators.min(0), Validators.max(40)]],
-      no2: [0,   [Validators.min(0), Validators.max(5)]],
-      no3: [10,  [Validators.min(0), Validators.max(300)]],
+      fe:   [0.00, [Validators.min(0), Validators.max(3)]],   // mg/L
+      k:    [0,    [Validators.min(0), Validators.max(50)]],  // mg/L
+      sio2: [0,    [Validators.min(0), Validators.max(10)]],  // mg/L
+      nh3:  [0.00, [Validators.min(0), Validators.max(5)]],   // mg/L
     };
 
     const eauDeMer = {
-      dkh:     [8,    [Validators.min(0), Validators.max(20)]],
-      salinity:[35,   [Validators.min(0), Validators.max(45)]], // ppt
-      ca:      [420,  [Validators.min(0), Validators.max(600)]],
-      mg:      [1300, [Validators.min(0), Validators.max(1800)]],
-      no3:     [10,   [Validators.min(0), Validators.max(300)]],
-      po4:     [0.05, [Validators.min(0), Validators.max(5)]],
+      dkh:      [8,    [Validators.min(0), Validators.max(20)]],
+      salinity: [35,   [Validators.min(0), Validators.max(45)]], // ppt
+      ca:       [420,  [Validators.min(0), Validators.max(600)]],
+      mg:       [1300, [Validators.min(0), Validators.max(1800)]],
     };
 
     this.form = this.fb.group({
@@ -88,10 +95,26 @@ export class MeasurementDialogComponent {
         ph:   v.ph ?? null,
         temp: v.temp ?? null,
         comment: v.comment?.toString().trim() || null,
+
         ...(this.data.type === 'EAU_DOUCE'
-          ? { kh: v.kh ?? null, gh: v.gh ?? null, no2: v.no2 ?? null, no3: v.no3 ?? null }
-          : { dkh: v.dkh ?? null, salinity: v.salinity ?? null, ca: v.ca ?? null,
-              mg: v.mg ?? null, no3: v.no3 ?? null, po4: v.po4 ?? null }),
+          ? {
+              kh: v.kh ?? null,
+              gh: v.gh ?? null,
+              no2: v.no2 ?? null,
+              no3: v.no3 ?? null,
+              fe:   v.fe   ?? null,
+              k:    v.k    ?? null,
+              sio2: v.sio2 ?? null,
+              nh3:  v.nh3  ?? null,         
+              po4: v.po4 ?? null,
+
+            }
+          : {
+              dkh: v.dkh ?? null,
+              salinity: v.salinity ?? null,
+              ca: v.ca ?? null,
+              mg: v.mg ?? null,
+            }),
       };
 
       await this.svc.createForAquarium(this.data.aquariumId, dto);

@@ -14,6 +14,10 @@ export interface MeasurementCreateDto {
   gh?: number | null;
   no2?: number | null;
   no3?: number | null;
+  fe?: number | null;
+  k?: number | null;
+  sio2?: number | null;
+  nh3?: number | null;
   // mer
   dkh?: number | null;
   salinity?: number | null; // ppt

@@ -12,6 +12,10 @@ export class CreateWaterMeasurementDto {
   @IsOptional() @IsNumber() @Min(0) @Max(40) gh?: number;
   @IsOptional() @IsNumber() @Min(0) @Max(5)  no2?: number;
   @IsOptional() @IsNumber() @Min(0) @Max(300) no3?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(3) fe?: number;   
+  @IsOptional() @IsNumber() @Min(0) @Max(50) k?: number;     
+  @IsOptional() @IsNumber() @Min(0) @Max(10) sio2?: number;  
+  @IsOptional() @IsNumber() @Min(0) @Max(5) nh3?: number; 
 
   // mer
   @IsOptional() @IsNumber() @Min(0) @Max(20) dkh?: number;

@@ -7,31 +7,22 @@
   <h1>Fiche aquarium</h1>
 
   <div class="actions">
-    <!-- Ouvre la fenêtre avec les champs (Nom, Type d’eau, L/L/H, Date) -->
     <button mat-flat-button color="primary" type="button" (click)="openEditDialog()" [disabled]="saving">
       <mat-icon>edit</mat-icon>
       <span>Modifier l’aquarium</span>
     </button>
 
-    <button mat-stroked-button color="warn" type="button"
-            (click)="remove()" [disabled]="saving">
+    <button mat-stroked-button color="warn" type="button" (click)="remove()" [disabled]="saving">
       <mat-icon>delete</mat-icon>
       <span>Supprimer</span>
-    </button>
-    <button mat-raised-button type="button" class="btn-primary"
-            (click)="save()" [disabled]="saving || form.invalid">
-      <mat-icon>save</mat-icon>
-      <span>Enregistrer</span>
     </button>
   </div>
 </section>
 
-<!-- Bandeau résumé (inchangé) -->
+<!-- Bandeau résumé -->
 <section class="hero" *ngIf="!loading">
   <div class="left">
-    <div class="avatar">
-      <mat-icon>water_drop</mat-icon>
-    </div>
+    <div class="avatar"><mat-icon>water_drop</mat-icon></div>
     <div class="headings">
       <div class="title">{{ form.value.name || '—' }}</div>
       <div class="meta">
@@ -60,7 +51,7 @@
   </div>
 </section>
 
-<!-- ========= Onglets en bas de page ========= -->
+<!-- ========= Onglets ========= -->
 <mat-tab-group dynamicHeight>
   <!-- Onglet MESURES -->
   <mat-tab label="Mesures">
@@ -72,10 +63,34 @@
         </button>
       </div>
 
-      <app-water-measurements-chart
-        [aquariumId]="id"
-        [waterType]="waterType">
-      </app-water-measurements-chart>
+      <!-- Grille 2 colonnes (1 en mobile) -->
+      <div class="mini-grid">
+        <!-- Commun -->
+        <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="ph"></app-water-measurements-chart></div>
+        <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="temp"></app-water-measurements-chart></div>
+        <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no2"></app-water-measurements-chart></div>
+        <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no3"></app-water-measurements-chart></div>
+
+        <!-- Eau douce -->
+        <ng-container *ngIf="waterType === 'EAU_DOUCE'">
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="kh"></app-water-measurements-chart></div>
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="gh"></app-water-measurements-chart></div>
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="co2"></app-water-measurements-chart></div>
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="po4"></app-water-measurements-chart></div>
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="fe"></app-water-measurements-chart></div>
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="k"></app-water-measurements-chart></div>
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="sio2"></app-water-measurements-chart></div>
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="nh3"></app-water-measurements-chart></div>
+        </ng-container>
+
+        <!-- Eau de mer -->
+        <ng-container *ngIf="waterType === 'EAU_DE_MER'">
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="dkh"></app-water-measurements-chart></div>
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="sal"></app-water-measurements-chart></div>
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="ca"></app-water-measurements-chart></div>
+          <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="mg"></app-water-measurements-chart></div>
+        </ng-container>
+      </div>
     </div>
   </mat-tab>
 
@@ -105,8 +120,6 @@
     </div>
   </mat-tab>
 </mat-tab-group>
-
-<!-- (plus de formulaire ici : il est dans le dialog) -->
 
 <!-- Loader -->
 <ng-template #loader>

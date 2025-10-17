@@ -1,23 +1,20 @@
 <mat-card class="chart-card">
-  <div class="header">
-    <h3><mat-icon>show_chart</mat-icon> Paramètres de l’eau</h3>
+  <!-- Titre du graphique -->
+  <div class="chart-header" *ngIf="metric">
+    <span class="metric-name">{{ metricLabel }}</span>
+    <span class="metric-unit" *ngIf="metricUnit">{{ metricUnit }}</span>
   </div>
 
-  <div class="chart-wrapper">
-    <!-- toujours présent -->
+  <!-- Canvas -->
+  <div class="chart-wrapper" [style.height.px]="180">
     <canvas #canvas></canvas>
 
-    <!-- overlays -->
     <div class="overlay loading" *ngIf="loading">
-      <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+      <mat-progress-spinner mode="indeterminate" diameter="30"></mat-progress-spinner>
     </div>
 
     <div class="overlay empty" *ngIf="!loading && !hasData">
-      Aucune mesure à afficher pour l’instant.
+      Aucune mesure à afficher.
     </div>
   </div>
-
-  <p class="hint">
-    Astuce : cliquez sur les éléments de la <strong>légende</strong> pour afficher/masquer des courbes.
-  </p>
 </mat-card>

@@ -1,9 +1,3 @@
-/**
- * roles.guard.ts
- * ----------------
- * Vérifie que l'utilisateur authentifié possède l'un des rôles requis.
- * Utilisé avec @Roles('ADMIN'), etc.
- */
 import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';

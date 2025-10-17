@@ -51,7 +51,6 @@ export class AquariumDetailComponent implements OnInit {
   loading = true;
   saving  = false;
 
-  // Form utilisé pour afficher/resynchroniser les infos (dialog -> page)
   form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(255)]],
     lengthCm: [0, [Validators.required, Validators.min(1)]],
@@ -61,7 +60,6 @@ export class AquariumDetailComponent implements OnInit {
     startDate: ['']
   });
 
-  // ------- Onglet "Espèces" (local front seulement pour l'instant)
   species: { name: string; count: number }[] = [];
 
   async ngOnInit() {
@@ -79,7 +77,6 @@ export class AquariumDetailComponent implements OnInit {
     try {
       const a = await firstValueFrom(this.api.getById(this.id));
       if (a) this.form.patchValue(a as any);
-      // TODO: quand tu auras l’API espèces, charge-les ici
     } catch {
       this.snack.open('Impossible de charger cet aquarium', 'Fermer', { duration: 3000 });
       this.router.navigate(['/aquariums']);
@@ -96,7 +93,6 @@ export class AquariumDetailComponent implements OnInit {
     return Math.round((L * W * H) / 1000);
   }
 
-  // utilisé par le chart
   get waterType(): WaterType {
     return (this.form?.value?.waterType ?? 'EAU_DOUCE') as WaterType;
   }
@@ -130,7 +126,7 @@ export class AquariumDetailComponent implements OnInit {
     }
   }
 
-  // --- Mesures
+  // ==== Mesures ====
   openMeasurementDialog() {
     const wt = this.waterType;
     const ref = this.dialog.open(MeasurementDialogComponent, {
@@ -145,10 +141,10 @@ export class AquariumDetailComponent implements OnInit {
     });
   }
   reloadMeasurements() {
-    // à implémenter si besoin
+    // à implémenter si besoin (ex: notifier les charts via un Subject dans le service)
   }
 
-  // --- Dialog “Modifier l’aquarium” (les champs de ta capture)
+  // ==== Dialog “Modifier l’aquarium” ====
   openEditDialog() {
     const v = this.form.getRawValue();
     const ref = this.dialog.open(EditAquariumDialogComponent, {
@@ -179,7 +175,7 @@ export class AquariumDetailComponent implements OnInit {
     });
   }
 
-  // --- Espèces (local / provisoire)
+  // ==== Espèces (local / provisoire) ====
   addSpecies() {
     const name = (window.prompt('Nom de l’espèce :') || '').trim();
     if (!name) return;
