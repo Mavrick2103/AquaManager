@@ -46,6 +46,6 @@ h2[mat-dialog-title]{
 /* Boutons actions */
 [mat-dialog-actions] button[mat-raised-button]{
   background: linear-gradient(135deg, var(--aqua), var(--green));
-  color:#fff; font-weight:700; border-radius: var(--r-md);
+  color:#009FE3; font-weight:700; border-radius: var(--r-md);
   display:inline-flex; align-items:center; gap:.5rem;
 }

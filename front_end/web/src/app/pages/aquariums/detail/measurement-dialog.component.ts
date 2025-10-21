@@ -52,10 +52,6 @@ export class MeasurementDialogComponent {
       no2:  [0,   [Validators.min(0), Validators.max(5)]],
       no3:  [10,  [Validators.min(0), Validators.max(300)]],
       kh:   [5,   [Validators.min(0), Validators.max(30)]],
-
-
-
-
       comment: [''],
     };
 
@@ -105,20 +101,25 @@ export class MeasurementDialogComponent {
               fe:   v.fe   ?? null,
               k:    v.k    ?? null,
               sio2: v.sio2 ?? null,
-              nh3:  v.nh3  ?? null,         
+              nh3:  v.nh3  ?? null,
               po4: v.po4 ?? null,
-
             }
           : {
               dkh: v.dkh ?? null,
               salinity: v.salinity ?? null,
               ca: v.ca ?? null,
               mg: v.mg ?? null,
+              // si tu saisis aussi NO3/PO4 en mer, tu peux les inclure ici
             }),
       };
 
       await this.svc.createForAquarium(this.data.aquariumId, dto);
+
+      // ✅ notifier la page des graphs
+      this.svc.notifyChanged(this.data.aquariumId);
+
       this.ref.close(true);
+      this.snack.open('Mesure enregistrée ✅', 'OK', { duration: 2000 });
     } catch (e: any) {
       this.snack.open(e?.error?.message || 'Échec de l’enregistrement', 'Fermer', { duration: 3500 });
     } finally {

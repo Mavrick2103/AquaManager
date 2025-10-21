@@ -1,5 +1,5 @@
 import {
-  AfterViewInit, Component, ElementRef, Input, OnChanges, SimpleChanges, ViewChild, inject,
+  AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild, inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Chart, ChartConfiguration, ChartDataset, registerables } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import { MeasurementsService, Measurement } from '../../../../core/water.service';
+import { Subject, filter, takeUntil } from 'rxjs';
 
 Chart.register(...registerables);
 
@@ -22,13 +23,15 @@ type MetricKey = 'ph'|'temp'|'no2'|'no3'|'kh'|'gh'|'co2'|'dkh'|'sal'|'ca'|'mg'|'
   templateUrl: './chart.component.html',
   styleUrls: ['./chart.component.scss'],
 })
-export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges {
+export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input({ required: true }) aquariumId!: number;
   @Input({ required: true }) waterType!: WaterType;
   @Input() metric?: MetricKey; // un graphe = une métrique
 
   @ViewChild('canvas', { static: true }) canvas!: ElementRef<HTMLCanvasElement>;
   private svc = inject(MeasurementsService);
+
+  private destroy$ = new Subject<void>();
 
   loading = false;
   hasData = false;
@@ -48,17 +51,37 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
     ca:  { label: 'Calcium',     unit: 'mg/L' },
     mg:  { label: 'Magnésium',   unit: 'mg/L' },
     po4: { label: 'PO₄',         unit: 'mg/L' },
-    fe: { label: 'Fe',         unit: 'mg/L' },
-    k: { label: 'Potassium',         unit: 'mg/L' },    
-    sio2: { label: 'Silicates',         unit: 'mg/L' },    
-    nh3: { label: 'Ammoniaque',         unit: 'mg/L' },
+    fe:  { label: 'Fe',          unit: 'mg/L' },
+    k:   { label: 'Potassium',   unit: 'mg/L' },
+    sio2:{ label: 'Silicates',   unit: 'mg/L' },
+    nh3: { label: 'Ammoniaque',  unit: 'mg/L' },
   };
   get metricLabel(): string { return this.metric ? this.META[this.metric].label : ''; }
   get metricUnit(): string  { return this.metric ? this.META[this.metric].unit  : ''; }
 
-  async ngAfterViewInit() { await this.loadAndRender(); }
+  async ngAfterViewInit() {
+    // charge une 1ère fois
+    await this.loadAndRender();
+
+    // 🔁 se recharger automatiquement après ajout/modif d’une mesure
+    this.svc.changed$
+      .pipe(
+        takeUntil(this.destroy$),
+        filter(e => e.aquariumId === this.aquariumId)
+      )
+      .subscribe(() => {
+        // pas d’await ici → on relance sans bloquer l’UI
+        this.loadAndRender();
+      });
+  }
+
   async ngOnChanges(ch: SimpleChanges) {
     if (ch['aquariumId'] || ch['waterType'] || ch['metric']) await this.loadAndRender();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private async loadAndRender() {
@@ -67,7 +90,11 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
     try {
       const rows = await this.svc.listForAquarium(this.aquariumId);
       this.renderChart(rows ?? []);
-    } catch { this.renderChart([]); } finally { this.loading = false; }
+    } catch {
+      this.renderChart([]);
+    } finally {
+      this.loading = false;
+    }
   }
 
   /** CO₂ (mg/L) ≈ 3 × KH × 10^(7 − pH) */
@@ -141,10 +168,8 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
       kh:'#009688', gh:'#9c27b0', co2:'#9e9e9e',
       dkh:'#673ab7', sal:'#795548', ca:'#4caf50', mg:'#8bc34a', po4:'#f44336',
       fe:'#d7ac2dff', k:'#494646ff', sio2:'#e8e830ff', nh3:'#f2a8a8ff',
-
     };
 
-    // Série demandée
     const m = this.metric as MetricKey | undefined;
     const series = m ? (values[m] ?? []) : [];
     this.hasData = series.some(v => v != null);

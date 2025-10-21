@@ -7,6 +7,26 @@
 }
 
 /* ====== Topbar ====== */
+/* Bouton Déconnexion en blanc, dans la topbar */
+.topbar .logout-btn {
+  --ink: #1F3522;
+
+  background: #fff !important;
+  color: var(--ink) !important;
+  border-color: #fff !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  border-radius: 15px;
+}
+
+.topbar .logout-btn:hover {
+  filter: brightness(0.98);
+  box-shadow: 0 4px 14px rgba(0,0,0,.16);
+}
+
+.topbar .logout-btn .mat-icon {
+  color: inherit !important; /* l’icône suit la couleur du texte */
+}
+
 .topbar {
   background: linear-gradient(135deg, #009FE3, #39B54A);
   color: white;

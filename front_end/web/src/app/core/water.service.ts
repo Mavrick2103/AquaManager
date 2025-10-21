@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER';
@@ -37,6 +37,15 @@ export interface Measurement extends Required<MeasurementCreateDto> {
 export class MeasurementsService {
   private http = inject(HttpClient);
   private base = environment.apiUrl;
+
+  /** 🔔 Événement global: “les mesures de l’aquarium X ont changé” */
+  private _changed$ = new Subject<{ aquariumId: number }>();
+  /** À écouter côté charts */
+  changed$ = this._changed$.asObservable();
+  /** À émettre après création/suppression/modification */
+  notifyChanged(aquariumId: number) {
+    this._changed$.next({ aquariumId });
+  }
 
   listForAquarium(aquariumId: number) {
     return firstValueFrom(
