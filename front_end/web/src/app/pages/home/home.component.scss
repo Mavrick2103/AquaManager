@@ -7,26 +7,6 @@
 }
 
 /* ====== Topbar ====== */
-/* Bouton Déconnexion en blanc, dans la topbar */
-.topbar .logout-btn {
-  --ink: #1F3522;
-
-  background: #fff !important;
-  color: var(--ink) !important;
-  border-color: #fff !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,.12);
-  border-radius: 15px;
-}
-
-.topbar .logout-btn:hover {
-  filter: brightness(0.98);
-  box-shadow: 0 4px 14px rgba(0,0,0,.16);
-}
-
-.topbar .logout-btn .mat-icon {
-  color: inherit !important; /* l’icône suit la couleur du texte */
-}
-
 .topbar {
   background: linear-gradient(135deg, #009FE3, #39B54A);
   color: white;
@@ -41,26 +21,31 @@
   }
 
   .logo-img {
-    height: 150px; /* ✅ plus grand */
+    height: 150px;
     width: auto;
-  }
-
-  .appname {
-    font-weight: 800;
-    font-size: 1.3rem;
   }
 
   .spacer {
     flex: 1;
   }
 
-  .user-email {
-    margin-left: 1rem;
-    font-size: 0.9rem;
-    color: #f0f9f0;
+  .logout-btn {
+    background: #fff !important;
+    color: #1F3522 !important;
+    border-color: #fff !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    border-radius: 15px;
+  }
+
+  .logout-btn:hover {
+    filter: brightness(0.98);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  }
+
+  .logout-btn .mat-icon {
+    color: inherit !important;
   }
 }
-
 
 /* ====== Hero ====== */
 .hero {
@@ -94,7 +79,7 @@
   }
 }
 
-/* ====== Grid + Cards ====== */
+/* ====== KPI GRID ====== */
 .grid {
   display: flex;
   justify-content: center;
@@ -103,39 +88,75 @@
   flex-wrap: wrap;
 }
 
-.card {
-  background: white;
+.card.kpi {
+  background: #fff;
   border-radius: 16px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   padding: 1.5rem;
   min-width: 220px;
+  text-align: center;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+  }
+
+  .kpi-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #009FE3;
+  }
+
+  .kpi-label {
+    margin-top: 0.4rem;
+    font-size: 0.95rem;
+    color: #1F3522;
+  }
+
+  .kpi-sub {
+    margin-top: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: #4b5a54;
+  }
 }
 
-.kpi-value {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #009FE3;
-}
-
-.kpi-label {
-  margin-top: 0.4rem;
-  font-size: 0.95rem;
-  color: #1F3522;
-}
-
-.activity {
-  max-width: 700px;
+/* ====== ACTIVITÉS : 2 SECTIONS CÔTE À CÔTE ====== */
+.activity-grid {
+  max-width: 1100px;
   margin: 0 auto 3rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ====== Cartes d’activités ====== */
+.activity {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+
   h2 {
     font-size: 1.4rem;
     font-weight: 700;
     margin-bottom: 1rem;
+    color: #1F3522;
   }
 
-  ul {
+  .activity-list {
     list-style: none;
     padding: 0;
     margin: 0;
+    display: grid;
+    gap: 0.6rem;
 
     li {
       display: flex;
@@ -152,6 +173,154 @@
         margin-left: auto;
         color: #39B54A;
         font-size: 0.9rem;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+}
+
+/* ====== CALENDRIER WRAP ====== */
+.calendar-wrap {
+  margin: 1rem auto 2.5rem;
+  padding: clamp(12px, 2vw, 20px);
+  max-width: 1100px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+
+  > app-week-calendar {
+    display: block;
+    width: 100%;
+  }
+}
+
+/* ====== FOOTER ====== */
+.footer {
+  background: linear-gradient(135deg, #009FE3, #39B54A);
+  color: #fff;
+  padding: 2rem 1rem 1rem;
+  margin-top: 3rem;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+
+  .footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  .footer-brand {
+    text-align: left;
+
+    .footer-logo {
+      height: 80px;
+      width: auto;
+      margin-bottom: 0.6rem;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+    }
+
+    .footer-desc {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      line-height: 1.5;
+    }
+  }
+
+  .footer-links {
+    h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.6rem;
+      font-weight: 700;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      margin-bottom: 0.35rem;
+    }
+
+    a {
+      color: #fff;
+      text-decoration: none;
+      opacity: 0.9;
+      font-size: 0.95rem;
+      transition: opacity 0.2s, transform 0.15s;
+
+      &:hover {
+        opacity: 1;
+        transform: translateX(3px);
+      }
+    }
+  }
+
+  .footer-social {
+    h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.6rem;
+      font-weight: 700;
+    }
+
+    .social-icons {
+      display: flex;
+      gap: 0.75rem;
+
+      a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        transition: background 0.2s, transform 0.2s;
+
+        mat-icon {
+          color: #fff;
+          font-size: 22px;
+        }
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.25);
+          transform: scale(1.05);
+        }
+      }
+    }
+  }
+
+  mat-divider {
+    margin: 1.5rem auto;
+    width: 90%;
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .footer-bottom {
+    max-width: 1100px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+
+    .footer-policy {
+      color: #fff;
+      text-decoration: underline;
+      font-size: 0.85rem;
+      opacity: 0.9;
+
+      &:hover {
+        opacity: 1;
       }
     }
   }

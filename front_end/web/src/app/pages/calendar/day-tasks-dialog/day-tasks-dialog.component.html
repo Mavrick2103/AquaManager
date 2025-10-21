@@ -1,0 +1,55 @@
+<!-- En-tête -->
+<header class="day-head">
+  <h2>
+    <mat-icon>event</mat-icon>
+    {{ data.date | date:'EEEE d MMMM y':'':'fr' }}
+  </h2>
+
+  <button mat-icon-button aria-label="Fermer" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+
+<mat-divider></mat-divider>
+
+<!-- Contenu -->
+<mat-dialog-content class="content">
+  <section class="day-section">
+    <h3 class="sub">Tâches du jour ({{ tasks.length }})</h3>
+
+    <mat-list class="tasks" *ngIf="tasks.length; else noTasks">
+      <mat-list-item *ngFor="let t of tasks" class="task-item" [class]="cssClass(t.type)">
+        <mat-icon matListItemIcon>{{ typeIcon(t.type) }}</mat-icon>
+
+        <div matListItemTitle class="t-title">
+          {{ t.title || 'Tâche' }}
+          <span class="t-aqua" *ngIf="t.aquarium?.name">— {{ t.aquarium?.name }}</span>
+        </div>
+
+        <div matListItemLine class="t-meta">
+          <span class="pill time">
+            <mat-icon inline>schedule</mat-icon>
+            {{ t.dueAt | date:'HH:mm' }}
+          </span>
+          <span class="pill kind">
+            <mat-icon inline>{{ typeIcon(t.type) }}</mat-icon>
+            {{ typeLabel(t.type) }}
+          </span>
+        </div>
+
+        <div class="t-desc" *ngIf="t.description">{{ t.description }}</div>
+      </mat-list-item>
+    </mat-list>
+
+    <ng-template #noTasks>
+      <div class="empty">
+        <mat-icon>info</mat-icon>
+        Aucune tâche prévue pour ce jour.
+      </div>
+    </ng-template>
+  </section>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="actions">
+  <button mat-stroked-button (click)="close()">Fermer</button>
+</mat-dialog-actions>

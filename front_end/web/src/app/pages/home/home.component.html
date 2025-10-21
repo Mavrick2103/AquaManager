@@ -34,7 +34,7 @@
     </button>
   </mat-menu>
 
-  <!-- Email + Déconnexion -->
+  <!-- Déconnexion -->
   <button mat-stroked-button color="warn" class="logout-btn" (click)="logout()">
     <mat-icon>logout</mat-icon>
     <span>Déconnexion</span>
@@ -54,42 +54,109 @@
     </div>
   </section>
 
-  <!-- Grid -->
+  <!-- KPI -->
   <section class="grid">
-    <div class="card kpi">
-      <div class="kpi-value">3</div>
-      <div class="kpi-label">Entretiens</div>
+    <!-- Tâches aujourd’hui -->
+    <div class="card kpi -today" routerLink="/calendar">
+      <div class="kpi-value">{{ todayTasksCount }}</div>
+      <div class="kpi-label">Tâches aujourd’hui</div>
     </div>
+
+    <!-- ✅ Nouvelles mesures d’eau réalisées ce mois-ci (tous bacs) -->
     <div class="card kpi">
-      <div class="kpi-value">2</div>
-      <div class="kpi-label">Changements d’eau</div>
+      <div class="kpi-value">{{ monthlyWaterTestsCount }}</div>
+      <div class="kpi-label">Mesures d’eau ce mois-ci</div>
     </div>
+
+    <!-- ✅ Nombre de tâches planifiées dans les 7 prochains jours -->
     <div class="card kpi">
-      <div class="kpi-value">0</div>
-      <div class="kpi-label">Alertes</div>
+      <div class="kpi-value">{{ upcomingTasks.length }}</div>
+      <div class="kpi-label">Tâches à venir (7j)</div>
     </div>
   </section>
 
-  <!-- Activités -->
-  <section class="card activity">
-    <h2>Dernières activités</h2>
-    <ul class="activity-list">
-      <li>
-        <mat-icon>opacity</mat-icon>
-        pH mesuré sur <strong>Aqua #1</strong>
-        <span class="time">il y a 2h</span>
-      </li>
-      <li>
-        <mat-icon>water_drop</mat-icon>
-        Changement d’eau planifié
-        <span class="time">demain</span>
-      </li>
-      <li>
-        <mat-icon>eco</mat-icon>
-        Ajout d’engrais
-        <span class="time">lundi</span>
-      </li>
-    </ul>
+  <!-- ====== Deux colonnes : Dernières activités & Activités à venir ====== -->
+  <section class="activity-grid">
+    <!-- ✅ Dernières activités (max 5, inclut mesures d'eau réalisées) -->
+    <section class="card activity">
+      <h2>Dernières activités</h2>
+      <ul class="activity-list">
+        <li *ngFor="let t of latestActivities">
+          <mat-icon>{{ typeIcon(t.type) }}</mat-icon>
+          <span class="txt">
+            <strong>{{ t.title || typeLabel(t.type) }}</strong>
+            <ng-container *ngIf="t.aquarium?.name"> — {{ t.aquarium?.name }}</ng-container>
+          </span>
+          <span class="time">{{ whenLabel(t) }}</span>
+        </li>
+        <li *ngIf="!latestActivities.length">
+          <mat-icon>info</mat-icon>
+          Aucune activité récente
+        </li>
+      </ul>
+    </section>
+
+    <!-- ✅ Activités à venir (7 jours, max 5) -->
+    <section class="card activity">
+      <h2>Activités à venir</h2>
+      <ul class="activity-list">
+        <li *ngFor="let t of upcomingTasks">
+          <mat-icon>{{ typeIcon(t.type) }}</mat-icon>
+          <span class="txt">
+            <strong>{{ t.title }}</strong>
+            <ng-container *ngIf="t.aquarium?.name"> — {{ t.aquarium?.name }}</ng-container>
+          </span>
+          <span class="time">{{ whenLabel(t) }}</span>
+        </li>
+
+        <li *ngIf="!upcomingTasks.length">
+          <mat-icon>check_circle</mat-icon>
+          Aucune activité prévue dans les 7 jours
+        </li>
+      </ul>
+    </section>
   </section>
-  <app-week-calendar></app-week-calendar>
+
+  <!-- Calendrier hebdo encadré -->
+  <section class="calendar-wrap">
+    <app-week-calendar></app-week-calendar>
+  </section>
 </main>
+
+<!-- ===== Footer ===== -->
+<footer class="footer">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <img src="/Logo_AquaManger.png" alt="AquaManager" class="footer-logo" />
+      <p class="footer-desc">
+        AquaManager – Suivez, entretenez et sublimez vos aquariums en toute simplicité 🌿🐠
+      </p>
+    </div>
+
+    <div class="footer-links">
+      <h3>Navigation</h3>
+      <ul>
+        <li><a routerLink="/home">Accueil</a></li>
+        <li><a routerLink="/aquariums">Mes aquariums</a></li>
+        <li><a routerLink="/calendar">Calendrier</a></li>
+        <li><a routerLink="/profile">Profil</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-social">
+      <h3>Suivez-nous</h3>
+      <div class="social-icons">
+        <a href="#" aria-label="Facebook"><mat-icon>facebook</mat-icon></a>
+        <a href="#" aria-label="Instagram"><mat-icon>photo_camera</mat-icon></a>
+        <a href="#" aria-label="Twitter"><mat-icon>alternate_email</mat-icon></a>
+      </div>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div class="footer-bottom">
+    <p>© {{ today.getFullYear() }} AquaManager — Tous droits réservés</p>
+    <a href="#" class="footer-policy">Mentions légales</a>
+  </div>
+</footer>

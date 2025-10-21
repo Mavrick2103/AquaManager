@@ -26,6 +26,7 @@ jobs:
       - name: Build backend
         working-directory: back_end
         run: npm run build
+        
 
   frontend:
     name: Frontend (Angular)

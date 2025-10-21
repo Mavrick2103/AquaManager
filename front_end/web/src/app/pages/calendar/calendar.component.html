@@ -8,15 +8,14 @@
   <!-- Titre centré -->
   <h1>Mon calendrier</h1>
 
-  <!-- Bouton à droite -->
+  <!-- ✅ Bouton “Nouvelle tâche” : ouvre le TaskDialogComponent -->
   <button mat-raised-button class="btn-primary" (click)="openCreateQuick()">
     <mat-icon>add</mat-icon>
     <span>Nouvelle tâche</span>
   </button>
 </section>
 
-
-<!-- Ton calendrier existant en dessous, inchangé -->
+<!-- Section du calendrier -->
 <section class="cal -compact">
   <header class="cal__head">
     <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()">
@@ -39,28 +38,33 @@
   <div class="cal__grid" role="grid" aria-label="Calendrier mensuel">
     <div class="cal__dow" *ngFor="let d of ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']">{{ d }}</div>
 
+    <!-- ✅ Chaque jour ouvre le dialog de détails du jour -->
     <ng-container *ngFor="let week of weeks()">
-      <button class="cal__cell"
-              *ngFor="let day of week"
-              role="gridcell"
-              [class.-out]="!isSameMonth(day)"
-              [class.-today]="isToday(day)"
-              (click)="openCreate(day)">
+      <button
+        class="cal__cell"
+        *ngFor="let day of week"
+        role="gridcell"
+        [class.-out]="!isSameMonth(day)"
+        [class.-today]="isToday(day)"
+        (click)="openDay(day)"
+      >
         <div class="cal__cell-head">
           <span class="cal__day">{{ fmt(day,'d') }}</span>
           <span class="cal__today-pill" *ngIf="isToday(day)">Aujourd’hui</span>
         </div>
 
         <ul class="cal__tasks">
-          <li *ngFor="let t of dayTasks(day) | slice:0:2"
-              class="cal__task"
-              [ngClass]="{
-                '-water': t.type === 'WATER_CHANGE',
-                '-fert':  t.type === 'FERTILIZATION',
-                '-trim':  t.type === 'TRIM',
-                '-test':  t.type === 'WATER_TEST'
-              }"
-              [title]="t.title + (t.aquarium?.name ? ' – ' + t.aquarium?.name : '')">
+          <li
+            *ngFor="let t of dayTasks(day) | slice:0:2"
+            class="cal__task"
+            [ngClass]="{
+              '-water': t.type === 'WATER_CHANGE',
+              '-fert':  t.type === 'FERTILIZATION',
+              '-trim':  t.type === 'TRIM',
+              '-test':  t.type === 'WATER_TEST'
+            }"
+            [title]="t.title + (t.aquarium?.name ? ' – ' + t.aquarium?.name : '')"
+          >
             <span class="dot"></span><span class="txt">{{ t.title }}</span>
           </li>
 

@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: aquamanager_db
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-aquamanager}
+      MYSQL_USER: ${DB_USER:-aquamanager}
+      MYSQL_PASSWORD: ${DB_PASS:-aquamanager}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-rootpass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$DB_ROOT_PASS || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./back_end
+      dockerfile: Dockerfile
+    container_name: aquamanager_api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-aquamanager}
+      DB_PASS: ${DB_PASS:-aquamanager}
+      DB_NAME: ${DB_NAME:-aquamanager}
+      JWT_SECRET: ${JWT_SECRET:-change_me_at_least_16_chars}
+      JWT_EXPIRES: ${JWT_EXPIRES:-1h}
+      NODE_ENV: production
+      PORT: 3000
+      TYPEORM_SYNC: "true" 
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      context: ./front_end/web
+      dockerfile: Dockerfile
+    container_name: aquamanager_front
+    depends_on:
+      - api
+    ports:
+      - "4200:80"
+
+volumes:
+  db_data:

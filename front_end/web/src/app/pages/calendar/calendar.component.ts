@@ -9,11 +9,14 @@ import { TaskDialogComponent } from './task-dialog/task-dialog.component';
 import { format, startOfMonth, endOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { RouterLink } from '@angular/router';
+import { DayTasksDialogComponent } from './day-tasks-dialog/day-tasks-dialog.component';
 
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatDialogModule, RouterLink],
+  imports: [
+    CommonModule, MatIconModule, MatButtonModule, MatDialogModule, RouterLink
+  ],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
 })
@@ -30,7 +33,7 @@ export class CalendarComponent {
   weeks = computed(() => {
     const monthStart = startOfMonth(this.currentMonth());
     const monthEnd = endOfMonth(monthStart);
-    const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 }); // lundi
+    const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
     const days: Date[] = [];
     let d = gridStart;
     while (d <= monthEnd || days.length % 7 !== 0) {
@@ -57,15 +60,14 @@ export class CalendarComponent {
   nextMonth() { this.currentMonth.set(addMonths(this.currentMonth(), 1)); }
   thisMonth() { this.currentMonth.set(new Date(this.today.getFullYear(), this.today.getMonth(), 1)); }
 
-  /** Bouton de la toolbar (ouvre à la date d’aujourd’hui) */
+  /**
+   * ✅ Bouton "Nouvelle tâche" de la toolbar :
+   * Ouvre le TaskDialogComponent (dialog complet)
+   */
   openCreateQuick(): void {
-    this.openCreate(this.today);
-  }
-
-  openCreate(day: Date) {
     this.dialog.open(TaskDialogComponent, {
       width: '420px',
-      data: { date: day },
+      data: { date: this.today },
       autoFocus: 'dialog'
     }).afterClosed().subscribe(created => {
       if (created) {
@@ -74,6 +76,64 @@ export class CalendarComponent {
       }
     });
   }
+
+  /**
+   * ✅ Clic sur un jour du calendrier : ouvre le dialog de détails du jour
+   */
+  openDay(day: Date) {
+  const isSmall = window.matchMedia('(max-width: 720px)').matches;
+
+  this.dialog.open(DayTasksDialogComponent, {
+    // 📱 Mobile : plein écran
+    ...(isSmall
+      ? {
+          width: '100vw',
+          maxWidth: '100vw',
+          height: '100dvh',
+          maxHeight: '100dvh',
+          panelClass: 'day-dialog--full'
+        }
+      // 🖥️ Desktop : large, mais borné au viewport
+      : {
+          width: '920px',
+          maxWidth: '92vw',
+          maxHeight: '90vh',
+          panelClass: 'day-dialog'
+        }),
+    data: {
+      date: day,
+      tasks: this.tasks().filter(t => t.dueAt.startsWith(format(day, 'yyyy-MM-dd')))
+    },
+    autoFocus: 'dialog',
+    restoreFocus: true
+  }).afterClosed().subscribe(changed => {
+    if (changed) {
+      const monthStr = format(this.currentMonth(), 'yyyy-MM');
+      this.tasksApi.list(monthStr).subscribe(res => this.tasks.set(res));
+    }
+  });
+}
+
+
+  /** Ancienne méthode conservée (utilisable ailleurs si besoin) */
+  openCreate(day: Date) {
+  const isSmall = window.matchMedia('(max-width: 720px)').matches;
+
+  this.dialog.open(TaskDialogComponent, {
+    ...(isSmall
+      ? { width: '100vw', maxWidth: '100vw', height: '100dvh', maxHeight: '100dvh', panelClass: 'day-dialog--full' }
+      : { width: '720px', maxWidth: '92vw', maxHeight: '90vh', panelClass: 'day-dialog' }),
+    data: { date: day },
+    autoFocus: 'dialog',
+    restoreFocus: true
+  }).afterClosed().subscribe(created => {
+    if (created) {
+      const monthStr = format(this.currentMonth(), 'yyyy-MM');
+      this.tasksApi.list(monthStr).subscribe(res => this.tasks.set(res));
+    }
+  });
+}
+
 
   dayTasks(d: Date) {
     const iso = format(d, 'yyyy-MM-dd');
