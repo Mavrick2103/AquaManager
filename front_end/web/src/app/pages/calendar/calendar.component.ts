@@ -8,11 +8,12 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { TaskDialogComponent } from './task-dialog/task-dialog.component';
 import { format, startOfMonth, endOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatDialogModule],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatDialogModule, RouterLink],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
 })
