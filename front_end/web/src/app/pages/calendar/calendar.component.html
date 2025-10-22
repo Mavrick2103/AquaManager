@@ -1,4 +1,4 @@
-<!-- Toolbar façon Mesaquarium -->
+<!-- Toolbar façon Mesaquarium (fait partie du flux, défile avec la page) -->
 <section class="toolbar">
   <!-- Logo cliquable -->
   <a class="brand" routerLink="/">
@@ -8,71 +8,113 @@
   <!-- Titre centré -->
   <h1>Mon calendrier</h1>
 
-  <!-- ✅ Bouton “Nouvelle tâche” : ouvre le TaskDialogComponent -->
+  <!-- Bouton “Nouvelle tâche” -->
   <button mat-raised-button class="btn-primary" (click)="openCreateQuick()">
     <mat-icon>add</mat-icon>
     <span>Nouvelle tâche</span>
   </button>
 </section>
 
-<!-- Section du calendrier -->
-<section class="cal -compact">
-  <header class="cal__head">
-    <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()">
-      <mat-icon>chevron_left</mat-icon>
-    </button>
-
-    <h1 class="cal__title">
-      <span class="cal__title--month">{{ fmt(currentMonth(),'MMMM') | titlecase }}</span>
-      <span class="cal__title--year">{{ fmt(currentMonth(),'yyyy') }}</span>
-    </h1>
-
-    <div class="cal__actions">
-      <button mat-stroked-button (click)="thisMonth()">Aujourd’hui</button>
-      <button mat-icon-button aria-label="Mois suivant" (click)="nextMonth()">
-        <mat-icon>chevron_right</mat-icon>
+<!-- Contenu principal -->
+<div class="page-wrap">
+  <!-- Section du calendrier -->
+  <section class="cal -compact">
+    <header class="cal__head">
+      <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()">
+        <mat-icon>chevron_left</mat-icon>
       </button>
+
+      <h1 class="cal__title">
+        <span class="cal__title--month">{{ fmt(currentMonth(),'MMMM') | titlecase }}</span>
+        <span class="cal__title--year">{{ fmt(currentMonth(),'yyyy') }}</span>
+      </h1>
+
+      <div class="cal__actions">
+        <button mat-stroked-button (click)="thisMonth()">Aujourd’hui</button>
+        <button mat-icon-button aria-label="Mois suivant" (click)="nextMonth()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <div class="cal__grid" role="grid" aria-label="Calendrier mensuel">
+      <div class="cal__dow" *ngFor="let d of ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']">{{ d }}</div>
+
+      <!-- Chaque jour ouvre le dialog de détails -->
+      <ng-container *ngFor="let week of weeks()">
+        <button
+          class="cal__cell"
+          *ngFor="let day of week"
+          role="gridcell"
+          [class.-out]="!isSameMonth(day)"
+          [class.-today]="isToday(day)"
+          (click)="openDayTasks(day)"
+        >
+          <div class="cal__cell-head">
+            <span class="cal__day">{{ fmt(day,'d') }}</span>
+            <span class="cal__today-pill" *ngIf="isToday(day)">Aujourd’hui</span>
+          </div>
+
+          <ul class="cal__tasks">
+            <li
+              *ngFor="let t of dayTasks(day) | slice:0:2"
+              class="cal__task"
+              [ngClass]="{
+                '-water': t.type === 'WATER_CHANGE',
+                '-fert':  t.type === 'FERTILIZATION',
+                '-trim':  t.type === 'TRIM',
+                '-test':  t.type === 'WATER_TEST'
+              }"
+              [title]="t.title + (t.aquarium?.name ? ' – ' + t.aquarium?.name : '')"
+            >
+              <span class="dot"></span>
+              <span class="txt">{{ t.title }}</span>
+            </li>
+
+            <li *ngIf="dayTasks(day).length > 2" class="cal__more">
+              +{{ dayTasks(day).length - 2 }}…
+            </li>
+          </ul>
+        </button>
+      </ng-container>
     </div>
-  </header>
+  </section>
+</div>
 
-  <div class="cal__grid" role="grid" aria-label="Calendrier mensuel">
-    <div class="cal__dow" *ngFor="let d of ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']">{{ d }}</div>
+<!-- ===== Footer ===== -->
+<footer class="footer">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <img src="/Logo_AquaManger.png" alt="AquaManager" class="footer-logo" />
+      <p class="footer-desc">
+        AquaManager – Suivez, entretenez et sublimez vos aquariums en toute simplicité 🌿🐠
+      </p>
+    </div>
 
-    <!-- ✅ Chaque jour ouvre le dialog de détails du jour -->
-    <ng-container *ngFor="let week of weeks()">
-      <button
-        class="cal__cell"
-        *ngFor="let day of week"
-        role="gridcell"
-        [class.-out]="!isSameMonth(day)"
-        [class.-today]="isToday(day)"
-        (click)="openDayTasks(day)"
-      >
-        <div class="cal__cell-head">
-          <span class="cal__day">{{ fmt(day,'d') }}</span>
-          <span class="cal__today-pill" *ngIf="isToday(day)">Aujourd’hui</span>
-        </div>
+    <div class="footer-links">
+      <h3>Navigation</h3>
+      <ul>
+        <li><a routerLink="/home">Accueil</a></li>
+        <li><a routerLink="/aquariums">Mes aquariums</a></li>
+        <li><a routerLink="/calendar">Calendrier</a></li>
+        <li><a routerLink="/profile">Profil</a></li>
+      </ul>
+    </div>
 
-        <ul class="cal__tasks">
-          <li
-            *ngFor="let t of dayTasks(day) | slice:0:2"
-            class="cal__task"
-            [ngClass]="{
-              '-water': t.type === 'WATER_CHANGE',
-              '-fert':  t.type === 'FERTILIZATION',
-              '-trim':  t.type === 'TRIM',
-              '-test':  t.type === 'WATER_TEST'
-            }"
-            [title]="t.title + (t.aquarium?.name ? ' – ' + t.aquarium?.name : '')"
-          >
-            <span class="dot"></span><span class="txt">{{ t.title }}</span>
-          </li>
-
-          <li *ngIf="dayTasks(day).length > 2" class="cal__more">
-            +{{ dayTasks(day).length - 2 }}…
-          </li>
-        </ul>
-      </button>
-    </ng-container>
+    <div class="footer-social">
+      <h3>Suivez-nous</h3>
+      <div class="social-icons">
+        <a href="#" aria-label="Facebook"><mat-icon>facebook</mat-icon></a>
+        <a href="#" aria-label="Instagram"><mat-icon>photo_camera</mat-icon></a>
+        <a href="#" aria-label="Twitter"><mat-icon>alternate_email</mat-icon></a>
+      </div>
+    </div>
   </div>
-</section>
+
+  <mat-divider></mat-divider>
+
+  <div class="footer-bottom">
+    <p>© {{ today.getFullYear() }} AquaManager — Tous droits réservés</p>
+    <a href="#" class="footer-policy">Mentions légales</a>
+  </div>
+</footer>

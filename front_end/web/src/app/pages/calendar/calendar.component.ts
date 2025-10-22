@@ -10,11 +10,13 @@ import { DayTasksDialogComponent } from './day-tasks-dialog/day-tasks-dialog.com
 import { format, startOfMonth, endOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { RouterLink } from '@angular/router';
+import { MatDividerModule } from '@angular/material/divider';
+
 
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatDialogModule, RouterLink],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatDialogModule, RouterLink, MatDividerModule],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
 })

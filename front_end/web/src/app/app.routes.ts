@@ -33,12 +33,12 @@ export const routes: Routes = [
       import('./pages/profile/profile.component').then(m => m.ProfileComponent),
     canActivate: [AuthGuard],
   },
-  {
-    path: 'settings',
-    loadComponent: () =>
-      import('./pages/settings/settings.component').then(m => m.SettingsComponent),
-    canActivate: [AuthGuard],
-  },
+  //{
+  //  path: 'settings',
+  //  loadComponent: () =>
+  //    import('./pages/settings/settings.component').then(m => m.SettingsComponent),
+  //  canActivate: [AuthGuard],
+  //},
   {
     path: 'calendar',
     loadComponent: () => import('./pages/calendar/calendar.component')
