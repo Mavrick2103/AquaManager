@@ -1,4 +1,5 @@
 import { IsDateString, IsInt, IsOptional, IsString, Length, IsEnum } from 'class-validator';
+import { TaskType } from '../task.entity';
 
 export class CreateTaskDto {
   @IsString() @Length(1, 200)
@@ -13,6 +14,6 @@ export class CreateTaskDto {
   @IsInt()
   aquariumId: number;
 
-  @IsEnum(['WATER_CHANGE','FERTILIZATION','TRIM','WATER_TEST','OTHER'])
-  type: 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
+  @IsEnum(TaskType)
+  type: TaskType;
 }

@@ -1,7 +1,70 @@
-.form { display:flex; flex-direction:column; gap:.9rem; }
-.row  { display:grid; grid-template-columns: 1fr 1fr; gap:.9rem; }
-.actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.25rem; }
+:host {
+  --ink: #1f3522;
+  --muted: #4b5a54;
+  --line: rgba(0, 0, 0, 0.08);
+  --brand1: #009fe3;
+  --brand2: #39b54a;
+  display: block;
+}
 
-/* petit polish Material */
-mat-form-field { width:100%; }
-@media (max-width: 640px){ .row { grid-template-columns: 1fr; } }
+/* ===== Title ===== */
+.dlg-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--ink);
+  mat-icon { color: var(--brand1); }
+}
+
+/* ===== Content wrapper ===== */
+.dlg-content { padding-top: 0.25rem; }
+
+/* Info banner */
+.info {
+  display:flex; align-items:center; gap:.5rem;
+  padding:.6rem .75rem; border-radius:12px; margin-bottom:.75rem;
+  background: #fff8e1; border:1px solid #ffe0a3; color:#4a3a12;
+  mat-icon { color:#d88500; }
+}
+
+/* ===== Form layout ===== */
+.form { display: grid; gap: 1rem; }
+
+.row { display: grid; gap: 1rem; }
+.row--2 { grid-template-columns: 1fr 1fr; }
+
+@media (max-width: 840px) {
+  .row--2 { grid-template-columns: 1fr; }
+}
+
+.fld--desc textarea { min-height: 96px; }
+
+/* Material field width */
+mat-form-field { width: 100%; }
+
+/* Prefix icons */
+mat-form-field mat-icon[matPrefix] {
+  opacity: .8;
+  margin-right: .15rem;
+  transform: translateY(1px);
+}
+
+/* ===== Buttons ===== */
+.actions {
+  margin-top: .25rem;
+  display: flex; justify-content: flex-end; gap: .6rem;
+  button[mat-flat-button]{
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    color: #fff;
+  }
+}
+
+/* Optional: lisser le container du dialog (si autorisé par ta config) */
+:host ::ng-deep .mat-mdc-dialog-surface {
+  border-radius: 14px;
+  max-width: 620px;
+  width: 90vw;
+}

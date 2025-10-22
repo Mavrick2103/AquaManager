@@ -1,4 +1,5 @@
 import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Length } from 'class-validator';
+import { TaskStatus, TaskType } from '../task.entity';
 
 export class UpdateTaskDto {
   @IsOptional() @IsString() @Length(1, 200)
@@ -13,9 +14,9 @@ export class UpdateTaskDto {
   @IsOptional() @IsInt()
   aquariumId?: number;
 
-  @IsOptional() @IsEnum(['PENDING','DONE'])
-  status?: 'PENDING' | 'DONE';
+  @IsOptional() @IsEnum(TaskStatus)
+  status?: TaskStatus;
 
-  @IsOptional() @IsEnum(['WATER_CHANGE','FERTILIZATION','TRIM','WATER_TEST','OTHER'])
-  type?: 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
+  @IsOptional() @IsEnum(TaskType)
+  type?: TaskType;
 }

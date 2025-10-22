@@ -1,3 +1,4 @@
+// src/app/pages/home/home.component.ts
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -14,10 +15,14 @@ import { MatChipsModule }   from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 
-/* Données tâches */
+/* Données */
 import { TasksService, Task } from '../../core/tasks.service';
+import { AquariumsService, Aquarium } from '../../core/aquariums.service';
+import { MeasurementsService, Measurement } from '../../core/water.service';
+
 import { format, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -35,23 +40,22 @@ import { fr } from 'date-fns/locale';
 export class HomeComponent implements OnInit {
   private auth = inject(AuthService);
   private tasksApi = inject(TasksService);
+  private aquariumsApi = inject(AquariumsService);
+  private measApi = inject(MeasurementsService);
 
   me: Me | null = null;
 
-  // Hover timers pour le menu profil
   private openTimer: any;
   private closeTimer: any;
 
-  // KPI du jour
   today = new Date();
   todayTasksCount = 0;
 
-  // ✅ KPI “Mesures d’eau ce mois-ci”
-  monthlyWaterTestsCount = 0;
+  // ✅ KPI : nb de relevés d’eau (mesures) effectués ce mois-ci (tous bacs)
+  monthlyMeasurementsCount = 0;
 
-  // Listes pour les cartes "Activités"
-  latestActivities: Task[] = [];  // dernières activités (max 5)
-  upcomingTasks: Task[] = [];     // à venir (7 jours, max 5)
+  latestActivities: Task[] = [];
+  upcomingTasks: Task[] = [];
 
   async ngOnInit() {
     this.me = await this.auth.fetchMe();
@@ -65,22 +69,15 @@ export class HomeComponent implements OnInit {
     const monthStart = startOfMonth(now);
     const monthEnd = endOfMonth(now);
 
+    // ---- Tâches (pour KPI du jour + listes activités)
     this.tasksApi.list(monthStr).subscribe((tasks: Task[]) => {
       const safe = tasks || [];
 
-      // ---- KPI “Tâches aujourd’hui”
+      // KPI “Tâches aujourd’hui”
       const todays = safe.filter(t => t?.dueAt?.startsWith(todayIso));
       this.todayTasksCount = todays.length;
 
-      // ---- KPI “Mesures d’eau ce mois-ci” (toutes tâches WATER_TEST du mois)
-      const monthTests = safe.filter(t => {
-        if (t.type !== 'WATER_TEST' || !t.dueAt) return false;
-        const d = new Date(t.dueAt);
-        return d >= monthStart && d <= monthEnd;
-      });
-      this.monthlyWaterTestsCount = monthTests.length;
-
-      // ---- Dernières activités (7 derniers jours, ou marquées faites)
+      // Dernières activités (7 derniers jours)
       this.latestActivities = [...safe]
         .filter(t => {
           if (!t?.dueAt) return false;
@@ -88,7 +85,6 @@ export class HomeComponent implements OnInit {
           const ref = doneAt ?? new Date(t.dueAt);
           return ref <= now && ref >= past7;
         })
-        // Remonter les mesures d’eau
         .sort((a, b) => {
           const aRef = (a as any).doneAt ? new Date((a as any).doneAt) : new Date(a.dueAt);
           const bRef = (b as any).doneAt ? new Date((b as any).doneAt) : new Date(b.dueAt);
@@ -100,7 +96,7 @@ export class HomeComponent implements OnInit {
         })
         .slice(0, 5);
 
-      // ---- Activités à venir (prochaines 7 jours, max 5)
+      // À venir (7 jours, max 5)
       this.upcomingTasks = safe
         .filter(t => {
           if (!t?.dueAt) return false;
@@ -110,6 +106,22 @@ export class HomeComponent implements OnInit {
         .sort((a, b) => a.dueAt.localeCompare(b.dueAt))
         .slice(0, 5);
     });
+
+    // ---- Mesures (relevés d’eau) : compter toutes les mesures du mois, tous bacs
+    try {
+      const aquariums: Aquarium[] = await firstValueFrom(this.aquariumsApi.listMine());
+      const allArrays: Measurement[][] = await Promise.all(
+        (aquariums || []).map(aq => this.measApi.listForAquarium(aq.id))
+      );
+      const all = allArrays.flat();
+
+      this.monthlyMeasurementsCount = all.filter(m => {
+        const d = new Date(m.measuredAt);
+        return d >= monthStart && d <= monthEnd;
+      }).length;
+    } catch {
+      this.monthlyMeasurementsCount = 0;
+    }
   }
 
   // ===== Helpers UI =====
@@ -140,16 +152,7 @@ export class HomeComponent implements OnInit {
   }
 
   logout() { this.auth.logout(); }
-
-  openMenu(trigger: MatMenuTrigger) {
-    clearTimeout(this.closeTimer);
-    this.openTimer = setTimeout(() => trigger.openMenu(), 100);
-  }
-  keepOpen(_trigger: MatMenuTrigger) {
-    clearTimeout(this.closeTimer);
-  }
-  closeMenu(trigger: MatMenuTrigger) {
-    clearTimeout(this.openTimer);
-    this.closeTimer = setTimeout(() => trigger.closeMenu(), 150);
-  }
+  openMenu(trigger: MatMenuTrigger) { clearTimeout(this.closeTimer); this.openTimer = setTimeout(() => trigger.openMenu(), 100); }
+  keepOpen(_trigger: MatMenuTrigger) { clearTimeout(this.closeTimer); }
+  closeMenu(trigger: MatMenuTrigger) { clearTimeout(this.openTimer); this.closeTimer = setTimeout(() => trigger.closeMenu(), 150); }
 }

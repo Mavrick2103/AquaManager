@@ -18,7 +18,13 @@
     <h3 class="sub">Tâches du jour ({{ tasks.length }})</h3>
 
     <mat-list class="tasks" *ngIf="tasks.length; else noTasks">
-      <mat-list-item *ngFor="let t of tasks" class="task-item" [class]="cssClass(t.type)">
+      <mat-list-item
+        *ngFor="let t of tasks"
+        class="task-item"
+        [class]="cssClass(t.type)"
+        (click)="openDetails(t)"
+        [title]="t.title"
+      >
         <mat-icon matListItemIcon>{{ typeIcon(t.type) }}</mat-icon>
 
         <div matListItemTitle class="t-title">

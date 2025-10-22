@@ -46,7 +46,7 @@
         role="gridcell"
         [class.-out]="!isSameMonth(day)"
         [class.-today]="isToday(day)"
-        (click)="openDay(day)"
+        (click)="openDayTasks(day)"
       >
         <div class="cal__cell-head">
           <span class="cal__day">{{ fmt(day,'d') }}</span>

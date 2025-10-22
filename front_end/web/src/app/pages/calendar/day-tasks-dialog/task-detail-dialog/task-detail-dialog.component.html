@@ -1,0 +1,50 @@
+<h2 mat-dialog-title>
+  <mat-icon>assignment</mat-icon>
+  Détails de la tâche
+</h2>
+
+<mat-dialog-content>
+  <form class="form">
+    <mat-form-field appearance="outline">
+      <mat-label>Titre</mat-label>
+      <input matInput [(ngModel)]="editing.title" name="title" required />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Description</mat-label>
+      <textarea matInput rows="3" [(ngModel)]="editing.description" name="desc"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Type</mat-label>
+      <mat-select [(ngModel)]="editing.type" name="type">
+        <mat-option value="WATER_CHANGE">Changement d’eau</mat-option>
+        <mat-option value="FERTILIZATION">Fertilisation</mat-option>
+        <mat-option value="TRIM">Taille / entretien</mat-option>
+        <mat-option value="WATER_TEST">Test de l’eau</mat-option>
+        <mat-option value="OTHER">Autre</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Date et heure</mat-label>
+      <input matInput type="datetime-local" [(ngModel)]="editing.dueAt" name="dueAt" />
+    </mat-form-field>
+
+    <!-- ✅ Remplace le “Statut” par la sélection d’Aquarium -->
+    <mat-form-field appearance="outline">
+      <mat-label>Aquarium</mat-label>
+      <mat-select [(ngModel)]="selectedAquariumId" name="aquariumId">
+        <mat-option *ngFor="let aq of aquariums" [value]="aq.id">
+          {{ aq.name || ('Bac #' + aq.id) }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancel()">Fermer</button>
+  <button mat-stroked-button color="warn" (click)="delete()">Supprimer</button>
+  <button mat-flat-button color="primary" (click)="save()">Enregistrer</button>
+</mat-dialog-actions>

@@ -1,81 +1,132 @@
-import { Component, Inject, inject, signal } from '@angular/core';
+import { Component, Inject, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { formatISO } from 'date-fns';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatChipsModule } from '@angular/material/chips';
 
+import { AquariumsService, Aquarium } from '../../../core/aquariums.service';
 import { TasksService } from '../../../core/tasks.service';
-import { AquariumsService } from '../../../core/aquariums.service';
+
+type TaskType = 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
 
 @Component({
   selector: 'app-task-dialog',
   standalone: true,
   imports: [
-    CommonModule, MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatButtonModule, MatDatepickerModule, MatNativeDateModule
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatButtonModule,
+    MatIconModule,
+    MatDividerModule,
+    MatChipsModule,
   ],
   templateUrl: './task-dialog.component.html',
   styleUrls: ['./task-dialog.component.scss'],
 })
-export class TaskDialogComponent {
+export class TaskDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
+  private dialogRef = inject(MatDialogRef<TaskDialogComponent>);
+  private aquariumsApi = inject(AquariumsService);
   private tasksApi = inject(TasksService);
-  private aquasApi = inject(AquariumsService);
-  private ref = inject(MatDialogRef<TaskDialogComponent>);
 
-  // ✅ tableau des types utilisé par le template
-  types = [
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { date?: Date } | null) {}
+
+  types: Array<{ value: TaskType; label: string }> = [
     { value: 'WATER_CHANGE', label: 'Changement d’eau' },
     { value: 'FERTILIZATION', label: 'Fertilisation' },
-    { value: 'TRIM', label: 'Taille des plantes' },
-    { value: 'WATER_TEST', label: 'Test de l’eau' },
-    { value: 'OTHER', label: 'Autre' },
+    { value: 'TRIM',         label: 'Taille / entretien' },
+    { value: 'WATER_TEST',   label: 'Test de l’eau' },
+    { value: 'OTHER',        label: 'Autre' },
   ];
 
-  aquariums = signal<{ id: number; name: string }[]>([]);
-  form!: FormGroup;
+  private aquariumsList: Aquarium[] = [];
+  aquariums() { return this.aquariumsList; }
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { date: Date }) {
-    // form construit après injection (évite "data used before init")
-    this.form = this.fb.group({
-      title: ['', [Validators.required, Validators.maxLength(200)]],
-      description: [''],
-      date: [data?.date ?? new Date(), Validators.required],
-      time: ['10:00', Validators.required],
-      aquariumId: [null as unknown as number, Validators.required],
-      type: ['OTHER', Validators.required],
-    });
+  loadingAquariums = true;
 
-    // ⚠️ ton back renvoie tes aquariums sur GET /aquariums
-    this.aquasApi.listMine().subscribe((aq) => {
-      this.aquariums.set(aq.map((x: any) => ({ id: x.id, name: x.name })));
-      if (aq.length === 1) this.form.patchValue({ aquariumId: aq[0].id });
+  form = this.fb.group({
+    title: ['', [Validators.required, Validators.maxLength(200)]],
+    description: [''],
+    date: [new Date(), Validators.required],
+    time: ['09:00'],
+    aquariumId: [null as number | null, Validators.required],
+    type: ['OTHER' as TaskType, Validators.required],
+  });
+
+  ngOnInit(): void {
+    if (this.data?.date instanceof Date) {
+      this.form.patchValue({ date: this.data.date });
+    }
+
+    this.aquariumsApi.listMine().subscribe({
+      next: (list) => {
+        this.aquariumsList = list || [];
+        this.loadingAquariums = false;
+
+        // si aucun aquarium -> on laisse l’UI afficher un bandeau d’info
+        if (!this.aquariumsList.length) return;
+
+        // auto-sélection si pas encore choisi
+        if (!this.form.value.aquariumId) {
+          this.form.patchValue({ aquariumId: this.aquariumsList[0].id });
+        }
+      },
+      error: () => {
+        this.aquariumsList = [];
+        this.loadingAquariums = false;
+      }
     });
   }
 
-  save() {
-    if (this.form.invalid) return;
-    const { title, description, date, time, aquariumId, type } = this.form.value;
+  private buildIsoDueAt(date: Date | null, time: string | null): string {
+    const d = date ?? new Date();
+    const hhmm = (time && /^\d{2}:\d{2}$/.test(time)) ? time : '09:00';
+    const [h, m] = hhmm.split(':').map(n => +n);
+    const local = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0, 0);
+    return local.toISOString();
+  }
 
-    const [h, m] = (time as string).split(':').map(Number);
-    const d = new Date(date as Date);
-    d.setHours(h, m, 0, 0);
+  save() {
+    // Affiche les erreurs si besoin
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+
+    // Garde anti-absence d’aquarium (le back exige aquariumId)
+    if (!this.aquariumsList.length) {
+      alert('Crée d’abord un aquarium pour associer la tâche.');
+      return;
+    }
+
+    const v = this.form.getRawValue();
+    const dueAtIso = this.buildIsoDueAt(v.date as Date, v.time || '09:00');
 
     this.tasksApi.create({
-      title: (title as string).trim(),
-      description: ((description as string) || '').trim(),
-      dueAt: formatISO(d),
-      aquariumId: Number(aquariumId),
-      type: type as any,
+      title: (v.title || '').trim(),
+      description: (v.description || '') || undefined,
+      dueAt: dueAtIso,
+      aquariumId: v.aquariumId as number,
+      type: v.type as TaskType,
     }).subscribe({
-      next: () => this.ref.close(true),
-      error: () => this.form.disable(),
+      next: (created) => this.dialogRef.close(created),
+      error: (err: unknown) => {
+        console.error(err);
+        alert('Erreur lors de la création de la tâche. Vérifie la date/heure et l’aquarium.');
+      }
     });
   }
 }

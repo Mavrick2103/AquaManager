@@ -1,46 +1,94 @@
-<h2 mat-dialog-title>Nouvelle tâche</h2>
+<h2 mat-dialog-title class="dlg-title">
+  <mat-icon>add_task</mat-icon>
+  Nouvelle tâche
+</h2>
 
-<form [formGroup]="form" (ngSubmit)="save()" class="form">
-  <mat-form-field appearance="outline">
-    <mat-label>Titre</mat-label>
-    <input matInput formControlName="title" placeholder="Ex. Changement d’eau">
-  </mat-form-field>
-
-  <mat-form-field appearance="outline">
-    <mat-label>Description</mat-label>
-    <textarea matInput rows="3" formControlName="description" placeholder="Notes facultatives"></textarea>
-  </mat-form-field>
-
-  <div class="row">
-    <mat-form-field appearance="outline">
-      <mat-label>Date</mat-label>
-      <input matInput [matDatepicker]="dp" formControlName="date">
-      <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
-      <mat-datepicker #dp startView="month"></mat-datepicker>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Heure</mat-label>
-      <input matInput type="time" formControlName="time">
-    </mat-form-field>
+<mat-dialog-content class="dlg-content">
+  <!-- Bandeau info si aucun aquarium -->
+  <div class="info" *ngIf="!loadingAquariums && !aquariums().length">
+    <mat-icon>info</mat-icon>
+    <span>Vous n’avez pas encore d’aquarium. Créez-en un pour pouvoir enregistrer une tâche.</span>
   </div>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Aquarium</mat-label>
-    <mat-select formControlName="aquariumId">
-      <mat-option *ngFor="let a of aquariums()" [value]="a.id">{{ a.name }}</mat-option>
-    </mat-select>
-  </mat-form-field>
+  <form [formGroup]="form" (ngSubmit)="save()" class="form">
 
-  <mat-form-field appearance="outline">
-    <mat-label>Type de tâche</mat-label>
-    <mat-select formControlName="type">
-      <mat-option *ngFor="let t of types" [value]="t.value">{{ t.label }}</mat-option>
-    </mat-select>
-  </mat-form-field>
+    <!-- Titre + Type -->
+    <div class="row row--2">
+      <mat-form-field appearance="outline">
+        <mat-label>Titre</mat-label>
+        <mat-icon matPrefix>edit</mat-icon>
+        <input matInput formControlName="title" placeholder="Ex. Changement d’eau 30 L" />
+        <mat-error *ngIf="form.get('title')?.hasError('required')">
+          Le titre est requis.
+        </mat-error>
+        <mat-error *ngIf="form.get('title')?.hasError('maxlength')">
+          Maximum 200 caractères.
+        </mat-error>
+      </mat-form-field>
 
-  <div class="actions">
-    <button mat-button mat-dialog-close>Annuler</button>
-    <button mat-flat-button color="primary" [disabled]="form.invalid">Enregistrer</button>
-  </div>
-</form>
+      <mat-form-field appearance="outline">
+        <mat-label>Type de tâche</mat-label>
+        <mat-icon matPrefix>category</mat-icon>
+        <mat-select formControlName="type">
+          <mat-option *ngFor="let t of types" [value]="t.value">{{ t.label }}</mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('type')?.invalid">
+          Choisissez un type.
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <!-- Description -->
+    <mat-form-field appearance="outline" class="fld--desc">
+      <mat-label>Description</mat-label>
+      <mat-icon matPrefix>notes</mat-icon>
+      <textarea
+        matInput
+        rows="3"
+        formControlName="description"
+        placeholder="Notes, volumes, dosages, consignes…"
+      ></textarea>
+    </mat-form-field>
+
+    <!-- Date + Heure -->
+    <div class="row row--2">
+      <mat-form-field appearance="outline">
+  <mat-label>Date</mat-label>
+  <input matInput [matDatepicker]="dp" formControlName="date" />
+  <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+  <mat-datepicker #dp startView="month"></mat-datepicker>
+  <mat-error *ngIf="form.get('date')?.invalid">La date est requise.</mat-error>
+</mat-form-field>
+
+
+      <mat-form-field appearance="outline">
+  <mat-label>Heure</mat-label>
+  <mat-icon matPrefix>schedule</mat-icon>
+  <input matInput type="time" formControlName="time" />
+</mat-form-field>
+
+    </div>
+
+    <!-- Aquarium -->
+    <mat-form-field appearance="outline">
+      <mat-label>Aquarium</mat-label>
+      <mat-icon matPrefix>water</mat-icon>
+      <mat-select formControlName="aquariumId" [disabled]="!aquariums().length">
+        <mat-option *ngFor="let a of aquariums()" [value]="a.id">{{ a.name }}</mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('aquariumId')?.invalid">
+        Sélectionnez un aquarium.
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button mat-button mat-dialog-close type="button">Annuler</button>
+      <!-- Bouton cliquable même si invalide, mais save() affichera les erreurs -->
+      <button mat-flat-button color="primary" type="submit">
+        <mat-icon>save</mat-icon>
+        Enregistrer
+      </button>
+    </div>
+  </form>
+</mat-dialog-content>

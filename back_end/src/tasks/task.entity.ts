@@ -2,6 +2,19 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, In
 import { User } from '../users/user.entity';
 import { Aquarium } from '../aquariums/aquariums.entity';
 
+export enum TaskStatus {
+  PENDING = 'PENDING',
+  DONE = 'DONE',
+}
+
+export enum TaskType {
+  WATER_CHANGE = 'WATER_CHANGE',
+  FERTILIZATION = 'FERTILIZATION',
+  TRIM = 'TRIM',
+  WATER_TEST = 'WATER_TEST',
+  OTHER = 'OTHER',
+}
+
 @Entity('tasks')
 export class Task {
   @PrimaryGeneratedColumn()
@@ -19,8 +32,8 @@ export class Task {
   dueAt: Date;
 
   /** Statut simple pour évoluer plus tard */
-  @Column({ type: 'enum', enum: ['PENDING', 'DONE'], default: 'PENDING' })
-  status: 'PENDING' | 'DONE';
+  @Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.PENDING })
+  status: TaskStatus;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -31,7 +44,6 @@ export class Task {
   @ManyToOne(() => Aquarium, (a) => a.id, { onDelete: 'CASCADE', eager: true })
   aquarium: Aquarium;
 
-  @Column({ type: 'enum', enum: ['WATER_CHANGE','FERTILIZATION','TRIM','WATER_TEST','OTHER'], default: 'OTHER' })
-  type: 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
-
+  @Column({ type: 'enum', enum: TaskType, default: TaskType.OTHER })
+  type: TaskType;
 }

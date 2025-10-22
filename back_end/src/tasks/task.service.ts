@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Task } from './task.entity';
+import { Task, TaskStatus, TaskType } from './task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Aquarium } from '../aquariums/aquariums.entity';
@@ -26,7 +26,8 @@ export class TaskService {
     if (month) {
       // borne [YYYY-MM-01, mois+1)
       const start = new Date(`${month}-01T00:00:00.000Z`);
-      const end = new Date(start); end.setUTCMonth(end.getUTCMonth() + 1);
+      const end = new Date(start);
+      end.setUTCMonth(end.getUTCMonth() + 1);
       qb.andWhere('t.dueAt >= :start AND t.dueAt < :end', { start, end });
     }
     return qb.getMany();
@@ -44,14 +45,13 @@ export class TaskService {
       title: dto.title,
       description: dto.description,
       dueAt: new Date(dto.dueAt),
-      status: 'PENDING',
-      type: dto.type ?? 'OTHER',
+      status: TaskStatus.PENDING,
+      type: dto.type ?? TaskType.OTHER,
       user: { id: userId } as any,
       aquarium,
     });
     return this.repo.save(task);
   }
-
 
   async update(userId: number, id: number, dto: UpdateTaskDto) {
     const task = await this.repo.findOne({
@@ -60,15 +60,22 @@ export class TaskService {
     });
     if (!task || task.user.id !== userId) throw new NotFoundException();
 
-    if (dto.aquariumId) {
-      const aq = await this.aqRepo.findOneBy({ id: dto.aquariumId });
-      if (!aq || aq.user?.id !== userId) throw new NotFoundException('Aquarium invalide');
+    if (dto.aquariumId !== undefined) {
+      // ⚠️ re-vérifie que l’aquarium appartient au user
+      const aq = await this.aqRepo.findOne({
+        where: { id: dto.aquariumId, user: { id: userId } },
+        relations: { user: true },
+        select: { id: true } as any,
+      });
+      if (!aq) throw new NotFoundException('Aquarium invalide ou non autorisé');
       task.aquarium = aq;
     }
+
     if (dto.title !== undefined) task.title = dto.title;
     if (dto.description !== undefined) task.description = dto.description;
     if (dto.dueAt !== undefined) task.dueAt = new Date(dto.dueAt);
     if (dto.status !== undefined) task.status = dto.status;
+    if (dto.type !== undefined) task.type = dto.type;
 
     return this.repo.save(task);
   }
@@ -79,6 +86,7 @@ export class TaskService {
       relations: { user: true },
     });
     if (!task || task.user.id !== userId) throw new NotFoundException();
+
     await this.repo.delete(id);
     return { ok: true };
   }

@@ -7,9 +7,8 @@ export type Task = {
   title: string;
   description?: string;
   dueAt: string;
-  status: 'PENDING'|'DONE';
-  // ⬇️ ajoute le type
-  type: 'WATER_CHANGE'|'FERTILIZATION'|'TRIM'|'WATER_TEST'|'OTHER';
+  status: 'PENDING' | 'DONE';
+  type: 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
   aquarium?: { id: number; name?: string };
 };
 
@@ -18,35 +17,40 @@ export class TasksService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/tasks`;
 
+  /** 🔹 Récupère les tâches du mois, ex: "2025-10" */
   list(month?: string) {
     const params = month ? new HttpParams().set('month', month) : undefined;
     return this.http.get<Task[]>(this.base, { params });
   }
 
-  // ⬇️ accepte maintenant "type"
+  /** 🔹 Crée une tâche */
   create(payload: {
     title: string;
     description?: string;
     dueAt: string;
     aquariumId: number;
-    type: 'WATER_CHANGE'|'FERTILIZATION'|'TRIM'|'WATER_TEST'|'OTHER';
+    type: 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
   }) {
     return this.http.post<Task>(this.base, payload);
   }
 
-  // ⬇️ et le permet aussi sur update
-  update(id: number, payload: Partial<{
-    title: string;
-    description?: string;
-    dueAt: string;
-    aquariumId: number;
-    status: 'PENDING'|'DONE';
-    type: 'WATER_CHANGE'|'FERTILIZATION'|'TRIM'|'WATER_TEST'|'OTHER';
-  }>) {
+  /** 🔹 Met à jour une tâche existante */
+  update(
+    id: number,
+    payload: Partial<{
+      title: string;
+      description?: string;
+      dueAt: string;
+      aquariumId: number;
+      status: 'PENDING' | 'DONE';
+      type: 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
+    }>
+  ) {
     return this.http.patch<Task>(`${this.base}/${id}`, payload);
   }
 
-  remove(id: number) {
+  /** 🔹 Supprime une tâche (DELETE /tasks/:id) */
+  delete(id: number) {
     return this.http.delete<{ ok: true }>(`${this.base}/${id}`);
   }
 }

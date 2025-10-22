@@ -1,12 +1,15 @@
 import { Component, Inject, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { Task } from '../../../core/tasks.service';
+import { Task, TasksService } from '../../../core/tasks.service';
+// ✅ chemin correct (frère du dossier day-tasks-dialog)
+import { TaskDetailDialogComponent } from '../day-tasks-dialog/task-detail-dialog/task-detail-dialog.component';
 
 type TaskType = 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
 
@@ -20,26 +23,63 @@ type TaskType = 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHE
     MatButtonModule,
     MatListModule,
     MatDividerModule,
+    MatTooltipModule,
   ],
   templateUrl: './day-tasks-dialog.component.html',
   styleUrls: ['./day-tasks-dialog.component.scss'],
 })
 export class DayTasksDialogComponent {
   private ref = inject(MatDialogRef<DayTasksDialogComponent>);
+  private dialog = inject(MatDialog);
+  private tasksApi = inject(TasksService);
 
-  /** On reçoit la date et la liste des tâches depuis l’ouverture du dialog */
   constructor(
     @Inject(MAT_DIALOG_DATA)
     public data: { date: Date; tasks: Task[] }
   ) {}
 
-  /** Liste triée par heure croissante */
+  /** Liste triée par heure croissante (copie défensive) */
   get tasks(): Task[] {
     return [...(this.data?.tasks ?? [])].sort((a, b) => a.dueAt.localeCompare(b.dueAt));
   }
 
-  close() {
-    this.ref.close(false);
+  close(changed = false) {
+    this.ref.close(changed);
+  }
+
+  /** ✅ Clic sur une tâche -> ouvre le détail (édition/suppression possibles) */
+  openDetails(t: Task) {
+    this.dialog
+      .open(TaskDetailDialogComponent, {
+        width: '480px',
+        data: { task: t },
+        autoFocus: 'dialog',
+      })
+      .afterClosed()
+      .subscribe((result) => {
+        if (!result) return;
+        if (result.deleted) {
+          this.removeLocal(t.id);
+          this.close(true);
+          return;
+        }
+        if (result && result.id) {
+          this.replaceLocal(result as Task);
+          this.close(true);
+        }
+      });
+  }
+
+  /** Remplace la tâche localement */
+  private replaceLocal(updated: Task) {
+    const idx = this.data.tasks.findIndex((x) => x.id === updated.id);
+    if (idx >= 0) this.data.tasks.splice(idx, 1, updated);
+  }
+
+  /** Retire la tâche localement */
+  private removeLocal(id: number) {
+    const idx = this.data.tasks.findIndex((x) => x.id === id);
+    if (idx >= 0) this.data.tasks.splice(idx, 1);
   }
 
   typeIcon(type?: string): string {
