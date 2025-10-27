@@ -5,18 +5,16 @@ import { Task, TaskStatus, TaskType } from './task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Aquarium } from '../aquariums/aquariums.entity';
-import { User } from '../users/user.entity';
 
 @Injectable()
 export class TaskService {
   constructor(
     @InjectRepository(Task) private readonly repo: Repository<Task>,
     @InjectRepository(Aquarium) private readonly aqRepo: Repository<Aquarium>,
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
   ) {}
 
   async findMine(userId: number, month?: string) {
-    // month optionnel: "2025-10" -> filtre sur le mois
+    // month optionnel: "YYYY-MM" -> filtre sur le mois (UTC)
     const qb = this.repo.createQueryBuilder('t')
       .leftJoin('t.user', 'u')
       .leftJoinAndSelect('t.aquarium', 'a')
@@ -24,7 +22,6 @@ export class TaskService {
       .orderBy('t.dueAt', 'ASC');
 
     if (month) {
-      // borne [YYYY-MM-01, mois+1)
       const start = new Date(`${month}-01T00:00:00.000Z`);
       const end = new Date(start);
       end.setUTCMonth(end.getUTCMonth() + 1);
@@ -45,10 +42,10 @@ export class TaskService {
       title: dto.title,
       description: dto.description,
       dueAt: new Date(dto.dueAt),
-      status: TaskStatus.PENDING,
-      type: dto.type ?? TaskType.OTHER,
       user: { id: userId } as any,
       aquarium,
+      status: TaskStatus.PENDING,
+      type: dto.type ?? TaskType.OTHER,
     });
     return this.repo.save(task);
   }
@@ -61,7 +58,6 @@ export class TaskService {
     if (!task || task.user.id !== userId) throw new NotFoundException();
 
     if (dto.aquariumId !== undefined) {
-      // ⚠️ re-vérifie que l’aquarium appartient au user
       const aq = await this.aqRepo.findOne({
         where: { id: dto.aquariumId, user: { id: userId } },
         relations: { user: true },

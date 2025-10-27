@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Param, Query, Patch, Delete, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Patch, Delete, Req, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // adapte le chemin à ton projet
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
 @Controller('tasks')
@@ -20,12 +20,16 @@ export class TaskController {
   }
 
   @Patch(':id')
-  update(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateTaskDto) {
-    return this.service.update(req.user.userId, Number(id), dto);
+  update(
+    @Req() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTaskDto,
+  ) {
+    return this.service.update(req.user.userId, id, dto);
   }
 
   @Delete(':id')
-  remove(@Req() req: any, @Param('id') id: string) {
-    return this.service.remove(req.user.userId, Number(id));
+  remove(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.service.remove(req.user.userId, id);
   }
 }

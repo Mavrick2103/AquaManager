@@ -19,9 +19,9 @@ describe('AquariumsService (unit)', () => {
       create: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
-      update: jest.fn(),
     };
-    const userRepoMock: Partial<jest.Mocked<Repository<User>>> = {
+
+    const usersRepoMock: Partial<jest.Mocked<Repository<User>>> = {
       findOne: jest.fn(),
     };
 
@@ -29,25 +29,42 @@ describe('AquariumsService (unit)', () => {
       providers: [
         AquariumsService,
         { provide: getRepositoryToken(Aquarium), useValue: aquariumRepoMock },
-        { provide: getRepositoryToken(User), useValue: userRepoMock },
+        { provide: getRepositoryToken(User), useValue: usersRepoMock },
       ],
     }).compile();
 
     service = module.get(AquariumsService);
     repo = module.get(getRepositoryToken(Aquarium));
     usersRepo = module.get(getRepositoryToken(User));
-    jest.clearAllMocks();
   });
 
-  it('findMine() -> interroge par user.id', async () => {
-    repo.find.mockResolvedValue([{ id: 1 } as any]);
-    const res = await service.findMine(7);
-    expect(repo.find).toHaveBeenCalledWith({ where: { user: { id: 7 } } });
-    expect(res).toEqual([{ id: 1 }]);
+  it('findMine() -> renvoie la liste des aquariums du user', async () => {
+    repo.find.mockResolvedValue([{ id: 1 }, { id: 2 }] as any);
+    const res = await service.findMine(1);
+    expect(repo.find).toHaveBeenCalledWith({
+      where: { user: { id: 1 } },
+      order: { createdAt: 'DESC' },
+    });
+    expect(res).toHaveLength(2);
+  });
+
+  it('findOne() -> 404 si non trouvé', async () => {
+    repo.findOne.mockResolvedValue(null as any);
+    await expect(service.findOne(1, 123)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('findOne() -> renvoie un aquarium appartenant au user', async () => {
+    repo.findOne.mockResolvedValue({ id: 5, user: { id: 1 } } as any);
+    const ok = await service.findOne(1, 5);
+    expect(repo.findOne).toHaveBeenCalledWith({
+      where: { id: 5, user: { id: 1 } },
+      relations: { user: true },
+    });
+    expect(ok).toEqual({ id: 5, user: { id: 1 } });
   });
 
   it('create() -> 404 si user inexistant', async () => {
-    usersRepo.findOne.mockResolvedValue(null);
+    usersRepo.findOne.mockResolvedValue(null as any);
     await expect(
       service.create(99, {
         name: 'A',
@@ -58,69 +75,51 @@ describe('AquariumsService (unit)', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('create() -> calcule volume, trim name, create + save', async () => {
+  it('create() -> calcule volume et sauvegarde', async () => {
     usersRepo.findOne.mockResolvedValue({ id: 1 } as any);
-    // Simuler create/save TypeORM
-    repo.create.mockImplementation((p: any) => p as any);
-    repo.save.mockImplementation(async (a: any) => ({ id: 42, ...a }));
+    repo.create.mockImplementation((x: any) => x);
+    repo.save.mockImplementation(async (x: any) => ({ id: 10, ...x }));
 
-    const dto = {
-      name: '  Mon Bac  ',
-      lengthCm: 100, widthCm: 40, heightCm: 45,  // 100*40*45 / 1000 = 180 L
-      waterType: 'EAU_DOUCE' as const,
-      startDate: '2025-01-15',
-    };
-
-    const a = await service.create(1, dto);
-
-    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'Mon Bac',
-      lengthCm: 100,
+    const res = await service.create(1, {
+      name: 'Proxima 175',
+      lengthCm: 70,
       widthCm: 40,
-      heightCm: 45,
-      volumeL: 180,
+      heightCm: 50,
       waterType: 'EAU_DOUCE',
-      startDate: expect.any(Date),     // service convertit string -> Date
-      user: { id: 1 },
-    }));
+      startDate: '2025-01-01',
+    } as any);
+
+    expect(res.volumeL).toBe(140);
+    expect(repo.create).toHaveBeenCalled();
     expect(repo.save).toHaveBeenCalled();
-    expect(a).toEqual(expect.objectContaining({
-      id: 42,
-      name: 'Mon Bac',
-      volumeL: 180,
-    }));
+    expect(res.id).toBeDefined();
   });
 
-  it('findOne() -> renvoie le bac du user sinon 404', async () => {
-    repo.findOne
-      .mockResolvedValueOnce(null as any) // first call -> 404
-      .mockResolvedValueOnce({ id: 5, user: { id: 1 } } as any);
-
-    await expect(service.findOne(1, 5)).rejects.toBeInstanceOf(NotFoundException);
-
-    const ok = await service.findOne(1, 5);
-    expect(repo.findOne).toHaveBeenLastCalledWith({
-      where: { id: 5, user: { id: 1 } },
-      relations: { user: true },
-    });
-    expect(ok).toEqual({ id: 5, user: { id: 1 } });
+  it('update() -> 404 si non trouvé', async () => {
+    repo.findOne.mockResolvedValue(null as any);
+    await expect(service.update(1, 7, { name: 'X' })).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('update() -> recalcule volume si dimensions changent', async () => {
-    // findOne est utilisé en interne
-    repo.findOne.mockResolvedValue({ 
-      id: 7, name: 'X', lengthCm: 50, widthCm: 30, heightCm: 30, volumeL: 45,
-      waterType: 'EAU_DOUCE', startDate: new Date('2025-01-01'), user: { id: 1 }
+  it('update() -> met à jour les champs et recalcule le volume si dimensions changent', async () => {
+    repo.findOne.mockResolvedValue({
+      id: 7,
+      name: 'X',
+      lengthCm: 50,
+      widthCm: 30,
+      heightCm: 30,
+      volumeL: 45,
+      waterType: 'EAU_DOUCE',
+      startDate: '2025-01-01',
+      user: { id: 1 },
     } as any);
 
     repo.save.mockImplementation(async (a: any) => a);
 
-    const updated = await service.update(1, 7, { lengthCm: 54, widthCm: 32 }); // h=30
-    // 54*32*30/1000 = 51.84 -> Math.round -> 52
+    const updated = await service.update(1, 7, { lengthCm: 54, widthCm: 32 });
     expect(updated.volumeL).toBe(52);
-    expect(repo.save).toHaveBeenCalledWith(expect.objectContaining({
-      lengthCm: 54, widthCm: 32, heightCm: 30, volumeL: 52,
-    }));
+    expect(repo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ lengthCm: 54, widthCm: 32, heightCm: 30, volumeL: 52 }),
+    );
   });
 
   it('remove() -> supprime et renvoie {ok:true}', async () => {

@@ -14,8 +14,12 @@ export class AquariumsService {
   ) {}
 
   findMine(userId: number) {
-    return this.repo.find({ where: { user: { id: userId } } });
-  }
+  return this.repo.find({
+    where: { user: { id: userId } },
+    order: { createdAt: 'DESC' }, // ⬅️ tri ajouté
+  });
+}
+
 
   async create(userId: number, dto: CreateAquariumDto) {
     // facultatif : vérifier que l’utilisateur existe
