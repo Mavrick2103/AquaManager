@@ -14,7 +14,6 @@ export class UsersController {
   async me(@Request() req) {
     const user = await this.users.findById(req.user.userId);
     if (!user) throw new NotFoundException('Utilisateur introuvable');
-    // ⬇️ user ne contient pas le champ password dans son type => on évite l'erreur TS
     const { password: _pw, ...safe } = (user as any);
     return safe;
   }

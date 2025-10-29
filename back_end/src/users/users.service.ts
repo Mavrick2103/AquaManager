@@ -3,8 +3,8 @@ import { Repository } from 'typeorm';
 import * as argon2 from 'argon2';
 import { User } from './user.entity';
 import { UpdateMeDto } from './dto/update-me.dto';
-import { Injectable, ConflictException } from '@nestjs/common';  // <-- ajoute ConflictException
-import { CreateUserDto } from './dto/create-user.dto';           // <-- importe ton DTO de création
+import { Injectable, ConflictException } from '@nestjs/common';
+import { CreateUserDto } from './dto/create-user.dto';
 
 
 @Injectable()
@@ -56,7 +56,6 @@ export class UsersService {
       email: dto.email,
       fullName: dto.fullName?.trim() ?? '',
       password,
-      // role: 'user', // <-- décommente si tu as une colonne role et que tu veux la valoriser ici
     });
 
     return this.repo.save(user);
