@@ -14,7 +14,6 @@ export class TaskService {
   ) {}
 
   async findMine(userId: number, month?: string) {
-    // month optionnel: "YYYY-MM" -> filtre sur le mois (UTC)
     const qb = this.repo.createQueryBuilder('t')
       .leftJoin('t.user', 'u')
       .leftJoinAndSelect('t.aquarium', 'a')

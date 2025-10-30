@@ -19,7 +19,6 @@ describe('WaterMeasurementService (unit)', () => {
       save: jest.fn(),
     };
 
-    // IMPORTANT: le service utilise exist() DANS listForAquarium et findOne() DANS createForAquarium
     const aquasMock: Partial<jest.Mocked<Repository<Aquarium>>> = {
       exist: jest.fn(),
       findOne: jest.fn(),
@@ -58,7 +57,7 @@ describe('WaterMeasurementService (unit)', () => {
 
   describe('createForAquarium', () => {
     it('lève 404 si aquarium inexistant', async () => {
-      aquas.findOne.mockResolvedValue(null as any); // <- createForAquarium utilise findOne()
+      aquas.findOne.mockResolvedValue(null as any);
       await expect(
         service.createForAquarium(1, { measuredAt: '2025-01-01T10:00:00.000Z' } as any)
       ).rejects.toBeInstanceOf(NotFoundException);

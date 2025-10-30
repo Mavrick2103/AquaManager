@@ -26,12 +26,10 @@ export class Task {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  /** Date/heure de la tâche (UTC en DB) */
   @Index()
   @Column({ type: 'datetime' })
   dueAt: Date;
 
-  /** Statut simple pour évoluer plus tard */
   @Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.PENDING })
   status: TaskStatus;
 

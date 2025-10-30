@@ -22,11 +22,10 @@ export class WaterMeasurementService {
     const a = await this.aquas.findOne({ where: { id: aquariumId } });
     if (!a) throw new NotFoundException('Aquarium introuvable');
 
-    // a.waterType: 'EAU_DOUCE' | 'EAU_DE_MER'
     if (a.waterType === 'EAU_DOUCE') {
       dto.dkh = dto.salinity = dto.ca = dto.mg =  undefined;
     } else {
-      dto.kh = dto.gh = dto.no2 = undefined; // NO3 commun conservé
+      dto.kh = dto.gh = dto.no2 = undefined;
     }
 
     const m = this.repo.create({

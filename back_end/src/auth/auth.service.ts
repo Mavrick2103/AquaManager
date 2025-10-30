@@ -14,18 +14,15 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await this.users.findByEmailWithPassword(email);
 
-    // ✅ Si l'utilisateur n'existe pas
     if (!user) {
       throw new UnauthorizedException('Email ou mot de passe invalide');
     }
 
-    // ✅ Vérifie le hash argon2 (user.password est présent grâce à addSelect)
     const ok = await argon2.verify(user.password, password);
     if (!ok) {
       throw new UnauthorizedException('Email ou mot de passe invalide');
     }
 
-    // ✅ On peut maintenant accéder aux champs sans erreur TS
     const payload = {
       sub: user.id,
       email: user.email,

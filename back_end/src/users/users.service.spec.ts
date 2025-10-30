@@ -134,8 +134,8 @@ describe('UsersService (unit)', () => {
 
     const res = await service.findByEmailWithPassword('a@a.com');
     expect(repo.createQueryBuilder).toHaveBeenCalledWith('u');
-    expect(res).not.toBeNull();            // ✅ vérification explicite
-    expect(res!.password).toBeDefined();   // ✅ évite l'erreur "possibly null"
+    expect(res).not.toBeNull();
+    expect(res!.password).toBeDefined();
   });
 
   it('deleteById -> supprime', async () => {

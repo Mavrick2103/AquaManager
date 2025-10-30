@@ -16,41 +16,37 @@ export class AquariumsService {
   findMine(userId: number) {
   return this.repo.find({
     where: { user: { id: userId } },
-    order: { createdAt: 'DESC' }, // ⬅️ tri ajouté
+    order: { createdAt: 'DESC' },
   });
 }
 
 
   async create(userId: number, dto: CreateAquariumDto) {
-    // facultatif : vérifier que l’utilisateur existe
     const user = await this.users.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
 
     const volumeL = Math.round((dto.lengthCm * dto.widthCm * dto.heightCm) / 1000);
 
-    // ⚠️ startDate -> Date (si entity attend Date)
     const startDate =
       (dto as any).startDate instanceof Date
         ? (dto as any).startDate
         : new Date(dto.startDate);
 
-    // ✅ construire un DeepPartial<Aquarium> explicite
     const partial: Partial<Aquarium> = {
       name: dto.name.trim(),
       lengthCm: dto.lengthCm,
       widthCm: dto.widthCm,
       heightCm: dto.heightCm,
-      volumeL,                      // <- propriété bien présente dans l’entity
+      volumeL,                      
       waterType: dto.waterType,
-      startDate,                    // <- Date et plus string
-      user: { id: userId } as any,  // <- DeepPartial<User> (évite User|null)
+      startDate,                  
+      user: { id: userId } as any,
     };
 
     const aquarium = this.repo.create(partial);
     return this.repo.save(aquarium);
   }
 
-  // ✅ lire un aquarium de l’utilisateur
   async findOne(userId: number, id: number) {
     const a = await this.repo.findOne({
       where: { id, user: { id: userId } },
@@ -60,7 +56,6 @@ export class AquariumsService {
     return a;
   }
 
-  // ✅ mise à jour (recalcule volume si dimensions changent)
   async update(userId: number, id: number, dto: Partial<CreateAquariumDto>) {
     const a = await this.findOne(userId, id);
 
@@ -80,7 +75,6 @@ export class AquariumsService {
     return this.repo.save(a);
   }
 
-  // ✅ suppression
   async remove(userId: number, id: number) {
     const a = await this.findOne(userId, id);
     await this.repo.remove(a);

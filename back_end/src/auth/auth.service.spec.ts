@@ -13,7 +13,6 @@ describe('AuthService (unit)', () => {
   let service: AuthService;
   let users: jest.Mocked<UsersService>;
 
-  // Mock JwtService compatible via cast
   const jwtMock = {
     signAsync: jest.fn().mockResolvedValue('jwt-token'),
   } as unknown as JwtService;
@@ -60,7 +59,6 @@ describe('AuthService (unit)', () => {
 
       const res = await service.login('a@a.com', 'secret');
 
-      // ✅ on vérifie uniquement le payload (un seul arg a été passé)
       expect((jwtMock.signAsync as unknown as jest.Mock)).toHaveBeenCalledWith(
         { sub: 1, email: 'a@a.com', role: 'user' }
       );

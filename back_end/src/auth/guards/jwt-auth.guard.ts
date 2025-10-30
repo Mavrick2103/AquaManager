@@ -1,10 +1,3 @@
-/**
- * jwt-auth.guard.ts
- * -------------------
- * Guard JWT global.
- * - Bloque tout par défaut
- * - Ignore si @Public() est présent
- */
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';

@@ -17,5 +17,5 @@ export class CreateAquariumDto {
   waterType: 'EAU_DOUCE' | 'EAU_DE_MER';
 
   @IsDateString()
-  startDate: string; // YYYY-MM-DD
+  startDate: string;
 }

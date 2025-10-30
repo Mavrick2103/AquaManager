@@ -63,7 +63,7 @@ describe('TaskService (unit)', () => {
     it('applique le filtre mois si fourni', async () => {
       const qb = mockQB([]);
       await service.findMine(1, '2025-10');
-      expect(qb.andWhere).toHaveBeenCalled(); // borne de date ajoutée
+      expect(qb.andWhere).toHaveBeenCalled();
     });
   });
 
