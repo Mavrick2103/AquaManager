@@ -39,7 +39,7 @@ describe('WaterMeasurementService (unit)', () => {
 
   describe('listForAquarium', () => {
     it('lève 404 si aquarium inexistant', async () => {
-      aquas.exist.mockResolvedValue(false as any); // <- listForAquarium utilise exist()
+      aquas.exist.mockResolvedValue(false as any);
       await expect(service.listForAquarium(123)).rejects.toBeInstanceOf(NotFoundException);
     });
 

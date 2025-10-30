@@ -1,11 +1,3 @@
-/**
- * jwt.strategy.ts
- * -----------------
- * Déclare la stratégie JWT pour Passport.
- * - Extrait le token de l’en-tête Authorization: Bearer <token>
- * - Vérifie la signature avec le secret .env
- * - Ajoute { userId, email, role } dans req.user si valide
- */
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';

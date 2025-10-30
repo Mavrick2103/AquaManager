@@ -25,7 +25,7 @@ import { TaskModule } from './tasks/task.module';
     }),
     TypeOrmModule.forRoot(typeOrmConfig()),
     UsersModule,
-    AquariumsModule, // ✅
+    AquariumsModule,
     AuthModule, WaterMeasurementModule, TaskModule,
   ],
 })

@@ -1,11 +1,3 @@
-/**
- * AuthService
- * -------------
- * - login -> POST /auth/login, stocke le token, fetchMe, redirect '/'
- * - fetchMe -> GET /users/me (avec Authorization: Bearer <token>)
- * - register -> POST /auth/register
- * - logout -> clear token + redirect '/login'
- */
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -21,7 +13,6 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  // --- helpers ---
   get token(): string | null {
     return localStorage.getItem(this.tokenKey);
   }
@@ -41,17 +32,15 @@ export class AuthService {
   const res = await this.http.post<{ access_token: string }>(
     `${environment.apiUrl}/auth/login`,
     { email, password }
-  ).toPromise(); // ou firstValueFrom(...)
+  ).toPromise();
 
   localStorage.setItem(this.tokenKey, res!.access_token);
-  await this.fetchMe();
+  await this.fetchMe();// voir pour changer le stockage localStorage/ httpOnly ou variable javascript
 
-  // ✅ rediriger vers Home (pas /profile)
   return this.router.navigateByUrl('/');
 }
 
 
-  /** Inscription utilisateur */
   async register(payload: { fullName: string; email: string; password: string }) {
     const res = await firstValueFrom(
       this.http.post<{ message: string }>(
@@ -59,10 +48,9 @@ export class AuthService {
         payload
       )
     );
-    return res; // message de succès éventuel
+    return res;
   }
 
-  /** Récupère l'utilisateur courant */
   async fetchMe() {
     const me = await firstValueFrom(
       this.http.get<Me>(`${environment.apiUrl}/users/me`, {
