@@ -4,7 +4,7 @@ import * as argon2 from 'argon2';
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 
-type JwtPayload = { sub: number; email: string; role: string };
+type JwtPayload = { sub: number; role: string };
 
 @Injectable()
 export class AuthService {
@@ -15,19 +15,14 @@ export class AuthService {
 
   async login(email: string, password: string) {
     const user = await this.users.findByEmailWithPassword(email);
-    if (!user) {
-      throw new UnauthorizedException('Email ou mot de passe invalide');
-    }
+    if (!user) throw new UnauthorizedException('Email ou mot de passe invalide');
 
     const ok = await argon2.verify(user.password, password);
-    if (!ok) {
-      throw new UnauthorizedException('Email ou mot de passe invalide');
-    }
+    if (!ok) throw new UnauthorizedException('Email ou mot de passe invalide');
 
     const payload: JwtPayload = {
       sub: user.id,
-      email: user.email,// ne pas mettre
-      role: user.role ?? 'user',
+      role: (user.role ?? 'USER').toUpperCase(),
     };
 
     const access = await this.signAccess(payload);

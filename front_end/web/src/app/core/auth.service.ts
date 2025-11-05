@@ -8,62 +8,72 @@ export type Me = { userId: number; email: string; role: 'USER' | 'ADMIN' };
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private tokenKey = 'token';
+  private accessToken: string | null = null; // token en mémoire
   me: Me | null = null;
 
   constructor(private http: HttpClient, private router: Router) {}
 
   get token(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    return this.accessToken;
   }
-  setToken(token: string) {
-    localStorage.setItem(this.tokenKey, token);
-  }
+
   isAuthenticated(): boolean {
-    return !!this.token;
+    return !!this.accessToken;
   }
+
   private get authHeaders(): HttpHeaders {
     return new HttpHeaders({
-      Authorization: `Bearer ${this.token ?? ''}`,
+      Authorization: `Bearer ${this.accessToken ?? ''}`,
     });
   }
 
   async login(email: string, password: string) {
-  const res = await this.http.post<{ access_token: string }>(
-    `${environment.apiUrl}/auth/login`,
-    { email, password }
-  ).toPromise();
+    const res = await firstValueFrom(
+      this.http.post<{ access_token: string }>(
+        `${environment.apiUrl}/auth/login`,
+        { email, password },
+        { withCredentials: true } // pose le cookie httpOnly
+      )
+    );
+    this.accessToken = res.access_token;
+    await this.fetchMe();
+    return this.router.navigateByUrl('/');
+  }
 
-  localStorage.setItem(this.tokenKey, res!.access_token);
-  await this.fetchMe();// voir pour changer le stockage localStorage/ httpOnly ou variable javascript
-
-  return this.router.navigateByUrl('/');
-}
-
+  async refreshAccessToken(): Promise<string | null> {
+    const res = await firstValueFrom(
+      this.http.post<{ access_token: string | null }>(
+        `${environment.apiUrl}/auth/refresh`,
+        {},
+        { withCredentials: true } // envoie le cookie httpOnly
+      )
+    );
+    this.accessToken = res.access_token ?? null;
+    return this.accessToken;
+  }
 
   async register(payload: { fullName: string; email: string; password: string }) {
-    const res = await firstValueFrom(
+    return await firstValueFrom(
       this.http.post<{ message: string }>(
         `${environment.apiUrl}/auth/register`,
         payload
       )
     );
-    return res;
   }
 
   async fetchMe() {
     const me = await firstValueFrom(
-      this.http.get<Me>(`${environment.apiUrl}/users/me`, {
-        headers: this.authHeaders,
-      })
+      this.http.get<Me>(`${environment.apiUrl}/users/me`, { headers: this.authHeaders })
     );
     this.me = me;
     return this.me;
   }
 
   logout() {
-    localStorage.removeItem(this.tokenKey);
+    this.accessToken = null;
     this.me = null;
+    this.http.post(`${environment.apiUrl}/auth/logout`, {}, { withCredentials: true })
+      .subscribe({ next: () => {}, error: () => {} });
     this.router.navigateByUrl('/login');
   }
 }

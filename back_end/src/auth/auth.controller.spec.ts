@@ -67,15 +67,23 @@ describe('AuthController', () => {
       const req = { cookies: { refresh_token: 'old-refresh' } } as any;
       const res = makeRes();
 
-      service.verifyRefresh.mockResolvedValue({ sub: 1, email: 'a@a.com', role: 'user' });
+      // Payload minimal et permissif : pas d'email, rôle potentiellement en MAJ
+      service.verifyRefresh.mockResolvedValue({ sub: 1, role: 'USER' } as any);
       service.signAccess.mockResolvedValue('new-access');
       service.signRefresh.mockResolvedValue('new-refresh');
 
       const out = await controller.refresh(req, res);
 
       expect(service.verifyRefresh).toHaveBeenCalledWith('old-refresh');
-      expect(service.signAccess).toHaveBeenCalledWith({ sub: 1, email: 'a@a.com', role: 'user' });
-      expect(service.signRefresh).toHaveBeenCalledWith({ sub: 1, email: 'a@a.com', role: 'user' });
+
+      // On n'impose plus la présence d'email et on tolère USER/user
+      expect(service.signAccess).toHaveBeenCalledWith(
+        expect.objectContaining({ sub: 1, role: expect.stringMatching(/^user$/i) }),
+      );
+      expect(service.signRefresh).toHaveBeenCalledWith(
+        expect.objectContaining({ sub: 1, role: expect.stringMatching(/^user$/i) }),
+      );
+
       expect(res.cookie).toHaveBeenCalledWith(
         'refresh_token',
         'new-refresh',

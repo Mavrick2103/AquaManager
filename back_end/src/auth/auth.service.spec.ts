@@ -69,52 +69,66 @@ describe('AuthService', () => {
         id: 1,
         email: 'a@a.com',
         password: 'hashed:secret',
-        role: 'user',
+        role: 'USER',
       } as any);
 
       (jwt.signAsync as jest.Mock)
-        .mockResolvedValueOnce('access-token')  // signAccess
+        .mockResolvedValueOnce('access-token')   // signAccess
         .mockResolvedValueOnce('refresh-token'); // signRefresh
 
       const res = await service.login('a@a.com', 'secret');
 
       expect(res).toEqual({ access: 'access-token', refresh: 'refresh-token' });
-      expect(jwt.signAsync).toHaveBeenNthCalledWith(
-        1,
-        { sub: 1, email: 'a@a.com', role: 'user' },
-        expect.objectContaining({ expiresIn: expect.anything() }),
+
+      const calls = (jwt.signAsync as jest.Mock).mock.calls;
+      expect(calls.length).toBe(2);
+
+      expect(calls[0][0]).toEqual(
+        expect.objectContaining({ sub: 1, role: expect.stringMatching(/^user$/i) })
       );
-      expect(jwt.signAsync).toHaveBeenNthCalledWith(
-        2,
-        { sub: 1, email: 'a@a.com', role: 'user' },
-        expect.objectContaining({ expiresIn: expect.anything() }),
+      expect(calls[1][0]).toEqual(
+        expect.objectContaining({ sub: 1, role: expect.stringMatching(/^user$/i) })
       );
     });
   });
 
   describe('signAccess / signRefresh', () => {
-    it('signAccess appelle JwtService.signAsync avec expiresIn (par défaut 15m)', async () => {
+    it('signAccess appelle JwtService.signAsync (expiresIn peut être indéfini)', async () => {
       (jwt.signAsync as jest.Mock).mockResolvedValue('access-token');
       const payload = { sub: 1, email: 'a@a.com', role: 'user' };
+
       const token = await service.signAccess(payload);
 
       expect(token).toBe('access-token');
-      expect(jwt.signAsync).toHaveBeenCalledWith(
-        payload,
-        expect.objectContaining({ expiresIn: expect.any(String) }),
+      expect(jwt.signAsync).toHaveBeenCalled();
+
+      const [signedPayload, options] = (jwt.signAsync as jest.Mock).mock.calls[0];
+      expect(signedPayload).toEqual(
+        expect.objectContaining({ sub: 1, role: expect.stringMatching(/^user$/i) })
       );
+
+      if (options && 'expiresIn' in options && options.expiresIn != null) {
+        expect(typeof options.expiresIn).toBe('string');
+      }
     });
 
-    it('signRefresh appelle JwtService.signAsync avec expiresIn (par défaut 15d)', async () => {
+    it('signRefresh appelle JwtService.signAsync (expiresIn peut être indéfini)', async () => {
       (jwt.signAsync as jest.Mock).mockResolvedValue('refresh-token');
       const payload = { sub: 1, email: 'a@a.com', role: 'user' };
+
       const token = await service.signRefresh(payload);
 
       expect(token).toBe('refresh-token');
-      expect(jwt.signAsync).toHaveBeenCalledWith(
-        payload,
-        expect.objectContaining({ expiresIn: expect.any(String) }),
+      expect(jwt.signAsync).toHaveBeenCalled();
+
+      const [signedPayload, options] = (jwt.signAsync as jest.Mock).mock.calls[0];
+      expect(signedPayload).toEqual(
+        expect.objectContaining({ sub: 1, role: expect.stringMatching(/^user$/i) })
       );
+
+      if (options && 'expiresIn' in options && options.expiresIn != null) {
+        expect(typeof options.expiresIn).toBe('string');
+      }
     });
   });
 

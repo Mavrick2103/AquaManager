@@ -25,9 +25,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { access, refresh } = await this.auth.login(body.email, body.password);
-
     res.cookie('refresh_token', refresh, REFRESH_COOKIE_OPTIONS);
-
     return { access_token: access };
   }
 
@@ -52,13 +50,11 @@ export class AuthController {
 
     const access = await this.auth.signAccess({
       sub: payload.sub,
-      email: payload.email,
       role: payload.role,
     });
 
     const newRefresh = await this.auth.signRefresh({
       sub: payload.sub,
-      email: payload.email,
       role: payload.role,
     });
     res.cookie('refresh_token', newRefresh, REFRESH_COOKIE_OPTIONS);
@@ -66,11 +62,12 @@ export class AuthController {
     return { access_token: access };
   }
 
+  @Public()
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refresh_token', { path: REFRESH_COOKIE_OPTIONS.path });
     return { message: 'ok' };
-  }//a faire revoqué un token 
+  }
 
   @Public()
   @Post('register')
