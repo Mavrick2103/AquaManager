@@ -11,11 +11,9 @@ import { AuthService } from './auth.service';
 
 function isAuthEndpoint(url: string): boolean {
   try {
-    // Gère URL absolue et relative (base: window.location.origin)
     const u = new URL(url, window.location.origin);
     return /^\/?api\/auth\/(refresh|login|logout)(\/|$)/.test(u.pathname);
   } catch {
-    // Fallback si URL bizarre
     return url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/auth/logout');
   }
 }
@@ -27,10 +25,8 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const isAuth = isAuthEndpoint(req.url);
 
-    // Ne pas écraser un Authorization déjà présent (rare mais possible)
     const alreadyHasAuth = !!req.headers.get('Authorization');
 
-    // On n’ajoute PAS le Bearer pour les endpoints d’auth (login/refresh/logout)
     const token = !isAuth && !alreadyHasAuth ? this.auth.token : null;
 
     const authReq = token
@@ -39,14 +35,10 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return next.handle(authReq).pipe(
       catchError((err: HttpErrorResponse) => {
-        // On ne tente pas de refresh si:
-        // - ce n’est pas un 401
-        // - c’est un endpoint d’auth (sinon boucle)
         if (err.status !== 401 || isAuth) {
           return throwError(() => err);
         }
 
-        // 401 → essayer refresh (cookie httpOnly) puis rejouer 1x
         return from(this.auth.refreshAccessToken()).pipe(
           switchMap((newToken) => {
             if (!newToken) {

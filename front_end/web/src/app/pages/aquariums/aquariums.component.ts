@@ -19,8 +19,6 @@ import { AquariumDialogComponent } from './dialog/aquarium-dialog.component';
   imports: [
     CommonModule,
     RouterLink,
-
-    // Angular Material utilisés dans le template
     MatDialogModule,
     MatCardModule,
     MatChipsModule,
@@ -57,12 +55,10 @@ export class AquariumsComponent implements OnInit {
     ref.afterClosed().subscribe(ok => { if (ok) this.load(); });
   }
 
-  // Navigation vers la fiche
   goTo(a: Aquarium) {
     this.router.navigate(['/aquariums', a.id]);
   }
 
-  // Utilisé dans le template (si tu préfères, remplace par a.volumeL)
   litersOf(a: Aquarium): number {
     return Math.round((a.lengthCm * a.widthCm * a.heightCm) / 1000);
   }

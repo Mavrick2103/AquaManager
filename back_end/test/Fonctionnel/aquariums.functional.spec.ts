@@ -15,7 +15,6 @@ describe('Aquariums (tests fonctionnels)', () => {
   let repo: jest.Mocked<Repository<Aquarium>>;
   let usersRepo: jest.Mocked<Repository<User>>;
 
-  // Simulation d’un utilisateur authentifié
   const req = { user: { userId: 1 } } as any;
 
   beforeEach(async () => {

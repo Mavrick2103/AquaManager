@@ -34,17 +34,15 @@ export class TaskDetailDialogComponent implements OnInit {
   private tasksApi = inject(TasksService);
   private aquariumsApi = inject(AquariumsService);
 
-  /** Modèle éditable lié au formulaire */
   editing: {
     id: number;
     title: string;
     description?: string | null;
-    dueAt: string; // format pour <input type="datetime-local"> => "YYYY-MM-DDTHH:mm"
+    dueAt: string;
     type: TaskType;
     aquarium?: { id: number; name?: string };
   };
 
-  /** Liste des bacs pour le select + sélection courante */
   aquariums: Aquarium[] = [];
   selectedAquariumId: number | null = null;
 
@@ -62,7 +60,6 @@ export class TaskDetailDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // listMine() renvoie un Observable => on s’abonne
     this.aquariumsApi.listMine().subscribe({
       next: (list) => {
         this.aquariums = list || [];
@@ -76,7 +73,6 @@ export class TaskDetailDialogComponent implements OnInit {
     });
   }
 
-  /** ISO -> "YYYY-MM-DDTHH:mm" pour l’input datetime-local */
   private toLocalInputValue(iso: string): string {
     if (iso && iso.length === 16 && iso.includes('T')) return iso;
     const d = new Date(iso);
@@ -90,7 +86,6 @@ export class TaskDetailDialogComponent implements OnInit {
     return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
   }
 
-  /** "YYYY-MM-DDTHH:mm" (local) -> ISO UTC (conforme @IsDateString) */
   private toIsoUtc(inputLocal: string): string {
     const d = new Date(inputLocal);
     return d.toISOString();
@@ -112,7 +107,7 @@ export class TaskDetailDialogComponent implements OnInit {
     };
 
     this.tasksApi.update(this.editing.id, payload).subscribe({
-      next: (res) => this.ref.close(res),   // renvoie la tâche mise à jour au parent
+      next: (res) => this.ref.close(res),
       error: (err: unknown) => {
         console.error(err);
         alert('Erreur lors de la mise à jour. Vérifie la date/heure et l’aquarium.');
@@ -124,7 +119,6 @@ export class TaskDetailDialogComponent implements OnInit {
     const ok = confirm(`Supprimer la tâche « ${this.editing.title} » ?`);
     if (!ok) return;
 
-    // ✅ Utilise delete(...) car ton service n’a pas remove(...)
     this.tasksApi.delete(this.editing.id).subscribe({
       next: () => this.ref.close({ deleted: true }),
       error: (err: unknown) => {

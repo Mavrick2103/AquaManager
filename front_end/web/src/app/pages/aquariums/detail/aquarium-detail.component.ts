@@ -91,7 +91,6 @@ export class AquariumDetailComponent implements OnInit {
     startDate: ['']
   });
 
-  // ==== Historique des mesures (intégré) ====
   measurements: WaterMeasurement[] = [];
 
   limitOptions = [5, 10, 20, 0];
@@ -131,7 +130,6 @@ export class AquariumDetailComponent implements OnInit {
     }
   }
 
-  // ==== Calculs dérivés ====
   get liters(): number {
     const v = this.form.value;
     const L = Number(v.lengthCm) || 0;
@@ -144,7 +142,6 @@ export class AquariumDetailComponent implements OnInit {
     return (this.form?.value?.waterType ?? 'EAU_DOUCE') as WaterType;
   }
 
-  // ==== Persistance aquarium ====
   async save() {
     if (this.form.invalid) return;
     this.saving = true;
@@ -189,7 +186,6 @@ export class AquariumDetailComponent implements OnInit {
     });
   }
 
-  // ====== Gestion affichage limité (liste déroulante) ======
   applyLimit() {
     if (this.selectedLimit === 0) {
       this.displayedMeasurements = this.measurements;
@@ -198,7 +194,6 @@ export class AquariumDetailComponent implements OnInit {
     }
   }
 
-  // ==== Historique: chargement & suppression ====
   async loadMeasurements() {
     try {
       const url = `${environment.apiUrl}/aquariums/${this.id}/measurements`;

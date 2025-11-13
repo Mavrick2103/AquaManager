@@ -15,7 +15,6 @@ export class SettingsService {
   async ensure(userId: number) {
     let s = await this.repo.findOne({ where: { user: { id: userId } }, relations: { user: true } });
     if (!s) {
-      // valeurs par défaut alignées avec le front
       s = this.repo.create({
         user: { id: userId } as User,
         theme: 'system',

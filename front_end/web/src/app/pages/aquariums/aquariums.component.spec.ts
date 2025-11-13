@@ -18,13 +18,12 @@ describe('AquariumsComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [
-        AquariumsComponent,        // standalone
-        RouterTestingModule,       // fournit le router + ActivatedRoute de base
+        AquariumsComponent,
+        RouterTestingModule,
       ],
       providers: [
         { provide: AquariumsService, useValue: aquariumsServiceSpy },
         { provide: MatDialog, useValue: dialogSpy },
-        // stub explicite d’ActivatedRoute pour être sûr
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: new Map() } } },
       ],
     }).compileComponents();

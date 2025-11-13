@@ -8,7 +8,6 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { Task, TasksService } from '../../../core/tasks.service';
-// ✅ chemin correct (frère du dossier day-tasks-dialog)
 import { TaskDetailDialogComponent } from '../day-tasks-dialog/task-detail-dialog/task-detail-dialog.component';
 
 type TaskType = 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
@@ -38,7 +37,6 @@ export class DayTasksDialogComponent {
     public data: { date: Date; tasks: Task[] }
   ) {}
 
-  /** Liste triée par heure croissante (copie défensive) */
   get tasks(): Task[] {
     return [...(this.data?.tasks ?? [])].sort((a, b) => a.dueAt.localeCompare(b.dueAt));
   }
@@ -47,7 +45,6 @@ export class DayTasksDialogComponent {
     this.ref.close(changed);
   }
 
-  /** ✅ Clic sur une tâche -> ouvre le détail (édition/suppression possibles) */
   openDetails(t: Task) {
     this.dialog
       .open(TaskDetailDialogComponent, {
@@ -70,13 +67,11 @@ export class DayTasksDialogComponent {
       });
   }
 
-  /** Remplace la tâche localement */
   private replaceLocal(updated: Task) {
     const idx = this.data.tasks.findIndex((x) => x.id === updated.id);
     if (idx >= 0) this.data.tasks.splice(idx, 1, updated);
   }
 
-  /** Retire la tâche localement */
   private removeLocal(id: number) {
     const idx = this.data.tasks.findIndex((x) => x.id === id);
     if (idx >= 0) this.data.tasks.splice(idx, 1);

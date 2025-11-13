@@ -14,7 +14,6 @@ import { TaskModule } from './tasks/task.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // Accepte d'autres variables non listées et affiche toutes les erreurs d'un coup
       validationOptions: { allowUnknown: true, abortEarly: false },
       validationSchema: Joi.object({
         NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
@@ -26,16 +25,14 @@ import { TaskModule } from './tasks/task.module';
         DB_NAME: Joi.string().required(),
 
         JWT_SECRET: Joi.string().min(16).required(),
-        JWT_EXPIRES: Joi.string().default('1h'),     // ex: '15m', '1h'
-        JWT_REFRESH_EXPIRES: Joi.string().default('15d'), // ex: '7d', '15d'
+        JWT_EXPIRES: Joi.string().default('1h'),
+        JWT_REFRESH_EXPIRES: Joi.string().default('15d'),
 
         PORT: Joi.number().integer().min(1).default(3000),
       }),
     }),
 
     TypeOrmModule.forRoot(typeOrmConfig()),
-
-    // Modules applicatifs
     UsersModule,
     AquariumsModule,
     AuthModule,

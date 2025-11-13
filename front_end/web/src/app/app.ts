@@ -10,12 +10,10 @@ import { Router, RouterOutlet } from '@angular/router';
 export class App {
   router = inject(Router);
 
-  // Routes où l'on NE veut PAS de header
   private authRoutes = ['/login', '/register', '/reset-password'];
 
-  // true => cacher le header
   get hideChrome() {
-    const url = this.router.url.split('?')[0]; // sans query params
+    const url = this.router.url.split('?')[0];
     return this.authRoutes.some(p => url.startsWith(p));
   }
 }

@@ -1,16 +1,13 @@
 <div class="login-wrap">
   <div class="hero">
-    <!-- Colonne gauche : logo -->
     <div class="side">
       <img src="/Logo_AquaManger.png" alt="AquaManager" class="side-logo" />
     </div>
 
-    <!-- Colonne droite : carte connexion -->
     <mat-card class="login-card" role="form" aria-labelledby="loginTitle">
       <h2 id="loginTitle">Connexion</h2>
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <!-- Email -->
         <mat-form-field appearance="outline" class="field">
           <mat-label>Adresse e-mail</mat-label>
           <input matInput type="email" formControlName="email" autocomplete="email" />
@@ -18,7 +15,6 @@
           <mat-error *ngIf="emailErr()">{{ emailErr() }}</mat-error>
         </mat-form-field>
 
-        <!-- Mot de passe -->
         <mat-form-field appearance="outline" class="field">
           <mat-label>Mot de passe</mat-label>
           <input matInput [type]="hide() ? 'password' : 'text'"
@@ -31,26 +27,22 @@
           <mat-error *ngIf="passwordErr()">{{ passwordErr() }}</mat-error>
         </mat-form-field>
 
-        <!-- Options -->
         <div class="row">
           <mat-checkbox formControlName="remember">Se souvenir de moi</mat-checkbox>
           <a routerLink="/auth/mot-de-passe-oublie" class="link">Mot de passe oublié ?</a>
         </div>
 
-        <!-- Bouton principal -->
         <button class="btn-primary" mat-raised-button type="submit" [disabled]="loading()">
           <mat-icon>login</mat-icon>
           <span *ngIf="!loading()">Se connecter</span>
           <mat-progress-spinner *ngIf="loading()" diameter="18" mode="indeterminate"></mat-progress-spinner>
         </button>
 
-        <!-- Lien inscription -->
         <p class="signup">
           Pas de compte ?
           <a routerLink="/register" class="link">Créer un compte</a>
         </p>
 
-        <!-- Erreurs -->
         <p class="error" *ngIf="errorMsg()">
           <mat-icon>error</mat-icon>
           {{ errorMsg() }}

@@ -46,7 +46,6 @@ export class ProfileComponent implements OnInit {
   form!: FormGroup;
   loading = false;
 
-  // Préférences locales
   prefs = {
     theme: 'system' as 'system' | 'light' | 'dark',
     tempUnit: 'C' as 'C' | 'F',
@@ -56,14 +55,12 @@ export class ProfileComponent implements OnInit {
   private orig = { fullName: '', email: '' };
 
   async ngOnInit() {
-    // SEO
     this.title.setTitle('Paramètres & Profil • AquaManager');
     this.meta.updateTag({
       name: 'description',
       content: 'Gérez votre profil, vos préférences d’affichage, notifications et exportez vos données sur AquaManager.',
     });
 
-    // Initialisation du form (évite les soucis de template)
     this.form = this.fb.group({
       fullName: ['', [Validators.required, Validators.maxLength(80)]],
       email:    ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
@@ -71,27 +68,22 @@ export class ProfileComponent implements OnInit {
       newPassword:     [''],
     });
 
-    // Récupération de l'utilisateur
     this.me = await this.users.getMe();
 
-    // fullName depuis l’API (peut être vide si compte ancien)
     const rawFullName = (this.me.fullName ?? '').trim();
 
     const fullName = rawFullName.length > 0
       ? rawFullName
       : (this.me.email?.split('@')[0] ?? '');
 
-    // On injecte les valeurs dans le form
     this.form.patchValue({
       fullName,
       email: this.me.email ?? '',
     });
 
-    // Pour la détection de changements
     this.orig.fullName = fullName;
     this.orig.email    = this.me.email ?? '';
 
-    // Préférences locales
     const raw = localStorage.getItem('aquamanager:prefs');
     if (raw) {
       try {
@@ -100,7 +92,6 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  // Helpers rôle
   get isAdmin(): boolean {
     const r = (this.me?.role || '').toLowerCase();
     return r === 'admin' || r === 'superadmin';

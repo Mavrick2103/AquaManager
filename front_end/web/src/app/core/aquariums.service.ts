@@ -12,9 +12,9 @@ export interface Aquarium {
   lengthCm: number;
   widthCm: number;
   heightCm: number;
-  volumeL: number;              // fourni par le back (sinon calcule côté front)
+  volumeL: number;
   waterType: WaterType;
-  startDate: string;            // yyyy-mm-dd
+  startDate: string;
   createdAt: string;
 }
 
@@ -24,7 +24,7 @@ export interface CreateAquariumDto {
   widthCm: number;
   heightCm: number;
   waterType: WaterType;
-  startDate: string;            // yyyy-mm-dd
+  startDate: string;
 }
 
 @Injectable({ providedIn: 'root' })

@@ -29,7 +29,6 @@ export class UserService {
   }
 
   updateMe(dto: UpdateMeDto) {
-    // Ton back accepte PUT partiel -> on envoie juste le champ modifié
     return firstValueFrom(this.http.put<UserMe>(`${this.base}/me`, dto));
   }
 

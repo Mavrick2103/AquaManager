@@ -60,7 +60,6 @@ export class CalendarComponent {
   nextMonth() { this.currentMonth.set(addMonths(this.currentMonth(), 1)); }
   thisMonth() { this.currentMonth.set(new Date(this.today.getFullYear(), this.today.getMonth(), 1)); }
 
-  /** Bouton de la toolbar (ouvre ton ancien créateur complet à aujourd’hui) */
   openCreateQuick(): void {
     this.dialog.open(TaskDialogComponent, {
       width: '420px',
@@ -71,7 +70,6 @@ export class CalendarComponent {
     });
   }
 
-  /** Clic sur une cellule -> ouvre la fenêtre des tâches du jour */
   openDayTasks(day: Date) {
     const dayTasks = this.dayTasks(day);
 
@@ -84,7 +82,6 @@ export class CalendarComponent {
     });
   }
 
-  /** (Optionnel) Garde ta méthode d’ouverture du créateur complet pour un jour donné */
   openCreate(day: Date) {
     this.dialog.open(TaskDialogComponent, {
       width: '420px',

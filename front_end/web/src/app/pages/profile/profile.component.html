@@ -1,4 +1,3 @@
-<!-- Marque cliquable (logo optimisé) -->
 <a class="brand" routerLink="/" aria-label="Retour à l’accueil">
   <img
     src="/Logo_AquaManger.png"
@@ -11,7 +10,6 @@
   />
 </a>
 
-<!-- Conteneur principal compact -->
 <mat-card class="settings-card" role="main">
   <header class="settings-header" aria-labelledby="page-title">
     <div class="titles">
@@ -20,7 +18,6 @@
     </div>
 
     <div class="quick-actions">
-      <!-- Badge rôle -->
       <span class="role-pill" *ngIf="isAdmin">Admin</span>
       <span class="role-pill -user" *ngIf="!isAdmin">User</span>
 
@@ -34,7 +31,6 @@
   <mat-divider class="header-divider"></mat-divider>
 
   <mat-tab-group class="tabs-compact" animationDuration="150ms">
-    <!-- Onglet Profil -->
     <mat-tab>
       <ng-template mat-tab-label>
         <mat-icon>person</mat-icon><span>Profil</span>
@@ -46,7 +42,6 @@
             Modifiez vos informations puis cliquez sur Enregistrer.
           </p>
 
-          <!-- Nom complet -->
           <div class="row">
             <label class="label" for="fullName">
               <mat-icon>badge</mat-icon> Nom complet
@@ -57,7 +52,6 @@
             </mat-form-field>
           </div>
 
-          <!-- Email -->
           <div class="row">
             <label class="label" for="email">
               <mat-icon>mail</mat-icon> Email
@@ -68,7 +62,6 @@
             </mat-form-field>
           </div>
 
-          <!-- Mots de passe -->
           <div class="row multi">
             <div class="label">
               <mat-icon>password</mat-icon> Mot de passe
@@ -87,7 +80,6 @@
             </div>
           </div>
 
-          <!-- Actions -->
           <div class="actions">
             <button mat-button type="button" (click)="reset()" [disabled]="loading">
               <mat-icon>refresh</mat-icon> Annuler
@@ -115,7 +107,6 @@
       </section>
     </mat-tab>
 
-    <!-- Onglet Préférences -->
     <mat-tab>
       <ng-template mat-tab-label>
         <mat-icon>tune</mat-icon><span>Préférences</span>
@@ -166,7 +157,6 @@
       </section>
     </mat-tab>
 
-    <!-- Onglet Données -->
     <mat-tab>
       <ng-template mat-tab-label>
         <mat-icon>database</mat-icon><span>Données</span>
@@ -183,7 +173,6 @@
       </section>
     </mat-tab>
 
-    <!-- Onglet Admin (visible uniquement pour les admins) -->
     <mat-tab *ngIf="isAdmin">
       <ng-template mat-tab-label>
         <mat-icon>admin_panel_settings</mat-icon><span>Admin</span>
@@ -191,7 +180,6 @@
 
       <section class="tab-pane">
         <div class="admin-grid">
-          <!-- Utilisateurs -->
           <mat-card class="admin-card">
             <div class="admin-head">
               <mat-icon>group</mat-icon>
@@ -206,7 +194,6 @@
             </div>
           </mat-card>
 
-          <!-- Aquariums -->
           <mat-card class="admin-card">
             <div class="admin-head">
               <mat-icon>inventory_2</mat-icon>

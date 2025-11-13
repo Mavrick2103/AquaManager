@@ -1,4 +1,3 @@
-/* ---------- Fond & grille générale (hero aquatique) ---------- */
 .register-wrap {
   min-height: 100dvh;
   display: grid;
@@ -13,7 +12,7 @@
 .hero {
   width: min(1120px, 100%);
   display: grid;
-  grid-template-columns: 420px 1fr; /* Gauche: logo — Droite: carte */
+  grid-template-columns: 420px 1fr;
   gap: clamp(22px, 4vw, 48px);
   align-items: center;
 
@@ -22,14 +21,13 @@
   }
 }
 
-/* ---------- Colonne gauche (logo) ---------- */
 .side {
   display: grid;
   place-items: center;
   min-height: 320px;
 
   @media (max-width: 920px) {
-    order: -1;            /* passe le logo au-dessus sur mobile */
+    order: -1;
     min-height: 0;
   }
 }
@@ -39,12 +37,11 @@
   height: auto;
   display: block;
   border-radius: 26px;
-  background: #fff;              /* lisible sur tous fonds */
+  background: #fff;
   box-shadow: var(--shadow-md);
   object-fit: contain;
 }
 
-/* ---------- Carte Material ---------- */
 .register-card {
   padding: 26px 24px 20px;
   border-radius: var(--radius-xl);
@@ -67,13 +64,11 @@
   }
 }
 
-/* ---------- Champs & Material fine-tuning ---------- */
 .field {
   width: 100%;
   margin-top: 14px;
 }
 
-/* Couleurs focus / contour des champs */
 .mat-mdc-form-field {
   --mdc-outlined-text-field-caret-color: var(--am-aqua);
   --mdc-outlined-text-field-focus-outline-color: var(--am-aqua);
@@ -85,7 +80,6 @@
   caret-color: var(--am-aqua);
 }
 
-/* ---------- Barre de robustesse du mot de passe ---------- */
 .strength {
   display: flex;
   align-items: center;
@@ -125,7 +119,6 @@
   }
 }
 
-/* ---------- Ligne options (CGU + lien connexion) ---------- */
 .row {
   margin: 10px 0 4px;
   display: flex;
@@ -143,7 +136,6 @@
   }
 }
 
-/* ---------- CTA principal ---------- */
 .btn-primary {
   width: 100%;
   margin-top: 14px;
@@ -163,7 +155,6 @@
   &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 }
 
-/* ---------- Aide & erreurs ---------- */
 .helper {
   margin-top: 8px;
   color: var(--muted);
@@ -178,7 +169,6 @@
   gap: 6px;
 }
 
-/* ---------- Accessibilité : réduit les animations si demandé ---------- */
 @media (prefers-reduced-motion: reduce) {
   .register-wrap {
     background: linear-gradient(180deg, #f7fcff 0%, #f8fff9 100%);

@@ -18,7 +18,6 @@ describe('RegisterComponent', () => {
       imports: [RegisterComponent],
       providers: [
         { provide: AuthService, useValue: authSpy },
-        // 👇 fournit un vrai router minimal pour routerLink / ActivatedRoute
         provideRouter([]),
       ],
     }).compileComponents();

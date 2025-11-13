@@ -11,11 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
-/* RxJS */
 import { firstValueFrom } from 'rxjs';
-
-/* Service d'auth */
 import { AuthService } from '../../core/auth.service';
 
 @Component({
@@ -72,10 +68,8 @@ export class LoginComponent {
     const { email, password } = this.form.value;
     if (!email || !password) return;
 
-    // Appel AuthService: renvoie une Promise<boolean> (navigation)
     await this.auth.login(email, password);
 
-    // Rien d'autre à faire ici : AuthService s'occupe de setToken, fetchMe et redirection
   } catch (e: any) {
     this.errorMsg.set(e?.error?.message ?? 'Échec de la connexion');
   } finally {

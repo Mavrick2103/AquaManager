@@ -39,13 +39,12 @@ export class AquariumDialogComponent {
     startDate: [new Date(), [Validators.required]],
   });
 
-  // Recalcul live
   liters = computed(() => {
     const v = this.form.value;
     const L = Number(v.lengthCm) || 0;
     const W = Number(v.widthCm) || 0;
     const H = Number(v.heightCm) || 0;
-    return Math.round((L * W * H) / 1000); // cm³ -> L
+    return Math.round((L * W * H) / 1000);
   });
 
   submit() {
@@ -59,12 +58,12 @@ export class AquariumDialogComponent {
       widthCm: Number(v.widthCm),
       heightCm: Number(v.heightCm),
       waterType: v.waterType as WaterType,
-      startDate: new Date(v.startDate as Date).toISOString().slice(0, 10), // yyyy-mm-dd
+      startDate: new Date(v.startDate as Date).toISOString().slice(0, 10),
     };
 
     this.api.create(dto).subscribe({
-      next: () => { this.submitting.set(false); this.ref.close(true); }, // ✅ indique succès
-      error: () => { this.submitting.set(false); /* affiche une erreur si tu veux */ },
+      next: () => { this.submitting.set(false); this.ref.close(true); },
+      error: () => { this.submitting.set(false); },
     });
   }
 

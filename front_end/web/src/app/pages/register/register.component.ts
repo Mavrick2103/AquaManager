@@ -35,13 +35,11 @@ export class RegisterComponent {
   private router = inject(Router);
   private authService = inject(AuthService);
 
-  // UI state
   hidePwd = signal(true);
   hideCfm = signal(true);
   loading = signal(false);
   errorMsg = signal<string | null>(null);
 
-  // Form (nonNullable pour éviter les string | null)
   form = this.fb.group({
     fullName: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.minLength(2)] }),
     email: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
@@ -51,7 +49,7 @@ export class RegisterComponent {
         validators: [
           Validators.required,
           Validators.minLength(8),
-          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/), // 1 min, 1 maj, 1 chiffre
+          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/),
         ],
       }),
       confirmPassword: this.fb.control('', { nonNullable: true, validators: [Validators.required] }),
@@ -59,7 +57,6 @@ export class RegisterComponent {
     acceptTos: this.fb.control(true, { nonNullable: true }),
   });
 
-  // Getters pratiques
   get fullName() { return this.form.controls.fullName; }
   get email() { return this.form.controls.email; }
   get passwords() { return this.form.controls.passwords; }
@@ -67,7 +64,6 @@ export class RegisterComponent {
   get confirmPassword() { return this.passwords.get('confirmPassword'); }
   get acceptTos() { return this.form.controls.acceptTos; }
 
-  // Indicateur simple de robustesse du mot de passe
   strength = computed(() => {
     const v = String(this.password?.value ?? '');
     let s = 0;
@@ -84,7 +80,7 @@ export class RegisterComponent {
   });
 
   async submit() {
-    console.log('[Register] submit triggered'); // <-- vérif console
+    console.log('[Register] submit triggered');
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -105,7 +101,6 @@ export class RegisterComponent {
 
       await this.authService.register(payload);
 
-      // Redirection après succès
       await this.router.navigateByUrl('/auth/connexion');
     } catch (e: any) {
       console.error('[Register] error', e);

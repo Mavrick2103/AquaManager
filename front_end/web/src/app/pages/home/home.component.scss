@@ -50,11 +50,27 @@
 .hero {
   text-align: center;
   padding: 40px 20px;
+  .hello {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+
+    margin-bottom: 0.4rem;
+
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;  
+  }
 
   h1 {
     font-size: 2rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
+    margin-top: 0.4rem;
     color: #1F3522;
   }
 
@@ -123,7 +139,6 @@
   }
 }
 
-/* ====== ACTIVITÉS : 2 SECTIONS CÔTE À CÔTE ====== */
 .activity-grid {
   max-width: 1100px;
   margin: 0 auto 3rem;
@@ -136,7 +151,6 @@
   }
 }
 
-/* ====== Cartes d’activités ====== */
 .activity {
   background: #fff;
   border-radius: 16px;

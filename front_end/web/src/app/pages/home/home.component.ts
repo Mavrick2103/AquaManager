@@ -1,4 +1,3 @@
-// src/app/pages/home/home.component.ts
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -44,14 +43,13 @@ export class HomeComponent implements OnInit {
   private measApi = inject(MeasurementsService);
 
   me: Me | null = null;
+  userFullName = '';
 
   private openTimer: any;
   private closeTimer: any;
 
   today = new Date();
   todayTasksCount = 0;
-
-  // ✅ KPI : nb de relevés d’eau (mesures) effectués ce mois-ci (tous bacs)
   monthlyMeasurementsCount = 0;
 
   latestActivities: Task[] = [];
@@ -59,6 +57,11 @@ export class HomeComponent implements OnInit {
 
   async ngOnInit() {
     this.me = await this.auth.fetchMe();
+
+    const rawFullName = (this.me?.fullName ?? '').trim();
+    this.userFullName = rawFullName.length
+      ? rawFullName
+      : (this.me?.email?.split('@')[0] ?? '');
 
     const now = new Date();
     const monthStr = format(now, 'yyyy-MM');
@@ -69,15 +72,12 @@ export class HomeComponent implements OnInit {
     const monthStart = startOfMonth(now);
     const monthEnd = endOfMonth(now);
 
-    // ---- Tâches (pour KPI du jour + listes activités)
     this.tasksApi.list(monthStr).subscribe((tasks: Task[]) => {
       const safe = tasks || [];
 
-      // KPI “Tâches aujourd’hui”
       const todays = safe.filter(t => t?.dueAt?.startsWith(todayIso));
       this.todayTasksCount = todays.length;
 
-      // Dernières activités (7 derniers jours)
       this.latestActivities = [...safe]
         .filter(t => {
           if (!t?.dueAt) return false;
@@ -96,7 +96,6 @@ export class HomeComponent implements OnInit {
         })
         .slice(0, 5);
 
-      // À venir (7 jours, max 5)
       this.upcomingTasks = safe
         .filter(t => {
           if (!t?.dueAt) return false;
@@ -107,7 +106,6 @@ export class HomeComponent implements OnInit {
         .slice(0, 5);
     });
 
-    // ---- Mesures (relevés d’eau) : compter toutes les mesures du mois, tous bacs
     try {
       const aquariums: Aquarium[] = await firstValueFrom(this.aquariumsApi.listMine());
       const allArrays: Measurement[][] = await Promise.all(
@@ -124,7 +122,6 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  // ===== Helpers UI =====
   typeIcon(type?: string) {
     switch (type) {
       case 'WATER_CHANGE':   return 'opacity';
@@ -148,11 +145,22 @@ export class HomeComponent implements OnInit {
   whenLabel(t: Task) {
     const doneAt = (t as any).doneAt ? new Date((t as any).doneAt) : null;
     const ref = doneAt ?? (t.dueAt ? new Date(t.dueAt) : this.today);
-    return format(ref, "EEE d MMM HH:mm", { locale: fr });
+    return format(ref, 'EEE d MMM HH:mm', { locale: fr });
   }
 
   logout() { this.auth.logout(); }
-  openMenu(trigger: MatMenuTrigger) { clearTimeout(this.closeTimer); this.openTimer = setTimeout(() => trigger.openMenu(), 100); }
-  keepOpen(_trigger: MatMenuTrigger) { clearTimeout(this.closeTimer); }
-  closeMenu(trigger: MatMenuTrigger) { clearTimeout(this.openTimer); this.closeTimer = setTimeout(() => trigger.closeMenu(), 150); }
+
+  openMenu(trigger: MatMenuTrigger) {
+    clearTimeout(this.closeTimer);
+    this.openTimer = setTimeout(() => trigger.openMenu(), 100);
+  }
+
+  keepOpen(_trigger: MatMenuTrigger) {
+    clearTimeout(this.closeTimer);
+  }
+
+  closeMenu(trigger: MatMenuTrigger) {
+    clearTimeout(this.openTimer);
+    this.closeTimer = setTimeout(() => trigger.closeMenu(), 150);
+  }
 }

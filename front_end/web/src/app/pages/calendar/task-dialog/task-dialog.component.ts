@@ -78,10 +78,8 @@ export class TaskDialogComponent implements OnInit {
         this.aquariumsList = list || [];
         this.loadingAquariums = false;
 
-        // si aucun aquarium -> on laisse l’UI afficher un bandeau d’info
         if (!this.aquariumsList.length) return;
 
-        // auto-sélection si pas encore choisi
         if (!this.form.value.aquariumId) {
           this.form.patchValue({ aquariumId: this.aquariumsList[0].id });
         }
@@ -102,11 +100,9 @@ export class TaskDialogComponent implements OnInit {
   }
 
   save() {
-    // Affiche les erreurs si besoin
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
-    // Garde anti-absence d’aquarium (le back exige aquariumId)
     if (!this.aquariumsList.length) {
       alert('Crée d’abord un aquarium pour associer la tâche.');
       return;

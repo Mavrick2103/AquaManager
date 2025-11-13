@@ -5,7 +5,6 @@
 
   <span class="spacer"></span>
 
-  <!-- Icône profil -->
   <button
     mat-icon-button
     aria-label="Profil"
@@ -18,8 +17,8 @@
 
 
 <main class="home-main">
-  <!-- Hero -->
   <section class="hero">
+    <p class="hello" *ngIf="userFullName">Bonjour {{ userFullName }} 👋</p>
     <h1>Gérez vos aquariums en toute clarté</h1>
     <p class="subtitle">
       Suivi des paramètres, entretiens planifiés, historique — tout au même endroit.
@@ -32,28 +31,23 @@
 
   <!-- KPI -->
   <section class="grid">
-    <!-- Tâches aujourd’hui -->
     <div class="card kpi -today" routerLink="/calendar">
       <div class="kpi-value">{{ todayTasksCount }}</div>
       <div class="kpi-label">Tâches aujourd’hui</div>
     </div>
 
-    <!-- ✅ Nouvelles mesures d’eau réalisées ce mois-ci (tous bacs) -->
     <div class="card kpi">
       <div class="kpi-value">{{ monthlyMeasurementsCount}}</div>
       <div class="kpi-label">Mesures d’eau ce mois-ci</div>
     </div>
 
-    <!-- ✅ Nombre de tâches planifiées dans les 7 prochains jours -->
     <div class="card kpi">
       <div class="kpi-value">{{ upcomingTasks.length }}</div>
       <div class="kpi-label">Tâches à venir (7j)</div>
     </div>
   </section>
 
-  <!-- ====== Deux colonnes : Dernières activités & Activités à venir ====== -->
   <section class="activity-grid">
-    <!-- ✅ Dernières activités (max 5, inclut mesures d'eau réalisées) -->
     <section class="card activity">
       <h2>Dernières activités</h2>
       <ul class="activity-list">
@@ -72,7 +66,6 @@
       </ul>
     </section>
 
-    <!-- ✅ Activités à venir (7 jours, max 5) -->
     <section class="card activity">
       <h2>Activités à venir</h2>
       <ul class="activity-list">
@@ -93,7 +86,6 @@
     </section>
   </section>
 
-  <!-- Calendrier hebdo encadré -->
   <section class="calendar-wrap">
     <app-week-calendar></app-week-calendar>
   </section>

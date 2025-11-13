@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export type Me = { userId: number; email: string; role: 'USER' | 'ADMIN' };
+export type Me = { userId: number; email: string; role: 'USER' | 'ADMIN'; fullName?: string;   };
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

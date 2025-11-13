@@ -11,7 +11,7 @@ const REFRESH_COOKIE_OPTIONS = {
   secure: isProd,
   sameSite: 'strict' as const,
   path: '/api/auth/refresh',
-  maxAge: 1000 * 60 * 60 * 24 * 15, // 15 jours
+  maxAge: 1000 * 60 * 60 * 24 * 15,
 };
 
 @Controller('auth')

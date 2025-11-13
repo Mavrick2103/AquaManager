@@ -16,7 +16,7 @@ export interface EditAquariumData {
     lengthCm: number;
     widthCm: number;
     heightCm: number;
-    startDate?: string; // YYYY-MM-DD
+    startDate?: string;
   };
 }
 
@@ -43,7 +43,7 @@ export class EditAquariumDialogComponent {
     lengthCm: [0, [Validators.required, Validators.min(1)]],
     widthCm:  [0, [Validators.required, Validators.min(1)]],
     heightCm: [0, [Validators.required, Validators.min(1)]],
-    startDate: [''], // string vide si non renseigné
+    startDate: [''],
   });
 
   ngOnInit() {
@@ -63,6 +63,6 @@ export class EditAquariumDialogComponent {
   cancel() { this.ref.close(); }
   submit() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.ref.close(this.form.getRawValue()); // on renvoie les valeurs au parent
+    this.ref.close(this.form.getRawValue());
   }
 }

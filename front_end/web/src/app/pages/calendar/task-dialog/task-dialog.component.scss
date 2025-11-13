@@ -18,10 +18,8 @@
   mat-icon { color: var(--brand1); }
 }
 
-/* ===== Content wrapper ===== */
 .dlg-content { padding-top: 0.25rem; }
 
-/* Info banner */
 .info {
   display:flex; align-items:center; gap:.5rem;
   padding:.6rem .75rem; border-radius:12px; margin-bottom:.75rem;
@@ -29,7 +27,6 @@
   mat-icon { color:#d88500; }
 }
 
-/* ===== Form layout ===== */
 .form { display: grid; gap: 1rem; }
 
 .row { display: grid; gap: 1rem; }
@@ -41,17 +38,14 @@
 
 .fld--desc textarea { min-height: 96px; }
 
-/* Material field width */
 mat-form-field { width: 100%; }
 
-/* Prefix icons */
 mat-form-field mat-icon[matPrefix] {
   opacity: .8;
   margin-right: .15rem;
   transform: translateY(1px);
 }
 
-/* ===== Buttons ===== */
 .actions {
   margin-top: .25rem;
   display: flex; justify-content: flex-end; gap: .6rem;
@@ -62,7 +56,6 @@ mat-form-field mat-icon[matPrefix] {
   }
 }
 
-/* Optional: lisser le container du dialog (si autorisé par ta config) */
 :host ::ng-deep .mat-mdc-dialog-surface {
   border-radius: 14px;
   max-width: 620px;

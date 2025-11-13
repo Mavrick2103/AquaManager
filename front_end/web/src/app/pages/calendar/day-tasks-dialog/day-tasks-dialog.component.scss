@@ -4,7 +4,6 @@
   min-width: 0;
   color: #1F3522;
 
-  /* Palette de la marque */
   --brand1: #009FE3;
   --brand2: #39B54A;
   --ink: #1F3522;
@@ -13,7 +12,6 @@
   --bg: #ffffff;
   --bg-soft: #fbfcfd;
 
-  /* Padding interne global du dialog */
   padding: 1.25rem 1.75rem 1.5rem;
   box-sizing: border-box;
 }
@@ -83,7 +81,6 @@
   }
 }
 
-/* Couleurs par type */
 .task-item.water_change,
 .task-item.water-change { --bar:#3ec3ff; --bgType:#f2f9ff; }
 .task-item.fertilization { --bar:#45d07a; --bgType:#f2fff7; }
@@ -92,7 +89,6 @@
 .task-item.water-test    { --bar:#8f84ff; --bgType:#f6f4ff; }
 .task-item.other          { --bar: color-mix(in oklab, var(--brand1) 40%, var(--brand2)); }
 
-/* Texte dans les tâches */
 .t-title {
   font-weight:700;
   display:flex;
@@ -140,7 +136,6 @@
   line-height:1.35;
 }
 
-/* État vide */
 .empty {
   display:flex;
   align-items:center;

@@ -17,13 +17,11 @@ export class TasksService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/tasks`;
 
-  /** 🔹 Récupère les tâches du mois, ex: "2025-10" */
   list(month?: string) {
     const params = month ? new HttpParams().set('month', month) : undefined;
     return this.http.get<Task[]>(this.base, { params });
   }
 
-  /** 🔹 Crée une tâche */
   create(payload: {
     title: string;
     description?: string;
@@ -34,7 +32,6 @@ export class TasksService {
     return this.http.post<Task>(this.base, payload);
   }
 
-  /** 🔹 Met à jour une tâche existante */
   update(
     id: number,
     payload: Partial<{
@@ -49,7 +46,6 @@ export class TasksService {
     return this.http.patch<Task>(`${this.base}/${id}`, payload);
   }
 
-  /** 🔹 Supprime une tâche (DELETE /tasks/:id) */
   delete(id: number) {
     return this.http.delete<{ ok: true }>(`${this.base}/${id}`);
   }

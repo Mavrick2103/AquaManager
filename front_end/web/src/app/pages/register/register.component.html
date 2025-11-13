@@ -1,17 +1,14 @@
 <div class="register-wrap">
   <div class="hero">
-    <!-- Colonne gauche : logo -->
     <div class="side">
       <img src="/Logo_AquaManger.png" alt="AquaManager" class="side-logo" />
     </div>
 
-    <!-- Colonne droite : carte création de compte -->
     <mat-card class="register-card" role="form" aria-labelledby="regTitle">
       <h2 id="regTitle">Créer un compte</h2>
       <p class="subtitle">Rejoignez AquaManager et simplifiez le suivi de vos aquariums.</p>
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <!-- Nom complet -->
         <mat-form-field appearance="outline" class="field">
           <mat-label>Nom complet</mat-label>
           <input matInput type="text" formControlName="fullName" autocomplete="name" />
@@ -20,7 +17,6 @@
           <mat-error *ngIf="fullName.hasError('minlength') && (fullName.dirty || fullName.touched)">Au moins 2 caractères</mat-error>
         </mat-form-field>
 
-        <!-- Email -->
         <mat-form-field appearance="outline" class="field">
           <mat-label>Adresse e-mail</mat-label>
           <input matInput type="email" formControlName="email" autocomplete="email" />
@@ -29,7 +25,6 @@
           <mat-error *ngIf="email.hasError('email') && (email.dirty || email.touched)">Email invalide</mat-error>
         </mat-form-field>
 
-        <!-- Mots de passe -->
         <div formGroupName="passwords">
           <mat-form-field appearance="outline" class="field">
             <mat-label>Mot de passe</mat-label>
@@ -44,7 +39,6 @@
             <mat-error *ngIf="password?.hasError('pattern')">Doit contenir majuscule, minuscule et chiffre</mat-error>
           </mat-form-field>
 
-          <!-- Barre de robustesse -->
           <div class="strength">
             <div class="bar"
                  [class.lv1]="strength()>=1"
@@ -84,10 +78,8 @@
           <mat-progress-spinner *ngIf="loading()" diameter="18" mode="indeterminate"></mat-progress-spinner>
         </button>
 
-        <!-- Aide sous bouton -->
         <p class="helper">En créant un compte, vous acceptez nos CGU et notre politique de confidentialité.</p>
 
-        <!-- Erreur globale -->
         <p class="error" *ngIf="errorMsg()">
           <mat-icon>error</mat-icon>
           {{ errorMsg() }}

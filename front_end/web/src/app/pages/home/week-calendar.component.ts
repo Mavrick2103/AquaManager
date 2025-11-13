@@ -135,7 +135,6 @@ export class WeekCalendarComponent {
     return `${this.fmt(a,'d MMM')} — ${this.fmt(b,'d MMM yyyy')}`;
   }
 
-  /** Navigation */
   prevWeek(){
     this.start = addWeeks(this.start, -1);
     this.days = Array.from({ length: 7 }, (_, i) => addDays(this.start, i));
@@ -149,7 +148,6 @@ export class WeekCalendarComponent {
     this.days = Array.from({ length: 7 }, (_, i) => addDays(this.start, i));
   }
 
-  /** Tâches du jour (yyyy-MM-dd) */
   dayTasks(d: Date): Task[] {
     const iso = this.fmt(d, 'yyyy-MM-dd');
     return this.tasks.filter(t => t.dueAt?.startsWith(iso));

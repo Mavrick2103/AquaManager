@@ -37,11 +37,9 @@ describe('AquariumDialogComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  // ✅ On teste juste le calcul avec les valeurs par défaut
   it('liters devrait retourner 63 L avec les valeurs par défaut du formulaire', () => {
-    // lengthCm = 60, widthCm = 30, heightCm = 35
     const liters = component.liters();
-    expect(liters).toBe(63); // 60 * 30 * 35 / 1000 = 63
+    expect(liters).toBe(63);
   });
 
   it('submit() devrait appeler api.create() et fermer le dialog si succès', () => {
@@ -76,7 +74,7 @@ describe('AquariumDialogComponent', () => {
 
   it('submit() ne devrait pas appeler api.create() si formulaire invalide', () => {
     component.form.patchValue({
-      name: '', // invalide
+      name: '',
     });
 
     component.submit();

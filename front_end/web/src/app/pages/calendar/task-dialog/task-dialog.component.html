@@ -4,7 +4,6 @@
 </h2>
 
 <mat-dialog-content class="dlg-content">
-  <!-- Bandeau info si aucun aquarium -->
   <div class="info" *ngIf="!loadingAquariums && !aquariums().length">
     <mat-icon>info</mat-icon>
     <span>Vous n’avez pas encore d’aquarium. Créez-en un pour pouvoir enregistrer une tâche.</span>
@@ -12,7 +11,6 @@
 
   <form [formGroup]="form" (ngSubmit)="save()" class="form">
 
-    <!-- Titre + Type -->
     <div class="row row--2">
       <mat-form-field appearance="outline">
         <mat-label>Titre</mat-label>
@@ -38,7 +36,6 @@
       </mat-form-field>
     </div>
 
-    <!-- Description -->
     <mat-form-field appearance="outline" class="fld--desc">
       <mat-label>Description</mat-label>
       <mat-icon matPrefix>notes</mat-icon>
@@ -50,7 +47,6 @@
       ></textarea>
     </mat-form-field>
 
-    <!-- Date + Heure -->
     <div class="row row--2">
       <mat-form-field appearance="outline">
   <mat-label>Date</mat-label>
@@ -69,7 +65,6 @@
 
     </div>
 
-    <!-- Aquarium -->
     <mat-form-field appearance="outline">
       <mat-label>Aquarium</mat-label>
       <mat-icon matPrefix>water</mat-icon>
@@ -81,10 +76,8 @@
       </mat-error>
     </mat-form-field>
 
-    <!-- Actions -->
     <div class="actions">
       <button mat-button mat-dialog-close type="button">Annuler</button>
-      <!-- Bouton cliquable même si invalide, mais save() affichera les erreurs -->
       <button mat-flat-button color="primary" type="submit">
         <mat-icon>save</mat-icon>
         Enregistrer

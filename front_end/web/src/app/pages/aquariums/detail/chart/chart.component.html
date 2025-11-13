@@ -1,11 +1,9 @@
 <mat-card class="chart-card">
-  <!-- Titre du graphique -->
   <div class="chart-header" *ngIf="metric">
     <span class="metric-name">{{ metricLabel }}</span>
     <span class="metric-unit" *ngIf="metricUnit">{{ metricUnit }}</span>
   </div>
 
-  <!-- Canvas -->
   <div class="chart-wrapper" [style.height.px]="180">
     <canvas #canvas></canvas>
 

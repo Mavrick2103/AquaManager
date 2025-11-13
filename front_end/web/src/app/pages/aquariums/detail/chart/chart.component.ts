@@ -37,7 +37,6 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
   hasData = false;
   private chart?: Chart<'line', (number | null)[], Date>;
 
-  // Libellés + unités
   private readonly META: Record<MetricKey, {label: string; unit: string}> = {
     ph:  { label: 'pH',          unit: '' },
     temp:{ label: 'Température', unit: '°C' },
@@ -60,17 +59,14 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
   get metricUnit(): string  { return this.metric ? this.META[this.metric].unit  : ''; }
 
   async ngAfterViewInit() {
-    // charge une 1ère fois
     await this.loadAndRender();
 
-    // 🔁 se recharger automatiquement après ajout/modif d’une mesure
     this.svc.changed$
       .pipe(
         takeUntil(this.destroy$),
         filter(e => e.aquariumId === this.aquariumId)
       )
       .subscribe(() => {
-        // pas d’await ici → on relance sans bloquer l’UI
         this.loadAndRender();
       });
   }
@@ -104,7 +100,6 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
     return Number.isFinite(v) ? Number(v.toFixed(2)) : null;
   }
 
-  /** Options mini AVEC axes visibles */
   private miniOptions(metric?: MetricKey): ChartConfiguration<'line'>['options'] {
     const unit = metric ? this.META[metric].unit : '';
     return {
@@ -137,11 +132,9 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
   }
 
   private renderChart(rows: Measurement[]) {
-    // Tri / labels
     const data = [...rows].sort((a,b)=>+new Date(a.measuredAt)-+new Date(b.measuredAt));
     const labels = data.map(d => new Date(d.measuredAt));
 
-    // Valeurs par métrique
     const get = (k: keyof Measurement) => data.map(d => (d[k] as number | undefined) ?? null);
     const values: Partial<Record<MetricKey, (number | null)[]>> = {
       ph: get('ph'),
@@ -174,7 +167,6 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
     const series = m ? (values[m] ?? []) : [];
     this.hasData = series.some(v => v != null);
 
-    // (re)création
     this.chart?.destroy();
     const ctx = this.canvas?.nativeElement?.getContext('2d');
     if (!ctx || !labels.length) { this.hasData = false; return; }

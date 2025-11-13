@@ -1,23 +1,17 @@
-<!-- Toolbar façon Mesaquarium (fait partie du flux, défile avec la page) -->
 <section class="toolbar">
-  <!-- Logo cliquable -->
   <a class="brand" routerLink="/">
     <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
   </a>
 
-  <!-- Titre centré -->
   <h1>Mon calendrier</h1>
 
-  <!-- Bouton “Nouvelle tâche” -->
   <button mat-raised-button class="btn-primary" (click)="openCreateQuick()">
     <mat-icon>add</mat-icon>
     <span>Nouvelle tâche</span>
   </button>
 </section>
 
-<!-- Contenu principal -->
 <div class="page-wrap">
-  <!-- Section du calendrier -->
   <section class="cal -compact">
     <header class="cal__head">
       <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()">
@@ -40,7 +34,6 @@
     <div class="cal__grid" role="grid" aria-label="Calendrier mensuel">
       <div class="cal__dow" *ngFor="let d of ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']">{{ d }}</div>
 
-      <!-- Chaque jour ouvre le dialog de détails -->
       <ng-container *ngFor="let week of weeks()">
         <button
           class="cal__cell"
