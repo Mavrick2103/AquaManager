@@ -3,9 +3,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 
-import { Task, TaskStatus, TaskType } from './task.entity';
-import { TaskService } from './task.service';
-import { Aquarium } from '../aquariums/aquariums.entity';
+import { Task, TaskStatus, TaskType } from '../../src/tasks/task.entity';
+import { TaskService } from '../../src/tasks/task.service';
+import { Aquarium } from '../../src/aquariums/aquariums.entity';
 
 describe('TaskService (unit)', () => {
   let service: TaskService;

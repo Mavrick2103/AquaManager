@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Body } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Post, Body, Delete } from '@nestjs/common';
 import { WaterMeasurementService } from './water-measurement.service';
 import { CreateWaterMeasurementDto } from './dto/create-water-measurement.dto';
 
@@ -12,7 +12,18 @@ export class WaterMeasurementController {
   }
 
   @Post()
-  create(@Param('aquariumId', ParseIntPipe) aquariumId: number, @Body() dto: CreateWaterMeasurementDto) {
+  create(
+    @Param('aquariumId', ParseIntPipe) aquariumId: number,
+    @Body() dto: CreateWaterMeasurementDto
+  ) {
     return this.svc.createForAquarium(aquariumId, dto);
+  }
+
+  @Delete(':id')
+  remove(
+    @Param('aquariumId', ParseIntPipe) aquariumId: number,
+    @Param('id', ParseIntPipe) id: number
+  ) {
+    return this.svc.deleteForAquarium(aquariumId, id);
   }
 }

@@ -1,8 +1,8 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { AquariumsService } from '../src/aquariums/aquariums.service';
+import { AppModule } from '../../src/app.module';
+import { AquariumsService } from '../../src/aquariums/aquariums.service';
 import { JwtService } from '@nestjs/jwt';
 
 describe('AquariumsController (e2e) — with real JWT', () => {
@@ -10,7 +10,6 @@ describe('AquariumsController (e2e) — with real JWT', () => {
   let jwt: JwtService;
   let token: string;
 
-  // Mock du service pour ne pas toucher la DB
   const serviceMock = {
     findMine: jest.fn(),
     create: jest.fn(),
@@ -20,7 +19,6 @@ describe('AquariumsController (e2e) — with real JWT', () => {
   };
 
   beforeAll(async () => {
-    // S’assure qu’un secret existe pour le module JWT
     if (!process.env.JWT_SECRET) {
       process.env.JWT_SECRET = 'testsecretvalue_min16chars';
     }
@@ -34,7 +32,6 @@ describe('AquariumsController (e2e) — with real JWT', () => {
 
     app = moduleRef.createNestApplication();
 
-    // ✅ Active la ValidationPipe globale comme en prod (main.ts n’est pas exécuté en test)
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -45,7 +42,6 @@ describe('AquariumsController (e2e) — with real JWT', () => {
 
     await app.init();
 
-    // Signe un vrai JWT avec le JwtService de l’appli
     jwt = moduleRef.get(JwtService);
     token = await jwt.signAsync({
       sub: 1,
@@ -100,11 +96,11 @@ describe('AquariumsController (e2e) — with real JWT', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         name: 'Bad',
-        lengthCm: 5,  // < @Min(10)
-        widthCm: 5,   // < @Min(10)
-        heightCm: 5,  // < @Min(10)
+        lengthCm: 5,
+        widthCm: 5,
+        heightCm: 5,
         waterType: 'EAU_DOUCE',
-        startDate: 'not-a-date', // pas une date ISO
+        startDate: 'not-a-date',
       })
       .expect(400);
   });

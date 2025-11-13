@@ -1,6 +1,10 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Title, Meta } from '@angular/platform-browser';
+
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -9,19 +13,23 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 import { AuthService } from '../../core/auth.service';
 import { UserService, UserMe } from '../../core/user.service';
-import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
+    CommonModule, ReactiveFormsModule, FormsModule, RouterModule,
     MatCardModule, MatFormFieldModule, MatInputModule,
     MatButtonModule, MatIconModule, MatDividerModule,
-    MatSnackBarModule, MatProgressSpinnerModule, RouterModule,
+    MatSnackBarModule, MatProgressSpinnerModule,
+    MatTabsModule, MatSlideToggleModule, MatSelectModule, MatButtonToggleModule,
   ],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
@@ -31,25 +39,73 @@ export class ProfileComponent implements OnInit {
   private users = inject(UserService);
   private auth  = inject(AuthService);
   private snack = inject(MatSnackBar);
+  private title = inject(Title);
+  private meta  = inject(Meta);
 
-  me!: UserMe;
+  me!: UserMe & { role?: string };
   form!: FormGroup;
   loading = false;
 
-  // Snapshots pour détecter ce qui a changé
+  // Préférences locales
+  prefs = {
+    theme: 'system' as 'system' | 'light' | 'dark',
+    tempUnit: 'C' as 'C' | 'F',
+    notifyTasks: true,
+  };
+
   private orig = { fullName: '', email: '' };
 
   async ngOnInit() {
-    this.me = await this.users.getMe();
-    this.form = this.fb.group({
-      fullName: [this.me.fullName ?? '', [Validators.required, Validators.maxLength(80)]],
-      email:    [this.me.email ?? '', [Validators.required, Validators.email, Validators.maxLength(160)]],
-      currentPassword: [''],
-      newPassword:     [''], // min len côté back si nécessaire
+    // SEO
+    this.title.setTitle('Paramètres & Profil • AquaManager');
+    this.meta.updateTag({
+      name: 'description',
+      content: 'Gérez votre profil, vos préférences d’affichage, notifications et exportez vos données sur AquaManager.',
     });
-    this.orig.fullName = this.form.value.fullName;
-    this.orig.email    = this.form.value.email;
+
+    // Initialisation du form (évite les soucis de template)
+    this.form = this.fb.group({
+      fullName: ['', [Validators.required, Validators.maxLength(80)]],
+      email:    ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
+      currentPassword: [''],
+      newPassword:     [''],
+    });
+
+    // Récupération de l'utilisateur
+    this.me = await this.users.getMe();
+
+    // fullName depuis l’API (peut être vide si compte ancien)
+    const rawFullName = (this.me.fullName ?? '').trim();
+
+    const fullName = rawFullName.length > 0
+      ? rawFullName
+      : (this.me.email?.split('@')[0] ?? '');
+
+    // On injecte les valeurs dans le form
+    this.form.patchValue({
+      fullName,
+      email: this.me.email ?? '',
+    });
+
+    // Pour la détection de changements
+    this.orig.fullName = fullName;
+    this.orig.email    = this.me.email ?? '';
+
+    // Préférences locales
+    const raw = localStorage.getItem('aquamanager:prefs');
+    if (raw) {
+      try {
+        this.prefs = { ...this.prefs, ...JSON.parse(raw) };
+      } catch {}
+    }
   }
+
+  // Helpers rôle
+  get isAdmin(): boolean {
+    const r = (this.me?.role || '').toLowerCase();
+    return r === 'admin' || r === 'superadmin';
+  }
+  get isUser(): boolean { return !this.isAdmin; }
 
   get fullNameCtrl() { return this.form.get('fullName')!; }
   get emailCtrl()    { return this.form.get('email')!; }
@@ -60,8 +116,8 @@ export class ProfileComponent implements OnInit {
     const v = this.form.value as any;
     return (
       v.fullName?.trim() !== this.orig.fullName ||
-      v.email?.trim() !== this.orig.email ||
-      !!v.newPassword // si un nouveau mot de passe est saisi, on considérera qu'il y a un changement
+      v.email?.trim()    !== this.orig.email ||
+      !!v.newPassword
     );
   }
 
@@ -80,18 +136,17 @@ export class ProfileComponent implements OnInit {
     const v = this.form.value as any;
 
     try {
-      // 1) Construire un DTO partiel avec uniquement les champs modifiés
       const profileDto: any = {};
       if (v.fullName?.trim() !== this.orig.fullName) profileDto.fullName = v.fullName.trim();
       if (v.email?.trim()    !== this.orig.email)    profileDto.email    = v.email.trim();
 
       if (Object.keys(profileDto).length) {
-        await this.users.updateMe(profileDto);
-        this.orig.fullName = profileDto.fullName ?? this.orig.fullName;
-        this.orig.email    = profileDto.email    ?? this.orig.email;
+        const updated = await this.users.updateMe(profileDto);
+        this.me = { ...this.me, ...updated };
+        this.orig.fullName = updated.fullName ?? this.orig.fullName;
+        this.orig.email    = updated.email    ?? this.orig.email;
       }
 
-      // 2) Mot de passe si renseigné
       if (v.newPassword) {
         await this.users.changePassword({
           currentPassword: v.currentPassword ?? '',
@@ -101,13 +156,10 @@ export class ProfileComponent implements OnInit {
         this.newPwdCtrl.setValue('');
       }
 
-      // 3) Feedback + refresh éventuel de la session
-      this.snack.open('Modifications enregistrées ✅', 'OK', { duration: 2000 });
-      // Optionnel: si tu tiens un cache utilisateur côté AuthService, rafraîchis-le
-      // await this.auth.fetchMe();
+      this.snack.open('Modifications enregistrées ✅', 'OK', { duration: 1800 });
       this.form.markAsPristine();
     } catch (e: any) {
-      this.snack.open(e?.error?.message || 'Échec de l’enregistrement', 'Fermer', { duration: 3500 });
+      this.snack.open(e?.error?.message || 'Échec de l’enregistrement', 'Fermer', { duration: 3200 });
     } finally {
       this.loading = false;
     }
@@ -117,10 +169,34 @@ export class ProfileComponent implements OnInit {
     if (!confirm('Cette action est définitive. Supprimer votre compte ?')) return;
     try {
       await this.users.deleteMe();
-      this.snack.open('Compte supprimé. Au revoir 👋', 'OK', { duration: 2000 });
+      this.snack.open('Compte supprimé. Au revoir 👋', 'OK', { duration: 1800 });
       this.auth.logout();
     } catch (e: any) {
       this.snack.open(e?.error?.message || 'Suppression impossible', 'Fermer', { duration: 3000 });
     }
+  }
+
+  savePreferences() {
+    localStorage.setItem('aquamanager:prefs', JSON.stringify(this.prefs));
+    this.snack.open('Préférences enregistrées', 'OK', { duration: 1400 });
+  }
+
+  exportData() {
+    const fakeDump = {
+      user: this.me,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(fakeDump, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'aquamanager_export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  logout() {
+    this.auth.logout();
+    this.snack.open('Déconnecté ✅', 'OK', { duration: 1400 });
   }
 }

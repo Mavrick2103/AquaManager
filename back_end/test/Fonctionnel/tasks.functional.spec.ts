@@ -1,0 +1,277 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { NotFoundException } from '@nestjs/common';
+
+import { TaskController } from '../../src/tasks/task.controller';
+import { TaskService } from '../../src/tasks/task.service';
+import { Task, TaskStatus, TaskType } from '../../src/tasks/task.entity';
+import { Aquarium } from '../../src/aquariums/aquariums.entity';
+
+describe('Tasks (tests fonctionnels)', () => {
+  let controller: TaskController;
+  let service: TaskService;
+  let repo: jest.Mocked<Repository<Task>>;
+  let aqRepo: jest.Mocked<Repository<Aquarium>>;
+
+  let qb: {
+    leftJoin: jest.Mock;
+    leftJoinAndSelect: jest.Mock;
+    where: jest.Mock;
+    orderBy: jest.Mock;
+    andWhere: jest.Mock;
+    getMany: jest.Mock;
+  };
+
+  const req = { user: { userId: 1 } } as any;
+
+  beforeEach(async () => {
+    qb = {
+      leftJoin: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getMany: jest.fn(),
+    };
+
+    const taskRepoMock: Partial<jest.Mocked<Repository<Task>>> = {
+      createQueryBuilder: jest.fn().mockReturnValue(qb),
+      findOne: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
+      delete: jest.fn(),
+    };
+
+    const aqRepoMock: Partial<jest.Mocked<Repository<Aquarium>>> = {
+      findOne: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [TaskController],
+      providers: [
+        TaskService,
+        { provide: getRepositoryToken(Task), useValue: taskRepoMock },
+        { provide: getRepositoryToken(Aquarium), useValue: aqRepoMock },
+      ],
+    }).compile();
+
+    controller = module.get(TaskController);
+    service = module.get(TaskService);
+    repo = module.get(getRepositoryToken(Task));
+    aqRepo = module.get(getRepositoryToken(Aquarium));
+
+    jest.clearAllMocks();
+  });
+
+  it('list() -> renvoie les tâches du user sans filtrage de mois', async () => {
+    const tasks = [
+      { id: 1, title: 'Changement d’eau', dueAt: new Date('2025-01-01') },
+      { id: 2, title: 'Test NO3', dueAt: new Date('2025-01-02') },
+    ] as any;
+
+    qb.getMany.mockResolvedValue(tasks);
+
+    const res = await controller.list(req);
+
+    expect(repo.createQueryBuilder).toHaveBeenCalledWith('t');
+    expect(qb.leftJoin).toHaveBeenCalledWith('t.user', 'u');
+    expect(qb.leftJoinAndSelect).toHaveBeenCalledWith('t.aquarium', 'a');
+    expect(qb.where).toHaveBeenCalledWith('u.id = :userId', { userId: 1 });
+    expect(qb.orderBy).toHaveBeenCalledWith('t.dueAt', 'ASC');
+    expect(qb.andWhere).not.toHaveBeenCalled();
+    expect(res).toEqual(tasks);
+  });
+
+  it('list() -> filtre les tâches par mois si month est fourni', async () => {
+    const tasks = [{ id: 3, title: 'Taille des plantes' }] as any;
+    qb.getMany.mockResolvedValue(tasks);
+
+    const res = await controller.list(req, '2025-03'); // mars 2025
+
+    expect(qb.andWhere).toHaveBeenCalled();
+    expect(res).toEqual(tasks);
+  });
+
+  it('create() -> crée une tâche pour un aquarium appartenant au user', async () => {
+    aqRepo.findOne.mockResolvedValue({
+      id: 5,
+      user: { id: 1 },
+    } as any);
+
+    repo.create.mockImplementation((partial: any) => partial as any);
+    repo.save.mockImplementation(async (t: any) => ({ id: 10, ...t }));
+
+    const dto = {
+      title: 'Changement d’eau',
+      description: '30 % du volume',
+      dueAt: '2025-01-15T10:00:00.000Z',
+      aquariumId: 5,
+      type: TaskType.WATER_CHANGE,
+    };
+
+    const res = await controller.create(req, dto as any);
+
+    expect(aqRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 5, user: { id: 1 } },
+      relations: { user: true },
+      select: { id: true } as any,
+    });
+    expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+        title: 'Changement d’eau',
+        description: '30 % du volume',
+        user: { id: 1 },
+        aquarium: expect.objectContaining({ id: 5 }),
+        status: TaskStatus.PENDING,
+        type: TaskType.WATER_CHANGE,
+        dueAt: new Date('2025-01-15T10:00:00.000Z'),
+     }),
+    );
+
+    expect(res).toMatchObject({
+      id: 10,
+      title: 'Changement d’eau',
+      type: TaskType.WATER_CHANGE,
+    });
+  });
+
+  it('create() -> 404 si aquarium introuvable ou non autorisé', async () => {
+    aqRepo.findOne.mockResolvedValue(null as any);
+
+    await expect(
+      controller.create(req, {
+        title: 'Test',
+        dueAt: '2025-01-01T00:00:00.000Z',
+        aquariumId: 999,
+        type: TaskType.OTHER,
+      } as any),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(repo.create).not.toHaveBeenCalled();
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('update() -> met à jour les champs simples d’une tâche appartenant au user', async () => {
+    const existing = {
+      id: 7,
+      title: 'Ancien titre',
+      description: 'Ancienne desc',
+      dueAt: new Date('2025-01-10T10:00:00.000Z'),
+      status: TaskStatus.PENDING,
+      type: TaskType.OTHER,
+      user: { id: 1 },
+      aquarium: { id: 5 },
+    } as any;
+
+    repo.findOne.mockResolvedValue(existing);
+    repo.save.mockImplementation(async (t: any) => t);
+
+    const dto = {
+      title: 'Nouveau titre',
+      description: 'Nouvelle description',
+      dueAt: '2025-01-20T15:00:00.000Z',
+      status: TaskStatus.DONE,
+      type: TaskType.WATER_TEST,
+    };
+
+    const res = await controller.update(req, 7, dto as any);
+
+    expect(repo.findOne).toHaveBeenCalledWith({
+      where: { id: 7 },
+      relations: { user: true, aquarium: true },
+    });
+    expect(res).toMatchObject({
+      id: 7,
+      title: 'Nouveau titre',
+      description: 'Nouvelle description',
+      status: TaskStatus.DONE,
+      type: TaskType.WATER_TEST,
+    });
+    expect(res.dueAt).toEqual(new Date('2025-01-20T15:00:00.000Z'));
+  });
+
+  it('update() -> change aussi d’aquarium si aquariumId est fourni et autorisé', async () => {
+    const existing = {
+      id: 8,
+      title: 'Tâche',
+      user: { id: 1 },
+      aquarium: { id: 5 },
+    } as any;
+
+    repo.findOne.mockResolvedValue(existing);
+    aqRepo.findOne.mockResolvedValue({
+      id: 6,
+      user: { id: 1 },
+    } as any);
+    repo.save.mockImplementation(async (t: any) => t);
+
+    const dto = {
+      aquariumId: 6,
+    };
+
+    const res = await controller.update(req, 8, dto as any);
+
+    expect(aqRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 6, user: { id: 1 } },
+      relations: { user: true },
+      select: { id: true } as any,
+    });
+    expect(res.aquarium).toMatchObject({ id: 6 });
+  });
+
+  it('update() -> 404 si la tâche n’existe pas ou n’appartient pas au user', async () => {
+    // cas 1 : pas de tâche
+    repo.findOne.mockResolvedValue(null as any);
+
+    await expect(
+      controller.update(req, 999, { title: 'X' } as any),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    // cas 2 : tâche d’un autre user
+    repo.findOne.mockResolvedValue({
+      id: 9,
+      user: { id: 2 }, // autre user
+    } as any);
+
+    await expect(
+      controller.update(req, 9, { title: 'Y' } as any),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('remove() -> supprime une tâche appartenant au user et renvoie { ok: true }', async () => {
+    const task = {
+      id: 12,
+      user: { id: 1 },
+    } as any;
+
+    repo.findOne.mockResolvedValue(task);
+    repo.delete.mockResolvedValue({} as any);
+
+    const res = await controller.remove(req, 12);
+
+    expect(repo.findOne).toHaveBeenCalledWith({
+      where: { id: 12 },
+      relations: { user: true },
+    });
+    expect(repo.delete).toHaveBeenCalledWith(12);
+    expect(res).toEqual({ ok: true });
+  });
+
+  it('remove() -> 404 si la tâche n’existe pas ou n’appartient pas au user', async () => {
+    // cas 1 : pas de tâche
+    repo.findOne.mockResolvedValue(null as any);
+
+    await expect(controller.remove(req, 999)).rejects.toBeInstanceOf(NotFoundException);
+    expect(repo.delete).not.toHaveBeenCalled();
+
+    // cas 2 : tâche d’un autre user
+    repo.findOne.mockResolvedValue({
+      id: 13,
+      user: { id: 2 },
+    } as any);
+
+    await expect(controller.remove(req, 13)).rejects.toBeInstanceOf(NotFoundException);
+    expect(repo.delete).not.toHaveBeenCalled();
+  });
+});

@@ -6,7 +6,6 @@ import { UpdateMeDto } from './dto/update-me.dto';
 import { Injectable, ConflictException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 
-
 @Injectable()
 export class UsersService {
   constructor(@InjectRepository(User) private readonly repo: Repository<User>) {}
@@ -35,11 +34,11 @@ export class UsersService {
     await this.repo.update({ id: userId }, { password: passwordHash });
     return true;
   }
-   
+
   async findByEmailWithPassword(email: string): Promise<User | null> {
     return this.repo
       .createQueryBuilder('u')
-      .addSelect('u.password')               
+      .addSelect('u.password')
       .where('u.email = :email', { email })
       .getOne();
   }
@@ -52,17 +51,21 @@ export class UsersService {
 
     const password = await argon2.hash(dto.password);
 
+    const fullName =
+      dto.fullName?.trim().length
+        ? dto.fullName.trim()
+        : dto.email.split('@')[0];
+
     const user = this.repo.create({
       email: dto.email,
-      fullName: dto.fullName?.trim() ?? '',
+      fullName,
       password,
     });
 
     return this.repo.save(user);
   }
+
   async deleteById(id: number) {
-  await this.repo.delete(id);
-}
-
-
+    await this.repo.delete(id);
+  }
 }

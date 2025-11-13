@@ -20,7 +20,7 @@ export interface MeasurementCreateDto {
   nh3?: number | null;
   // mer
   dkh?: number | null;
-  salinity?: number | null; // ppt
+  salinity?: number | null;
   ca?: number | null;
   mg?: number | null;
   po4?: number | null;
@@ -38,24 +38,34 @@ export class MeasurementsService {
   private http = inject(HttpClient);
   private base = environment.apiUrl;
 
-  /** 🔔 Événement global: “les mesures de l’aquarium X ont changé” */
   private _changed$ = new Subject<{ aquariumId: number }>();
-  /** À écouter côté charts */
   changed$ = this._changed$.asObservable();
-  /** À émettre après création/suppression/modification */
+
   notifyChanged(aquariumId: number) {
     this._changed$.next({ aquariumId });
   }
 
   listForAquarium(aquariumId: number) {
-    return firstValueFrom(
-      this.http.get<Measurement[]>(`${this.base}/aquariums/${aquariumId}/measurements`)
+    const url = `${this.base}/aquariums/${aquariumId}/measurements`;
+    return firstValueFrom(this.http.get<Measurement[]>(url));
+  }
+
+  async getLastForAquarium(aquariumId: number): Promise<Measurement | null> {
+    const list = await this.listForAquarium(aquariumId);
+    if (!Array.isArray(list) || list.length === 0) return null;
+    const sorted = [...list].sort(
+      (a, b) => new Date(b.measuredAt).getTime() - new Date(a.measuredAt).getTime()
     );
+    return sorted[0] ?? null;
   }
 
   createForAquarium(aquariumId: number, dto: MeasurementCreateDto) {
-    return firstValueFrom(
-      this.http.post<Measurement>(`${this.base}/aquariums/${aquariumId}/measurements`, dto)
-    );
+    const url = `${this.base}/aquariums/${aquariumId}/measurements`;
+    return firstValueFrom(this.http.post<Measurement>(url, dto));
+  }
+
+  deleteForAquarium(aquariumId: number, id: number) {
+    const url = `${this.base}/aquariums/${aquariumId}/measurements/${id}`;
+    return firstValueFrom(this.http.delete<void>(url));
   }
 }

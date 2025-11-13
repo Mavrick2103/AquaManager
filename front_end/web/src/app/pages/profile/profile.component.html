@@ -1,83 +1,257 @@
-<a class="brand" routerLink="/">
-    <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
-  </a>
-<mat-card class="profile-card">
-  <h1>Mon profil</h1>
-  <p class="hint">Modifiez vos informations puis cliquez sur <strong>Enregistrer</strong>.</p>
+<!-- Marque cliquable (logo optimisé) -->
+<a class="brand" routerLink="/" aria-label="Retour à l’accueil">
+  <img
+    src="/Logo_AquaManger.png"
+    alt="AquaManager"
+    class="logo"
+    width="280"
+    height="70"
+    loading="lazy"
+    decoding="async"
+  />
+</a>
 
-  <form [formGroup]="form" class="grid">
-    <!-- Nom complet -->
-    <div class="row">
-      <div class="label">
-        <mat-icon>badge</mat-icon>
-        <span>Nom complet</span>
-      </div>
-
-      <mat-form-field appearance="outline" class="field">
-        <input matInput formControlName="fullName" maxlength="80" />
-        <mat-hint align="end">{{ fullNameCtrl.value.length || 0 }} / 80</mat-hint>
-      </mat-form-field>
+<!-- Conteneur principal compact -->
+<mat-card class="settings-card" role="main">
+  <header class="settings-header" aria-labelledby="page-title">
+    <div class="titles">
+      <h1 id="page-title">Paramètres & Profil</h1>
+      <p class="subtitle">Personnalisez votre expérience et gérez vos informations.</p>
     </div>
 
-    <mat-divider></mat-divider>
+    <div class="quick-actions">
+      <!-- Badge rôle -->
+      <span class="role-pill" *ngIf="isAdmin">Admin</span>
+      <span class="role-pill -user" *ngIf="!isAdmin">User</span>
 
-    <!-- Email -->
-    <div class="row">
-      <div class="label">
-        <mat-icon>mail</mat-icon>
-        <span>Email</span>
-      </div>
-
-      <mat-form-field appearance="outline" class="field">
-        <input matInput type="email" formControlName="email" maxlength="160" />
-        <mat-error *ngIf="emailCtrl.invalid && emailCtrl.touched">Email invalide</mat-error>
-      </mat-form-field>
+      <button mat-stroked-button color="warn" (click)="logout()" aria-label="Se déconnecter">
+        <mat-icon>logout</mat-icon>
+        Déconnexion
+      </button>
     </div>
+  </header>
 
-    <mat-divider></mat-divider>
+  <mat-divider class="header-divider"></mat-divider>
 
-    <!-- Mot de passe -->
-    <div class="row">
-      <div class="label">
-        <mat-icon>password</mat-icon>
-        <span>Mot de passe</span>
-      </div>
+  <mat-tab-group class="tabs-compact" animationDuration="150ms">
+    <!-- Onglet Profil -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>person</mat-icon><span>Profil</span>
+      </ng-template>
 
-      <div class="field grid-2">
-        <mat-form-field appearance="outline">
-          <mat-label>Mot de passe actuel (si requis)</mat-label>
-          <input matInput type="password" formControlName="currentPassword" />
-        </mat-form-field>
+      <section class="tab-pane">
+        <form [formGroup]="form" class="profile-grid" aria-describedby="profil-help">
+          <p id="profil-help" class="visually-hidden">
+            Modifiez vos informations puis cliquez sur Enregistrer.
+          </p>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Nouveau mot de passe</mat-label>
-          <input matInput type="password" formControlName="newPassword" />
-          <mat-hint>6 caractères minimum</mat-hint>
-        </mat-form-field>
-      </div>
-    </div>
-  </form>
+          <!-- Nom complet -->
+          <div class="row">
+            <label class="label" for="fullName">
+              <mat-icon>badge</mat-icon> Nom complet
+            </label>
+            <mat-form-field appearance="fill" class="field">
+              <input id="fullName" matInput formControlName="fullName" maxlength="80" autocomplete="name" />
+              <mat-hint align="end">{{ fullNameCtrl.value?.length || 0 }} / 80</mat-hint>
+            </mat-form-field>
+          </div>
 
-  <div class="actions">
-    <button mat-stroked-button (click)="reset()" [disabled]="loading">
-      <mat-icon>refresh</mat-icon> Annuler
-    </button>
+          <!-- Email -->
+          <div class="row">
+            <label class="label" for="email">
+              <mat-icon>mail</mat-icon> Email
+            </label>
+            <mat-form-field appearance="fill" class="field">
+              <input id="email" matInput type="email" formControlName="email" maxlength="160" autocomplete="email" />
+              <mat-error *ngIf="emailCtrl.invalid && emailCtrl.touched">Email invalide</mat-error>
+            </mat-form-field>
+          </div>
 
-    <button mat-flat-button color="primary"
-            (click)="saveAll()"
-            [disabled]="loading || form.invalid || !hasChanges">
-      <mat-icon *ngIf="!loading">save</mat-icon>
-      <mat-progress-spinner *ngIf="loading" mode="indeterminate" diameter="18"></mat-progress-spinner>
-      Enregistrer
-    </button>
-  </div>
-</mat-card>
+          <!-- Mots de passe -->
+          <div class="row multi">
+            <div class="label">
+              <mat-icon>password</mat-icon> Mot de passe
+            </div>
+            <div class="field grid-2">
+              <mat-form-field appearance="fill">
+                <mat-label>Mot de passe actuel (si requis)</mat-label>
+                <input matInput type="password" formControlName="currentPassword" autocomplete="current-password" />
+              </mat-form-field>
 
-<mat-card class="danger-card">
-  <h2>Zone dangereuse</h2>
-  <p>La suppression de votre compte est <strong>définitive</strong>. Toutes vos données associées seront supprimées.</p>
-  <button mat-flat-button color="warn" (click)="deleteAccount()">
-    <mat-icon>delete_forever</mat-icon>
-    Supprimer mon compte
-  </button>
+              <mat-form-field appearance="fill">
+                <mat-label>Nouveau mot de passe</mat-label>
+                <input matInput type="password" formControlName="newPassword" autocomplete="new-password" />
+                <mat-hint>6 caractères minimum</mat-hint>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="actions">
+            <button mat-button type="button" (click)="reset()" [disabled]="loading">
+              <mat-icon>refresh</mat-icon> Annuler
+            </button>
+
+            <button mat-flat-button color="primary"
+              type="button"
+              (click)="saveAll()"
+              [disabled]="loading || form.invalid || !hasChanges">
+              <mat-icon *ngIf="!loading">save</mat-icon>
+              <mat-progress-spinner *ngIf="loading" mode="indeterminate" diameter="18"></mat-progress-spinner>
+              Enregistrer
+            </button>
+          </div>
+        </form>
+
+        <mat-card class="danger-card" aria-live="polite">
+          <h2>Zone dangereuse</h2>
+          <p>La suppression de votre compte est <strong>définitive</strong>. Toutes vos données associées seront supprimées.</p>
+          <button mat-flat-button color="warn" (click)="deleteAccount()">
+            <mat-icon>delete_forever</mat-icon>
+            Supprimer mon compte
+          </button>
+        </mat-card>
+      </section>
+    </mat-tab>
+
+    <!-- Onglet Préférences -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>tune</mat-icon><span>Préférences</span>
+      </ng-template>
+
+      <section class="tab-pane">
+        <div class="prefs-grid">
+          <div class="pref">
+            <div class="pref-head">
+              <mat-icon>palette</mat-icon>
+              <h3>Thème</h3>
+            </div>
+            <mat-button-toggle-group
+              name="theme"
+              [(ngModel)]="prefs.theme"
+              (change)="savePreferences()"
+              aria-label="Choix du thème">
+              <mat-button-toggle value="system">Système</mat-button-toggle>
+              <mat-button-toggle value="light">Clair</mat-button-toggle>
+              <mat-button-toggle value="dark">Sombre</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+          <div class="pref">
+            <div class="pref-head">
+              <mat-icon>thermostat</mat-icon>
+              <h3>Unités des mesures</h3>
+            </div>
+            <mat-form-field appearance="fill" class="w-240">
+              <mat-label>Température</mat-label>
+              <mat-select [(ngModel)]="prefs.tempUnit" (selectionChange)="savePreferences()" aria-label="Unité de température">
+                <mat-option value="C">Celsius (°C)</mat-option>
+                <mat-option value="F">Fahrenheit (°F)</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="pref">
+            <div class="pref-head">
+              <mat-icon>notifications</mat-icon>
+              <h3>Notifications</h3>
+            </div>
+            <mat-slide-toggle [(ngModel)]="prefs.notifyTasks" (change)="savePreferences()" aria-label="Activer les rappels de tâches">
+              Rappels de tâches
+            </mat-slide-toggle>
+          </div>
+        </div>
+      </section>
+    </mat-tab>
+
+    <!-- Onglet Données -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>database</mat-icon><span>Données</span>
+      </ng-template>
+
+      <section class="tab-pane">
+        <mat-card class="data-card">
+          <h2>Vos données</h2>
+          <p>Exportez l’ensemble de vos aquariums, mesures et tâches au format JSON.</p>
+          <button mat-stroked-button (click)="exportData()">
+            <mat-icon>download</mat-icon> Exporter mes données (.json)
+          </button>
+        </mat-card>
+      </section>
+    </mat-tab>
+
+    <!-- Onglet Admin (visible uniquement pour les admins) -->
+    <mat-tab *ngIf="isAdmin">
+      <ng-template mat-tab-label>
+        <mat-icon>admin_panel_settings</mat-icon><span>Admin</span>
+      </ng-template>
+
+      <section class="tab-pane">
+        <div class="admin-grid">
+          <!-- Utilisateurs -->
+          <mat-card class="admin-card">
+            <div class="admin-head">
+              <mat-icon>group</mat-icon>
+              <h3>Utilisateurs</h3>
+            </div>
+            <p>Créer, éditer, activer/désactiver des comptes, réinitialiser des mots de passe.</p>
+            <div class="admin-actions">
+              <button mat-stroked-button color="primary" [routerLink]="'/admin/users'">
+                <mat-icon>manage_accounts</mat-icon>
+                Gérer les utilisateurs
+              </button>
+            </div>
+          </mat-card>
+
+          <!-- Aquariums -->
+          <mat-card class="admin-card">
+            <div class="admin-head">
+              <mat-icon>inventory_2</mat-icon>
+              <h3>Aquariums</h3>
+            </div>
+            <p>Modérer les aquariums, corriger des propriétaires, nettoyer des données.</p>
+            <div class="admin-actions">
+              <button mat-stroked-button color="primary" [routerLink]="'/admin/aquariums'">
+                <mat-icon>view_list</mat-icon>
+                Gérer les aquariums
+              </button>
+            </div>
+          </mat-card>
+
+          <!-- Plantes -->
+          <mat-card class="admin-card">
+            <div class="admin-head">
+              <mat-icon>local_florist</mat-icon>
+              <h3>Plantes</h3>
+            </div>
+            <p>Créer / modifier les fiches plantes (lumière, CO₂, sol, croissance…).</p>
+            <div class="admin-actions">
+              <button mat-stroked-button color="primary" [routerLink]="'/admin/plants'">
+                <mat-icon>edit</mat-icon>
+                Gérer les plantes
+              </button>
+            </div>
+          </mat-card>
+
+          <!-- Espèces -->
+          <mat-card class="admin-card">
+            <div class="admin-head">
+              <mat-icon>pets</mat-icon>
+              <h3>Espèces</h3>
+            </div>
+            <p>Créer / modifier les espèces (paramètres, compatibilités, taille, biotope…)</p>
+            <div class="admin-actions">
+              <button mat-stroked-button color="primary" [routerLink]="'/admin/species'">
+                <mat-icon>library_books</mat-icon>
+                Gérer les espèces
+              </button>
+            </div>
+          </mat-card>
+        </div>
+      </section>
+    </mat-tab>
+  </mat-tab-group>
 </mat-card>

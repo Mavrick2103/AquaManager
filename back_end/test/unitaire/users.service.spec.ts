@@ -4,8 +4,8 @@ import { Repository } from 'typeorm';
 import { ConflictException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
-import { UsersService } from './users.service';
-import { User } from './user.entity';
+import { UsersService } from '../../src/users/users.service';
+import { User } from '../../src/users/user.entity';
 
 jest.mock('argon2', () => ({
   hash: jest.fn(async (s: string) => 'hashed:' + s),

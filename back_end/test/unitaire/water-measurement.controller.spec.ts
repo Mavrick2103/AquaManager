@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WaterMeasurementController } from './water-measurement.controller';
-import { WaterMeasurementService } from './water-measurement.service';
-import { CreateWaterMeasurementDto } from './dto/create-water-measurement.dto';
+import { WaterMeasurementController } from '../../src/water-measurement/water-measurement.controller';
+import { WaterMeasurementService } from '../../src/water-measurement/water-measurement.service';
+import { CreateWaterMeasurementDto } from '../../src/water-measurement/dto/create-water-measurement.dto';
 
 describe('WaterMeasurementController (unit)', () => {
   let controller: WaterMeasurementController;

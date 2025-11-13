@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
-import { UpdateMeDto } from './dto/update-me.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
+import { UsersController } from '../../src/users/users.controller';
+import { UsersService } from '../../src/users/users.service';
+import { UpdateMeDto } from '../../src/users/dto/update-me.dto';
+import { ChangePasswordDto } from '../../src/users/dto/change-password.dto';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('UsersController (unit)', () => {

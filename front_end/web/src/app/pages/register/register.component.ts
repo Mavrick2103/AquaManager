@@ -13,7 +13,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AuthService } from '../../core/auth.service';
 
-// Validator: mot de passe = confirmation
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   const pwd = group.get('password')?.value;
   const cfm = group.get('confirmPassword')?.value;

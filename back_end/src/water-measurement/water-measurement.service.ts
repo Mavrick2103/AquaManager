@@ -23,9 +23,9 @@ export class WaterMeasurementService {
     if (!a) throw new NotFoundException('Aquarium introuvable');
 
     if (a.waterType === 'EAU_DOUCE') {
-      dto.dkh = dto.salinity = dto.ca = dto.mg =  undefined;
+      dto.dkh = dto.salinity = dto.ca = dto.mg = undefined;
     } else {
-      dto.kh = dto.gh = dto.no2 = undefined;
+      dto.kh = dto.gh = dto.no2 = dto.no3 = dto.fe = dto.k = dto.sio2 = dto.nh3 = undefined;
     }
 
     const m = this.repo.create({
@@ -33,11 +33,17 @@ export class WaterMeasurementService {
       measuredAt: new Date(dto.measuredAt),
       ph: dto.ph ?? null, temp: dto.temp ?? null,
       kh: dto.kh ?? null, gh: dto.gh ?? null, no2: dto.no2 ?? null, no3: dto.no3 ?? null,
-      dkh: dto.dkh ?? null, salinity: dto.salinity ?? null, ca: dto.ca ?? null,
-      mg: dto.mg ?? null, po4: dto.po4 ?? null,
+      dkh: dto.dkh ?? null, salinity: dto.salinity ?? null, ca: dto.ca ?? null, mg: dto.mg ?? null, po4: dto.po4 ?? null,
       fe: dto.fe ?? null, k: dto.k ?? null, sio2: dto.sio2 ?? null, nh3: dto.nh3 ?? null,
       comment: dto.comment?.trim() || null,
     });
     return this.repo.save(m);
+  }
+
+  async deleteForAquarium(aquariumId: number, id: number) {
+    const measurement = await this.repo.findOne({ where: { id, aquariumId } });
+    if (!measurement) throw new NotFoundException('Mesure introuvable pour cet aquarium');
+    await this.repo.delete({ id });
+    return { success: true };
   }
 }

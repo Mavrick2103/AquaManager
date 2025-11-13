@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TaskController } from './task.controller';
-import { TaskService } from './task.service';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
-import { TaskStatus, TaskType } from './task.entity';
+import { TaskController } from '../../src/tasks/task.controller';
+import { TaskService } from '../../src/tasks/task.service';
+import { CreateTaskDto } from '../../src/tasks/dto/create-task.dto';
+import { UpdateTaskDto } from '../../src/tasks/dto/update-task.dto';
+import { TaskStatus, TaskType } from '../../src/tasks/task.entity';
 
 describe('TaskController (unit)', () => {
   let controller: TaskController;

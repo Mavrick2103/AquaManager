@@ -3,9 +3,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 
-import { AquariumsService } from './aquariums.service';
-import { Aquarium } from './aquariums.entity';
-import { User } from '../users/user.entity';
+import { AquariumsService } from '../../src/aquariums/aquariums.service';
+import { Aquarium } from '../../src/aquariums/aquariums.entity';
+import { User } from '../../src/users/user.entity';
 
 describe('AquariumsService (unit)', () => {
   let service: AquariumsService;

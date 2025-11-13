@@ -31,11 +31,6 @@ export class AuthService {
     return { access, refresh };
   }
 
-  async register(dto: CreateUserDto) {
-    const user = await this.users.create(dto);
-    return { id: user.id, fullName: user.fullName, email: user.email };
-  }
-
   signAccess(payload: JwtPayload) {
     const expiresIn = process.env.JWT_EXPIRES;
     return this.jwt.signAsync(payload, { expiresIn });
@@ -48,5 +43,10 @@ export class AuthService {
 
   verifyRefresh(token: string) {
     return this.jwt.verifyAsync<JwtPayload>(token);
+  }
+
+  async register(dto: CreateUserDto) {
+    const user = await this.users.create(dto);
+    return { id: user.id, fullName: user.fullName, email: user.email };
   }
 }

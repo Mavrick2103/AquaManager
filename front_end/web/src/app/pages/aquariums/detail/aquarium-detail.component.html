@@ -1,4 +1,3 @@
-<!-- Toolbar / actions -->
 <section class="toolbar">
   <a class="brand" [routerLink]="['/aquariums']" aria-label="Retour à la liste">
     <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
@@ -7,19 +6,30 @@
   <h1>Fiche aquarium</h1>
 
   <div class="actions">
-    <button mat-flat-button color="primary" type="button" (click)="openEditDialog()" [disabled]="saving">
-      <mat-icon>edit</mat-icon>
-      <span>Modifier l’aquarium</span>
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="saving"
+      [matMenuTriggerFor]="settingsMenu"
+      aria-label="Paramètres"
+    >
+      <mat-icon>settings</mat-icon>
+      <span>Paramètres</span>
     </button>
 
-    <button mat-stroked-button color="warn" type="button" (click)="remove()" [disabled]="saving">
-      <mat-icon>delete</mat-icon>
-      <span>Supprimer</span>
-    </button>
+    <mat-menu #settingsMenu="matMenu">
+      <button mat-menu-item (click)="openEditDialog()">
+        <mat-icon>edit</mat-icon>
+        <span>Modifier l’aquarium</span>
+      </button>
+      <button mat-menu-item (click)="remove()">
+        <mat-icon color="warn">delete</mat-icon>
+        <span>Supprimer</span>
+      </button>
+    </mat-menu>
   </div>
 </section>
 
-<!-- Bandeau résumé -->
 <section class="hero" *ngIf="!loading">
   <div class="left">
     <div class="avatar"><mat-icon>water_drop</mat-icon></div>
@@ -53,7 +63,6 @@
 
 <!-- ========= Onglets ========= -->
 <mat-tab-group dynamicHeight>
-  <!-- Onglet MESURES -->
   <mat-tab label="Mesures">
     <div class="tab-section">
       <div class="tab-actions">
@@ -66,10 +75,18 @@
       <!-- Grille 2 colonnes (1 en mobile) -->
       <div class="mini-grid">
         <!-- Commun -->
-        <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="ph"></app-water-measurements-chart></div>
-        <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="temp"></app-water-measurements-chart></div>
-        <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no2"></app-water-measurements-chart></div>
-        <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no3"></app-water-measurements-chart></div>
+        <div class="mini-card">
+          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="ph"></app-water-measurements-chart>
+        </div>
+        <div class="mini-card">
+          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="temp"></app-water-measurements-chart>
+        </div>
+        <div class="mini-card">
+          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no2"></app-water-measurements-chart>
+        </div>
+        <div class="mini-card">
+          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no3"></app-water-measurements-chart>
+        </div>
 
         <!-- Eau douce -->
         <ng-container *ngIf="waterType === 'EAU_DOUCE'">
@@ -91,10 +108,98 @@
           <div class="mini-card"><app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="mg"></app-water-measurements-chart></div>
         </ng-container>
       </div>
+
+      <!-- ================= Historique des mesures ================= -->
+      <section class="history" *ngIf="!loading">
+        <div class="history-header">
+          <h2>Historique des mesures</h2>
+
+          <mat-form-field appearance="outline" class="limit-select">
+            <mat-label>Afficher</mat-label>
+            <mat-select [(value)]="selectedLimit" (selectionChange)="applyLimit()">
+              <mat-option *ngFor="let n of limitOptions" [value]="n">{{ n === 0 ? 'Toutes' : n }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <table mat-table [dataSource]="displayedMeasurements" class="mat-elevation-z0">
+          <!-- Date -->
+          <ng-container matColumnDef="measuredAt">
+            <th mat-header-cell *matHeaderCellDef>Date</th>
+            <td mat-cell *matCellDef="let m">{{ m.measuredAt | date: 'medium' }}</td>
+          </ng-container>
+
+          <!-- Colonnes communes -->
+          <ng-container matColumnDef="ph">
+            <th mat-header-cell *matHeaderCellDef>pH</th>
+            <td mat-cell *matCellDef="let m">{{ m.ph ?? '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="temp">
+            <th mat-header-cell *matHeaderCellDef>Temp (°C)</th>
+            <td mat-cell *matCellDef="let m">{{ m.temp ?? '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="no2">
+            <th mat-header-cell *matHeaderCellDef>NO₂</th>
+            <td mat-cell *matCellDef="let m">{{ m.no2 ?? '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="no3">
+            <th mat-header-cell *matHeaderCellDef>NO₃</th>
+            <td mat-cell *matCellDef="let m">{{ m.no3 ?? '—' }}</td>
+          </ng-container>
+
+          <!-- Eau douce -->
+          <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="kh">
+            <th mat-header-cell *matHeaderCellDef>KH</th>
+            <td mat-cell *matCellDef="let m">{{ m.kh ?? '—' }}</td>
+          </ng-container>
+          <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="gh">
+            <th mat-header-cell *matHeaderCellDef>GH</th>
+            <td mat-cell *matCellDef="let m">{{ m.gh ?? '—' }}</td>
+          </ng-container>
+          <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="po4">
+            <th mat-header-cell *matHeaderCellDef>PO₄</th>
+            <td mat-cell *matCellDef="let m">{{ m.po4 ?? '—' }}</td>
+          </ng-container>
+          <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="fe">
+            <th mat-header-cell *matHeaderCellDef>Fe</th>
+            <td mat-cell *matCellDef="let m">{{ m.fe ?? '—' }}</td>
+          </ng-container>
+          <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="k">
+            <th mat-header-cell *matHeaderCellDef>K</th>
+            <td mat-cell *matCellDef="let m">{{ m.k ?? '—' }}</td>
+          </ng-container>
+
+          <!-- Eau de mer -->
+          <ng-container *ngIf="waterType === 'EAU_DE_MER'" matColumnDef="dkh">
+            <th mat-header-cell *matHeaderCellDef>dKH</th>
+            <td mat-cell *matCellDef="let m">{{ m.dkh ?? '—' }}</td>
+          </ng-container>
+          <ng-container *ngIf="waterType === 'EAU_DE_MER'" matColumnDef="salinity">
+            <th mat-header-cell *matHeaderCellDef>Salinité</th>
+            <td mat-cell *matCellDef="let m">{{ m.salinity ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let m">
+              <button mat-icon-button color="warn" (click)="deleteMeasurement(m.id)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+
+        <p *ngIf="!displayedMeasurements.length" style="opacity:0.7; margin-top:8px;">
+          Aucune mesure enregistrée pour le moment.
+        </p>
+      </section>
+      <!-- ================= /Historique ================= -->
     </div>
   </mat-tab>
 
-  <!-- Onglet ESPÈCES -->
   <mat-tab label="Espèces">
     <div class="tab-section">
       <div class="tab-actions">
@@ -121,7 +226,6 @@
   </mat-tab>
 </mat-tab-group>
 
-<!-- Loader -->
 <ng-template #loader>
   <div class="loading">
     <mat-progress-spinner diameter="56"></mat-progress-spinner>

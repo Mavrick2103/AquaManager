@@ -5,42 +5,17 @@
 
   <span class="spacer"></span>
 
-  <!-- Icône profil avec menu au survol -->
+  <!-- Icône profil -->
   <button
     mat-icon-button
     aria-label="Profil"
-    [matMenuTriggerFor]="profileMenu"
-    [matMenuTriggerRestoreFocus]="false"
-    #menuTrigger="matMenuTrigger"
-    (mouseenter)="openMenu(menuTrigger)"
+    [routerLink]="'/profile'"
+    class="profile-btn"
   >
     <mat-icon>account_circle</mat-icon>
   </button>
-
-  <mat-menu
-    #profileMenu="matMenu"
-    (mouseenter)="keepOpen(menuTrigger)"
-    (mouseleave)="closeMenu(menuTrigger)"
-    xPosition="before"
-    yPosition="below"
-  >
-    <button mat-menu-item [routerLink]="'/profile'">
-      <mat-icon>person</mat-icon>
-      <span>Profil utilisateur</span>
-    </button>
-   <!-- <button mat-menu-item [routerLink]="'/settings'">
-      <mat-icon>settings</mat-icon>
-      <span>Paramètres</span>
-    </button>
-  -->
-  </mat-menu>
-
-  <!-- Déconnexion -->
-  <button mat-stroked-button color="warn" class="logout-btn" (click)="logout()">
-    <mat-icon>logout</mat-icon>
-    <span>Déconnexion</span>
-  </button>
 </mat-toolbar>
+
 
 <main class="home-main">
   <!-- Hero -->
