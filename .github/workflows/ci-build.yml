@@ -18,10 +18,10 @@ jobs:
 
       - name: Install deps
         run: |
-          cd front_end
+          cd front_end/web
           npm install
 
       - name: Build project
         run: |
-          cd front_end
+          cd front_end/web
           npm run build
