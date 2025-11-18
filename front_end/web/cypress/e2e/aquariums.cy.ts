@@ -110,7 +110,7 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     cy.contains('mat-chip', /eau douce/i).should('exist');
   });
 
-  it('supprime un aquarium existant', () => {
+    it('supprime un aquarium existant', () => {
     const aq = {
       id: 2,
       name: 'Aqua à supprimer',
@@ -135,7 +135,11 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     cy.intercept('DELETE', rx.getAq(2), { statusCode: 200, body: { ok: true } }).as('deleteAq');
     cy.intercept('GET', rx.getAqs, { statusCode: 200, body: [] }).as('listAfterDelete');
 
-    cy.contains('button', /supprimer/i, { timeout: 10000 })
+    cy.contains('button', /paramètres/i, { timeout: 10000 })
+      .should('be.visible')
+      .click({ force: true });
+
+    cy.contains('button.mat-mdc-menu-item, button[mat-menu-item], button', /supprimer/i, { timeout: 10000 })
       .should('be.visible')
       .click({ force: true });
 
