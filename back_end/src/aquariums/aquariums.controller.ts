@@ -26,7 +26,7 @@ export class AquariumsController {
     return this.service.findOne(req.user.userId, id);
   }
 
-  @Put(':id')
+  @Put(':id') 
   update(
     @Request() req,
     @Param('id', ParseIntPipe) id: number,
