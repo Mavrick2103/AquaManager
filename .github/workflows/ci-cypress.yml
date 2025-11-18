@@ -21,10 +21,15 @@ jobs:
           cd front_end/web
           npm install
 
-      - name: Install Cypress
+      - name: Build Angular app
         run: |
           cd front_end/web
-          npx cypress install
+          npm run build
+
+      - name: Start HTTP server on dist (background)
+        run: |
+          cd front_end/web
+          npx http-server ./dist/web/browser -p 4200 &
 
       - name: Run Cypress tests
         run: |

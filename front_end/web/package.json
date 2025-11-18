@@ -5,6 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "serve:dist": "npx http-server ./dist/web/browser -p 4200",
+    "cypress:run": "npx cypress run",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
