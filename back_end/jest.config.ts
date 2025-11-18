@@ -7,13 +7,11 @@ const config: Config = {
   moduleFileExtensions: ['ts', 'js', 'json'],
   testEnvironment: 'node',
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
-  // on détecte tous les types de tests par le nommage
   testMatch: [
-    '**/*.spec.ts',        // unitaires
-    '**/*.functional.spec.ts',    // intégration
-    '**/*.e2e-spec.ts',    // E2E
+    '**/*.spec.ts',
+    '**/*.functional.spec.ts',
+    '**/*.e2e-spec.ts',
   ],
-  // utile pour SQLite in-memory en intégration : exécuter en séquentiel
   maxWorkers: 1,
 };
 
