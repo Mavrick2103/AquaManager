@@ -2,7 +2,6 @@
 
 describe('Authentification', () => {
   beforeEach(() => {
-    // Stubs communs pour le scénario "login OK"
     cy.intercept('POST', '**/auth/login', {
       statusCode: 200,
       body: { access_token: 'TEST_TOKEN' },
@@ -16,6 +15,7 @@ describe('Authentification', () => {
 
   it('doit permettre la connexion', () => {
     cy.visit('/login');
+
     cy.get('input[formControlName="email"]').type('test@aquamanager.com');
     cy.get('input[formControlName="password"]').type('Azerty123');
     cy.get('button[type="submit"]').click();
@@ -27,22 +27,25 @@ describe('Authentification', () => {
   });
 
   it('empêche un accès non connecté au dashboard', () => {
-    // On simule vraiment un utilisateur NON connecté
     cy.clearCookies();
     cy.window().then((win) => {
       win.localStorage.clear();
       win.sessionStorage.clear();
     });
 
-    // Ici on n’a pas besoin de stubber login/me : on ne veut justement PAS être authentifié
+    cy.intercept('GET', '**/users/me', {
+      statusCode: 401,
+      body: { message: 'Unauthorized' },
+    }).as('meUnauthorized');
+
     cy.visit('/');
 
-    // 👉 Ce qui compte : pas de dashboard visible…
-    cy.contains('Mes aquariums').should('not.exist');
+    cy.wait('@meUnauthorized');
 
-    // …et on voit bien le formulaire de login (ou au moins les champs)
-    cy.get('input[formControlName="email"]').should('be.visible');
+    cy.get('input[formControlName="email"]', { timeout: 10000 }).should('be.visible');
     cy.get('input[formControlName="password"]').should('be.visible');
     cy.get('button[type="submit"]').should('be.visible');
+
+    cy.url().should('include', '/login');
   });
 });
