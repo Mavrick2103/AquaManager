@@ -9,20 +9,17 @@ describe('Authentification', () => {
 
     cy.intercept('GET', '**/users/me', {
       statusCode: 200,
-      body: { id: 1, email: 'test@aquamanager.com' },
+      body: { userId: 1, email: 'test@aquamanager.com', role: 'USER' },
     }).as('me');
   });
 
   it('doit permettre la connexion', () => {
     cy.visit('/login');
-
     cy.get('input[formControlName="email"]').type('test@aquamanager.com');
     cy.get('input[formControlName="password"]').type('Azerty123');
     cy.get('button[type="submit"]').click();
 
-    cy.wait('@login');
-    cy.wait('@me');
-
+    cy.wait(['@login', '@me']);
     cy.contains('Mes aquariums').should('be.visible');
   });
 
@@ -33,19 +30,19 @@ describe('Authentification', () => {
       win.sessionStorage.clear();
     });
 
-    cy.intercept('GET', '**/users/me', {
-      statusCode: 401,
-      body: { message: 'Unauthorized' },
-    }).as('meUnauthorized');
+    cy.intercept('POST', '**/auth/refresh', {
+      statusCode: 200,
+      body: { access_token: null },
+    }).as('refreshFail');
 
     cy.visit('/');
 
-    cy.wait('@meUnauthorized');
-
-    cy.get('input[formControlName="email"]', { timeout: 10000 }).should('be.visible');
-    cy.get('input[formControlName="password"]').should('be.visible');
-    cy.get('button[type="submit"]').should('be.visible');
+    cy.wait('@refreshFail');
 
     cy.url().should('include', '/login');
+
+    cy.get('input[formControlName="email"]').should('be.visible');
+    cy.get('input[formControlName="password"]').should('be.visible');
+    cy.get('button[type="submit"]').should('be.visible');
   });
 });
