@@ -17,6 +17,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test": "jest --config jest.config.ts --runInBand",
+    "test:ci": "jest test/unitaire test/Fonctionnel",
     "test:unit": "jest --config jest.config.ts --runInBand --testMatch **/*.spec.ts",
     "test:fun": "jest --config jest.config.ts --runInBand --testMatch **/*.functional.spec.ts",
     "test:e2e": "jest --config jest.config.ts --runInBand --testMatch **/*.e2e-spec.ts"
