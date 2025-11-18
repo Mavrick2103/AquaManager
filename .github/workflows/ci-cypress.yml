@@ -18,15 +18,15 @@ jobs:
 
       - name: Install frontend deps
         run: |
-          cd front_end
+          cd front_end/web
           npm install
 
       - name: Install Cypress
         run: |
-          cd front_end
+          cd front_end/web
           npx cypress install
 
       - name: Run Cypress tests
         run: |
-          cd front_end
+          cd front_end/web
           npx cypress run
