@@ -1,0 +1,27 @@
+name: CI - Jest (backend)
+
+on:
+  push:
+
+jobs:
+  tests-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend deps
+        run: |
+          cd back_end
+          npm install
+
+      - name: Run Jest tests
+        run: |
+          cd back_end
+          npm test
