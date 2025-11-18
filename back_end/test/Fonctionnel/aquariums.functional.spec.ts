@@ -36,7 +36,6 @@ describe('Aquariums (tests fonctionnels)', () => {
         AquariumsService,
         { provide: getRepositoryToken(Aquarium), useValue: aquariumRepoMock },
         { provide: getRepositoryToken(User), useValue: usersRepoMock },
-        // On neutralise le guard JWT pour ne pas gérer les vrais tokens ici
         { provide: JwtAuthGuard, useValue: { canActivate: () => true } },
       ],
     }).compile();
@@ -50,15 +49,14 @@ describe('Aquariums (tests fonctionnels)', () => {
   });
 
   it('scénario fonctionnel : un user crée un aquarium puis récupère sa liste', async () => {
-    // le user existe
+
     usersRepo.findOne.mockResolvedValue({ id: 1 } as any);
 
-    // comportement du repo
     repo.create.mockImplementation((partial: any) => partial as any);
     repo.save.mockImplementation(async (a: any) => ({ id: 42, ...a }));
 
     const dto = {
-      name: ' Proxima 175 ', // on teste aussi le trim()
+      name: ' Proxima 175 ',
       lengthCm: 70,
       widthCm: 40,
       heightCm: 50,
@@ -86,9 +84,7 @@ describe('Aquariums (tests fonctionnels)', () => {
       volumeL: 140,
     });
 
-    // findMine dans le même scénario
     repo.find.mockResolvedValue([created]);
-
     const mine = await controller.findMine(req);
 
     expect(repo.find).toHaveBeenCalledWith({
