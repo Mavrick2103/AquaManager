@@ -1,6 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
+import { ConfigService } from '@nestjs/config';
+
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 
@@ -11,14 +13,19 @@ export class AuthService {
   constructor(
     private readonly users: UsersService,
     private readonly jwt: JwtService,
+    private readonly config: ConfigService,
   ) {}
 
   async login(email: string, password: string) {
     const user = await this.users.findByEmailWithPassword(email);
-    if (!user) throw new UnauthorizedException('Email ou mot de passe invalide');
+    if (!user) {
+      throw new UnauthorizedException('Email ou mot de passe invalide');
+    }
 
     const ok = await argon2.verify(user.password, password);
-    if (!ok) throw new UnauthorizedException('Email ou mot de passe invalide');
+    if (!ok) {
+      throw new UnauthorizedException('Email ou mot de passe invalide');
+    }
 
     const payload: JwtPayload = {
       sub: user.id,
@@ -31,22 +38,22 @@ export class AuthService {
     return { access, refresh };
   }
 
+  async register(dto: CreateUserDto) {
+    const user = await this.users.create(dto);
+    return { id: user.id, fullName: user.fullName, email: user.email };
+  }
+
   signAccess(payload: JwtPayload) {
-    const expiresIn = process.env.JWT_EXPIRES;
+    const expiresIn = this.config.get<string>('JWT_EXPIRES') || '15m';
     return this.jwt.signAsync(payload, { expiresIn });
   }
 
   signRefresh(payload: JwtPayload) {
-    const expiresIn = process.env.JWT_REFRESH_EXPIRES;
+    const expiresIn = this.config.get<string>('JWT_REFRESH_EXPIRES') || '15d';
     return this.jwt.signAsync(payload, { expiresIn });
   }
 
   verifyRefresh(token: string) {
     return this.jwt.verifyAsync<JwtPayload>(token);
-  }
-
-  async register(dto: CreateUserDto) {
-    const user = await this.users.create(dto);
-    return { id: user.id, fullName: user.fullName, email: user.email };
   }
 }

@@ -20,20 +20,33 @@ describe('WaterMeasurementController (unit)', () => {
 
     controller = module.get(WaterMeasurementController);
     service = module.get(WaterMeasurementService) as any;
+
+    jest.clearAllMocks();
   });
 
   it('GET /aquariums/:aquariumId/measurements -> list()', async () => {
+    const req: any = { user: { userId: 42 } };
+
     service.listForAquarium.mockResolvedValue([{ id: 1 }] as any);
-    const res = await controller.list(5);
-    expect(service.listForAquarium).toHaveBeenCalledWith(5);
+
+    const res = await controller.list(req, 5);
+
+    expect(service.listForAquarium).toHaveBeenCalledWith(42, 5);
     expect(res).toEqual([{ id: 1 }]);
   });
 
   it('POST /aquariums/:aquariumId/measurements -> create()', async () => {
-    const dto: CreateWaterMeasurementDto = { measuredAt: '2025-01-01T00:00:00.000Z' };
+    const req: any = { user: { userId: 42 } };
+
+    const dto: CreateWaterMeasurementDto = {
+      measuredAt: '2025-01-01T00:00:00.000Z',
+    } as any;
+
     (service.createForAquarium as jest.Mock).mockResolvedValue({ id: 10 } as any);
-    const res = await controller.create(7, dto);
-    expect(service.createForAquarium).toHaveBeenCalledWith(7, dto);
+
+    const res = await controller.create(req, 7, dto);
+
+    expect(service.createForAquarium).toHaveBeenCalledWith(42, 7, dto);
     expect(res).toEqual({ id: 10 });
   });
 });

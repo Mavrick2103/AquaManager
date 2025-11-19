@@ -1,17 +1,20 @@
-import { DataSourceOptions } from 'typeorm';
-import { User } from '../users/user.entity';
-import { Aquarium } from '../aquariums/aquariums.entity';
-import { WaterMeasurement } from '../water-measurement/water-measurement.entity';
-import { Task } from '../tasks/task.entity';
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
-export const typeOrmConfig = (): DataSourceOptions => ({
-  type: 'mysql',
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT ?? 3306),
-  username: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  entities: [User, Aquarium, WaterMeasurement, Task],
-  synchronize: false,
-  logging: false,
-});
+export function typeOrmConfig(): TypeOrmModuleOptions {
+  const isProd = process.env.NODE_ENV === 'production';
+
+  return {
+    type: 'mysql',
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT ?? 3306),
+    username: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+
+    autoLoadEntities: true,
+
+    synchronize: process.env.TYPEORM_SYNC === 'true' && !isProd,
+
+    logging: !isProd,
+  };
+}

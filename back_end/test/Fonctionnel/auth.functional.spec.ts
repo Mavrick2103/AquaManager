@@ -2,6 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 import { AuthController } from '../../src/auth/auth.controller';
 import { AuthService } from '../../src/auth/auth.service';
@@ -21,11 +22,9 @@ describe('Auth (tests fonctionnels)', () => {
   let auth: AuthService;
   let users: jest.Mocked<UsersService>;
   let jwt: jest.Mocked<JwtService>;
+  let configMock: { get: jest.Mock };
 
   beforeEach(async () => {
-    // On configure des variables d’env pour les expirations (utilisées dans signAccess/signRefresh)
-    process.env.JWT_EXPIRES = '1h';
-    process.env.JWT_REFRESH_EXPIRES = '7d';
     process.env.JWT_SECRET = 'testsecret_min_16_chars';
 
     const usersMock: Partial<jest.Mocked<UsersService>> = {
@@ -38,12 +37,21 @@ describe('Auth (tests fonctionnels)', () => {
       verifyAsync: jest.fn(),
     };
 
+    configMock = {
+      get: jest.fn((key: string) => {
+        if (key === 'JWT_EXPIRES') return '1h';
+        if (key === 'JWT_REFRESH_EXPIRES') return '7d';
+        return undefined;
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         AuthService,
         { provide: UsersService, useValue: usersMock },
         { provide: JwtService, useValue: jwtMock },
+        { provide: ConfigService, useValue: configMock },
       ],
     }).compile();
 
@@ -56,7 +64,6 @@ describe('Auth (tests fonctionnels)', () => {
   });
 
   it('login() -> génère un access token et pose le refresh token en cookie', async () => {
-    // user trouvé avec mot de passe hashé
     users.findByEmailWithPassword.mockResolvedValue({
       id: 1,
       email: 'test@mail.com',
@@ -64,7 +71,6 @@ describe('Auth (tests fonctionnels)', () => {
       role: 'USER',
     } as any);
 
-    // premier signAsync = access, deuxième = refresh
     let call = 0;
     jwt.signAsync.mockImplementation(async () => {
       call++;
@@ -72,16 +78,14 @@ describe('Auth (tests fonctionnels)', () => {
     });
 
     const res: any = { cookie: jest.fn() };
-
     const body = { email: 'test@mail.com', password: 'secret123' };
+
     const result = await controller.login(body, res);
 
-    // vérifie la chaîne fonctionnelle login
     expect(users.findByEmailWithPassword).toHaveBeenCalledWith('test@mail.com');
     expect(argon2.verify).toHaveBeenCalledWith('hashed:secret123', 'secret123');
-    expect(jwt.signAsync).toHaveBeenCalledTimes(2); // access + refresh
+    expect(jwt.signAsync).toHaveBeenCalledTimes(2);
 
-    // vérifie la pose du cookie de refresh
     expect(res.cookie).toHaveBeenCalledWith(
       'refresh_token',
       'REFRESH_TOKEN',
@@ -91,7 +95,6 @@ describe('Auth (tests fonctionnels)', () => {
       }),
     );
 
-    // corps de réponse = access_token
     expect(result).toEqual({ access_token: 'ACCESS_TOKEN' });
   });
 
@@ -140,7 +143,6 @@ describe('Auth (tests fonctionnels)', () => {
     const req: any = { cookies: { refresh_token: 'BAD_TOKEN' } };
     const res: any = { cookie: jest.fn() };
 
-    // on mocke verifyRefresh pour qu’il rejette
     jest.spyOn(auth, 'verifyRefresh').mockRejectedValue(new Error('invalid'));
 
     const result = await controller.refresh(req, res);
@@ -154,13 +156,11 @@ describe('Auth (tests fonctionnels)', () => {
     const req: any = { cookies: { refresh_token: 'OLD_REFRESH' } };
     const res: any = { cookie: jest.fn() };
 
-    // payload du refresh décodé
     jest.spyOn(auth, 'verifyRefresh').mockResolvedValue({
       sub: 1,
       role: 'USER',
     } as any);
 
-    // signAccess / signRefresh utilisent tous deux jwt.signAsync
     let call = 0;
     jwt.signAsync.mockImplementation(async () => {
       call++;
@@ -169,13 +169,9 @@ describe('Auth (tests fonctionnels)', () => {
 
     const result = await controller.refresh(req, res);
 
-    // verifyRefresh appelé avec l’ancien cookie
     expect(auth.verifyRefresh).toHaveBeenCalledWith('OLD_REFRESH');
-
-    // 2 nouveaux tokens générés
     expect(jwt.signAsync).toHaveBeenCalledTimes(2);
 
-    // cookie refresh mis à jour
     expect(res.cookie).toHaveBeenCalledWith(
       'refresh_token',
       'NEW_REFRESH',

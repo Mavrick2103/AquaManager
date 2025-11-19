@@ -79,7 +79,7 @@ describe('Users (tests fonctionnels)', () => {
     await expect(controller.me(req)).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('updateMe() -> met à jour le profil et renvoie le user sans mot de passe', async () => {
+    it('updateMe() -> met à jour le profil et renvoie le user sans mot de passe', async () => {
     const dto = { fullName: 'Nouveau Nom', email: 'new@test.com' };
 
     repo.update.mockResolvedValue({} as any);
@@ -93,7 +93,10 @@ describe('Users (tests fonctionnels)', () => {
 
     const result = await controller.updateMe(req, dto);
 
-    expect(repo.update).toHaveBeenCalledWith({ id: 1 }, dto);
+    expect(repo.update).toHaveBeenCalledWith(
+      { id: 1 },
+      expect.objectContaining({ fullName: 'Nouveau Nom' }),
+    );
     expect(repo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
     expect(result).toMatchObject({
       id: 1,
@@ -103,6 +106,7 @@ describe('Users (tests fonctionnels)', () => {
     });
     expect((result as any).password).toBeUndefined();
   });
+
 
   it('updateMe() -> 404 si utilisateur introuvable après update', async () => {
     repo.update.mockResolvedValue({} as any);

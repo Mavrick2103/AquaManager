@@ -7,22 +7,44 @@ import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix('api');
+  const isProd = process.env.NODE_ENV === 'production';
 
+  app.setGlobalPrefix('api');
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
   );
 
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
+
   app.use(cookieParser());
+  const allowedOrigins = isProd
+    ? [
+        'https://aquamanager.mondomaine.fr',
+      ]
+    : [
+        'http://localhost:4200',
+      ];
 
   app.enableCors({
-    origin: ['http://localhost:4200'],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  await app.listen(process.env.PORT || 3000);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+
+  console.log(
+    `AquaManager API démarrée sur port ${port} (NODE_ENV=${process.env.NODE_ENV || 'development'})`,
+  );
 }
+
 bootstrap();

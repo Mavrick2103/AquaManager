@@ -14,6 +14,10 @@ import { TaskModule } from './tasks/task.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+
+      // 🔹 Charge automatiquement .env.development, .env.production, etc.
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+
       validationOptions: { allowUnknown: true, abortEarly: false },
       validationSchema: Joi.object({
         NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),

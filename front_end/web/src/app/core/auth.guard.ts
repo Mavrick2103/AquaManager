@@ -14,11 +14,14 @@ export class AuthGuard implements CanActivate {
         return false;
       }
     }
+
     try {
-      if (!this.auth.me) await this.auth.fetchMe();
+      if (!this.auth.me) {
+        await this.auth.fetchMe();
+      }
       return true;
     } catch {
-      this.auth.logout();
+      await this.auth.logout();
       return false;
     }
   }

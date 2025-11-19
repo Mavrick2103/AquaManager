@@ -20,6 +20,6 @@ echo "3) Nettoyage des ressources Docker inutiles..."
 docker image prune -f >/dev/null 2>&1 || true
 
 echo ""
-echo "✅ Déploiement terminé !"
+echo "Déploiement terminé !"
 echo "Frontend → http://localhost:4200"
 echo "API → http://localhost:3000"

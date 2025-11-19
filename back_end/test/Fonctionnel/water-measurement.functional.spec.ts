@@ -14,6 +14,8 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
   let repo: jest.Mocked<Repository<WaterMeasurement>>;
   let aquasRepo: jest.Mocked<Repository<Aquarium>>;
 
+  const req = { user: { userId: 1 } } as any;
+
   beforeEach(async () => {
     const measurementRepoMock: Partial<jest.Mocked<Repository<WaterMeasurement>>> = {
       find: jest.fn(),
@@ -24,7 +26,6 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
     };
 
     const aquasRepoMock: Partial<jest.Mocked<Repository<Aquarium>>> = {
-      exist: jest.fn(),
       findOne: jest.fn(),
     };
 
@@ -46,7 +47,11 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
   });
 
   it('list() -> renvoie les mesures triées par date pour un aquarium existant', async () => {
-    aquasRepo.exist.mockResolvedValue(true as any);
+    aquasRepo.findOne.mockResolvedValue({
+      id: 1,
+      waterType: 'EAU_DOUCE',
+      user: { id: 1 },
+    } as any);
 
     const list = [
       { id: 2, aquariumId: 1, measuredAt: new Date('2025-01-02') },
@@ -54,9 +59,12 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
     ];
     repo.find.mockResolvedValue(list as any);
 
-    const res = await controller.list(1);
+    const res = await controller.list(req, 1);
 
-    expect(aquasRepo.exist).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(aquasRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 1, user: { id: 1 } },
+      relations: ['user'],
+    });
     expect(repo.find).toHaveBeenCalledWith({
       where: { aquariumId: 1 },
       order: { measuredAt: 'DESC' },
@@ -65,9 +73,9 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
   });
 
   it('list() -> 404 si aquarium inexistant', async () => {
-    aquasRepo.exist.mockResolvedValue(false as any);
+    aquasRepo.findOne.mockResolvedValue(null as any);
 
-    await expect(controller.list(999)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(controller.list(req, 999)).rejects.toBeInstanceOf(NotFoundException);
     expect(repo.find).not.toHaveBeenCalled();
   });
 
@@ -75,6 +83,7 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
     aquasRepo.findOne.mockResolvedValue({
       id: 1,
       waterType: 'EAU_DOUCE',
+      user: { id: 1 },
     } as any);
 
     repo.create.mockImplementation((partial: any) => partial as any);
@@ -92,7 +101,7 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
       k: 15,
       sio2: 1,
       nh3: 0,
-      // champs eau de mer qu’on veut voir annulés :
+      // champs eau de mer qu’on veut voir annulés
       dkh: 8,
       salinity: 35,
       ca: 420,
@@ -101,9 +110,12 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
       comment: '  mesure du matin  ',
     };
 
-    const res = await controller.create(1, dto as any);
+    const res = await controller.create(req, 1, dto as any);
 
-    expect(aquasRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(aquasRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 1, user: { id: 1 } },
+      relations: ['user'],
+    });
     expect(repo.create).toHaveBeenCalledWith(
       expect.objectContaining({
         aquariumId: 1,
@@ -123,7 +135,7 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
         salinity: null,
         ca: null,
         mg: null,
-        po4: 0.1, // on ne l’a pas nettoyé dans ton service pour eau douce => reste
+        po4: 0.1, // tu ne la nettoies pas en eau douce dans ton service
         comment: 'mesure du matin',
       }),
     );
@@ -137,6 +149,7 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
     aquasRepo.findOne.mockResolvedValue({
       id: 2,
       waterType: 'EAU_DE_MER',
+      user: { id: 1 },
     } as any);
 
     repo.create.mockImplementation((partial: any) => partial as any);
@@ -146,7 +159,7 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
       measuredAt: '2025-02-01T12:00:00.000Z',
       ph: 8.1,
       temp: 25,
-      // champs eau douce qu’on veut voir remis à null
+      // champs eau douce à nettoyer
       kh: 5,
       gh: 8,
       no2: 0.2,
@@ -164,9 +177,12 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
       comment: '  récifal  ',
     };
 
-    const res = await controller.create(2, dto as any);
+    const res = await controller.create(req, 2, dto as any);
 
-    expect(aquasRepo.findOne).toHaveBeenCalledWith({ where: { id: 2 } });
+    expect(aquasRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 2, user: { id: 1 } },
+      relations: ['user'],
+    });
     expect(repo.create).toHaveBeenCalledWith(
       expect.objectContaining({
         aquariumId: 2,
@@ -201,7 +217,7 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
     aquasRepo.findOne.mockResolvedValue(null as any);
 
     await expect(
-      controller.create(999, {
+      controller.create(req, 999, {
         measuredAt: '2025-01-01T00:00:00.000Z',
       } as any),
     ).rejects.toBeInstanceOf(NotFoundException);
@@ -211,6 +227,12 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
   });
 
   it('deleteForAquarium supprime une mesure existante et renvoie { success: true }', async () => {
+    aquasRepo.findOne.mockResolvedValue({
+      id: 1,
+      user: { id: 1 },
+      waterType: 'EAU_DOUCE',
+    } as any);
+
     const measurement = {
       id: 5,
       aquariumId: 1,
@@ -219,8 +241,12 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
     repo.findOne.mockResolvedValue(measurement as any);
     repo.delete.mockResolvedValue({} as any);
 
-    const res = await controller.remove(1, 5);
+    const res = await controller.remove(req, 1, 5);
 
+    expect(aquasRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 1, user: { id: 1 } },
+      relations: ['user'],
+    });
     expect(repo.findOne).toHaveBeenCalledWith({
       where: { id: 5, aquariumId: 1 },
     });
@@ -229,9 +255,15 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
   });
 
   it('deleteForAquarium -> 404 si la mesure n’existe pas pour cet aquarium', async () => {
+    aquasRepo.findOne.mockResolvedValue({
+      id: 1,
+      user: { id: 1 },
+      waterType: 'EAU_DOUCE',
+    } as any);
+
     repo.findOne.mockResolvedValue(null as any);
 
-    await expect(controller.remove(1, 999)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(controller.remove(req, 1, 999)).rejects.toBeInstanceOf(NotFoundException);
     expect(repo.delete).not.toHaveBeenCalled();
   });
 });

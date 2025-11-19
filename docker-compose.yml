@@ -37,7 +37,7 @@ services:
       JWT_EXPIRES: ${JWT_EXPIRES:-1h}
       NODE_ENV: production
       PORT: 3000
-      TYPEORM_SYNC: "true" 
+      TYPEORM_SYNC: "true"
     ports:
       - "3000:3000"
 

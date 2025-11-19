@@ -11,15 +11,22 @@ describe('Authentification', () => {
       statusCode: 200,
       body: { userId: 1, email: 'test@aquamanager.com', role: 'USER' },
     }).as('me');
+
+    cy.intercept('POST', '**/auth/refresh', {
+      statusCode: 201,
+      body: { access_token: 'TEST_TOKEN' },
+    }).as('refresh');
   });
 
   it('doit permettre la connexion', () => {
     cy.visit('/login');
+
     cy.get('input[formControlName="email"]').type('test@aquamanager.com');
     cy.get('input[formControlName="password"]').type('Azerty123');
     cy.get('button[type="submit"]').click();
 
     cy.wait(['@login', '@me']);
+    cy.visit('/');
     cy.contains('Mes aquariums').should('be.visible');
   });
 

@@ -1,9 +1,10 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as argon2 from 'argon2';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+
 import { User } from './user.entity';
 import { UpdateMeDto } from './dto/update-me.dto';
-import { Injectable, ConflictException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
@@ -14,10 +15,32 @@ export class UsersService {
     return this.repo.findOne({ where: { id } });
   }
 
+
   async updateProfile(userId: number, dto: UpdateMeDto) {
-    await this.repo.update({ id: userId }, dto);
+    const user = await this.repo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    const patch: Partial<User> = {};
+
+    if (dto.fullName !== undefined) {
+      const name = dto.fullName.trim();
+      if (name.length > 0) patch.fullName = name;
+    }
+
+    if (dto.email !== undefined && dto.email !== user.email) {
+      const exists = await this.repo.exist({ where: { email: dto.email } });
+      if (exists) throw new ConflictException('Email déjà utilisé');
+      patch.email = dto.email;
+    }
+
+    if (Object.keys(patch).length === 0) {
+      return user;
+    }
+
+    await this.repo.update({ id: userId }, patch);
     return this.findById(userId);
   }
+
 
   async changePassword(userId: number, currentPassword: string, newPassword: string) {
     const user = await this.repo
@@ -25,6 +48,7 @@ export class UsersService {
       .addSelect('u.password')
       .where('u.id = :id', { id: userId })
       .getOne();
+
     if (!user) return false;
 
     const ok = await argon2.verify(user.password, currentPassword);
@@ -34,6 +58,7 @@ export class UsersService {
     await this.repo.update({ id: userId }, { password: passwordHash });
     return true;
   }
+
 
   async findByEmailWithPassword(email: string): Promise<User | null> {
     return this.repo

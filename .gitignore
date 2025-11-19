@@ -11,10 +11,9 @@ yarn-error.log*
 # === Angular CLI ===
 .angular
 .vscode
-.DS_Store
 
 # === Env files ===
-back_end/.env
+back_end/.env*
 *.local
 
 # === IDE / OS ===

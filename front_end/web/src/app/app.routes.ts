@@ -40,10 +40,12 @@ export const routes: Routes = [
   //  canActivate: [AuthGuard],
   //},
   {
-    path: 'calendar',
-    loadComponent: () => import('./pages/calendar/calendar.component')
-      .then(m => m.CalendarComponent)
+  path: 'calendar',
+  loadComponent: () =>
+    import('./pages/calendar/calendar.component').then(m => m.CalendarComponent),
+  canActivate: [AuthGuard],
   },
+
 
   { path: '**', redirectTo: '' },
 ];
