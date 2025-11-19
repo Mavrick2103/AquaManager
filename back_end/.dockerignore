@@ -5,3 +5,4 @@ test-results
 npm-debug.log
 .git
 .gitignore
+.env

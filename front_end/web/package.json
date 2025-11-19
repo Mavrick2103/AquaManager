@@ -8,7 +8,8 @@
     "cypress:run": "npx cypress run",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:ci": "ng test --watch=false --browsers=ChromeHeadless"
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
+    "test:cov": "ng test --code-coverage --watch=false"
   },
   "prettier": {
     "printWidth": 100,
