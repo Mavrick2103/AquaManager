@@ -14,8 +14,7 @@ yarn-error.log*
 .DS_Store
 
 # === Env files ===
-.env
-.env.example
+back_end/.env
 *.local
 
 # === IDE / OS ===
