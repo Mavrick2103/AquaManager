@@ -5,7 +5,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment'; // adapte si besoin
+import { environment } from '../../../../environments/environment';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -88,7 +88,7 @@ export class AquariumDetailComponent implements OnInit {
     widthCm:  [0, [Validators.required, Validators.min(1)]],
     heightCm: [0, [Validators.required, Validators.min(1)]],
     waterType: ['EAU_DOUCE' as WaterType, Validators.required],
-    startDate: ['']
+    startDate: [''], // ISO yyyy-MM-dd
   });
 
   measurements: WaterMeasurement[] = [];
@@ -176,7 +176,7 @@ export class AquariumDetailComponent implements OnInit {
     const wt = this.waterType;
     const ref = this.dialog.open(MeasurementDialogComponent, {
       width: '720px',
-      data: { aquariumId: this.id, type: wt }
+      data: { aquariumId: this.id, type: wt },
     });
     ref.afterClosed().subscribe(async (saved: boolean) => {
       if (saved) {
@@ -231,6 +231,7 @@ export class AquariumDetailComponent implements OnInit {
     const count = Math.max(1, Number(countStr) || 1);
     this.species = [...this.species, { name, count }];
   }
+
   removeSpecies(i: number) {
     this.species = this.species.filter((_, idx) => idx !== i);
   }
@@ -238,6 +239,7 @@ export class AquariumDetailComponent implements OnInit {
   // ==== Dialog “Modifier l’aquarium” ====
   openEditDialog() {
     const v = this.form.getRawValue();
+
     const ref = this.dialog.open(EditAquariumDialogComponent, {
       width: '720px',
       data: {
@@ -248,21 +250,29 @@ export class AquariumDetailComponent implements OnInit {
           widthCm: Number(v.widthCm) || 0,
           heightCm: Number(v.heightCm) || 0,
           startDate: (v as any).startDate || '',
-        }
-      }
+        },
+      },
     });
 
-    ref.afterClosed().subscribe((result) => {
+    ref.afterClosed().subscribe(async (result) => {
       if (!result) return;
+
+      // click sur "Supprimer" dans le dialog
+      if (result.delete === true) {
+        await this.remove();
+        return;
+      }
+
+      // sinon, mise à jour : on colle les valeurs puis on sauvegarde
       this.form.patchValue({
         name: result.name,
         waterType: result.waterType,
         lengthCm: Number(result.lengthCm) || 0,
         widthCm: Number(result.widthCm) || 0,
         heightCm: Number(result.heightCm) || 0,
-        startDate: result.startDate || '',
+        startDate: result.startDate ?? '',
       });
-      this.form.markAsDirty();
+      await this.save();
     });
   }
 }

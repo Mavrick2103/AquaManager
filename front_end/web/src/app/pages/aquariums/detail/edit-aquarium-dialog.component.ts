@@ -1,4 +1,4 @@
-import { Component, Inject, inject } from '@angular/core';
+import { Component, Inject, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -6,6 +6,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 export type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER';
 
@@ -16,9 +19,12 @@ export interface EditAquariumData {
     lengthCm: number;
     widthCm: number;
     heightCm: number;
-    startDate?: string;
+    startDate?: string; // ISO yyyy-MM-dd
   };
 }
+
+// - { delete: true } si suppression
+// - sinon : valeurs du formulaire (avec startDate normalisée)
 
 @Component({
   selector: 'app-edit-aquarium-dialog',
@@ -26,43 +32,76 @@ export interface EditAquariumData {
   templateUrl: './edit-aquarium-dialog.component.html',
   styleUrls: ['./edit-aquarium-dialog.component.scss'],
   imports: [
-    CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatIconModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
   ],
 })
-export class EditAquariumDialogComponent {
+export class EditAquariumDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
+
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: EditAquariumData,
-    private ref: MatDialogRef<EditAquariumDialogComponent>
+    private ref: MatDialogRef<EditAquariumDialogComponent>,
   ) {}
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(255)]],
     waterType: ['EAU_DOUCE' as WaterType, Validators.required],
     lengthCm: [0, [Validators.required, Validators.min(1)]],
-    widthCm:  [0, [Validators.required, Validators.min(1)]],
+    widthCm: [0, [Validators.required, Validators.min(1)]],
     heightCm: [0, [Validators.required, Validators.min(1)]],
-    startDate: [''],
+    startDate: [null as Date | null],
   });
 
   ngOnInit() {
     const i = this.data?.initial;
-    if (i) {
-      this.form.patchValue({
-        name: i.name ?? '',
-        waterType: i.waterType ?? 'EAU_DOUCE',
-        lengthCm: i.lengthCm ?? 0,
-        widthCm: i.widthCm ?? 0,
-        heightCm: i.heightCm ?? 0,
-        startDate: i.startDate ?? '',
-      });
-    }
+    if (!i) return;
+
+    this.form.patchValue({
+      name: i.name ?? '',
+      waterType: i.waterType ?? 'EAU_DOUCE',
+      lengthCm: i.lengthCm ?? 0,
+      widthCm: i.widthCm ?? 0,
+      heightCm: i.heightCm ?? 0,
+      startDate: i.startDate ? new Date(i.startDate) : null,
+    });
   }
 
-  cancel() { this.ref.close(); }
+  cancel() {
+    this.ref.close();
+  }
+
   submit() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.ref.close(this.form.getRawValue());
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const raw = this.form.getRawValue();
+
+    const startDate = raw.startDate
+      ? new Date(raw.startDate).toISOString().slice(0, 10)
+      : null;
+
+    this.ref.close({
+      name: raw.name!.trim(),
+      waterType: raw.waterType as WaterType,
+      lengthCm: Number(raw.lengthCm),
+      widthCm: Number(raw.widthCm),
+      heightCm: Number(raw.heightCm),
+      startDate,
+    });
+  }
+
+  delete() {
+    this.ref.close({ delete: true });
   }
 }

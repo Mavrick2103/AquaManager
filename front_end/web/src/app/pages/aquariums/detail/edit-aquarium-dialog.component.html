@@ -1,48 +1,71 @@
-<h2 mat-dialog-title>Modifier l’aquarium</h2>
-
-<div mat-dialog-content [formGroup]="form" class="grid">
-  <div class="row two">
-    <mat-form-field appearance="outline">
-      <mat-label>Nom *</mat-label>
-      <input matInput formControlName="name" maxlength="255">
-      <mat-hint align="end">{{ form.value.name?.length || 0 }} / 255</mat-hint>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Type d’eau *</mat-label>
-      <mat-select formControlName="waterType">
-        <mat-option value="EAU_DOUCE">Eau douce</mat-option>
-        <mat-option value="EAU_DE_MER">Eau de mer</mat-option>
-      </mat-select>
-    </mat-form-field>
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon>aquarium</mat-icon>
+  <div class="titles">
+    <span>Modifier l’aquarium</span>
+    <small *ngIf="data?.initial?.name">Aquarium : {{ data.initial.name }}</small>
   </div>
+</h2>
 
-  <div class="row three">
-    <mat-form-field appearance="outline">
-      <mat-label>Longueur (cm) *</mat-label>
-      <input matInput type="number" formControlName="lengthCm">
-    </mat-form-field>
+<div mat-dialog-content [formGroup]="form" class="dialog-content">
+  <div class="form-grid">
+    <!-- Nom + type d’eau -->
+    <div class="row row-two">
+      <mat-form-field appearance="outline">
+        <mat-label>Nom *</mat-label>
+        <input matInput formControlName="name" maxlength="255" />
+        <mat-hint align="end">{{ form.value.name?.length || 0 }} / 255</mat-hint>
+      </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Largeur (cm) *</mat-label>
-      <input matInput type="number" formControlName="widthCm">
-    </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Type d’eau *</mat-label>
+        <mat-select formControlName="waterType">
+          <mat-option value="EAU_DOUCE">Eau douce</mat-option>
+          <mat-option value="EAU_DE_MER">Eau de mer</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Hauteur (cm) *</mat-label>
-      <input matInput type="number" formControlName="heightCm">
-    </mat-form-field>
-  </div>
+    <!-- Dimensions -->
+    <div class="row row-three">
+      <mat-form-field appearance="outline">
+        <mat-label>Longueur (cm) *</mat-label>
+        <input matInput type="number" formControlName="lengthCm" />
+      </mat-form-field>
 
-  <div class="row one">
-    <mat-form-field appearance="outline">
-      <mat-label>Date de mise en eau</mat-label>
-      <input matInput type="date" formControlName="startDate">
-    </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Largeur (cm) *</mat-label>
+        <input matInput type="number" formControlName="widthCm" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hauteur (cm) *</mat-label>
+        <input matInput type="number" formControlName="heightCm" />
+      </mat-form-field>
+    </div>
+
+    <!-- Date de mise en eau -->
+    <div class="row row-one">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Date de mise en eau</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="startDate" />
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+    </div>
   </div>
 </div>
 
-<div mat-dialog-actions align="end">
+<div mat-dialog-actions class="dialog-actions">
+  <button mat-stroked-button color="warn" (click)="delete()" [disabled]="form.disabled">
+    <mat-icon>delete</mat-icon>
+    Supprimer
+  </button>
+
+  <span class="spacer"></span>
+
   <button mat-button (click)="cancel()">Annuler</button>
-  <button mat-raised-button color="primary" (click)="submit()">Enregistrer</button>
+  <button mat-raised-button color="primary" (click)="submit()" [disabled]="form.invalid">
+    <mat-icon>save</mat-icon>
+    Enregistrer
+  </button>
 </div>

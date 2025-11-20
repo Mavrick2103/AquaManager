@@ -10,23 +10,12 @@
       mat-stroked-button
       type="button"
       [disabled]="saving"
-      [matMenuTriggerFor]="settingsMenu"
-      aria-label="Paramètres"
+      (click)="openEditDialog()"
+      aria-label="Paramètres de l’aquarium"
     >
       <mat-icon>settings</mat-icon>
       <span>Paramètres</span>
     </button>
-
-    <mat-menu #settingsMenu="matMenu">
-      <button mat-menu-item (click)="openEditDialog()">
-        <mat-icon>edit</mat-icon>
-        <span>Modifier l’aquarium</span>
-      </button>
-      <button mat-menu-item (click)="remove()">
-        <mat-icon color="warn">delete</mat-icon>
-        <span>Supprimer</span>
-      </button>
-    </mat-menu>
   </div>
 </section>
 
