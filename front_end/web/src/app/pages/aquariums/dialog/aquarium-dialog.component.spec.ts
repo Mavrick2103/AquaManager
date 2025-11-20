@@ -37,10 +37,17 @@ describe('AquariumDialogComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('liters devrait retourner 63 L avec les valeurs par défaut du formulaire', () => {
-    const liters = component.liters();
-    expect(liters).toBe(63);
+ it('liters devrait retourner le bon litrage en fonction des dimensions', () => {
+  component.form.patchValue({
+    lengthCm: 60,
+    widthCm: 40,
+    heightCm: 35,
   });
+
+  const liters = component.liters();
+  expect(liters).toBe(84);
+});
+
 
   it('submit() devrait appeler api.create() et fermer le dialog si succès', () => {
     component.form.patchValue({

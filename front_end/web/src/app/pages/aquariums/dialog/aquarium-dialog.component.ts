@@ -1,4 +1,4 @@
-import { Component, Inject, computed, inject, signal } from '@angular/core';
+import { Component, Inject, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -26,9 +26,16 @@ export class AquariumDialogComponent {
   private fb = inject(FormBuilder);
   private api = inject(AquariumsService);
   private ref = inject(MatDialogRef<AquariumDialogComponent>);
-  constructor(@Inject(MAT_DIALOG_DATA) public data: any) {}
+
+  constructor(@Inject(MAT_DIALOG_DATA) public data: any) {
+    // calcul initial du litrage
+    this.updateLiters();
+    // recalcule à chaque modification du formulaire
+    this.form.valueChanges.subscribe(() => this.updateLiters());
+  }
 
   submitting = signal(false);
+  liters = signal(0);
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(80)]],
@@ -39,16 +46,25 @@ export class AquariumDialogComponent {
     startDate: [new Date(), [Validators.required]],
   });
 
-  liters = computed(() => {
+  private updateLiters(): void {
     const v = this.form.value;
     const L = Number(v.lengthCm) || 0;
     const W = Number(v.widthCm) || 0;
     const H = Number(v.heightCm) || 0;
-    return Math.round((L * W * H) / 1000);
-  });
+
+    if (!L || !W || !H) {
+      this.liters.set(0);
+      return;
+    }
+
+    this.liters.set(Math.round((L * W * H) / 1000));
+  }
 
   submit() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
     this.submitting.set(true);
 
     const v = this.form.value;
@@ -62,10 +78,17 @@ export class AquariumDialogComponent {
     };
 
     this.api.create(dto).subscribe({
-      next: () => { this.submitting.set(false); this.ref.close(true); },
-      error: () => { this.submitting.set(false); },
+      next: () => {
+        this.submitting.set(false);
+        this.ref.close(true);
+      },
+      error: () => {
+        this.submitting.set(false);
+      },
     });
   }
 
-  close() { this.ref.close(false); }
+  close() {
+    this.ref.close(false);
+  }
 }
