@@ -25,12 +25,14 @@ async function bootstrap() {
 
   app.use(cookieParser());
   const allowedOrigins = isProd
-    ? [
-        'https://aquamanager.mondomaine.fr',
-      ]
-    : [
-        'http://localhost:4200',
-      ];
+  ? [
+      'https://aquamanager.fr',
+      'https://www.aquamanager.fr',
+    ]
+  : [
+      'http://localhost:4200',
+    ];
+
 
   app.enableCors({
     origin: allowedOrigins,
