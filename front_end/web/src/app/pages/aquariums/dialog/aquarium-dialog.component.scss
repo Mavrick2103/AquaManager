@@ -26,22 +26,20 @@ h2[mat-dialog-title]{
   @media (max-width:760px){ grid-template-columns: 1fr; }
 }
 
-.inline{
-  display:grid; grid-template-columns: 1fr 1fr 210px; gap: 12px; align-items: end;
+.inline {
+  display:grid;
+  grid-template-columns: 1fr 1fr; // tu n'as que 2 colonnes ici, pas 3
+  gap: 12px;
+  align-items: end;
+
   @media (max-width:920px){ grid-template-columns: 1fr 1fr; }
   @media (max-width:640px){ grid-template-columns: 1fr; }
 
-  .liters{
-    background: var(--white);
-    border:1px solid var(--border);
-    border-radius: var(--r-lg);
-    box-shadow: var(--shadow-md);
-    padding:12px; text-align:center;
-
-    .liters-value{ font-weight:900; color: var(--aqua); font-size:1.2rem; }
-    .liters-label{ color: var(--muted); font-size:.9rem; }
+  mat-form-field:last-child {
+    min-width: 180px;
   }
 }
+
 
 /* Boutons actions */
 [mat-dialog-actions] button[mat-raised-button]{
