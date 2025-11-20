@@ -49,6 +49,7 @@ services:
       - api
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       # nginx de ton front
       - ./front_end/web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
