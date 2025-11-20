@@ -29,14 +29,15 @@
           <mat-form-field appearance="outline" class="field">
             <mat-label>Mot de passe</mat-label>
             <input matInput [type]="hidePwd() ? 'password' : 'text'" formControlName="password" autocomplete="new-password" />
-            <button type="button" mat-icon-button matSuffix (click)="hidePwd.set(!hidePwd())"
-                    [attr.aria-label]="hidePwd() ? 'Afficher le mot de passe' : 'Masquer le mot de passe'">
+            <button type="button" mat-icon-button matSuffix (click)="hidePwd.set(!hidePwd())"[attr.aria-label]="hidePwd() ? 'Afficher le mot de passe' : 'Masquer le mot de passe'">
               <mat-icon>{{ hidePwd() ? 'visibility' : 'visibility_off' }}</mat-icon>
             </button>
-            <mat-hint>8+ caractères, 1 maj, 1 min, 1 chiffre</mat-hint>
+
+             <!-- hint mis à jour -->
+            <mat-hint>8+ caractères, 1 maj, 1 min, 1 chiffre, 1 caractère spécial</mat-hint>
             <mat-error *ngIf="password?.hasError('required') && (password?.dirty || password?.touched)">Mot de passe requis</mat-error>
             <mat-error *ngIf="password?.hasError('minlength')">Minimum 8 caractères</mat-error>
-            <mat-error *ngIf="password?.hasError('pattern')">Doit contenir majuscule, minuscule et chiffre</mat-error>
+            <mat-error *ngIf="password?.hasError('pattern')">Doit contenir une majuscule, une minuscule, un chiffre et un caractère spécial</mat-error>
           </mat-form-field>
 
           <div class="strength">

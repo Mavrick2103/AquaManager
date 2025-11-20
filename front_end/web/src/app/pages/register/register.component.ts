@@ -49,7 +49,8 @@ export class RegisterComponent {
         validators: [
           Validators.required,
           Validators.minLength(8),
-          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/),
+          // 👉 maj, min, chiffre, caractère spécial
+          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/),
         ],
       }),
       confirmPassword: this.fb.control('', { nonNullable: true, validators: [Validators.required] }),
@@ -64,16 +65,29 @@ export class RegisterComponent {
   get confirmPassword() { return this.passwords.get('confirmPassword'); }
   get acceptTos() { return this.form.controls.acceptTos; }
 
+  // 🔑 signal qui suit la valeur du mot de passe
+  passwordValue = signal('');
+
+  constructor() {
+    const pwdCtrl = this.password;
+    if (pwdCtrl) {
+      pwdCtrl.valueChanges.subscribe(v => {
+        this.passwordValue.set(v ?? '');
+      });
+    }
+  }
+
   strength = computed(() => {
-    const v = String(this.password?.value ?? '');
+    const v = this.passwordValue();
     let s = 0;
     if (v.length >= 8) s++;
     if (/[A-Z]/.test(v)) s++;
     if (/[a-z]/.test(v)) s++;
     if (/\d/.test(v)) s++;
-    if (/[^A-Za-z0-9]/.test(v)) s++;
+    if (/[^A-Za-z0-9]/.test(v)) s++; // caractère spécial
     return Math.min(s, 5);
   });
+
   strengthLabel = computed(() => {
     const x = this.strength();
     return ['Très faible','Faible','Moyenne','Bonne','Forte'][Math.max(0, x-1)] ?? 'Très faible';
@@ -100,7 +114,6 @@ export class RegisterComponent {
       console.log('[Register] payload', payload);
 
       await this.authService.register(payload);
-
       await this.router.navigateByUrl('/auth/connexion');
     } catch (e: any) {
       console.error('[Register] error', e);
