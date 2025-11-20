@@ -99,7 +99,7 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     cy.contains('.mat-mdc-option, .mat-option', /eau douce/i).click();
 
     cy.get('mat-dialog-container').within(() => {
-      cy.contains('button', /créer|enregistrer|valider/i).click();
+      cy.contains('button', /enregistrer/i).click();
     });
 
     cy.wait('@createAquarium');

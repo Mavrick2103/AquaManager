@@ -74,7 +74,7 @@ describe('Mesures et graphiques - AquaManager', () => {
     cy.get('mat-dialog-container', { timeout: 10000 }).within(() => {
       cy.get('input[formControlName="ph"]').clear().type('7.2', { force: true });
       cy.get('input[formControlName="temp"]').clear().type('25', { force: true });
-      cy.contains('button', /créer|enregistrer|valider|ajouter/i, { timeout: 10000 }).click({ force: true });
+      cy.contains('button', /enregistrer/i, { timeout: 10000 }).click({ force: true });
     });
     cy.wait('@createMeasurement');
     cy.contains('Paramètres enregistrés', { timeout: 10000 }).should('be.visible');
