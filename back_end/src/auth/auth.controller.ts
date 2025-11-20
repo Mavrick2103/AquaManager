@@ -8,7 +8,8 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true as const,
-  secure: isProd,
+  //secure: isProd,
+  secure: false,
   sameSite: 'strict' as const,
   path: '/api/auth/refresh',
   maxAge: 1000 * 60 * 60 * 24 * 15,
