@@ -20,13 +20,21 @@ jobs:
 
       - name: Déploiement sur le serveur
         run: |
-          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
+          echo "[CD] Connexion au serveur..."
+          ssh -o StrictHostKeyChecking=no "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
           set -euo pipefail
 
-          cd "${SSH_APP_DIR:-/var/www/aquamanager}"
+          echo "[CD] Positionnement dans le dossier de l'application..."
+          cd /home/ubuntu/apps/AquaManager
+
+          echo "[CD] Récupération du dernier code (git pull)..."
           git pull origin main
+
+          echo "[CD] Reconstruction et redémarrage des conteneurs Docker..."
           docker compose up -d --build
+
+          echo "[CD] Nettoyage des anciennes images inutilisées..."
           docker image prune -f || true
+
+          echo "[CD] Déploiement terminé avec succès ✔"
           EOF
-        env:
-          SSH_APP_DIR: ${{ secrets.SSH_APP_DIR }}

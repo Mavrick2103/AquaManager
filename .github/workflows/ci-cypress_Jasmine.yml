@@ -23,7 +23,6 @@ jobs:
         working-directory: front_end/web
         run: npm ci
 
-      # ---------- TESTS JASMINE / KARMA ----------
       - name: Setup Chrome for Karma
         uses: browser-actions/setup-chrome@v1
 
@@ -31,7 +30,6 @@ jobs:
         working-directory: front_end/web
         run: npm test -- --watch=false --browsers=ChromeHeadless
 
-      # ---------- CYPRESS ----------
       - name: Start Angular dev server
         working-directory: front_end/web
         run: |
