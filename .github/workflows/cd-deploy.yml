@@ -23,8 +23,6 @@ jobs:
           echo "[CD] Connexion au serveur..."
           ssh -o StrictHostKeyChecking=no "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
           set -euo pipefail
-
-          echo "[CD] Positionnement dans le dossier de l'application..."
           cd /home/ubuntu/apps/AquaManager
 
           echo "[CD] Récupération du dernier code (git pull)..."
