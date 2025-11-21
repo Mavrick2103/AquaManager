@@ -4,7 +4,15 @@ import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
+   {
+    path: 'login',
+    component: LoginComponent,
+    data: {
+      title: 'Connexion – AquaManager',
+      description: 'Connectez-vous à AquaManager pour suivre vos aquariums, vos paramètres d’eau et vos tâches d’entretien.',
+      robots: 'noindex'
+    }
+  },
 
   { path: '', component: HomeComponent, canActivate: [AuthGuard] },
 
