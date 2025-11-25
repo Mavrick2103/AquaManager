@@ -71,7 +71,6 @@ export class AquariumsService {
       waterType: dto.waterType ?? a.waterType,
       startDate: dto.startDate ?? a.startDate,
     });
-
     return this.repo.save(a);
   }
 
