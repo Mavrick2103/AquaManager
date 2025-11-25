@@ -1,11 +1,10 @@
 :host {
   display: block;
-  max-width: 720px; /* largeur max du dialog sur desktop */
+  max-width: 720px;
   margin: 0 auto;
   background: #f2f7f9;
 }
 
-/* Titre */
 .dialog-title {
   display: flex;
   align-items: center;
@@ -33,20 +32,17 @@
   }
 }
 
-/* Contenu du dialog */
 .dialog-content {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-/* Formulaire global */
 .form-grid {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* Ligne du haut : date / pH / Temp */
 .top-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -57,7 +53,6 @@
   }
 }
 
-/* Section eau douce / eau de mer */
 .section {
   padding: 10px 0 2px;
   border-top: 1px solid rgba(0, 0, 0, 0.04);
@@ -75,7 +70,6 @@
   }
 }
 
-/* Pilules type d'eau */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -99,7 +93,6 @@
   border-color: rgba(0, 159, 227, 0.2);
 }
 
-/* Grille des paramètres (KH, GH, etc.) */
 .params-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -114,17 +107,16 @@
   }
 }
 
-/* Champ commentaire sur toute la largeur */
 .full {
   width: 100%;
 }
 
-/* Actions */
 .dialog-actions {
   padding-top: 8px;
   padding-bottom: 4px;
   display: flex;
   gap: 8px;
+  justify-content: flex-end;
 
   button[color='primary'] {
     border-radius: 10px;
@@ -133,7 +125,6 @@
   }
 }
 
-/* === MatDialog : pas de scroll interne, pas d'horizontal === */
 ::ng-deep .mat-mdc-dialog-container {
   max-width: 720px;
   width: 100%;
@@ -143,11 +134,11 @@
 ::ng-deep .mat-mdc-dialog-content {
   max-width: 100vw;
   box-sizing: border-box;
-  max-height: none !important;   /* supprime le scroll interne */
-  overflow: visible !important;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto !important;
+  overflow-x: hidden;
 }
 
-/* Lisibilité des champs */
 ::ng-deep .mat-mdc-form-field,
 ::ng-deep .mdc-text-field__input {
   font-size: 0.95rem;
@@ -162,4 +153,18 @@
 
 ::ng-deep .mdc-text-field--outlined {
   background-color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .dialog-actions {
+    position: sticky;
+    bottom: 0;
+    background: #f2f7f9;
+    padding: 10px 16px env(safe-area-inset-bottom, 10px);
+    z-index: 50;
+  }
+
+  .dialog-actions button {
+    flex: 1;
+  }
 }
