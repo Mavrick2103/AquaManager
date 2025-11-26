@@ -49,18 +49,20 @@ export class TaskDialogComponent implements OnInit {
   types: Array<{ value: TaskType; label: string }> = [
     { value: 'WATER_CHANGE', label: 'Changement d’eau' },
     { value: 'FERTILIZATION', label: 'Fertilisation' },
-    { value: 'TRIM',         label: 'Taille / entretien' },
-    { value: 'WATER_TEST',   label: 'Test de l’eau' },
-    { value: 'OTHER',        label: 'Autre' },
+    { value: 'TRIM', label: 'Taille / entretien' },
+    { value: 'WATER_TEST', label: 'Test de l’eau' },
+    { value: 'OTHER', label: 'Autre' },
   ];
 
   private aquariumsList: Aquarium[] = [];
-  aquariums() { return this.aquariumsList; }
+  aquariums() {
+    return this.aquariumsList;
+  }
 
   loadingAquariums = true;
 
   form = this.fb.group({
-    title: ['', [Validators.required, Validators.maxLength(200)]],
+    title: ['', [Validators.maxLength(200)]],
     description: [''],
     date: [new Date(), Validators.required],
     time: ['09:00'],
@@ -87,42 +89,46 @@ export class TaskDialogComponent implements OnInit {
       error: () => {
         this.aquariumsList = [];
         this.loadingAquariums = false;
-      }
+      },
     });
   }
 
   private buildIsoDueAt(date: Date | null, time: string | null): string {
     const d = date ?? new Date();
-    const hhmm = (time && /^\d{2}:\d{2}$/.test(time)) ? time : '09:00';
-    const [h, m] = hhmm.split(':').map(n => +n);
+    const hhmm = time && /^\d{2}:\d{2}$/.test(time) ? time : '09:00';
+    const [h, m] = hhmm.split(':').map((n) => +n);
     const local = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0, 0);
     return local.toISOString();
   }
 
   save() {
-    this.form.markAllAsTouched();
-    if (this.form.invalid) return;
+  this.form.markAllAsTouched();
+  if (this.form.invalid) return;
 
-    if (!this.aquariumsList.length) {
-      alert('Crée d’abord un aquarium pour associer la tâche.');
-      return;
-    }
-
-    const v = this.form.getRawValue();
-    const dueAtIso = this.buildIsoDueAt(v.date as Date, v.time || '09:00');
-
-    this.tasksApi.create({
-      title: (v.title || '').trim(),
-      description: (v.description || '') || undefined,
-      dueAt: dueAtIso,
-      aquariumId: v.aquariumId as number,
-      type: v.type as TaskType,
-    }).subscribe({
-      next: (created) => this.dialogRef.close(created),
-      error: (err: unknown) => {
-        console.error(err);
-        alert('Erreur lors de la création de la tâche. Vérifie la date/heure et l’aquarium.');
-      }
-    });
+  if (!this.aquariumsList.length) {
+    alert('Crée d’abord un aquarium pour associer la tâche.');
+    return;
   }
+
+  const v = this.form.getRawValue();
+  const dueAtIso = this.buildIsoDueAt(v.date as Date, v.time || '09:00');
+
+  const title = (v.title ?? '').toString().trim();
+  const description = (v.description ?? '').toString().trim();
+
+  this.tasksApi.create({
+    title,
+    description: description || undefined,
+    dueAt: dueAtIso,
+    aquariumId: v.aquariumId as number,
+    type: v.type as TaskType,
+  }).subscribe({
+    next: (created) => this.dialogRef.close(created),
+    error: (err: unknown) => {
+      console.error(err);
+      alert('Erreur lors de la création de la tâche. Vérifie la date/heure et l’aquarium.');
+    }
+  });
+}
+
 }

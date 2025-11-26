@@ -84,6 +84,7 @@ mat-form-field mat-icon[matPrefix] {
 /* ===== Actions ===== */
 .actions {
   margin-top: 0.4rem;
+  padding: 8px 16px 12px;
   display: flex;
   justify-content: flex-end;
   gap: 0.7rem;
@@ -96,7 +97,16 @@ mat-form-field mat-icon[matPrefix] {
   }
 }
 
-/* ===== Style global du dialog ===== */
+@media (max-width: 600px) {
+  .actions {
+    padding-inline: 10px;
+  }
+
+  .actions button {
+    flex: 1;
+  }
+}
+
 :host ::ng-deep .mat-mdc-dialog-surface {
   border-radius: 22px;
   max-width: 860px;
@@ -106,15 +116,15 @@ mat-form-field mat-icon[matPrefix] {
 }
 
 :host ::ng-deep .mat-mdc-dialog-container {
-  max-height: 100vh;
+  max-height: none;
 }
 
-/* Pas de scroll horizontal + meilleure lisibilité */
 :host ::ng-deep .mat-mdc-dialog-content {
   max-width: 100%;
   box-sizing: border-box;
-  max-height: none !important;
-  overflow: visible !important;
+  max-height: 65vh;
+  overflow-y: auto !important;
+  overflow-x: hidden;
 }
 
 :host ::ng-deep .mat-mdc-form-field,
