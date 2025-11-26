@@ -126,23 +126,40 @@
     <!-- Commentaire -->
     <mat-form-field appearance="outline" class="full">
       <mat-label>Commentaire (optionnel)</mat-label>
-      <textarea matInput rows="2" formControlName="comment" maxlength="120"></textarea>
-      <mat-hint align="end">{{ form.value.comment?.length || 0 }} / 120</mat-hint>
+      <textarea
+        matInput
+        rows="2"
+        formControlName="comment"
+        maxlength="120"
+      ></textarea>
+      <mat-hint align="end">
+        {{ form.value.comment?.length || 0 }} / 120
+      </mat-hint>
     </mat-form-field>
   </form>
 </div>
 
 <div mat-dialog-actions align="end" class="dialog-actions">
   <button mat-stroked-button (click)="close()" [disabled]="loading">
-    <mat-icon>close</mat-icon> Annuler
+    <mat-icon>close</mat-icon>
+    Annuler
   </button>
-  <button mat-flat-button color="primary" (click)="save()" [disabled]="loading || form.invalid">
+
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="save()"
+    [disabled]="loading || form.invalid"
+  >
     <ng-container *ngIf="!loading; else loadingTpl">
       <mat-icon>save</mat-icon>
       Enregistrer
     </ng-container>
     <ng-template #loadingTpl>
-      <mat-progress-spinner mode="indeterminate" diameter="18"></mat-progress-spinner>
+      <mat-progress-spinner
+        mode="indeterminate"
+        diameter="18"
+      ></mat-progress-spinner>
     </ng-template>
   </button>
 </div>
