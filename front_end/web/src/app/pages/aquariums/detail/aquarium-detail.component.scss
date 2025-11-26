@@ -1,137 +1,374 @@
-:root{
-  --aqua:#009FE3; --green:#39B54A; --dark:#1F3522; --white:#fff;
-  --border:#e8f1ee; --muted:#5b6b63;
-  --r-xl:20px; --r-lg:14px; --r-md:10px;
-  --shadow-lg:0 22px 50px rgba(0,0,0,.08);
-  --shadow-md:0 12px 28px rgba(0,0,0,.06);
+:root {
+  --aqua: #009fe3;
+  --green: #39b54a;
+  --dark: #1f3522;
+  --white: #fff;
+  --border: #e8f1ee;
+  --muted: #5b6b63;
+  --r-xl: 20px;
+  --r-lg: 14px;
+  --r-md: 10px;
+  --shadow-lg: 0 22px 50px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 12px 28px rgba(0, 0, 0, 0.06);
 }
 
-:host{
-  display:block; min-height:100vh; color:var(--dark);
+:host {
+  display: block;
+  min-height: 100vh;
+  color: var(--dark);
   background:
-    radial-gradient(1200px 700px at 85% -20%, rgba(0,159,227,.12), transparent 60%),
-    radial-gradient(900px 600px at -10% 120%, rgba(57,181,74,.12), transparent 55%),
+    radial-gradient(1200px 700px at 85% -20%, rgba(0, 159, 227, 0.12), transparent 60%),
+    radial-gradient(900px 600px at -10% 120%, rgba(57, 181, 74, 0.12), transparent 55%),
     linear-gradient(180deg, #f4fbff, #f7fff9 58%, #f9fffb 100%);
-  padding:16px;
-  font-family:'Montserrat','Open Sans',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  padding: 16px;
+  font-family: 'Montserrat', 'Open Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    sans-serif;
 }
 
-/* Toolbar */
-.toolbar{
-  max-width:1100px; margin:0 auto 12px; padding:0 8px;
-  display:grid; grid-template-columns:auto 1fr auto; align-items:center; column-gap:12px;
+/* =========================================
+   Toolbar
+========================================= */
 
-  .brand{ display:inline-flex; align-items:center; text-decoration:none; outline:none; }
-  .logo{ height:150px; width:auto; display:block; }
+.toolbar {
+  max-width: 1100px;
+  margin: 0 auto 12px;
+  padding: 0 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 12px;
 
-  h1{
-    margin:0; font-weight:800; letter-spacing:.2px; color:var(--aqua);
-    justify-self:center; text-align:center;
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    outline: none;
   }
 
-  .actions{ display:inline-flex; gap:10px; justify-self:end; }
-}
-
-/* Bandeau résumé */
-.hero{
-  max-width:1100px; margin:0 auto 16px; padding:16px 20px;
-  border:1px solid var(--border); border-radius:var(--r-xl);
-  background:
-    radial-gradient(800px 500px at 90% -20%, rgba(0,159,227,.10), transparent 60%),
-    radial-gradient(600px 400px at -20% 110%, rgba(57,181,74,.10), transparent 55%),
-    #fff;
-  display:grid; grid-template-columns:1fr auto; gap:16px;
-
-  .left{ display:flex; gap:14px; align-items:center; }
-  .avatar{
-    height:56px; width:56px; border-radius:16px;
-    background: linear-gradient(135deg, var(--aqua), var(--green));
-    color:#fff; display:flex; align-items:center; justify-content:center;
-  }
-  .headings{
-    .title{ font-size:1.35rem; font-weight:800; }
-    .meta{ margin-top:2px; color:var(--muted); display:inline-flex; align-items:center; gap:10px; }
-    .dot{ width:6px; height:6px; border-radius:999px; background: currentColor; display:inline-block; }
+  .logo {
+    height: 120px;
+    width: auto;
+    display: block;
   }
 
-  .right{
-    display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; align-items:center;
-    .kpi{
-      background:#fff; border:1px solid var(--border); border-radius:14px; padding:10px 12px;
-      .kpi-label{ font-size:.75rem; color:var(--muted); }
-      .kpi-value{ font-weight:800; color:var(--dark); }
+  /* ===== Titre + icône mobile ===== */
+  .title-with-icon {
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    color: var(--aqua);
+    justify-self: center;
+    text-align: center;
+    font-size: 1.4rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    .settings-mobile {
+      display: none; /* masqué sur PC */
     }
   }
 
-  @media (max-width: 900px){
-    grid-template-columns:1fr;
-    .right{ grid-template-columns:1fr 1fr; }
+  /* ===== Gros bouton desktop ===== */
+  .actions {
+    display: inline-flex;
+    gap: 10px;
+    justify-self: end;
   }
 }
 
-.loading{ display:grid; place-items:center; padding:60px 0; }
+/* =========================================
+   Toolbar responsive
+========================================= */
 
-.mini-grid{
-  margin-top:16px;
-  display:grid;
+@media (max-width: 768px) {
+  :host {
+    padding: 8px;
+  }
+
+  .toolbar {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 8px;
+    align-items: center;
+
+    .logo {
+      height: 72px;
+    }
+
+    .title-with-icon {
+      justify-self: flex-start;
+      text-align: left;
+      font-size: 1.1rem;
+    }
+
+    /* ===== Activer la roue crantée mobile ===== */
+    .title-with-icon .settings-mobile {
+      display: inline-flex;
+      margin-left: 6px;
+    }
+
+    /* ===== Cacher le gros bouton ===== */
+    .actions {
+      display: none;
+    }
+  }
+}
+
+/* =========================================
+   Hero (bandeau résumé)
+========================================= */
+
+.hero {
+  max-width: 1100px;
+  margin: 0 auto 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(800px 500px at 90% -20%, rgba(0, 159, 227, 0.1), transparent 60%),
+    radial-gradient(600px 400px at -20% 110%, rgba(57, 181, 74, 0.1), transparent 55%),
+    #fff;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+
+  .left {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+
+  .avatar {
+    height: 56px;
+    width: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--aqua), var(--green));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .headings {
+    .title {
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .meta {
+      margin-top: 2px;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: currentColor;
+      display: inline-block;
+    }
+  }
+
+  .right {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+
+    .kpi {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 12px;
+
+      .kpi-label {
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+
+      .kpi-value {
+        font-weight: 800;
+        color: var(--dark);
+      }
+    }
+  }
+}
+
+/* Hero responsive */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    .right {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    border-radius: var(--r-lg);
+    padding: 12px 14px;
+
+    .avatar {
+      height: 48px;
+      width: 48px;
+      border-radius: 14px;
+    }
+
+    .headings .title {
+      font-size: 1.15rem;
+    }
+
+    .right {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+/* =========================================
+   Onglets
+========================================= */
+
+.tabs-group {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: transparent;
+}
+
+.tab-section {
+  margin-top: 12px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+.tab-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 768px) {
+  .tab-section {
+    padding: 12px;
+    border-radius: var(--r-lg);
+  }
+
+  .tab-actions {
+    justify-content: flex-start;
+  }
+
+  .tab-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* =========================================
+   Graphiques
+========================================= */
+
+.mini-grid {
+  margin-top: 16px;
+  display: grid;
   grid-template-columns: 1fr 1fr;
-  gap:16px;
-}
-@media (max-width: 768px){
-  .mini-grid{ grid-template-columns: 1fr; }
-}
-.mini-card{ background: transparent; border: none; padding: 0; }
-
-/* ===== Historique ===== */
-.history{
-  max-width:1100px;
-  margin:32px auto 0;
-  padding:16px;
-  background:#fff;
-  border-radius:14px;
-  border:1px solid var(--border);
+  gap: 16px;
 }
 
-.history-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:16px;
-  flex-wrap:wrap;
+.mini-card {
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
-.limit-select{ width: 120px; }
-
-/* On enlève le margin ici, il passe sur le wrapper */
-.history table{
-  width:100%;
-  margin-top:0;
-}
-
-/* Wrapper scrollable pour mobile */
-.history-table-wrapper{
-  width:100%;
-  margin-top:8px;
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-}
-
-/* Le tableau garde sa largeur, et le wrapper scroll si besoin */
-.history-table-wrapper table{
-  width:100%;
-  min-width:max-content;
-}
-
-.history-empty{
-  opacity:0.7;
-  margin-top:8px;
-}
-
-/* Optionnel : resserrer un peu sur mobile */
-@media (max-width: 768px){
-  .history-table-wrapper table th,
-  .history-table-wrapper table td{
-    padding:6px 8px;
-    font-size:0.8rem;
+@media (max-width: 900px) {
+  .mini-grid {
+    grid-template-columns: 1fr;
   }
+}
+
+/* =========================================
+   Historique des mesures
+========================================= */
+
+.history {
+  max-width: 1100px;
+  margin: 32px auto 0;
+  padding: 16px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  h2 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+}
+
+.limit-select {
+  width: 120px;
+}
+
+.history-table-wrapper {
+  width: 100%;
+  margin-top: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.history-table-wrapper table {
+  width: 100%;
+  min-width: max-content;
+}
+
+.history-empty {
+  opacity: 0.7;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .history {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: var(--r-lg);
+  }
+
+  .history-table-wrapper table th,
+  .history-table-wrapper table td {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+/* =========================================
+   Espèces
+========================================= */
+
+.empty-species {
+  opacity: 0.7;
+  margin: 16px 0 0;
+}
+
+/* =========================================
+   Loader
+========================================= */
+
+.loading {
+  display: grid;
+  place-items: center;
+  padding: 60px 0;
 }

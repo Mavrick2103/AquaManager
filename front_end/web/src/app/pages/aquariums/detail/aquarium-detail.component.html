@@ -3,8 +3,23 @@
     <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
   </a>
 
-  <h1>Fiche aquarium</h1>
+  <h1 class="title-with-icon">
+    Fiche aquarium
 
+    <!-- Bouton mobile : icône seule -->
+    <button
+      mat-icon-button
+      class="settings-mobile"
+      type="button"
+      [disabled]="saving"
+      (click)="openEditDialog()"
+      aria-label="Paramètres de l’aquarium"
+    >
+      <mat-icon>settings</mat-icon>
+    </button>
+  </h1>
+
+  <!-- Bouton desktop : texte + icône -->
   <div class="actions">
     <button
       mat-stroked-button
@@ -40,7 +55,8 @@
     <div class="kpi">
       <div class="kpi-label">Dimensions</div>
       <div class="kpi-value">
-        {{ form.value.lengthCm || 0 }} × {{ form.value.widthCm || 0 }} × {{ form.value.heightCm || 0 }} cm
+        {{ form.value.lengthCm || 0 }} × {{ form.value.widthCm || 0 }} ×
+        {{ form.value.heightCm || 0 }} cm
       </div>
     </div>
     <div class="kpi">
@@ -51,13 +67,13 @@
 </section>
 
 <!-- ========= Onglets ========= -->
-<mat-tab-group dynamicHeight>
+<mat-tab-group dynamicHeight class="tabs-group">
   <mat-tab label="Mesures">
     <div class="tab-section">
       <div class="tab-actions">
         <button mat-raised-button color="primary" (click)="openMeasurementDialog()">
           <mat-icon>add</mat-icon>
-          Ajouter une mesure
+          <span>Ajouter une mesure</span>
         </button>
       </div>
 
@@ -66,29 +82,29 @@
           <app-water-measurements-chart
             [aquariumId]="id"
             [waterType]="waterType"
-            metric="ph">
-          </app-water-measurements-chart>
+            metric="ph"
+          ></app-water-measurements-chart>
         </div>
         <div class="mini-card">
           <app-water-measurements-chart
             [aquariumId]="id"
             [waterType]="waterType"
-            metric="temp">
-          </app-water-measurements-chart>
+            metric="temp"
+          ></app-water-measurements-chart>
         </div>
         <div class="mini-card">
           <app-water-measurements-chart
             [aquariumId]="id"
             [waterType]="waterType"
-            metric="no2">
-          </app-water-measurements-chart>
+            metric="no2"
+          ></app-water-measurements-chart>
         </div>
         <div class="mini-card">
           <app-water-measurements-chart
             [aquariumId]="id"
             [waterType]="waterType"
-            metric="no3">
-          </app-water-measurements-chart>
+            metric="no3"
+          ></app-water-measurements-chart>
         </div>
 
         <!-- Eau douce -->
@@ -97,57 +113,57 @@
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="kh">
-            </app-water-measurements-chart>
+              metric="kh"
+            ></app-water-measurements-chart>
           </div>
           <div class="mini-card">
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="gh">
-            </app-water-measurements-chart>
+              metric="gh"
+            ></app-water-measurements-chart>
           </div>
           <div class="mini-card">
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="co2">
-            </app-water-measurements-chart>
+              metric="co2"
+            ></app-water-measurements-chart>
           </div>
           <div class="mini-card">
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="po4">
-            </app-water-measurements-chart>
+              metric="po4"
+            ></app-water-measurements-chart>
           </div>
           <div class="mini-card">
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="fe">
-            </app-water-measurements-chart>
+              metric="fe"
+            ></app-water-measurements-chart>
           </div>
           <div class="mini-card">
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="k">
-            </app-water-measurements-chart>
+              metric="k"
+            ></app-water-measurements-chart>
           </div>
           <div class="mini-card">
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="sio2">
-            </app-water-measurements-chart>
+              metric="sio2"
+            ></app-water-measurements-chart>
           </div>
           <div class="mini-card">
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="nh3">
-            </app-water-measurements-chart>
+              metric="nh3"
+            ></app-water-measurements-chart>
           </div>
         </ng-container>
 
@@ -157,29 +173,29 @@
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="dkh">
-            </app-water-measurements-chart>
+              metric="dkh"
+            ></app-water-measurements-chart>
           </div>
           <div class="mini-card">
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="sal">
-            </app-water-measurements-chart>
+              metric="sal"
+            ></app-water-measurements-chart>
           </div>
           <div class="mini-card">
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="ca">
-            </app-water-measurements-chart>
+              metric="ca"
+            ></app-water-measurements-chart>
           </div>
           <div class="mini-card">
             <app-water-measurements-chart
               [aquariumId]="id"
               [waterType]="waterType"
-              metric="mg">
-            </app-water-measurements-chart>
+              metric="mg"
+            ></app-water-measurements-chart>
           </div>
         </ng-container>
       </div>
@@ -204,7 +220,9 @@
             <!-- Date -->
             <ng-container matColumnDef="measuredAt">
               <th mat-header-cell *matHeaderCellDef>Date</th>
-              <td mat-cell *matCellDef="let m">{{ m.measuredAt | date: 'medium' }}</td>
+              <td mat-cell *matCellDef="let m">
+                {{ m.measuredAt | date: 'medium' }}
+              </td>
             </ng-container>
 
             <!-- Colonnes communes -->
@@ -260,7 +278,11 @@
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let m">
-                <button mat-icon-button color="warn" (click)="deleteMeasurement(m.id)">
+                <button
+                  mat-icon-button
+                  color="warn"
+                  (click)="deleteMeasurement(m.id)"
+                >
                   <mat-icon>delete</mat-icon>
                 </button>
               </td>
@@ -283,7 +305,7 @@
       <div class="tab-actions">
         <button mat-raised-button (click)="addSpecies()">
           <mat-icon>add</mat-icon>
-          Ajouter une espèce
+          <span>Ajouter une espèce</span>
         </button>
       </div>
 
@@ -291,14 +313,19 @@
         <mat-list-item *ngFor="let s of species; let i = index">
           <div matListItemTitle>{{ s.name }}</div>
           <div matListItemLine>Quantité : {{ s.count }}</div>
-          <button mat-icon-button color="warn" (click)="removeSpecies(i)" aria-label="Supprimer">
+          <button
+            mat-icon-button
+            color="warn"
+            (click)="removeSpecies(i)"
+            aria-label="Supprimer"
+          >
             <mat-icon>delete</mat-icon>
           </button>
         </mat-list-item>
       </mat-list>
 
       <ng-template #emptySpecies>
-        <p style="opacity:.7; margin:16px 0">Aucune espèce enregistrée pour le moment.</p>
+        <p class="empty-species">Aucune espèce enregistrée pour le moment.</p>
       </ng-template>
     </div>
   </mat-tab>
