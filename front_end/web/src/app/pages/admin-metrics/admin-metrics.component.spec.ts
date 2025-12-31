@@ -1,23 +1,21 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { AdminMetricsComponent } from './admin-metrics.component';
 
-import { AdminMetrics } from './admin-metrics';
-
-describe('AdminMetrics', () => {
-  let component: AdminMetrics;
-  let fixture: ComponentFixture<AdminMetrics>;
-
+describe('AdminMetricsComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AdminMetrics]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(AdminMetrics);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+      imports: [AdminMetricsComponent],
+      providers: [
+        provideHttpClientTesting(),
+        provideRouter([]),
+      ],
+    }).compileComponents();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    const fixture = TestBed.createComponent(AdminMetricsComponent);
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

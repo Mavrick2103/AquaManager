@@ -15,8 +15,10 @@ export class WaterMeasurementService {
 // vérification de l'appartenance de l'aquarium au user
   private async ensureOwnership(userId: number, aquariumId: number): Promise<Aquarium> {
     const aquarium = await this.aquas.findOne({
-      where: { id: aquariumId, user: { id: userId } },
-    });
+  where: { id: aquariumId, user: { id: userId } },
+  relations: ['user'],
+});
+
     if (!aquarium) {
       throw new NotFoundException('Aquarium introuvable');
     }
