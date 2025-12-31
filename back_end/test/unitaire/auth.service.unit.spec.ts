@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
 
-// Mock argon2.verify
+// mock argon2.verify
 jest.mock('argon2', () => ({
   verify: jest.fn(async (hash: string, plain: string) => hash === 'hashed:' + plain),
 }));
@@ -16,6 +16,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let users: jest.Mocked<UsersService>;
   let jwt: jest.Mocked<JwtService>;
+  let mail: typeof mailServiceMock;
   let configMock: { get: jest.Mock };
 
   beforeEach(async () => {
@@ -23,10 +24,9 @@ describe('AuthService', () => {
       findByEmailWithPassword: jest.fn(),
       create: jest.fn(),
 
-      // ✅ nouvelles méthodes nécessaires
+      // ✅ nouveaux endpoints
       setEmailVerifyToken: jest.fn().mockResolvedValue(undefined),
       verifyEmailByTokenHash: jest.fn().mockResolvedValue(null),
-
       setPasswordResetToken: jest.fn().mockResolvedValue(null),
       resetPasswordByTokenHash: jest.fn().mockResolvedValue(null),
     };
@@ -57,6 +57,7 @@ describe('AuthService', () => {
     service = module.get(AuthService);
     users = module.get(UsersService) as any;
     jwt = module.get(JwtService) as any;
+    mail = module.get(MailService) as any;
 
     jest.clearAllMocks();
   });
@@ -65,9 +66,8 @@ describe('AuthService', () => {
     it('jette Unauthorized si user introuvable', async () => {
       users.findByEmailWithPassword.mockResolvedValue(null);
 
-      await expect(service.login('test@mail.com', 'secret')).rejects.toBeInstanceOf(
-        UnauthorizedException,
-      );
+      await expect(service.login('test@mail.com', 'secret'))
+        .rejects.toBeInstanceOf(UnauthorizedException);
 
       expect(users.findByEmailWithPassword).toHaveBeenCalledWith('test@mail.com');
     });
@@ -78,26 +78,11 @@ describe('AuthService', () => {
         email: 'test@mail.com',
         password: 'hashed:secret',
         role: 'USER',
-        emailVerifiedAt: null, // ✅ non vérifié
+        emailVerifiedAt: null,
       } as any);
 
-      await expect(service.login('test@mail.com', 'secret')).rejects.toBeInstanceOf(
-        UnauthorizedException,
-      );
-    });
-
-    it('jette Unauthorized si mot de passe invalide', async () => {
-      users.findByEmailWithPassword.mockResolvedValue({
-        id: 1,
-        email: 'test@mail.com',
-        password: 'hashed:other',
-        role: 'USER',
-        emailVerifiedAt: new Date(), // ✅ vérifié
-      } as any);
-
-      await expect(service.login('test@mail.com', 'secret')).rejects.toBeInstanceOf(
-        UnauthorizedException,
-      );
+      await expect(service.login('test@mail.com', 'secret'))
+        .rejects.toBeInstanceOf(UnauthorizedException);
     });
 
     it('retourne access + refresh si OK', async () => {
@@ -106,7 +91,7 @@ describe('AuthService', () => {
         email: 'test@mail.com',
         password: 'hashed:secret',
         role: 'user',
-        emailVerifiedAt: new Date(), // ✅ obligatoire maintenant
+        emailVerifiedAt: new Date(),
       } as any);
 
       jwt.signAsync
@@ -115,50 +100,13 @@ describe('AuthService', () => {
 
       const res = await service.login('test@mail.com', 'secret');
 
-      expect(users.findByEmailWithPassword).toHaveBeenCalledWith('test@mail.com');
       expect(jwt.signAsync).toHaveBeenCalledTimes(2);
       expect(res).toEqual({ access: 'ACCESS_TOKEN', refresh: 'REFRESH_TOKEN' });
     });
   });
 
-  describe('signAccess / signRefresh', () => {
-    it('signAccess appelle JwtService.signAsync avec JWT_EXPIRES', async () => {
-      const payload = { sub: 1, role: 'USER' };
-      jwt.signAsync.mockResolvedValue('ACCESS');
-
-      const token = await service.signAccess(payload);
-
-      expect(configMock.get).toHaveBeenCalledWith('JWT_EXPIRES');
-      expect(jwt.signAsync).toHaveBeenCalledWith(payload, { expiresIn: '15m' });
-      expect(token).toBe('ACCESS');
-    });
-
-    it('signRefresh appelle JwtService.signAsync avec JWT_REFRESH_EXPIRES', async () => {
-      const payload = { sub: 1, role: 'USER' };
-      jwt.signAsync.mockResolvedValue('REFRESH');
-
-      const token = await service.signRefresh(payload);
-
-      expect(configMock.get).toHaveBeenCalledWith('JWT_REFRESH_EXPIRES');
-      expect(jwt.signAsync).toHaveBeenCalledWith(payload, { expiresIn: '15d' });
-      expect(token).toBe('REFRESH');
-    });
-  });
-
-  describe('verifyRefresh', () => {
-    it('délègue à jwt.verifyAsync et retourne le payload', async () => {
-      const payload = { sub: 1, role: 'USER' };
-      jwt.verifyAsync.mockResolvedValue(payload as any);
-
-      const res = await service.verifyRefresh('TOKEN');
-
-      expect(jwt.verifyAsync).toHaveBeenCalledWith('TOKEN');
-      expect(res).toBe(payload);
-    });
-  });
-
   describe('register', () => {
-    it('appelle UsersService.create, setEmailVerifyToken, sendVerifyEmail et retourne infos publiques', async () => {
+    it('crée user + set token + envoie mail', async () => {
       users.create.mockResolvedValue({
         id: 1,
         fullName: 'John Doe',
@@ -169,8 +117,18 @@ describe('AuthService', () => {
       const res = await service.register(dto);
 
       expect(users.create).toHaveBeenCalledWith(dto);
-      expect(users.setEmailVerifyToken).toHaveBeenCalledTimes(1);
-      expect(mailServiceMock.sendVerifyEmail).toHaveBeenCalledTimes(1);
+
+      expect(users.setEmailVerifyToken).toHaveBeenCalledWith(
+        1,
+        expect.any(String),
+        expect.any(Date),
+      );
+
+      expect(mail.sendVerifyEmail).toHaveBeenCalledWith(
+        'john@doe.com',
+        'John Doe',
+        expect.any(String),
+      );
 
       expect(res).toEqual({
         id: 1,

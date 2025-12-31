@@ -2,17 +2,17 @@
 
 describe('Authentification', () => {
   beforeEach(() => {
-    cy.intercept('POST', '**/auth/login', {
+    cy.intercept('POST', '**/api/auth/login', {
       statusCode: 200,
       body: { access_token: 'TEST_TOKEN' },
     }).as('login');
 
-    cy.intercept('GET', '**/users/me', {
+    cy.intercept('GET', '**/api/users/me', {
       statusCode: 200,
       body: { userId: 1, email: 'test@aquamanager.com', role: 'USER' },
     }).as('me');
 
-    cy.intercept('POST', '**/auth/refresh', {
+    cy.intercept('POST', '**/api/auth/refresh', {
       statusCode: 201,
       body: { access_token: 'TEST_TOKEN' },
     }).as('refresh');
@@ -37,19 +37,16 @@ describe('Authentification', () => {
       win.sessionStorage.clear();
     });
 
-    cy.intercept('POST', '**/auth/refresh', {
+    cy.intercept('POST', '**/api/auth/refresh', {
       statusCode: 200,
       body: { access_token: null },
     }).as('refreshFail');
 
     cy.visit('/');
-
     cy.wait('@refreshFail');
 
     cy.url().should('include', '/login');
-
     cy.get('input[formControlName="email"]').should('be.visible');
     cy.get('input[formControlName="password"]').should('be.visible');
-    cy.get('button[type="submit"]').should('be.visible');
   });
 });

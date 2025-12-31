@@ -10,7 +10,7 @@ import { CreateUserDto } from '../../src/users/dto/create-user.dto';
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
 
-// On mock argon2 pour contrôler la vérification de mot de passe
+// Mock argon2 pour contrôler la vérification de mot de passe
 jest.mock('argon2', () => ({
   hash: jest.fn(async (plain: string) => 'hashed:' + plain),
   verify: jest.fn(async (hash: string, plain: string) => hash === 'hashed:' + plain),
