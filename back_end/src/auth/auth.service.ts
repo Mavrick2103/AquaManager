@@ -21,17 +21,14 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Email ou mot de passe invalide');
     }
-
     const ok = await argon2.verify(user.password, password);
     if (!ok) {
       throw new UnauthorizedException('Email ou mot de passe invalide');
     }
-
     const payload: JwtPayload = {
       sub: user.id,
       role: (user.role ?? 'USER').toUpperCase(),
     };
-
     const access = await this.signAccess(payload);
     const refresh = await this.signRefresh(payload);
 

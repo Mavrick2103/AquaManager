@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn } from 'typeorm';
 import { Aquarium } from '../aquariums/aquariums.entity';
 
 @Entity('users')
@@ -17,6 +17,9 @@ export class User {
 
   @Column({ default: 'USER' })
   role: 'USER' | 'ADMIN';
+
+  @CreateDateColumn()
+  createdAt: Date;
 
   @OneToMany(() => Aquarium, (aquarium) => aquarium.user, { cascade: false })
   aquariums: Aquarium[];

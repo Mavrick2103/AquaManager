@@ -13,7 +13,6 @@ export type Me = {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  // Token JWT uniquement en mémoire
   private accessToken: string | null = null;
   me: Me | null = null;
 

@@ -65,7 +65,6 @@ export class TaskService {
       if (!aq) throw new NotFoundException('Aquarium invalide ou non autorisé');
       task.aquarium = aq;
     }
-
     if (dto.title !== undefined) task.title = dto.title;
     if (dto.description !== undefined) task.description = dto.description;
     if (dto.dueAt !== undefined) task.dueAt = new Date(dto.dueAt);

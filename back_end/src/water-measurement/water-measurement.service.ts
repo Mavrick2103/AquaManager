@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -12,23 +12,17 @@ export class WaterMeasurementService {
     @InjectRepository(WaterMeasurement) private repo: Repository<WaterMeasurement>,
     @InjectRepository(Aquarium) private aquas: Repository<Aquarium>,
   ) {}
-
-  /**
-   * Vérifie que l'aquarium existe ET appartient bien à l'utilisateur.
-   * Lève une erreur si ce n'est pas le cas.
-   */
+// vérification de l'appartenance de l'aquarium au user
   private async ensureOwnership(userId: number, aquariumId: number): Promise<Aquarium> {
     const aquarium = await this.aquas.findOne({
       where: { id: aquariumId, user: { id: userId } },
-      relations: ['user'],
     });
     if (!aquarium) {
-      // On ne précise pas si c'est une question d'appartenance ou d'existence → meilleure sécurité
       throw new NotFoundException('Aquarium introuvable');
     }
     return aquarium;
   }
-
+//liste des mesure
   async listForAquarium(userId: number, aquariumId: number) {
     await this.ensureOwnership(userId, aquariumId);
     return this.repo.find({
@@ -36,11 +30,10 @@ export class WaterMeasurementService {
       order: { measuredAt: 'DESC' },
     });
   }
-
+// nouvelle mesure
   async createForAquarium(userId: number, aquariumId: number, dto: CreateWaterMeasurementDto) {
     const aquarium = await this.ensureOwnership(userId, aquariumId);
 
-    // Nettoyage selon le type d'eau
     if (aquarium.waterType === 'EAU_DOUCE') {
       dto.dkh = dto.salinity = dto.ca = dto.mg = undefined;
     } else {
@@ -70,7 +63,7 @@ export class WaterMeasurementService {
 
     return this.repo.save(m);
   }
-
+ //suppression d'une mesure
   async deleteForAquarium(userId: number, aquariumId: number, id: number) {
     await this.ensureOwnership(userId, aquariumId);
 

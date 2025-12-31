@@ -53,6 +53,13 @@ export const routes: Routes = [
     import('./pages/calendar/calendar.component').then(m => m.CalendarComponent),
   canActivate: [AuthGuard],
   },
+  
+{
+  path: 'admin/metrics',
+  loadComponent: () =>
+    import('./pages/admin-metrics/admin-metrics.component').then(m => m.AdminMetricsComponent),
+  canActivate: [AuthGuard],
+},
 
 
   { path: '**', redirectTo: '' },

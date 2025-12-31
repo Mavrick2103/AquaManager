@@ -15,7 +15,6 @@ export class UsersService {
     return this.repo.findOne({ where: { id } });
   }
 
-
   async updateProfile(userId: number, dto: UpdateMeDto) {
     const user = await this.repo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('Utilisateur introuvable');

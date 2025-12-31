@@ -12,7 +12,8 @@ export class AquariumsService {
     @InjectRepository(Aquarium) private readonly repo: Repository<Aquarium>,
     @InjectRepository(User) private readonly users: Repository<User>,
   ) {}
-
+  
+// tous les aquariums d’un utilisateur
   findMine(userId: number) {
   return this.repo.find({
     where: { user: { id: userId } },

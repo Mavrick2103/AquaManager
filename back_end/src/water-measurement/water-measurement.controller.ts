@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  Post,
-  Body,
-  Delete,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import {Controller, Get, Param, ParseIntPipe, Post, Body, Delete, Req, UseGuards} from '@nestjs/common';
 import { WaterMeasurementService } from './water-measurement.service';
 import { CreateWaterMeasurementDto } from './dto/create-water-measurement.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,7 +7,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('aquariums/:aquariumId/measurements')
 export class WaterMeasurementController {
   constructor(private svc: WaterMeasurementService) {}
-
+// récupère les mesure de l'aquarium x
   @Get()
   list(
     @Req() req: any,
@@ -26,6 +16,7 @@ export class WaterMeasurementController {
     return this.svc.listForAquarium(req.user.userId, aquariumId);
   }
 
+  // nouvelle mesure d'eau aquarium x
   @Post()
   create(
     @Req() req: any,
@@ -34,7 +25,7 @@ export class WaterMeasurementController {
   ) {
     return this.svc.createForAquarium(req.user.userId, aquariumId, dto);
   }
-
+// supprime mesure x de l'aquarium x
   @Delete(':id')
   remove(
     @Req() req: any,

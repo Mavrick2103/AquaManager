@@ -9,18 +9,19 @@ import { AuthModule } from './auth/auth.module';
 import { AquariumsModule } from './aquariums/aquariums.module';
 import { WaterMeasurementModule } from './water-measurement/water-measurement.module';
 import { TaskModule } from './tasks/task.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
 
-      // 🔹 Charge automatiquement .env.development, .env.production, etc.
+      // Charge automatiquement .env.development, .env.production.
       envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
 
       validationOptions: { allowUnknown: true, abortEarly: false },
       validationSchema: Joi.object({
-        NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
+        NODE_ENV: Joi.string().valid('development', 'production').default('development'),
 
         DB_HOST: Joi.string().required(),
         DB_PORT: Joi.number().integer().min(1).default(3306),
@@ -42,6 +43,7 @@ import { TaskModule } from './tasks/task.module';
     AuthModule,
     WaterMeasurementModule,
     TaskModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

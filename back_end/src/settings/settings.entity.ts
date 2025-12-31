@@ -47,3 +47,5 @@ export class Settings {
   @Column({ type: 'float', default: 26 })
   tempMax: number;
 }
+
+// En cours de developpement

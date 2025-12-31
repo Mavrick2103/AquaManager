@@ -19,9 +19,8 @@
     "test": "jest --config jest.config.ts --runInBand",
     "test:ci": "jest test/unitaire test/Fonctionnel",
     "test:unit": "jest --config jest.config.ts --runInBand --testMatch **/*.unit.spec.ts",
-    "test:fun": "jest --config jest.config.ts --runInBand --testMatch **/*.functional.spec.ts",
-    "test:e2e": "jest --config jest.config.ts --runInBand --testMatch **/*.e2e-spec.ts"
-  },
+    "test:fun": "jest --config jest.config.ts --runInBand --testMatch **/*.functional.spec.ts"
+    },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",

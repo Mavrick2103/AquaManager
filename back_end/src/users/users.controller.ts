@@ -9,7 +9,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly users: UsersService) {}
-
+ 
+  // récupère info user connecté
   @Get('me')
   async me(@Request() req) {
     const user = await this.users.findById(req.user.userId);
@@ -18,6 +19,7 @@ export class UsersController {
     return safe;
   }
 
+  // modifie info user connecté
   @Put('me')
   async updateMe(@Request() req, @Body() dto: UpdateMeDto) {
     const updated = await this.users.updateProfile(req.user.userId, dto);
@@ -26,16 +28,19 @@ export class UsersController {
     return safe;
   }
 
+  // modifie mot de passe user connecté
   @Post('me/password')
   async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
     const ok = await this.users.changePassword(req.user.userId, dto.currentPassword, dto.newPassword);
     if (!ok) throw new BadRequestException('Mot de passe actuel invalide');
     return { ok: true };
   }
- @Delete('me')
-async removeMe(@Req() req: any) {
-  const userId = Number(req.user?.userId ?? req.user?.sub);
-  await this.users.deleteById(userId);
-  return { ok: true };
-}
+
+  //supprime user connecté
+  @Delete('me')
+  async removeMe(@Req() req: any) {
+    const userId = Number(req.user?.userId ?? req.user?.sub);
+    await this.users.deleteById(userId);
+    return { ok: true };
+  }
 }
