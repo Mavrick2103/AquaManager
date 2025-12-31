@@ -1,13 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+
 import { AuthService } from '../../src/auth/auth.service';
 import { UsersService } from '../../src/users/users.service';
-import { ConfigService } from '@nestjs/config';
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
 
-// mock argon2.verify
+// Mock argon2.verify
 jest.mock('argon2', () => ({
   verify: jest.fn(async (hash: string, plain: string) => hash === 'hashed:' + plain),
 }));
@@ -24,9 +25,10 @@ describe('AuthService', () => {
       findByEmailWithPassword: jest.fn(),
       create: jest.fn(),
 
-      // ✅ nouveaux endpoints
+      // ✅ nouvelles méthodes
       setEmailVerifyToken: jest.fn().mockResolvedValue(undefined),
       verifyEmailByTokenHash: jest.fn().mockResolvedValue(null),
+
       setPasswordResetToken: jest.fn().mockResolvedValue(null),
       resetPasswordByTokenHash: jest.fn().mockResolvedValue(null),
     };
@@ -85,13 +87,26 @@ describe('AuthService', () => {
         .rejects.toBeInstanceOf(UnauthorizedException);
     });
 
+    it('jette Unauthorized si mot de passe invalide', async () => {
+      users.findByEmailWithPassword.mockResolvedValue({
+        id: 1,
+        email: 'test@mail.com',
+        password: 'hashed:other',
+        role: 'USER',
+        emailVerifiedAt: new Date(), // ✅ sinon ça bloque avant
+      } as any);
+
+      await expect(service.login('test@mail.com', 'secret'))
+        .rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
     it('retourne access + refresh si OK', async () => {
       users.findByEmailWithPassword.mockResolvedValue({
         id: 1,
         email: 'test@mail.com',
         password: 'hashed:secret',
         role: 'user',
-        emailVerifiedAt: new Date(),
+        emailVerifiedAt: new Date(), // ✅ requis
       } as any);
 
       jwt.signAsync

@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
@@ -16,6 +12,8 @@ type JwtPayload = { sub: number; role: string };
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly users: UsersService,
     private readonly jwt: JwtService,
@@ -55,14 +53,9 @@ export class AuthService {
 
     await this.users.setEmailVerifyToken(user.id, tokenHash, expiresAt);
 
-    try {
-      await this.mail.sendVerifyEmail(user.email, user.fullName, token);
-    } catch (e: any) {
-      // évite les comptes “bloqués” sans mail : tu peux soit supprimer le user, soit throw
-      throw new ServiceUnavailableException(
-        `Impossible d'envoyer l'email de vérification. Réessaie plus tard.`,
-      );
-    }
+    // Si l’email plante, tu peux choisir: soit throw, soit log + continuer.
+    // Pour éviter les comptes bloqués sans mail, je préfère FAIL (throw).
+    await this.mail.sendVerifyEmail(user.email, user.fullName, token);
 
     return {
       id: user.id,
@@ -75,13 +68,11 @@ export class AuthService {
   async verifyEmail(token: string) {
     const tokenHash = this.sha256(token);
     const user = await this.users.verifyEmailByTokenHash(tokenHash);
-
     if (!user) return { ok: false, message: 'Lien invalide ou expiré' };
     return { ok: true, message: 'Email vérifié' };
   }
 
   async forgotPassword(email: string) {
-    // ne révèle jamais si le mail existe
     const token = randomBytes(32).toString('hex');
     const tokenHash = this.sha256(token);
     const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 min
@@ -97,7 +88,6 @@ export class AuthService {
   async resetPassword(token: string, newPassword: string) {
     const tokenHash = this.sha256(token);
     const user = await this.users.resetPasswordByTokenHash(tokenHash, newPassword);
-
     if (!user) return { ok: false, message: 'Lien invalide ou expiré' };
     return { ok: true, message: 'Mot de passe mis à jour' };
   }
