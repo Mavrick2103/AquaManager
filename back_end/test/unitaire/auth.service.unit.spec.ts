@@ -5,6 +5,9 @@ import * as argon2 from 'argon2';
 import { AuthService } from '../../src/auth/auth.service';
 import { UsersService } from '../../src/users/users.service';
 import { ConfigService } from '@nestjs/config';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from './utils/mail.mock';
+
 
 // Mock argon2.verify
 jest.mock('argon2', () => ({
@@ -43,6 +46,7 @@ describe('AuthService', () => {
         { provide: UsersService, useValue: usersMock },
         { provide: JwtService, useValue: jwtMock },
         { provide: ConfigService, useValue: configMock },
+        { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
 
