@@ -6,6 +6,8 @@ import * as argon2 from 'argon2';
 
 import { UsersService } from '../../src/users/users.service';
 import { User } from '../../src/users/user.entity';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
 
 jest.mock('argon2', () => ({
   hash: jest.fn(async (s: string) => 'hashed:' + s),
@@ -31,6 +33,7 @@ describe('UsersService (unit)', () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: repoMock },
+        { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
 

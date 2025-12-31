@@ -4,6 +4,8 @@ import { TaskService } from '../../src/tasks/task.service';
 import { CreateTaskDto } from '../../src/tasks/dto/create-task.dto';
 import { UpdateTaskDto } from '../../src/tasks/dto/update-task.dto';
 import { TaskStatus, TaskType } from '../../src/tasks/task.entity';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
 
 describe('TaskController (unit)', () => {
   let controller: TaskController;
@@ -21,7 +23,9 @@ describe('TaskController (unit)', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TaskController],
-      providers: [{ provide: TaskService, useValue: mockService }],
+      providers: [{ provide: TaskService, useValue: mockService },
+        { provide: MailService, useValue: mailServiceMock },
+      ],
     }).compile();
 
     controller = module.get(TaskController);

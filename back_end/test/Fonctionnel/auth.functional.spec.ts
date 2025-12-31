@@ -8,6 +8,8 @@ import { AuthController } from '../../src/auth/auth.controller';
 import { AuthService } from '../../src/auth/auth.service';
 import { UsersService } from '../../src/users/users.service';
 import { CreateUserDto } from '../../src/users/dto/create-user.dto';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
 
 // On mock argon2 pour contrôler la vérification de mot de passe
 jest.mock('argon2', () => ({
@@ -52,6 +54,7 @@ describe('Auth (tests fonctionnels)', () => {
         { provide: UsersService, useValue: usersMock },
         { provide: JwtService, useValue: jwtMock },
         { provide: ConfigService, useValue: configMock },
+        { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
 

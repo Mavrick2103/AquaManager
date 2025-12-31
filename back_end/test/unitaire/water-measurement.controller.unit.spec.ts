@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { WaterMeasurementController } from '../../src/water-measurement/water-measurement.controller';
 import { WaterMeasurementService } from '../../src/water-measurement/water-measurement.service';
 import { CreateWaterMeasurementDto } from '../../src/water-measurement/dto/create-water-measurement.dto';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
 
 describe('WaterMeasurementController (unit)', () => {
   let controller: WaterMeasurementController;
@@ -15,7 +17,9 @@ describe('WaterMeasurementController (unit)', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WaterMeasurementController],
-      providers: [{ provide: WaterMeasurementService, useValue: mockService }],
+      providers: [{ provide: WaterMeasurementService, useValue: mockService },
+        { provide: MailService, useValue: mailServiceMock },
+      ],
     }).compile();
 
     controller = module.get(WaterMeasurementController);

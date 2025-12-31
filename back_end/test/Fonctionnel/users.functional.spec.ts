@@ -7,6 +7,8 @@ import * as argon2 from 'argon2';
 import { UsersController } from '../../src/users/users.controller';
 import { UsersService } from '../../src/users/users.service';
 import { User } from '../../src/users/user.entity';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
 
 describe('Users (tests fonctionnels)', () => {
   let controller: UsersController;
@@ -42,6 +44,7 @@ describe('Users (tests fonctionnels)', () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: usersRepoMock },
+        { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
 

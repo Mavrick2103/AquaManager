@@ -6,6 +6,8 @@ import { NotFoundException } from '@nestjs/common';
 import { AquariumsService } from '../../src/aquariums/aquariums.service';
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
 import { User } from '../../src/users/user.entity';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
 
 describe('AquariumsService (unit)', () => {
   let service: AquariumsService;
@@ -30,6 +32,7 @@ describe('AquariumsService (unit)', () => {
         AquariumsService,
         { provide: getRepositoryToken(Aquarium), useValue: aquariumRepoMock },
         { provide: getRepositoryToken(User), useValue: usersRepoMock },
+        { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
 

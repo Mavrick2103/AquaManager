@@ -7,6 +7,8 @@ import { TaskController } from '../../src/tasks/task.controller';
 import { TaskService } from '../../src/tasks/task.service';
 import { Task, TaskStatus, TaskType } from '../../src/tasks/task.entity';
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
 
 describe('Tasks (tests fonctionnels)', () => {
   let controller: TaskController;
@@ -53,6 +55,7 @@ describe('Tasks (tests fonctionnels)', () => {
         TaskService,
         { provide: getRepositoryToken(Task), useValue: taskRepoMock },
         { provide: getRepositoryToken(Aquarium), useValue: aqRepoMock },
+        { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
 

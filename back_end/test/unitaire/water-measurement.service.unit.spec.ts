@@ -7,6 +7,8 @@ import { WaterMeasurement } from '../../src/water-measurement/water-measurement.
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
 import { CreateWaterMeasurementDto } from '../../src/water-measurement/dto/create-water-measurement.dto';
 import { NotFoundException } from '@nestjs/common';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
 
 describe('WaterMeasurementService (unit)', () => {
   let service: WaterMeasurementService;
@@ -37,6 +39,7 @@ describe('WaterMeasurementService (unit)', () => {
           provide: getRepositoryToken(Aquarium),
           useValue: aquariumRepoMock,
         },
+        { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
 

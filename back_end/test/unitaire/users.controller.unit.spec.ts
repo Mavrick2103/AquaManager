@@ -4,6 +4,8 @@ import { UsersService } from '../../src/users/users.service';
 import { UpdateMeDto } from '../../src/users/dto/update-me.dto';
 import { ChangePasswordDto } from '../../src/users/dto/change-password.dto';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
 
 describe('UsersController (unit)', () => {
   let controller: UsersController;
@@ -21,7 +23,10 @@ describe('UsersController (unit)', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
-      providers: [{ provide: UsersService, useValue: mockService }],
+      providers: [{ provide: UsersService, useValue: mockService },
+        { provide: MailService, useValue: mailServiceMock },
+
+      ],
     }).compile();
 
     controller = module.get(UsersController);

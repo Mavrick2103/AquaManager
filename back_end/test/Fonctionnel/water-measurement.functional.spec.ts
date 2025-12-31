@@ -7,6 +7,8 @@ import { WaterMeasurementController } from '../../src/water-measurement/water-me
 import { WaterMeasurementService } from '../../src/water-measurement/water-measurement.service';
 import { WaterMeasurement } from '../../src/water-measurement/water-measurement.entity';
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
 
 describe('WaterMeasurement (tests fonctionnels)', () => {
   let controller: WaterMeasurementController;
@@ -35,6 +37,7 @@ describe('WaterMeasurement (tests fonctionnels)', () => {
         WaterMeasurementService,
         { provide: getRepositoryToken(WaterMeasurement), useValue: measurementRepoMock },
         { provide: getRepositoryToken(Aquarium), useValue: aquasRepoMock },
+        { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
 

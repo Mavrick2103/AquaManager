@@ -8,6 +8,9 @@ import { AquariumsService } from '../../src/aquariums/aquariums.service';
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
 import { User } from '../../src/users/user.entity';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
+import { MailService } from '../../src/mail/mail.service';
+import { mailServiceMock } from '../utils/mail.mock';
+
 
 describe('Aquariums (tests fonctionnels)', () => {
   let controller: AquariumsController;
@@ -37,6 +40,7 @@ describe('Aquariums (tests fonctionnels)', () => {
         { provide: getRepositoryToken(Aquarium), useValue: aquariumRepoMock },
         { provide: getRepositoryToken(User), useValue: usersRepoMock },
         { provide: JwtAuthGuard, useValue: { canActivate: () => true } },
+        { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
 
