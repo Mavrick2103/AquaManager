@@ -31,12 +31,24 @@ services:
       DB_USER: ${DB_USER:-aquamanager}
       DB_PASS: ${DB_PASS:-aquamanager}
       DB_NAME: ${DB_NAME:-aquamanager}
+
       JWT_SECRET: ${JWT_SECRET:-change_me_at_least_16_chars}
       JWT_EXPIRES: ${JWT_EXPIRES:-1h}
       JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-15d}
+
       NODE_ENV: production
       PORT: 3000
       TYPEORM_SYNC: "true"
+
+      # ✅ EMAIL (Gmail SMTP)
+      APP_URL: ${APP_URL:-https://aquamanager.fr}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_USER: ${SMTP_USER:-aquamanager.contact@gmail.com}
+      SMTP_PASS: ${SMTP_PASS:-ishdizrethtfbsoy}
+      EMAIL_FROM: ${EMAIL_FROM:-AquaManager <aquamanager.contact@gmail.com>}
+
     ports:
       - "3000:3000"
 

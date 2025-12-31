@@ -55,7 +55,7 @@ export class RegisterComponent {
       }),
       confirmPassword: this.fb.control('', { nonNullable: true, validators: [Validators.required] }),
     }, { validators: passwordsMatch }),
-    acceptTos: this.fb.control(true, { nonNullable: true }),
+    acceptTos: this.fb.control(false, { nonNullable: true }),
   });
 
   get fullName() { return this.form.controls.fullName; }

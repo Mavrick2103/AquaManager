@@ -1,0 +1,19 @@
+<div class="wrap">
+  <mat-card class="card">
+    <h1>Vérification email</h1>
+
+    <div class="center" *ngIf="loading()">
+      <mat-spinner diameter="36"></mat-spinner>
+      <p>Validation en cours…</p>
+    </div>
+
+    <div *ngIf="!loading()">
+      <p class="msg" [class.ok]="ok()" [class.ko]="ok() === false">{{ message() }}</p>
+
+      <div class="actions">
+        <a mat-flat-button color="primary" routerLink="/login">Aller à la connexion</a>
+        <a mat-button routerLink="/">Retour accueil</a>
+      </div>
+    </div>
+  </mat-card>
+</div>

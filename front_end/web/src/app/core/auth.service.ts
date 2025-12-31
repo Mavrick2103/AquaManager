@@ -88,6 +88,24 @@ export class AuthService {
       return null;
     }
   }
+  async verifyEmail(token: string): Promise<{ ok: boolean; message?: string }> {
+  return await this.http
+    .post<{ ok: boolean; message?: string }>(`${environment.apiUrl}/auth/verify-email`, { token })
+    .toPromise() as any;
+}
+
+async forgotPassword(email: string): Promise<{ ok: boolean; message?: string }> {
+  return await this.http
+    .post<{ ok: boolean; message?: string }>(`${environment.apiUrl}/auth/forgot-password`, { email })
+    .toPromise() as any;
+}
+
+async resetPassword(token: string, newPassword: string): Promise<{ ok: boolean; message?: string }> {
+  return await this.http
+    .post<{ ok: boolean; message?: string }>(`${environment.apiUrl}/auth/reset-password`, { token, newPassword })
+    .toPromise() as any;
+}
+
 
   async register(payload: { fullName: string; email: string; password: string }) {
     return await firstValueFrom(

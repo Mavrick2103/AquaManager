@@ -1,0 +1,12 @@
+.page { max-width: 980px; margin: 0 auto; padding: 16px; }
+.head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.title { display:flex; gap:10px; align-items:flex-start; }
+.title mat-icon { margin-top: 4px; opacity:.9; }
+h1 { margin:0; font-size: 26px; font-weight: 900; }
+p { margin:6px 0 0; opacity:.75; }
+.card { border-radius: 18px; border: 1px solid rgba(15,23,42,.10); }
+mat-divider { margin: 14px 0; }
+ul { margin: 8px 0 0 18px; }
+.muted { margin-top: 14px; opacity: .65; font-size: 12px; }
+.links { margin-top: 12px; display:flex; gap:10px; justify-content:center; opacity:.8; }
+.links a { text-decoration: none; }

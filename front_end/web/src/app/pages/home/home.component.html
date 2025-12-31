@@ -111,6 +111,15 @@
       </ul>
     </div>
 
+    <div class="footer-links">
+      <h3>Légal</h3>
+      <ul>
+        <li><a routerLink="/legal">Mentions légales</a></li>
+        <li><a routerLink="/privacy">Politique de confidentialité</a></li>
+        <li><a routerLink="/terms">CGU</a></li>
+      </ul>
+    </div>
+
     <div class="footer-social">
       <h3>Suivez-nous</h3>
       <div class="social-icons">
@@ -125,6 +134,13 @@
 
   <div class="footer-bottom">
     <p>© {{ today.getFullYear() }} AquaManager — Tous droits réservés</p>
-    <a href="#" class="footer-policy">Mentions légales</a>
+
+    <div class="footer-legal">
+      <a routerLink="/legal" class="footer-policy">Mentions légales</a>
+      <span class="sep">•</span>
+      <a routerLink="/privacy" class="footer-policy">Confidentialité</a>
+      <span class="sep">•</span>
+      <a routerLink="/terms" class="footer-policy">CGU</a>
+    </div>
   </div>
 </footer>

@@ -4,64 +4,109 @@ import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
-   {
+  // ✅ Pages publiques (sans AuthGuard)
+  {
     path: 'login',
     component: LoginComponent,
     data: {
       title: 'Connexion – AquaManager',
-      description: 'Connectez-vous à AquaManager pour suivre vos aquariums, vos paramètres d’eau et vos tâches d’entretien.',
-      robots: 'noindex'
-    }
+      description:
+        "Connectez-vous à AquaManager pour suivre vos aquariums, vos paramètres d’eau et vos tâches d’entretien.",
+      robots: 'noindex',
+    },
   },
-
-  { path: '', component: HomeComponent, canActivate: [AuthGuard] },
 
   {
     path: 'register',
     loadComponent: () =>
-      import('./pages/register/register.component').then(m => m.RegisterComponent),
+      import('./pages/register/register.component').then((m) => m.RegisterComponent),
+    data: { title: 'Inscription – AquaManager', robots: 'noindex' },
   },
 
+  // ✅ Page appelée depuis le mail (OBLIGATOIREMENT publique)
+  
+  {
+  path: 'auth/verification-email',
+  loadComponent: () =>
+    import('./pages/email/verify-email.component').then(m => m.VerifyEmailComponent),    data: { title: 'Vérification email – AquaManager', robots: 'noindex' },
+
+},
+
+
+  // ✅ (optionnel mais recommandé) mot de passe oublié / reset
+ {
+    path: 'auth/reset-password',
+    loadComponent: () =>
+      import('./pages/email/reset-password.component').then(m => m.ResetPasswordComponent),
+    data: { title: 'Réinitialisation mot de passe – AquaManager', robots: 'noindex' }
+  },
+
+   {
+    path: 'auth/forgot-password',
+    loadComponent: () =>
+      import('./pages/email/forgot-password.component').then(m => m.ForgotPasswordComponent),
+    data: { title: 'Mot de passe oublié – AquaManager', robots: 'noindex' }
+  },
+
+  // ✅ Pages légales (publiques)
+  {
+    path: 'legal',
+    loadComponent: () =>
+      import('./pages/legal/legal.component').then((m) => m.LegalComponent),
+    data: { title: 'Mentions légales – AquaManager', robots: 'index,follow' },
+  },
+  {
+    path: 'privacy',
+    loadComponent: () =>
+      import('./pages/legal/privacy.component').then((m) => m.PrivacyComponent),
+    data: { title: 'Politique de confidentialité – AquaManager', robots: 'index,follow' },
+  },
+  {
+    path: 'terms',
+    loadComponent: () =>
+      import('./pages/legal/terms.component').then((m) => m.TermsComponent),
+    data: { title: 'CGU – AquaManager', robots: 'index,follow' },
+  },
+
+  // ✅ Accueil PROTÉGÉ (après login)
+  { path: '', component: HomeComponent, canActivate: [AuthGuard] },
+
+  // ✅ Le reste protégé
   {
     path: 'aquariums',
     loadComponent: () =>
-      import('./pages/aquariums/aquariums.component').then(m => m.AquariumsComponent),
+      import('./pages/aquariums/aquariums.component').then((m) => m.AquariumsComponent),
     canActivate: [AuthGuard],
   },
   {
     path: 'aquariums/:id',
     loadComponent: () =>
-      import('./pages/aquariums/detail/aquarium-detail.component').then(m => m.AquariumDetailComponent),
+      import('./pages/aquariums/detail/aquarium-detail.component').then(
+        (m) => m.AquariumDetailComponent
+      ),
     canActivate: [AuthGuard],
   },
-
   {
     path: 'profile',
     loadComponent: () =>
-      import('./pages/profile/profile.component').then(m => m.ProfileComponent),
+      import('./pages/profile/profile.component').then((m) => m.ProfileComponent),
     canActivate: [AuthGuard],
   },
-  //{
-  //  path: 'settings',
-  //  loadComponent: () =>
-  //    import('./pages/settings/settings.component').then(m => m.SettingsComponent),
-  //  canActivate: [AuthGuard],
-  //},
   {
-  path: 'calendar',
-  loadComponent: () =>
-    import('./pages/calendar/calendar.component').then(m => m.CalendarComponent),
-  canActivate: [AuthGuard],
+    path: 'calendar',
+    loadComponent: () =>
+      import('./pages/calendar/calendar.component').then((m) => m.CalendarComponent),
+    canActivate: [AuthGuard],
   },
-  
-{
-  path: 'admin/metrics',
-  loadComponent: () =>
-    import('./pages/admin-metrics/admin-metrics.component').then(m => m.AdminMetricsComponent),
-  canActivate: [AuthGuard],
-},
+  {
+    path: 'admin/metrics',
+    loadComponent: () =>
+      import('./pages/admin-metrics/admin-metrics.component').then(
+        (m) => m.AdminMetricsComponent
+      ),
+    canActivate: [AuthGuard],
+  },
 
-
-  { path: '**', redirectTo: '' },
+  // ✅ 404 -> page login (sinon tu reboucles sur home protégée)
+  { path: '**', redirectTo: 'login' },
 ];
- 
