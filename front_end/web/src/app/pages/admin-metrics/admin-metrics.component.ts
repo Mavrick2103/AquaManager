@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
+import { RouterModule } from '@angular/router';
+
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -11,10 +14,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { RouterModule } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
 
-type MetricsRange = '7d' | '30d' | 'all';
+type MetricsRange = '7d' | '30d' | '365d' | 'all';
 type Role = 'USER' | 'ADMIN';
 
 interface AdminMetricsDto {
@@ -25,7 +27,7 @@ interface AdminMetricsDto {
     admins: number;
     newInRange: number | null;
     activeInRange: number;
-    latest: Array<{ id: number; fullName: string; email: string; role: Role }>;
+    latest: Array<{ id: number; fullName: string; email: string; role: Role; createdAt?: string }>;
     note?: string;
   };
   aquariums: { total: number; createdInRange: number };
@@ -38,16 +40,17 @@ interface AdminMetricsDto {
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     MatToolbarModule,
     MatCardModule,
     MatIconModule,
+    MatButtonModule,
     MatButtonToggleModule,
     MatProgressSpinnerModule,
     MatTableModule,
     MatChipsModule,
     MatDividerModule,
     MatTooltipModule,
-    RouterModule,
   ],
   templateUrl: './admin-metrics.component.html',
   styleUrls: ['./admin-metrics.component.scss'],
@@ -97,6 +100,7 @@ export class AdminMetricsComponent {
   rangeLabel(): string {
     if (this.range === '7d') return '7 derniers jours';
     if (this.range === '30d') return '30 derniers jours';
+    if (this.range === '365d') return '12 derniers mois';
     return 'Depuis le début';
   }
 

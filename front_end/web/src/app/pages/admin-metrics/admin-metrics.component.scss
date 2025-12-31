@@ -1,57 +1,37 @@
 :host {
-  /* Mets ici TES vraies couleurs si tu les connais */
-  --am-primary: #1ea7ff;   /* bleu aqua */
-  --am-accent:  #22c7b8;   /* teal */
-  --am-bg:      #f6fbff;
-  --am-border:  rgba(15, 23, 42, 0.10);
-  --am-muted:   rgba(15, 23, 42, 0.62);
+  --am-primary: #1ea7ff;
+  --am-accent: #22c7b8;
+  --am-border: rgba(15, 23, 42, 0.10);
+  --am-muted: rgba(15, 23, 42, 0.62);
 }
 
-.page {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 16px;
-}
+.page { max-width: 1180px; margin: 0 auto; padding: 16px; }
 
 .toolbar {
   border-radius: 18px;
   border: 1px solid var(--am-border);
   background: linear-gradient(135deg, rgba(30,167,255,0.12), rgba(34,199,184,0.10));
-  backdrop-filter: blur(6px);
+  padding: 14px;
   height: auto;
-  padding: 14px 14px;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  .brand-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 16px;
-    display: grid;
-    place-items: center;
-    background: rgba(255,255,255,0.8);
-    border: 1px solid var(--am-border);
-  }
-
-  .brand-title {
-    font-size: 26px;
-    font-weight: 900;
-    letter-spacing: -0.4px;
-    line-height: 1.05;
-  }
-
-  .brand-sub {
-    margin-top: 4px;
-    color: var(--am-muted);
-    font-size: 13px;
-  }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 44px; height: 44px; border-radius: 16px;
+  display: grid; place-items: center;
+  background: rgba(255,255,255,0.8);
+  border: 1px solid var(--am-border);
 }
+.brand-title { font-size: 26px; font-weight: 900; }
+.brand-sub { margin-top: 4px; color: var(--am-muted); font-size: 13px; }
 
 .spacer { flex: 1; }
+
+.home-btn {
+  border-radius: 14px;
+  margin-right: 10px;
+  mat-icon { margin-right: 6px; }
+}
 
 .range {
   border-radius: 14px;
@@ -59,13 +39,7 @@
   border: 1px solid var(--am-border);
   background: rgba(255,255,255,0.75);
 
-  .mini {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    margin-right: 6px;
-    vertical-align: -3px;
-  }
+  .mini { font-size: 18px; width: 18px; height: 18px; margin-right: 6px; }
 }
 
 .state {
@@ -78,9 +52,7 @@
   border: 1px solid var(--am-border);
   background: rgba(255,255,255,0.8);
 
-  &.error {
-    background: rgba(239, 68, 68, 0.08);
-  }
+  &.error { background: rgba(239, 68, 68, 0.08); }
 }
 
 .grid {
@@ -88,65 +60,29 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-  }
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
 }
 
 .kpi {
-  position: relative;
   border-radius: 18px;
   border: 1px solid var(--am-border);
   background: rgba(255,255,255,0.86);
-  overflow: hidden;
 
-  .kpi-top {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    padding: 14px 14px 10px;
-  }
-
+  .kpi-top { display: flex; gap: 12px; align-items: center; padding: 14px 14px 10px; }
   .kpi-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 16px;
-    display: grid;
-    place-items: center;
+    width: 42px; height: 42px; border-radius: 16px;
+    display: grid; place-items: center;
     background: rgba(15, 23, 42, 0.06);
   }
+  .kpi-label { font-size: 13px; color: var(--am-muted); }
+  .kpi-value { font-size: 34px; font-weight: 950; }
 
-  .kpi-label {
-    font-size: 13px;
-    color: var(--am-muted);
-    margin-bottom: 2px;
-  }
-
-  .kpi-value {
-    font-size: 34px;
-    font-weight: 950;
-    letter-spacing: -0.6px;
-    line-height: 1;
-  }
-
-  mat-divider {
-    opacity: 0.7;
-  }
-
-  .kpi-rows {
-    padding: 10px 14px 14px;
-
-    .row {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(15,23,42,0.06);
-
-      &:last-child { border-bottom: none; }
-      span { color: rgba(15,23,42,0.78); }
-      b { font-weight: 900; }
-    }
+  .kpi-rows { padding: 10px 14px 14px; }
+  .row {
+    display: flex; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid rgba(15,23,42,0.06);
+    &:last-child { border-bottom: none; }
+    b { font-weight: 900; }
   }
 
   .note {
@@ -155,39 +91,17 @@
     border-radius: 14px;
     border: 1px dashed rgba(15,23,42,0.18);
     background: rgba(30,167,255,0.06);
-    display: flex;
-    gap: 8px;
-    align-items: flex-start;
+    display: flex; gap: 8px; align-items: flex-start;
     color: rgba(15,23,42,0.72);
     font-size: 12px;
-
-    mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-      margin-top: 1px;
-    }
+    mat-icon { font-size: 18px; width: 18px; height: 18px; margin-top: 1px; }
   }
 }
 
-/* Accent bars par carte */
 .kpi-users { border-top: 3px solid var(--am-primary); }
 .kpi-aqua { border-top: 3px solid var(--am-accent); }
 .kpi-measures { border-top: 3px solid rgba(99, 102, 241, 0.75); }
 .kpi-tasks { border-top: 3px solid rgba(34, 197, 94, 0.75); }
-
-/* Glow discret comme sur ton screen */
-.kpi-users .glow {
-  position: absolute;
-  right: -60px;
-  top: -60px;
-  width: 220px;
-  height: 220px;
-  border-radius: 999px;
-  background: radial-gradient(circle at 30% 30%, rgba(30,167,255,0.26), transparent 58%),
-              radial-gradient(circle at 70% 70%, rgba(34,199,184,0.22), transparent 58%);
-  pointer-events: none;
-}
 
 .table-card {
   margin-top: 14px;
@@ -199,21 +113,9 @@
     padding: 14px 14px 8px;
     display: flex;
     justify-content: space-between;
-    gap: 12px;
     align-items: flex-start;
-
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: -0.2px;
-    }
-
-    p {
-      margin: 4px 0 0;
-      font-size: 12px;
-      color: var(--am-muted);
-    }
+    h2 { margin: 0; font-size: 18px; font-weight: 900; }
+    p { margin: 4px 0 0; font-size: 12px; color: var(--am-muted); }
   }
 
   .table-wrap {
@@ -224,37 +126,14 @@
     background: rgba(248, 250, 252, 0.85);
   }
 
-  table {
-    width: 100%;
-    min-width: 720px;
-  }
-
-  th {
-    font-weight: 900;
-    background: rgba(255,255,255,0.95);
-  }
-
-  tr.mat-row:nth-child(even) td {
-    background: rgba(15, 23, 42, 0.02);
-  }
+  table { width: 100%; min-width: 720px; }
+  th { font-weight: 900; background: rgba(255,255,255,0.95); }
+  tr.mat-row:nth-child(even) td { background: rgba(15, 23, 42, 0.02); }
 }
 
 .chip {
   font-weight: 900;
   border: 1px solid rgba(15,23,42,0.12);
   background: rgba(15,23,42,0.06);
-
-  &.admin {
-    background: rgba(30,167,255,0.16);
-    border-color: rgba(30,167,255,0.30);
-  }
+  &.admin { background: rgba(30,167,255,0.16); border-color: rgba(30,167,255,0.30); }
 }
-.home-btn {
-  border-radius: 14px;
-  margin-right: 10px;
-
-  mat-icon {
-    margin-right: 6px;
-  }
-}
-
