@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import nodemailer from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
@@ -8,9 +8,19 @@ export class MailService {
   private transporter: nodemailer.Transporter;
 
   constructor(private readonly config: ConfigService) {
+    // ✅ IMPORTANT : en test, on n'envoie rien (Jest / CI)
+    const nodeEnv = (this.config.get<string>('NODE_ENV') ?? process.env.NODE_ENV ?? 'development').toLowerCase();
+    if (nodeEnv === 'test') {
+      // jsonTransport => nodemailer n'ouvre AUCUNE connexion réseau
+      this.transporter = nodemailer.createTransport({ jsonTransport: true } as any);
+      this.logger.log('MailService: jsonTransport enabled (NODE_ENV=test)');
+      return;
+    }
+
     const host = this.config.get<string>('SMTP_HOST') ?? 'smtp.gmail.com';
     const port = Number(this.config.get<string>('SMTP_PORT') ?? 465);
-    const secure = String(this.config.get<string>('SMTP_SECURE') ?? 'true').toLowerCase() === 'true';
+    const secure =
+      String(this.config.get<string>('SMTP_SECURE') ?? 'true').toLowerCase() === 'true';
 
     const user = this.config.get<string>('SMTP_USER') ?? '';
     const rawPass = this.config.get<string>('SMTP_PASS') ?? '';
@@ -33,7 +43,7 @@ export class MailService {
   }
 
   async sendVerifyEmail(to: string, fullName: string, token: string) {
-const url = `${this.appUrl()}/auth/verification-email?token=${encodeURIComponent(token)}`;
+    const url = `${this.appUrl()}/auth/verification-email?token=${encodeURIComponent(token)}`;
 
     await this.transporter.sendMail({
       from: this.from(),
@@ -83,12 +93,14 @@ const url = `${this.appUrl()}/auth/verification-email?token=${encodeURIComponent
   }
 
   private escape(s: string) {
-    return (s ?? '').replace(/[&<>"']/g, (c) => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
-    }[c] as string));
+    return (s ?? '').replace(/[&<>"']/g, (c) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+      } as Record<string, string>)[c] ?? c,
+    );
   }
 }
