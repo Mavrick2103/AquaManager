@@ -1,4 +1,3 @@
-// test/Fonctionnel/auth.functional.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -32,6 +31,13 @@ describe('Auth (tests fonctionnels)', () => {
     const usersMock: Partial<jest.Mocked<UsersService>> = {
       findByEmailWithPassword: jest.fn(),
       create: jest.fn(),
+
+      // ✅ nouvelles méthodes nécessaires
+      setEmailVerifyToken: jest.fn().mockResolvedValue(undefined),
+      verifyEmailByTokenHash: jest.fn().mockResolvedValue(null),
+
+      setPasswordResetToken: jest.fn().mockResolvedValue(null),
+      resetPasswordByTokenHash: jest.fn().mockResolvedValue(null),
     };
 
     const jwtMock: Partial<jest.Mocked<JwtService>> = {
@@ -72,6 +78,7 @@ describe('Auth (tests fonctionnels)', () => {
       email: 'test@mail.com',
       password: 'hashed:secret123',
       role: 'USER',
+      emailVerifiedAt: new Date(), // ✅ obligatoire maintenant
     } as any);
 
     let call = 0;
@@ -113,12 +120,31 @@ describe('Auth (tests fonctionnels)', () => {
     expect(res.cookie).not.toHaveBeenCalled();
   });
 
+  it('login() -> Unauthorized si email non vérifié', async () => {
+    users.findByEmailWithPassword.mockResolvedValue({
+      id: 1,
+      email: 'test@mail.com',
+      password: 'hashed:secret123',
+      role: 'USER',
+      emailVerifiedAt: null, // ✅ non vérifié
+    } as any);
+
+    const res: any = { cookie: jest.fn() };
+
+    await expect(
+      controller.login({ email: 'test@mail.com', password: 'secret123' }, res),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    expect(res.cookie).not.toHaveBeenCalled();
+  });
+
   it('login() -> Unauthorized si mot de passe invalide', async () => {
     users.findByEmailWithPassword.mockResolvedValue({
       id: 1,
       email: 'test@mail.com',
       password: 'hashed:otherpassword',
       role: 'USER',
+      emailVerifiedAt: new Date(), // ✅ vérifié
     } as any);
 
     const res: any = { cookie: jest.fn() };
@@ -216,10 +242,14 @@ describe('Auth (tests fonctionnels)', () => {
     const result = await controller.register(dto);
 
     expect(users.create).toHaveBeenCalledWith(dto);
+    expect(users.setEmailVerifyToken).toHaveBeenCalledTimes(1);
+    expect(mailServiceMock.sendVerifyEmail).toHaveBeenCalledTimes(1);
+
     expect(result).toEqual({
       id: 1,
       fullName: 'John Doe',
       email: 'john@test.com',
+      message: expect.any(String),
     });
   });
 });

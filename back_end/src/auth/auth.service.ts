@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
@@ -12,6 +12,8 @@ type JwtPayload = { sub: number; role: string };
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly users: UsersService,
     private readonly jwt: JwtService,
@@ -25,79 +27,61 @@ export class AuthService {
 
     // ✅ bloque login si email pas vérifié
     if (!user.emailVerifiedAt) {
-      throw new UnauthorizedException("Email non vérifié. Vérifie ta boîte mail.");
+      throw new UnauthorizedException('Email non vérifié. Vérifie ta boîte mail.');
     }
 
     const ok = await argon2.verify(user.password, password);
     if (!ok) throw new UnauthorizedException('Email ou mot de passe invalide');
 
-    const payload: JwtPayload = {
-      sub: user.id,
-      role: (user.role ?? 'USER').toUpperCase(),
-    };
-
+    const payload: JwtPayload = { sub: user.id, role: (user.role ?? 'USER').toUpperCase() };
     const access = await this.signAccess(payload);
     const refresh = await this.signRefresh(payload);
     return { access, refresh };
   }
 
   async register(dto: CreateUserDto) {
-  console.log('[REGISTER] start', dto.email);
+    const user = await this.users.create(dto);
 
-  const user = await this.users.create(dto);
-  console.log('[REGISTER] user created', { id: user.id, email: user.email });
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = this.sha256(token);
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24h
 
-  // token brut envoyé par email, hash stocké en DB
-  const token = randomBytes(32).toString('hex');
-  const tokenHash = this.sha256(token);
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24h
+    await this.users.setEmailVerifyToken(user.id, tokenHash, expiresAt);
 
-  console.log('[REGISTER] token generated', { userId: user.id, expiresAt });
+    // ✅ si l'email plante, on loggue mais on ne casse pas l'inscription
+    try {
+      await this.mail.sendVerifyEmail(user.email, user.fullName, token);
+    } catch (e: any) {
+      this.logger.error(`sendVerifyEmail failed for ${user.email}: ${e?.message ?? e}`);
+    }
 
-  console.log('[REGISTER] before setEmailVerifyToken');
-  await this.users.setEmailVerifyToken(user.id, tokenHash, expiresAt);
-  console.log('[REGISTER] after setEmailVerifyToken');
-
-  console.log('[REGISTER] before sendVerifyEmail');
-  try {
-    await this.mail.sendVerifyEmail(user.email, user.fullName, token);
-    console.log('[REGISTER] after sendVerifyEmail ✅');
-  } catch (e: any) {
-    console.error('[REGISTER] sendVerifyEmail FAILED ❌', e?.message ?? e);
-    // Tu peux choisir : soit tu fails l'inscription, soit tu laisses passer mais sans mail.
-    // Moi je préfère FAIL pour éviter les comptes bloqués sans mail.
-    throw e;
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      message: 'Compte créé. Vérifie ton e-mail pour activer ton compte.',
+    };
   }
-
-  console.log('[REGISTER] done ✅');
-
-  return {
-    id: user.id,
-    fullName: user.fullName,
-    email: user.email,
-    message: 'Compte créé. Vérifie ton e-mail pour activer ton compte.',
-  };
-}
-
 
   async verifyEmail(token: string) {
     const tokenHash = this.sha256(token);
     const user = await this.users.verifyEmailByTokenHash(tokenHash);
-    if (!user) {
-      return { ok: false, message: 'Lien invalide ou expiré' };
-    }
+    if (!user) return { ok: false, message: 'Lien invalide ou expiré' };
     return { ok: true, message: 'Email vérifié' };
   }
 
   async forgotPassword(email: string) {
-    // ⚠️ on ne révèle jamais si le mail existe ou non
     const token = randomBytes(32).toString('hex');
     const tokenHash = this.sha256(token);
     const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 min
 
     const user = await this.users.setPasswordResetToken(email, tokenHash, expiresAt);
     if (user) {
-      await this.mail.sendResetPassword(user.email, user.fullName, token);
+      try {
+        await this.mail.sendResetPassword(user.email, user.fullName, token);
+      } catch (e: any) {
+        this.logger.error(`sendResetPassword failed for ${user.email}: ${e?.message ?? e}`);
+      }
     }
 
     return { ok: true, message: 'Si un compte existe, un email a été envoyé.' };
@@ -106,7 +90,6 @@ export class AuthService {
   async resetPassword(token: string, newPassword: string) {
     const tokenHash = this.sha256(token);
     const user = await this.users.resetPasswordByTokenHash(tokenHash, newPassword);
-
     if (!user) return { ok: false, message: 'Lien invalide ou expiré' };
     return { ok: true, message: 'Mot de passe mis à jour' };
   }
