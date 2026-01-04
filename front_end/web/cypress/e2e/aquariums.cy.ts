@@ -5,7 +5,7 @@ const rx = {
   refresh: '**/api/auth/refresh',
   me:      '**/api/users/me',
 
-  aqsAny:  '**/api/aquariums**',
+  aqsAny:  '**/api/aquariums**',         // match large (safe)
   aqById:  (id: number | string) => `**/api/aquariums/${id}**`,
 
   tasksAny: '**/api/tasks**',
@@ -46,8 +46,6 @@ describe('Flow complet AquaManager (création + suppression)', () => {
       volumeL: 175,
     };
 
-    // 1er GET liste => []
-    // 2e GET liste (après création) => [created]
     let listCall = 0;
     cy.intercept('GET', rx.aqsAny, (req) => {
       listCall += 1;
@@ -124,7 +122,6 @@ describe('Flow complet AquaManager (création + suppression)', () => {
 
     cy.wait('@deleteAq');
     cy.wait('@listAfterDelete');
-
     cy.contains(/vous n’avez pas encore d’aquarium/i).should('exist');
   });
 });
@@ -139,34 +136,32 @@ describe('Sécurité front — XSS & token', () => {
     const alerts: string[] = [];
     cy.on('window:alert', (txt) => alerts.push(txt));
 
-    // IMPORTANT: ne pas écraser l'intercept GET aquariums
-    // 1er GET => []
-    cy.intercept(
-      { method: 'GET', url: rx.aqsAny, times: 1 },
-      { statusCode: 200, body: [] }
-    ).as('aqListEmpty');
-
-    // GET suivants => payload
+    // 1) GET par défaut (prendra les requêtes après la 1ère)
     cy.intercept(
       { method: 'GET', url: rx.aqsAny },
       {
         statusCode: 200,
         body: [{
-          id: 99,
-          name: payload,
+          id: 99, name: payload,
           lengthCm: 10, widthCm: 10, heightCm: 10,
           waterType: 'EAU_DOUCE',
         }],
       }
     ).as('listWithXss');
 
+    // 2) IMPORTANT: l’intercept le plus récent gagne -> on met celui-ci EN DERNIER
+    // pour qu’il attrape la 1ère requête uniquement.
+    cy.intercept(
+      { method: 'GET', url: rx.aqsAny, times: 1 },
+      { statusCode: 200, body: [] }
+    ).as('aqListEmpty');
+
     cy.intercept(
       { method: 'POST', url: rx.aqsAny },
       {
         statusCode: 201,
         body: {
-          id: 99,
-          name: payload,
+          id: 99, name: payload,
           lengthCm: 10, widthCm: 10, heightCm: 10,
           waterType: 'EAU_DOUCE',
         },
@@ -174,7 +169,7 @@ describe('Sécurité front — XSS & token', () => {
     ).as('createXss');
 
     cy.visit('/aquariums');
-    cy.wait('@aqListEmpty');
+    cy.wait('@aqListEmpty'); // maintenant, il se déclenche bien
 
     cy.contains('button', /nouvel aquarium|créer mon premier aquarium/i).click({ force: true });
 
@@ -182,7 +177,6 @@ describe('Sécurité front — XSS & token', () => {
       cy.get('input[formControlName="name"]').type(payload, { parseSpecialCharSequences: false });
       cy.get('mat-select[formControlName="waterType"]').click();
     });
-
     cy.contains('.mat-mdc-option, .mat-option', /eau douce/i).click();
 
     cy.get('mat-dialog-container').within(() => {
