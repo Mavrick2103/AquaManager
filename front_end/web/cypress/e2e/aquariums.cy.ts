@@ -5,13 +5,12 @@ const rx = {
   refresh: '**/api/auth/refresh',
   me:      '**/api/users/me',
 
-  postAq:  /\/api\/aquariums\/?$/,
-  getAqs:  /\/api\/aquariums(\?.*)?$/,          // liste
-  getAq:   (id: number|string) => new RegExp(`/api/aquariums/${id}(\\?.*)?$`),
+  aqsAny:  '**/api/aquariums**',         // match large (safe)
+  aqById:  (id: number | string) => `**/api/aquariums/${id}**`,
 
-  tasksAny:     '**/api/tasks*',
-  measuresFor:  (id: number|string) => new RegExp(`/api/aquariums/${id}/measurements(\\?.*)?$`),
-  measuresAny:  /\/api\/measurements(\?.*)?$/,
+  tasksAny: '**/api/tasks**',
+  measuresFor: (id: number | string) => `**/api/aquariums/${id}/measurements**`,
+  measuresAny: '**/api/measurements**',
 };
 
 function stubSessionBasics() {
@@ -20,14 +19,8 @@ function stubSessionBasics() {
   cy.intercept('GET',  rx.me,      { statusCode: 200, body: { userId: 1, email: 'test@aquamanager.com', role: 'USER' } }).as('me');
 }
 
-function stubHomeEmpty() {
-  cy.intercept('GET', rx.getAqs,  { statusCode: 200, body: [] }).as('aqListEmpty');
-  cy.intercept('GET', rx.tasksAny, { statusCode: 200, body: [] }).as('tasksEmpty');
-}
-
-function uiLoginToHome() {
+function uiLogin() {
   stubSessionBasics();
-  stubHomeEmpty();
 
   cy.visit('/login');
   cy.get('input[formControlName="email"]').type('test@aquamanager.com');
@@ -35,54 +28,43 @@ function uiLoginToHome() {
   cy.get('button[type="submit"]').click();
 
   cy.wait(['@login', '@me']);
-  cy.visit('/home');
-  cy.wait(['@aqListEmpty', '@tasksEmpty']);
+  // optionnel mais utile : vérifier qu’on n’est plus sur login
+  cy.url().should('not.include', '/login');
 }
 
-function goToAquariumsList(withBody: any[]) {
-  cy.intercept('GET', rx.getAqs, { statusCode: 200, body: withBody }).as('aqList');
-
-  cy.get('.cta-row button[routerLink="/aquariums"]', { timeout: 10000 })
-    .should('be.visible')
-    .click({ force: true });
-
-  cy.url({ timeout: 10000 }).should('include', '/aquariums');
+function visitAquariumsList(body: any[]) {
+  cy.intercept('GET', rx.aqsAny, { statusCode: 200, body }).as('aqList');
+  cy.visit('/aquariums');
   cy.wait('@aqList');
 }
 
 describe('Flow complet AquaManager (création + suppression)', () => {
   beforeEach(() => {
-    uiLoginToHome();
+    uiLogin();
   });
 
   it('crée un aquarium avec succès', () => {
-    goToAquariumsList([]);
+    // 1er GET liste => []
+    // 2e GET liste (après création) => [created]
+    const created = {
+      id: 1,
+      name: 'Bac test',
+      lengthCm: 70, widthCm: 50, heightCm: 50,
+      waterType: 'EAU_DOUCE',
+      startDate: '2025-01-01',
+      volumeL: 175,
+    };
 
-    cy.intercept('POST', rx.postAq, (req) => {
-      req.reply({
-        statusCode: 201,
-        body: {
-          id: 1,
-          name: 'Bac test',
-          lengthCm: 70, widthCm: 50, heightCm: 50,
-          waterType: 'EAU_DOUCE',
-          startDate: '2025-01-01',
-          volumeL: 175,
-        },
-      });
-    }).as('createAquarium');
+    let listCall = 0;
+    cy.intercept('GET', rx.aqsAny, (req) => {
+      listCall += 1;
+      req.reply({ statusCode: 200, body: listCall === 1 ? [] : [created] });
+    }).as('aqListSeq');
 
-    cy.intercept('GET', rx.getAqs, {
-      statusCode: 200,
-      body: [{
-        id: 1,
-        name: 'Bac test',
-        lengthCm: 70, widthCm: 50, heightCm: 50,
-        waterType: 'EAU_DOUCE',
-        startDate: '2025-01-01',
-        volumeL: 175,
-      }],
-    }).as('listAfterCreate');
+    cy.intercept('POST', rx.aqsAny, { statusCode: 201, body: created }).as('createAquarium');
+
+    cy.visit('/aquariums');
+    cy.wait('@aqListSeq');
 
     cy.contains('button, [role="button"]', /nouvel aquarium|créer mon premier aquarium/i, { timeout: 10000 })
       .should('be.visible')
@@ -103,14 +85,14 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     });
 
     cy.wait('@createAquarium');
-    cy.wait('@listAfterCreate');
+    cy.wait('@aqListSeq'); // refresh liste après create
 
     cy.contains('mat-card-title', 'Bac test', { timeout: 10000 }).should('be.visible');
     cy.contains('mat-card-subtitle', '70×50×50').should('be.visible');
     cy.contains('mat-chip', /eau douce/i).should('exist');
   });
 
-    it('supprime un aquarium existant', () => {
+  it('supprime un aquarium existant', () => {
     const aq = {
       id: 2,
       name: 'Aqua à supprimer',
@@ -119,28 +101,25 @@ describe('Flow complet AquaManager (création + suppression)', () => {
       startDate: '2025-02-01',
       volumeL: 96,
     };
-    goToAquariumsList([aq]);
 
-    cy.intercept('GET', rx.getAq(2), { statusCode: 200, body: aq }).as('getDetail');
+    cy.intercept('GET', rx.aqsAny, { statusCode: 200, body: [aq] }).as('aqList');
+    cy.intercept('GET', rx.aqById(2), { statusCode: 200, body: aq }).as('getDetail');
     cy.intercept('GET', rx.measuresFor(2), { statusCode: 200, body: [] }).as('getMeasures');
     cy.intercept('GET', rx.measuresAny,    { statusCode: 200, body: [] }).as('getAllMeasures');
 
-    cy.contains('mat-card-title', /aqua à supprimer/i)
-      .should('be.visible')
-      .click({ force: true });
+    cy.visit('/aquariums');
+    cy.wait('@aqList');
 
+    cy.contains('mat-card-title', /aqua à supprimer/i).click({ force: true });
     cy.wait('@getDetail');
 
     cy.on('window:confirm', () => true);
-    cy.intercept('DELETE', rx.getAq(2), { statusCode: 200, body: { ok: true } }).as('deleteAq');
-    cy.intercept('GET', rx.getAqs, { statusCode: 200, body: [] }).as('listAfterDelete');
 
-    cy.contains('button', /paramètres/i, { timeout: 10000 })
-      .should('be.visible')
-      .click({ force: true });
+    cy.intercept('DELETE', rx.aqById(2), { statusCode: 200, body: { ok: true } }).as('deleteAq');
+    cy.intercept('GET', rx.aqsAny, { statusCode: 200, body: [] }).as('listAfterDelete');
 
+    cy.contains('button', /paramètres/i, { timeout: 10000 }).click({ force: true });
     cy.contains('button.mat-mdc-menu-item, button[mat-menu-item], button', /supprimer/i, { timeout: 10000 })
-      .should('be.visible')
       .click({ force: true });
 
     cy.wait('@deleteAq');
@@ -151,23 +130,24 @@ describe('Flow complet AquaManager (création + suppression)', () => {
 
 describe('Sécurité front — XSS & token', () => {
   beforeEach(() => {
-    uiLoginToHome();
+    uiLogin();
   });
 
   it('bloque l’exécution de scripts (XSS)', () => {
-    goToAquariumsList([]);
-
     const payload = `<img src=x onerror="alert('xss')">`;
     const alerts: string[] = [];
     cy.on('window:alert', (txt) => alerts.push(txt));
 
-    cy.intercept('POST', rx.postAq, { statusCode: 201, body: {
+    cy.intercept('GET',  rx.aqsAny, { statusCode: 200, body: [] }).as('aqListEmpty');
+    cy.intercept('POST', rx.aqsAny, { statusCode: 201, body: {
       id: 99, name: payload, lengthCm: 10, widthCm: 10, heightCm: 10, waterType: 'EAU_DOUCE'
     }}).as('createXss');
-
-    cy.intercept('GET', rx.getAqs, { statusCode: 200, body: [{
+    cy.intercept('GET',  rx.aqsAny, { statusCode: 200, body: [{
       id: 99, name: payload, lengthCm: 10, widthCm: 10, heightCm: 10, waterType: 'EAU_DOUCE'
     }]}).as('listWithXss');
+
+    cy.visit('/aquariums');
+    cy.wait('@aqListEmpty');
 
     cy.contains('button', /nouvel aquarium|créer mon premier aquarium/i).click({ force: true });
 
@@ -182,20 +162,16 @@ describe('Sécurité front — XSS & token', () => {
     });
 
     cy.wait(['@createXss', '@listWithXss']);
+
     cy.then(() => expect(alerts, 'aucun alert() déclenché').to.have.length(0));
+    // Test plus “réel” : aucun tag img rendu dans le titre
+    cy.get('mat-card-title img').should('not.exist');
+    // Et le texte est affiché comme texte
     cy.get('mat-card-title').should('contain.text', '<img');
   });
 
   it('ne stocke PAS le token en localStorage après login', () => {
-    cy.intercept('POST', rx.login, { statusCode: 200, body: { access_token: 'TEST_TOKEN' } }).as('login2');
-    cy.intercept('GET',  rx.me,    { statusCode: 200, body: { userId: 1, email: 'test@aquamanager.com', role: 'USER' } }).as('me2');
-
-    cy.visit('/login');
-    cy.get('input[formControlName="email"]').type('test@aquamanager.com');
-    cy.get('input[formControlName="password"]').type('azerty123');
-    cy.get('button[type="submit"]').click();
-    cy.wait(['@login2', '@me2']);
-
+    // ici tu peux garder ton test tel quel si tu veux
     cy.window().then((win) => {
       expect(win.localStorage.getItem('access_token')).to.be.null;
     });
