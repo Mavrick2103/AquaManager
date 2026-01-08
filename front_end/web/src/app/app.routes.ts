@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
 import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './core/auth.guard';
+import {AdminGuard} from './core/admin.guard';
 
 export const routes: Routes = [
   // ✅ Pages publiques (sans AuthGuard)
@@ -31,6 +32,36 @@ export const routes: Routes = [
     import('./pages/email/verify-email.component').then(m => m.VerifyEmailComponent),    data: { title: 'Vérification email – AquaManager', robots: 'noindex' },
 
 },
+
+{
+  path: 'admin/species/fish',
+  loadComponent: () =>
+    import('./pages/profile/Fiche-poissons/admin-fish-cards.component')
+      .then((m) => m.AdminFishCardsComponent),
+  data: { title: 'Admin – Espèces (Poissons) – AquaManager', robots: 'noindex' },
+  // si tu as un guard admin, mets-le ici :
+  // canActivate: [authGuard, adminGuard],
+},
+
+{
+  path: 'admin/species/plant',
+  loadComponent: () =>
+    import('./pages/profile/Fiche-Plants/admin-plant-cards.component')
+      .then((m) => m.AdminPlantCardsComponent),
+  data: { title: 'Admin – Espèces (Plants) – AquaManager', robots: 'noindex' },
+  // si tu as un guard admin, mets-le ici :
+  // canActivate: [authGuard, adminGuard],
+},
+{
+  path: 'admin/users',
+  loadComponent: () =>
+    import('./pages/profile/admin-users/admin-users.component')
+      .then((m) => m.AdminUsersComponent),
+  data: { title: 'Admin – Utilisateurs – AquaManager', robots: 'noindex' },
+  canActivate: [AuthGuard, AdminGuard],
+},
+
+
 
 
   // ✅ (optionnel mais recommandé) mot de passe oublié / reset

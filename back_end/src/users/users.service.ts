@@ -1,11 +1,14 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as argon2 from 'argon2';
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 
 import { User } from './user.entity';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
+
+
 
 @Injectable()
 export class UsersService {
@@ -171,4 +174,91 @@ export class UsersService {
 
     return this.findById(user.id);
   }
+
+    async adminList(search?: string) {
+    const qb = this.repo.createQueryBuilder('u');
+
+    // ✅ on ne renvoie PAS password (select:false) + champs sensibles restent hors payload
+    qb.select(['u.id', 'u.fullName', 'u.email', 'u.role', 'u.createdAt']);
+
+    if (search?.trim()) {
+      const q = `%${search.trim().toLowerCase()}%`;
+      qb.andWhere('(LOWER(u.email) LIKE :q OR LOWER(u.fullName) LIKE :q)', { q });
+    }
+
+    qb.orderBy('u.createdAt', 'DESC');
+    return qb.getMany();
+  }
+
+  async adminGetOne(id: number) {
+    if (!Number.isFinite(id)) throw new BadRequestException('Id invalide');
+
+    const user = await this.repo
+      .createQueryBuilder('u')
+      .select(['u.id', 'u.fullName', 'u.email', 'u.role', 'u.createdAt'])
+      .where('u.id = :id', { id })
+      .getOne();
+
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+    return user;
+  }
+
+  async adminUpdate(id: number, dto: AdminUpdateUserDto) {
+    if (!Number.isFinite(id)) throw new BadRequestException('Id invalide');
+
+    const user = await this.repo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    const patch: Partial<User> = {};
+
+    if (dto.fullName !== undefined) {
+      const name = String(dto.fullName ?? '').trim();
+      if (name.length < 2) throw new BadRequestException('Nom invalide');
+      patch.fullName = name;
+    }
+
+    if (dto.email !== undefined) {
+      const email = String(dto.email ?? '').trim().toLowerCase();
+      if (!email) throw new BadRequestException('Email invalide');
+
+      if (email !== user.email) {
+        const exists = await this.repo.exist({ where: { email } });
+        if (exists) throw new ConflictException('Email déjà utilisé');
+        patch.email = email;
+      }
+    }
+
+    if (dto.role !== undefined) {
+      patch.role = dto.role;
+    }
+
+    if (Object.keys(patch).length === 0) {
+      // rien à modifier
+      return this.adminGetOne(id);
+    }
+
+    await this.repo.update({ id }, patch);
+    return this.adminGetOne(id);
+  }
+
+  async adminDelete(id: number) {
+    if (!Number.isFinite(id)) throw new BadRequestException('Id invalide');
+
+    const user = await this.repo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    try {
+      await this.repo.delete(id);
+      return { ok: true };
+    } catch (e: any) {
+      // ✅ MySQL FK constraint fail (ex: user a des aquariums)
+      if (e?.code === 'ER_ROW_IS_REFERENCED_2' || e?.errno === 1451) {
+        throw new ConflictException(
+          'Impossible de supprimer cet utilisateur : il possède des données liées (ex: aquariums). Supprime ses aquariums avant.',
+        );
+      }
+      throw e;
+    }
+  }
+
 }

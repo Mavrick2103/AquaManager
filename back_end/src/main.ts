@@ -4,16 +4,40 @@ import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
+
+function getUploadDir(): string {
+  // En prod (docker): /data/uploads
+  // En local: back_end/uploads (car process.cwd() = back_end)
+  return process.env.UPLOAD_DIR?.trim() || join(process.cwd(), 'uploads');
+}
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   const isProd = process.env.NODE_ENV === 'production';
 
+  // ✅ API prefix
   app.setGlobalPrefix('api');
+
+  // ✅ Sert les fichiers uploadés (images) : /uploads/** (PAS sous /api)
+  const uploadDir = getUploadDir();
+  app.useStaticAssets(uploadDir, {
+    prefix: '/uploads',
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
+
+      // ✅ IMPORTANT pour FormData (multipart)
+      // Convertit "12" -> 12, "true" -> true, etc.
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
 
@@ -24,15 +48,10 @@ async function bootstrap() {
   );
 
   app.use(cookieParser());
-  const allowedOrigins = isProd
-  ? [
-      'https://aquamanager.fr',
-      'https://www.aquamanager.fr',
-    ]
-  : [
-      'http://localhost:4200',
-    ];
 
+  const allowedOrigins = isProd
+    ? ['https://aquamanager.fr', 'https://www.aquamanager.fr']
+    : ['http://localhost:4200'];
 
   app.enableCors({
     origin: allowedOrigins,

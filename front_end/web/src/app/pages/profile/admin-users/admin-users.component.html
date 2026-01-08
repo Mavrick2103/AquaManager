@@ -1,0 +1,160 @@
+<div class="admin-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" role="navigation" aria-label="Menu administration">
+    <a class="brand" routerLink="/" aria-label="Retour à l’accueil">
+      <img
+        src="/Logo_AquaManger.png"
+        alt="AquaManager"
+        class="logo"
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+
+    <div class="sidebar-title">ADMINISTRATION</div>
+
+    <mat-nav-list class="nav">
+      <a mat-list-item routerLink="/admin/metrics" routerLinkActive="active">
+        <mat-icon matListItemIcon>manage_accounts</mat-icon>
+        <span matListItemTitle>Dashboard</span>
+      </a>
+
+      <a
+        mat-list-item
+        routerLink="/admin/users"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>group</mat-icon>
+        <span matListItemTitle>Utilisateurs</span>
+      </a>
+
+      <a
+        mat-list-item
+        routerLink="/admin/species/fish"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>pets</mat-icon>
+        <span matListItemTitle>Poissons</span>
+      </a>
+
+      <a
+        mat-list-item
+        routerLink="/admin/species/plant"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>local_florist</mat-icon>
+        <span matListItemTitle>Plantes</span>
+      </a>
+    </mat-nav-list>
+
+    <!-- footer collé en bas -->
+    <div class="sidebar-footer">
+  <a
+    mat-stroked-button
+    class="back-btn"
+    routerLink="/profile"
+    aria-label="Retour au profil"
+  >
+    <mat-icon>arrow_back</mat-icon>
+    Profil
+  </a>
+</div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <mat-card class="admin-card" role="main">
+      <header class="admin-header">
+        <div class="titles">
+          <h2>Gestion des utilisateurs</h2>
+          <p class="subtitle">Recherchez, changez le rôle ou supprimez un utilisateur.</p>
+        </div>
+
+        <mat-form-field appearance="fill" class="search">
+          <mat-label>Rechercher (nom, email)</mat-label>
+          <input matInput [formControl]="searchCtrl" placeholder="ex: romain, test@mail.com" />
+          <button
+            *ngIf="searchCtrl.value"
+            matSuffix
+            mat-icon-button
+            (click)="clearSearch()"
+            aria-label="Effacer"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+      </header>
+
+      <mat-divider class="divider"></mat-divider>
+
+      <!-- LOADING -->
+      <div *ngIf="loading" class="loading">
+        <mat-progress-spinner mode="indeterminate" diameter="20"></mat-progress-spinner>
+        <span>Chargement...</span>
+      </div>
+
+      <!-- EMPTY -->
+      <div *ngIf="!loading && (!users || users.length === 0)" class="empty">
+        <mat-icon>group_off</mat-icon>
+        <div>
+          <p class="empty-title">Aucun utilisateur</p>
+          <p class="empty-sub">Essaie une autre recherche.</p>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap" *ngIf="!loading && users?.length">
+        <table mat-table [dataSource]="users" class="users-table" [trackBy]="trackById">
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef>Inscription</th>
+            <td mat-cell *matCellDef="let u">{{ u.createdAt | date:'short' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="fullName">
+            <th mat-header-cell *matHeaderCellDef>Nom</th>
+            <td mat-cell *matCellDef="let u">
+              <div class="name-cell">
+                <mat-icon class="avatar">person</mat-icon>
+                <span class="name">{{ u.fullName }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef>Email</th>
+            <td mat-cell *matCellDef="let u" class="mono">{{ u.email }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="role">
+            <th mat-header-cell *matHeaderCellDef>Rôle</th>
+            <td mat-cell *matCellDef="let u">
+              <span class="role-pill" [class.admin]="u.role === 'ADMIN'">
+                <mat-icon>{{ u.role === 'ADMIN' ? 'admin_panel_settings' : 'person' }}</mat-icon>
+                {{ u.role }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let u" class="actions">
+              <button mat-stroked-button color="primary" (click)="toggleRole(u)">
+                <mat-icon>swap_horiz</mat-icon>
+                Switch rôle
+              </button>
+
+              <button mat-stroked-button color="warn" (click)="deleteUser(u)">
+                <mat-icon>delete</mat-icon>
+                Supprimer
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+    </mat-card>
+  </main>
+</div>

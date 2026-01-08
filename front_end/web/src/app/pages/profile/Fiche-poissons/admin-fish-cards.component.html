@@ -1,0 +1,507 @@
+<div class="admin-layout">
+  <!-- SIDEBAR (IDENTIQUE A ADMIN-USERS) -->
+  <aside class="sidebar" role="navigation" aria-label="Menu administration">
+    <a class="brand" routerLink="/" aria-label="Retour à l’accueil">
+      <img
+        src="/Logo_AquaManger.png"
+        alt="AquaManager"
+        class="logo"
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+
+    <div class="sidebar-title">ADMINISTRATION</div>
+
+    <mat-nav-list class="nav">
+      <a mat-list-item routerLink="/admin/metrics" routerLinkActive="active">
+        <mat-icon matListItemIcon>manage_accounts</mat-icon>
+        <span matListItemTitle>Dashboard</span>
+      </a>
+
+      <a
+        mat-list-item
+        routerLink="/admin/users"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>group</mat-icon>
+        <span matListItemTitle>Utilisateurs</span>
+      </a>
+
+      <a
+        mat-list-item
+        routerLink="/admin/species/fish"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>pets</mat-icon>
+        <span matListItemTitle>Poissons</span>
+      </a>
+
+      <a
+        mat-list-item
+        routerLink="/admin/species/plant"
+        routerLinkActive="active"
+      >
+        <mat-icon matListItemIcon>local_florist</mat-icon>
+        <span matListItemTitle>Plantes</span>
+      </a>
+    </mat-nav-list>
+
+    <div class="sidebar-footer">
+  <a
+    mat-stroked-button
+    class="back-btn"
+    routerLink="/profile"
+    aria-label="Retour au profil"
+  >
+    <mat-icon>arrow_back</mat-icon>
+    Profil
+  </a>
+</div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div class="page">
+      <div class="header">
+        <div class="titles">
+          <div class="title">Fiches Poissons (Admin)</div>
+          <div class="subtitle">Créer, modifier, supprimer — images & attributs complets</div>
+        </div>
+      </div>
+
+      <mat-card class="tabs">
+        <mat-tab-group [(selectedIndex)]="tabIndex" animationDuration="0ms">
+
+          <!-- ================= LISTE ================= -->
+          <mat-tab label="Liste">
+            <div class="tab-page">
+              <div class="toolbar">
+                <div class="left">
+                  <div class="mode">Liste des poissons</div>
+                  <div class="muted small">Dernières créations en premier</div>
+                </div>
+
+                <div class="toolbar-actions">
+                  <mat-form-field class="search" appearance="outline">
+                    <mat-label>Rechercher (tous critères)</mat-label>
+                    <input matInput [value]="search" (input)="onSearchChange($event)">
+                    <mat-icon matSuffix>search</mat-icon>
+                  </mat-form-field>
+
+                  <button mat-flat-button color="primary" type="button" (click)="newCard()">
+                    <mat-icon>add</mat-icon>
+                    Nouvelle fiche
+                  </button>
+
+                  <button mat-stroked-button type="button" (click)="refresh()" [disabled]="loading">
+                    <mat-icon>refresh</mat-icon>
+                    Rafraîchir
+                  </button>
+                </div>
+              </div>
+
+              <div class="meta">
+                <div class="count">{{ filtered.length }} fiche(s)</div>
+                <div class="hint" *ngIf="loading">Chargement...</div>
+              </div>
+
+              <div class="grid" *ngIf="filtered.length; else empty">
+                <mat-card
+                  class="card"
+                  *ngFor="let r of filtered"
+                  (click)="selectRow(r)"
+                  [class.active]="selected?.id === r.id"
+                >
+                  <div class="card-top">
+                    <div class="thumb" [class.no]="!r.imageUrl">
+                      <ng-container *ngIf="imageSrc(r.imageUrl) as src; else noThumb">
+                        <img [src]="src" (error)="onImgError()" />
+                      </ng-container>
+                      <ng-template #noThumb>IMG</ng-template>
+                    </div>
+
+                    <div class="head">
+                      <div class="name">
+                        {{ r.commonName }}
+                        <span class="id">#{{ r.id }}</span>
+                      </div>
+
+                      <div class="sub">
+                        <span class="pill">{{ r.waterType }}</span>
+                        <span class="pill" *ngIf="r.temperament">{{ r.temperament }}</span>
+                        <span class="pill" *ngIf="r.activity">{{ r.activity }}</span>
+                      </div>
+
+                      <div class="muted small" *ngIf="r.scientificName">{{ r.scientificName }}</div>
+                    </div>
+                  </div>
+
+                  <div class="quick">
+                    <div class="q">
+                      <div class="k">Volume min</div>
+                      <div class="v">{{ r.minVolumeL ?? '—' }} L</div>
+                    </div>
+                    <div class="q">
+                      <div class="k">Taille max</div>
+                      <div class="v">{{ r.maxSizeCm ?? '—' }} cm</div>
+                    </div>
+                  </div>
+
+                  <div class="card-actions">
+                    <button mat-stroked-button color="primary" type="button" (click)="$event.stopPropagation(); selectRow(r)">
+                      <mat-icon>edit</mat-icon>
+                      Modifier
+                    </button>
+                  </div>
+                </mat-card>
+              </div>
+
+              <ng-template #empty>
+                <div class="empty">Aucune fiche poisson.</div>
+              </ng-template>
+            </div>
+          </mat-tab>
+
+          <!-- ================= CREATE / EDIT ================= -->
+          <mat-tab [label]="selected ? 'Édition' : 'Création'">
+            <div class="tab-page">
+              <div class="toolbar">
+                <div class="left">
+                  <div class="mode">
+                    {{ selected ? ('Modifier : #' + selected.id) : 'Créer une fiche poisson' }}
+                  </div>
+                  <div class="muted small">
+                    {{ selected ? 'Clique une fiche dans la liste pour l’éditer' : 'Formulaire + preview' }}
+                  </div>
+                </div>
+
+                <div class="toolbar-actions">
+                
+
+                  <button mat-stroked-button color="warn" type="button"
+                    *ngIf="selected"
+                    (click)="deleteSelected()"
+                    [disabled]="saving || uploading"
+                  >
+                    <mat-icon>delete</mat-icon>
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+
+              <div class="editor">
+                <!-- FORM -->
+                <mat-card class="form">
+                  <form (ngSubmit)="submit()" [formGroup]="form">
+
+                    <div class="section">
+                      <div class="section-title">Identité</div>
+
+                      <div class="grid-form">
+                        <mat-form-field appearance="outline" class="span2">
+                          <mat-label>Nom commun *</mat-label>
+                          <input matInput formControlName="commonName" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="span2">
+                          <mat-label>Nom scientifique</mat-label>
+                          <input matInput formControlName="scientificName" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="span2">
+                          <mat-label>Famille</mat-label>
+                          <input matInput formControlName="family" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="span2">
+                          <mat-label>Origine</mat-label>
+                          <input matInput formControlName="origin" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Type d’eau *</mat-label>
+                          <mat-select formControlName="waterType">
+                            <mat-option *ngFor="let t of waterTypes" [value]="t">{{ t }}</mat-option>
+                          </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Activité</mat-label>
+                          <mat-select formControlName="activity">
+                            <mat-option [value]="null">—</mat-option>
+                            <mat-option *ngFor="let x of activities" [value]="x">{{ x }}</mat-option>
+                          </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Tempérament</mat-label>
+                          <mat-select formControlName="temperament">
+                            <mat-option [value]="null">—</mat-option>
+                            <mat-option *ngFor="let x of temperaments" [value]="x">{{ x }}</mat-option>
+                          </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Difficulté</mat-label>
+                          <mat-select formControlName="difficulty">
+                            <mat-option [value]="null">—</mat-option>
+                            <mat-option *ngFor="let x of difficulties" [value]="x">{{ x }}</mat-option>
+                          </mat-select>
+                        </mat-form-field>
+
+                        <mat-slide-toggle formControlName="isActive">Active</mat-slide-toggle>
+                      </div>
+                    </div>
+
+                    <mat-divider class="divider"></mat-divider>
+
+                    <div class="section">
+                      <div class="section-title">Maintenance</div>
+
+                      <div class="grid-form">
+                        <mat-form-field appearance="outline">
+                          <mat-label>Volume min (L)</mat-label>
+                          <input matInput type="number" formControlName="minVolumeL" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Groupe min</mat-label>
+                          <input matInput type="number" formControlName="minGroupSize" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Taille max (cm)</mat-label>
+                          <input matInput type="number" formControlName="maxSizeCm" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Durée de vie (années)</mat-label>
+                          <input matInput type="number" formControlName="lifespanYears" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Zone</mat-label>
+                          <input matInput formControlName="zone" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Régime</mat-label>
+                          <input matInput formControlName="diet" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="span2">
+                          <mat-label>Compatibilité</mat-label>
+                          <input matInput formControlName="compatibility" />
+                        </mat-form-field>
+                      </div>
+                    </div>
+
+                    <mat-divider class="divider"></mat-divider>
+
+                    <div class="section">
+                      <div class="section-title">Paramètres d’eau</div>
+
+                      <div class="grid-form">
+                        <mat-form-field appearance="outline">
+                          <mat-label>Temp min</mat-label>
+                          <input matInput type="number" formControlName="tempMin" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>Temp max</mat-label>
+                          <input matInput type="number" formControlName="tempMax" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>pH min</mat-label>
+                          <input matInput type="number" formControlName="phMin" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>pH max</mat-label>
+                          <input matInput type="number" formControlName="phMax" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>GH min</mat-label>
+                          <input matInput type="number" formControlName="ghMin" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>GH max</mat-label>
+                          <input matInput type="number" formControlName="ghMax" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>KH min</mat-label>
+                          <input matInput type="number" formControlName="khMin" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline">
+                          <mat-label>KH max</mat-label>
+                          <input matInput type="number" formControlName="khMax" />
+                        </mat-form-field>
+                      </div>
+                    </div>
+
+                    <mat-divider class="divider"></mat-divider>
+
+                    <div class="section">
+                      <div class="section-title">Comportement & reproduction</div>
+
+                      <div class="grid-text">
+                        <mat-form-field appearance="outline">
+                          <mat-label>Comportement</mat-label>
+                          <textarea matInput rows="3" formControlName="behavior"></textarea>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Reproduction</mat-label>
+                          <textarea matInput rows="3" formControlName="breeding"></textarea>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Conseils reproduction</mat-label>
+                          <textarea matInput rows="3" formControlName="breedingTips"></textarea>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Notes</mat-label>
+                          <textarea matInput rows="3" formControlName="notes"></textarea>
+                        </mat-form-field>
+                      </div>
+                    </div>
+
+                    <mat-divider class="divider"></mat-divider>
+
+                    <div class="section">
+                      <div class="section-title">Image</div>
+
+                      <!-- CREATE: file gardé en mémoire -->
+                      <div class="img-actions" *ngIf="!selected">
+                        <input #fileCreate type="file" accept="image/*" hidden (change)="onFileSelectedCreate($event)" />
+                        <button mat-stroked-button type="button" (click)="pickImage(fileCreate)" [disabled]="saving">
+                          <mat-icon>upload</mat-icon>
+                          Choisir une image
+                        </button>
+
+                        <button mat-stroked-button type="button" (click)="removeImage()" [disabled]="saving">
+                          <mat-icon>close</mat-icon>
+                          Retirer
+                        </button>
+
+                        <span class="muted small" *ngIf="pendingCreateFile">{{ pendingCreateFile.name }}</span>
+                      </div>
+
+                      <!-- EDIT: upload direct -->
+                      <div class="img-actions" *ngIf="selected">
+                        <input #fileEdit type="file" accept="image/*" hidden (change)="onFileSelectedEdit($event)" />
+                        <button mat-stroked-button type="button" (click)="pickImage(fileEdit)" [disabled]="uploading || saving">
+                          <mat-icon>upload</mat-icon>
+                          {{ uploading ? 'Import...' : 'Importer' }}
+                        </button>
+
+                        <button mat-stroked-button type="button" (click)="removeImage()" [disabled]="uploading || saving">
+                          <mat-icon>close</mat-icon>
+                          Retirer
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="actions">
+                      <button mat-flat-button color="primary" type="submit" [disabled]="saving || uploading">
+                        <mat-icon>save</mat-icon>
+                        {{ selected ? 'Enregistrer' : 'Créer' }}
+                      </button>
+
+                      <button mat-stroked-button type="button" (click)="tabIndex = 0" [disabled]="saving || uploading">
+                        <mat-icon>list</mat-icon>
+                        Retour liste
+                      </button>
+                    </div>
+                  </form>
+                </mat-card>
+
+                <!-- PREVIEW -->
+                <div class="preview">
+                  <mat-card class="preview-card">
+                    <div class="preview-head">
+                      <div>
+                        <div class="p-title">{{ form.get('commonName')?.value || 'Nom commun' }}</div>
+                        <div class="p-sub">{{ form.get('scientificName')?.value || 'Nom scientifique' }}</div>
+                        <div class="p-pill">{{ form.get('waterType')?.value }}</div>
+                      </div>
+
+                      <div class="p-img">
+                        <ng-container *ngIf="imageSrc(form.get('imageUrl')?.value) as src; else noImg">
+                          <img [src]="src" (error)="onImgError()" />
+                        </ng-container>
+                        <ng-template #noImg>
+                          <div class="no-img">
+                            <div class="t">Pas d’image</div>
+                            <div class="s">uploads / url</div>
+                          </div>
+                        </ng-template>
+                      </div>
+                    </div>
+
+                    <div class="preview-body">
+                      <div class="block">
+                        <div class="bt">Profil</div>
+                        <div class="kv">
+                          <div class="k">Activité</div><div class="v">{{ form.get('activity')?.value || '—' }}</div>
+                          <div class="k">Tempérament</div><div class="v">{{ form.get('temperament')?.value || '—' }}</div>
+                          <div class="k">Difficulté</div><div class="v">{{ form.get('difficulty')?.value || '—' }}</div>
+                          <div class="k">Active</div><div class="v">{{ form.get('isActive')?.value ? 'Oui' : 'Non' }}</div>
+                        </div>
+                      </div>
+
+                      <div class="block">
+                        <div class="bt">Maintenance</div>
+                        <div class="mini-grid">
+                          <div class="mini"><div class="k">Volume min</div><div class="v">{{ form.get('minVolumeL')?.value ?? '—' }} L</div></div>
+                          <div class="mini"><div class="k">Groupe min</div><div class="v">{{ form.get('minGroupSize')?.value ?? '—' }}</div></div>
+                          <div class="mini"><div class="k">Taille max</div><div class="v">{{ form.get('maxSizeCm')?.value ?? '—' }} cm</div></div>
+                          <div class="mini"><div class="k">Durée de vie</div><div class="v">{{ form.get('lifespanYears')?.value ?? '—' }} ans</div></div>
+                        </div>
+                      </div>
+
+                      <div class="block">
+                        <div class="bt">Eau</div>
+                        <div class="kv">
+                          <div class="k">Temp</div><div class="v">{{ form.get('tempMin')?.value ?? '—' }} / {{ form.get('tempMax')?.value ?? '—' }}</div>
+                          <div class="k">pH</div><div class="v">{{ form.get('phMin')?.value ?? '—' }} / {{ form.get('phMax')?.value ?? '—' }}</div>
+                          <div class="k">GH</div><div class="v">{{ form.get('ghMin')?.value ?? '—' }} / {{ form.get('ghMax')?.value ?? '—' }}</div>
+                          <div class="k">KH</div><div class="v">{{ form.get('khMin')?.value ?? '—' }} / {{ form.get('khMax')?.value ?? '—' }}</div>
+                        </div>
+                      </div>
+
+                      <div class="block">
+                        <div class="bt">Détails</div>
+                        <div class="txt">
+                          <div class="k">Comportement</div>
+                          <div class="v">{{ form.get('behavior')?.value || '—' }}</div>
+                        </div>
+                        <div class="txt">
+                          <div class="k">Reproduction</div>
+                          <div class="v">{{ form.get('breeding')?.value || '—' }}</div>
+                        </div>
+                        <div class="txt">
+                          <div class="k">Conseils</div>
+                          <div class="v">{{ form.get('breedingTips')?.value || '—' }}</div>
+                        </div>
+                        <div class="txt">
+                          <div class="k">Notes</div>
+                          <div class="v">{{ form.get('notes')?.value || '—' }}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </mat-card>
+                </div>
+
+              </div>
+            </div>
+          </mat-tab>
+
+        </mat-tab-group>
+      </mat-card>
+    </div>
+  </main>
+</div>

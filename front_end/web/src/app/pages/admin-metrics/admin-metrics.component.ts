@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -15,6 +15,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
+import { MatListModule } from '@angular/material/list';
 
 type MetricsRange = '7d' | '30d' | '365d' | 'all';
 type Role = 'USER' | 'ADMIN';
@@ -41,6 +42,7 @@ interface AdminMetricsDto {
   imports: [
     CommonModule,
     RouterModule,
+
     MatToolbarModule,
     MatCardModule,
     MatIconModule,
@@ -51,6 +53,7 @@ interface AdminMetricsDto {
     MatChipsModule,
     MatDividerModule,
     MatTooltipModule,
+    MatListModule,
   ],
   templateUrl: './admin-metrics.component.html',
   styleUrls: ['./admin-metrics.component.scss'],
@@ -64,8 +67,15 @@ export class AdminMetricsComponent {
 
   displayedColumns = ['id', 'fullName', 'email', 'role'] as const;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private location: Location,
+  ) {
     this.load();
+  }
+
+  back(): void {
+    this.location.back();
   }
 
   private api(path: string) {

@@ -46,6 +46,45 @@
   }
 }
 
+
+/* ===== Bandeau annonce défilant ===== */
+.announce {
+  position: sticky;
+  top: 0;                  /* colle en haut quand tu scroll */
+  z-index: 1000;           /* au-dessus du contenu */
+  background: rgba(251, 235, 60, 0.9);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+
+  overflow: hidden;
+}
+
+.announce__track {
+  display: flex;
+  width: max-content;
+  gap: 48px;
+  padding: 8px 16px;
+
+  animation: announce-marquee 18s linear infinite;
+}
+
+.announce__item {
+  white-space: nowrap;
+  font-weight: 800;
+  color: #1F3522;
+}
+
+@keyframes announce-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Accessibilité : si l’utilisateur préfère réduire les animations */
+@media (prefers-reduced-motion: reduce) {
+  .announce__track { animation: none; }
+}
+
+
 /* ====== Hero ====== */
 .hero {
   text-align: center;

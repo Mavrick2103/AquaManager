@@ -180,31 +180,33 @@
 
       <section class="tab-pane">
         <div class="admin-grid">
+
           <mat-card class="admin-card">
             <div class="admin-head">
-              <mat-icon>group</mat-icon>
-              <h3>Utilisateurs</h3>
+              <mat-icon>show_chart</mat-icon>
+              <h3>Dashboard Admin</h3>
             </div>
-            <p>Créer, éditer, activer/désactiver des comptes, réinitialiser des mots de passe.</p>
+            <p>Suivre l'évolution du site</p>
             <div class="admin-actions">
               <button mat-stroked-button color="primary" [routerLink]="'/admin/metrics'">
                 <mat-icon>manage_accounts</mat-icon>
-                Gérer les utilisateurs
+                Suivie
               </button>
             </div>
           </mat-card>
 
           <mat-card class="admin-card">
             <div class="admin-head">
-              <mat-icon>inventory_2</mat-icon>
-              <h3>Aquariums</h3>
+              <mat-icon>group</mat-icon>
+              <h3>Utilisateurs</h3>
             </div>
-            <p>Modérer les aquariums, corriger des propriétaires, nettoyer des données.</p>
+            <p>Gestion des utilisateur, crée, modifier et supprimer</p>
             <div class="admin-actions">
-              <button mat-stroked-button color="primary" [routerLink]="'/admin/aquariums'">
+              <button mat-stroked-button color="primary" [routerLink]="'/admin/users'">
                 <mat-icon>view_list</mat-icon>
-                Gérer les aquariums
+                Gérer les utilisateur
               </button>
+
             </div>
           </mat-card>
 
@@ -216,10 +218,12 @@
             </div>
             <p>Créer / modifier les fiches plantes (lumière, CO₂, sol, croissance…).</p>
             <div class="admin-actions">
-              <button mat-stroked-button color="primary" [routerLink]="'/admin/plants'">
+              <button mat-stroked-button color="primary" routerLink="/admin/species/plant">
                 <mat-icon>edit</mat-icon>
                 Gérer les plantes
               </button>
+
+
             </div>
           </mat-card>
 
@@ -231,7 +235,7 @@
             </div>
             <p>Créer / modifier les espèces (paramètres, compatibilités, taille, biotope…)</p>
             <div class="admin-actions">
-              <button mat-stroked-button color="primary" [routerLink]="'/admin/species'">
+              <button mat-stroked-button color="primary" routerLink="/admin/species/fish">
                 <mat-icon>library_books</mat-icon>
                 Gérer les espèces
               </button>

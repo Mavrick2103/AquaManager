@@ -10,6 +10,8 @@ import { AquariumsModule } from './aquariums/aquariums.module';
 import { WaterMeasurementModule } from './water-measurement/water-measurement.module';
 import { TaskModule } from './tasks/task.module';
 import { AdminModule } from './admin/admin.module';
+import { FishCardsModule } from './catalog/fish-cards/fish-card.module';
+import { PlantCardsModule } from './catalog/plant-cards/plant-cards.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { AdminModule } from './admin/admin.module';
     WaterMeasurementModule,
     TaskModule,
     AdminModule,
+    FishCardsModule,
+    PlantCardsModule,
   ],
 })
 export class AppModule {}

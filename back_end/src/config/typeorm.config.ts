@@ -3,6 +3,9 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 export function typeOrmConfig(): TypeOrmModuleOptions {
   const isProd = process.env.NODE_ENV === 'production';
 
+  const syncEnabled = process.env.TYPEORM_SYNC === 'true';
+  const loggingEnabled = process.env.TYPEORM_LOGGING === 'true';
+
   return {
     type: 'mysql',
     host: process.env.DB_HOST,
@@ -13,8 +16,10 @@ export function typeOrmConfig(): TypeOrmModuleOptions {
 
     autoLoadEntities: true,
 
-    synchronize: process.env.TYPEORM_SYNC === 'true' && !isProd,
+    // ✅ jamais en prod
+    synchronize: syncEnabled && !isProd,
 
-    logging: !isProd,
+    // ✅ dev: true, prod: via env
+    logging: isProd ? loggingEnabled : true,
   };
 }
