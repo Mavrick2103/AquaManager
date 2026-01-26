@@ -17,7 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 
-type MetricsRange = '7d' | '30d' | '365d' | 'all';
+type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 type Role = 'USER' | 'ADMIN';
 
 interface AdminMetricsDto {
@@ -108,6 +108,7 @@ export class AdminMetricsComponent {
   }
 
   rangeLabel(): string {
+    if (this.range === '1d') return '1 derniers jours';
     if (this.range === '7d') return '7 derniers jours';
     if (this.range === '30d') return '30 derniers jours';
     if (this.range === '365d') return '12 derniers mois';

@@ -61,19 +61,12 @@
 
         <span class="spacer"></span>
 
-        <button mat-stroked-button class="home-btn" routerLink="/" matTooltip="Retour à l’accueil">
-          <mat-icon>home</mat-icon>
-          Accueil
-        </button>
-
         <mat-button-toggle-group class="range" [value]="range" aria-label="Période">
+          <mat-button-toggle value="7d" (click)="setRange('7d')">24h</mat-button-toggle>
           <mat-button-toggle value="7d" (click)="setRange('7d')">7j</mat-button-toggle>
           <mat-button-toggle value="30d" (click)="setRange('30d')">30j</mat-button-toggle>
           <mat-button-toggle value="365d" (click)="setRange('365d')">1 an</mat-button-toggle>
-          <mat-button-toggle value="all" (click)="setRange('all')">
-            <mat-icon class="mini">check</mat-icon>
-            Total
-          </mat-button-toggle>
+          <mat-button-toggle value="all" (click)="setRange('all')">Total</mat-button-toggle>
         </mat-button-toggle-group>
       </mat-toolbar>
 
