@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { readFile, unlink } from 'fs/promises';
+
+type ContactCategory = 'BUG' | 'QUESTION' | 'SUGGESTION' | 'AUTRE';
 
 @Injectable()
 export class MailService {
@@ -16,11 +19,12 @@ export class MailService {
 
     const host = this.config.get<string>('SMTP_HOST') ?? 'smtp.gmail.com';
     const port = Number(this.config.get<string>('SMTP_PORT') ?? 465);
-    const secure = String(this.config.get<string>('SMTP_SECURE') ?? 'true').toLowerCase() === 'true';
+    const secure =
+      String(this.config.get<string>('SMTP_SECURE') ?? 'true').toLowerCase() === 'true';
 
     const user = this.config.get<string>('SMTP_USER') ?? '';
     const rawPass = this.config.get<string>('SMTP_PASS') ?? '';
-    const pass = rawPass.replace(/\s+/g, '');
+    const pass = rawPass.replace(/\s+/g, ''); // ✅ supprime espaces/retours
 
     this.transporter = nodemailer.createTransport({
       host,
@@ -30,15 +34,19 @@ export class MailService {
     });
   }
 
-  private appUrl() {
+  private appUrl(): string {
     return (this.config.get<string>('APP_URL') ?? 'http://localhost:4200').replace(/\/$/, '');
   }
 
-  private from() {
+  private from(): string {
+    // ✅ l'expéditeur affiché
     return this.config.get<string>('EMAIL_FROM') ?? 'AquaManager <aquamanager.contact@gmail.com>';
   }
 
-  async sendVerifyEmail(to: string, fullName: string, token: string) {
+  // ============================================================
+  // ✅ EMAIL : Vérification de compte
+  // ============================================================
+  async sendVerifyEmail(to: string, fullName: string, token: string): Promise<void> {
     const url = `${this.appUrl()}/auth/verification-email?token=${encodeURIComponent(token)}`;
 
     await this.transporter.sendMail({
@@ -63,7 +71,10 @@ export class MailService {
     this.logger.log(`Verify email sent to ${to}`);
   }
 
-  async sendResetPassword(to: string, fullName: string, token: string) {
+  // ============================================================
+  // ✅ EMAIL : Mot de passe oublié
+  // ============================================================
+  async sendResetPassword(to: string, fullName: string, token: string): Promise<void> {
     const url = `${this.appUrl()}/auth/reset-password?token=${encodeURIComponent(token)}`;
 
     await this.transporter.sendMail({
@@ -88,7 +99,69 @@ export class MailService {
     this.logger.log(`Reset password email sent to ${to}`);
   }
 
-  private escape(s: string) {
+  // ============================================================
+  // ✅ EMAIL : Formulaire de contact (avec pièces jointes)
+  // ============================================================
+  async sendContactMessage(params: {
+    category: ContactCategory;
+    subject: string;
+    fromEmail: string;
+    message: string;
+    attachments?: Express.Multer.File[];
+  }): Promise<void> {
+    const to = this.config.get<string>('CONTACT_TO_EMAIL') ?? 'aquamanager.contact@gmail.com';
+
+    const label =
+      params.category === 'BUG'
+        ? 'Bug'
+        : params.category === 'QUESTION'
+        ? 'Question'
+        : params.category === 'SUGGESTION'
+        ? "Suggestion d'amélioration"
+        : 'Autre';
+
+    const subject = `[AquaManager Contact] ${label} — ${params.subject}`;
+
+    const text =
+`Catégorie: ${label}
+Email utilisateur: ${params.fromEmail}
+
+Message:
+${params.message}
+`;
+
+    const files = params.attachments ?? [];
+
+    // ✅ Convertit les fichiers uploadés en pièces jointes Nodemailer
+    const attachments = await Promise.all(
+      files.map(async (f) => {
+        const content = await readFile(f.path);
+        return {
+          filename: f.originalname,
+          content,
+          contentType: f.mimetype,
+        };
+      })
+    );
+
+    try {
+      await this.transporter.sendMail({
+        from: this.from(),
+        to,                          // ✅ ton email de réception
+        replyTo: params.fromEmail,   // ✅ tu réponds au user directement
+        subject,
+        text,
+        attachments,
+      });
+
+      this.logger.log(`Contact email sent from ${params.fromEmail} (${label})`);
+    } finally {
+      // ✅ Nettoyage des fichiers temporaires (même si erreur)
+      await Promise.allSettled(files.map((f) => unlink(f.path)));
+    }
+  }
+
+  private escape(s: string): string {
     return (s ?? '').replace(/[&<>"']/g, (c) => ({
       '&': '&amp;',
       '<': '&lt;',

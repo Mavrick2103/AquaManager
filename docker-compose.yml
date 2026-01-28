@@ -35,6 +35,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change_me_at_least_16_chars}
       JWT_EXPIRES: ${JWT_EXPIRES:-1h}
       JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-15d}
+      CONTACT_TO_EMAIL: ${CONTACT_TO_EMAIL:-aquamanager.contact@gmail.com}
+
 
       NODE_ENV: production
       PORT: 3000

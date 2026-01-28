@@ -91,6 +91,16 @@
         <li><a routerLink="/aquariums">Mes aquariums</a></li>
         <li><a routerLink="/calendar">Calendrier</a></li>
         <li><a routerLink="/profile">Profil</a></li>
+        <li><a routerLink="/a-propos-gestion-aquarium">A Propos</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h3>Légal</h3>
+      <ul>
+        <li><a routerLink="/legal">Mentions légales</a></li>
+        <li><a routerLink="/privacy">Politique de confidentialité</a></li>
+        <li><a routerLink="/terms">CGU</a></li>
       </ul>
     </div>
 
@@ -98,7 +108,7 @@
       <h3>Suivez-nous</h3>
       <div class="social-icons">
         <a href="#" aria-label="Facebook"><mat-icon>facebook</mat-icon></a>
-        <a href="#" aria-label="Instagram"><mat-icon>photo_camera</mat-icon></a>
+        <a href="https://www.instagram.com/aquamanager_france/" aria-label="Instagram"><mat-icon>photo_camera</mat-icon></a>
         <a href="#" aria-label="Twitter"><mat-icon>alternate_email</mat-icon></a>
       </div>
     </div>
@@ -108,6 +118,13 @@
 
   <div class="footer-bottom">
     <p>© {{ today.getFullYear() }} AquaManager — Tous droits réservés</p>
-    <a href="#" class="footer-policy">Mentions légales</a>
+
+    <div class="footer-legal">
+      <a routerLink="/legal" class="footer-policy">Mentions légales</a>
+      <span class="sep">•</span>
+      <a routerLink="/privacy" class="footer-policy">Confidentialité</a>
+      <span class="sep">•</span>
+      <a routerLink="/terms" class="footer-policy">CGU</a>
+    </div>
   </div>
 </footer>

@@ -137,6 +137,16 @@ export const routes: Routes = [
       ),
     canActivate: [AuthGuard],
   },
+  {
+  path: 'contact',
+  loadComponent: () =>
+    import('./pages/contact/contact.component').then(m => m.ContactComponent),
+  },
+  {
+  path: 'a-propos-gestion-aquarium',
+  loadComponent: () =>
+    import('./pages/about/about.component').then((m) => m.AboutComponent),
+  },
 
   // ✅ 404 -> page login (sinon tu reboucles sur home protégée)
   { path: '**', redirectTo: 'login' },

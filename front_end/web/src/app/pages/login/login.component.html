@@ -2,6 +2,19 @@
   <div class="hero">
     <div class="side">
       <img src="/Logo_AquaManger.png" alt="AquaManager" class="side-logo" />
+
+      <!-- ✅ Actions sous le logo (pro) -->
+      <div class="side-actions">
+        <a routerLink="/a-propos-gestion-aquarium" class="side-pill">
+          <mat-icon>info</mat-icon>
+          À propos
+        </a>
+
+        <a routerLink="/contact" class="side-pill">
+          <mat-icon>mail</mat-icon>
+          Contact
+        </a>
+      </div>
     </div>
 
     <mat-card class="login-card" role="form" aria-labelledby="loginTitle">
@@ -17,20 +30,28 @@
 
         <mat-form-field appearance="outline" class="field">
           <mat-label>Mot de passe</mat-label>
-          <input matInput [type]="hide() ? 'password' : 'text'"
-                 formControlName="password" autocomplete="current-password" />
-          <button type="button" mat-icon-button matSuffix
-                  (click)="hide.set(!hide())"
-                  [attr.aria-label]="hide() ? 'Afficher le mot de passe' : 'Masquer le mot de passe'">
+          <input
+            matInput
+            [type]="hide() ? 'password' : 'text'"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            mat-icon-button
+            matSuffix
+            (click)="hide.set(!hide())"
+            [attr.aria-label]="hide() ? 'Afficher le mot de passe' : 'Masquer le mot de passe'"
+          >
             <mat-icon>{{ hide() ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
           <mat-error *ngIf="passwordErr()">{{ passwordErr() }}</mat-error>
         </mat-form-field>
+
         <a mat-button routerLink="/auth/forgot-password">Mot de passe oublié ?</a>
 
         <div class="row">
-          <!--<mat-checkbox formControlName="remember">Se souvenir de moi</mat-checkbox>
-          <a routerLink="/auth/mot-de-passe-oublie" class="link">Mot de passe oublié ?</a>-->
+          <!-- réservé -->
         </div>
 
         <button class="btn-primary" mat-raised-button type="submit" [disabled]="loading()">

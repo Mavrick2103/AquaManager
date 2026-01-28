@@ -1,0 +1,137 @@
+<div class="contact-wrap">
+  <div class="hero">
+    <mat-card class="card">
+      <!-- Header -->
+      <div class="title">
+        <div class="badge">
+          <mat-icon>support_agent</mat-icon>
+          Support AquaManager
+        </div>
+
+        <h1>Contact</h1>
+        <p class="subtitle">
+          Un bug, une question ou une idée ? Écris-nous ici, on te répondra au plus vite.
+          Tu peux joindre des images ou un PDF pour illustrer ton message.
+        </p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <!-- Grid -->
+        <div class="grid">
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Type de demande</mat-label>
+            <mat-select formControlName="category">
+              <mat-option *ngFor="let c of categories" [value]="c.value">
+                <mat-icon class="opt-ic">{{ c.icon }}</mat-icon>
+                {{ c.label }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.controls.category.touched && form.controls.category.invalid">
+              Choisis un type
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Ton e-mail</mat-label>
+            <input matInput type="email" formControlName="fromEmail" autocomplete="email" />
+            <mat-icon matSuffix>alternate_email</mat-icon>
+            <mat-error *ngIf="form.controls.fromEmail.touched && form.controls.fromEmail.invalid">
+              Email invalide
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Sujet</mat-label>
+          <input matInput type="text" formControlName="subject" />
+          <mat-icon matSuffix>subject</mat-icon>
+          <mat-hint align="end">{{ (form.controls.subject.value.length || 0) }} / 120</mat-hint>
+          <mat-error *ngIf="form.controls.subject.touched && form.controls.subject.invalid">
+            Sujet requis (4 à 120 caractères)
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Décris le problème / la demande</mat-label>
+          <textarea matInput rows="7" formControlName="message"></textarea>
+          <mat-hint align="end">{{ (form.controls.message.value.length || 0) }} / 4000</mat-hint>
+          <mat-error *ngIf="form.controls.message.touched && form.controls.message.invalid">
+            Message requis (min 20 caractères)
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Upload box -->
+        <div class="upload">
+          <div class="upload-head">
+            <div>
+              <div class="upload-title">
+                <mat-icon>attach_file</mat-icon>
+                <span>Pièces jointes</span>
+              </div>
+              <div class="upload-sub">
+                Max {{ maxFiles }} fichiers — {{ maxTotalMb }} MB au total (PNG/JPG/WEBP/PDF)
+              </div>
+            </div>
+
+            <label class="pick" for="contactFiles">
+              <mat-icon>upload</mat-icon>
+              <span>Choisir des fichiers</span>
+            </label>
+          </div>
+
+          <input
+            id="contactFiles"
+            class="file-input"
+            type="file"
+            multiple
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            (change)="onPickFiles($event)"
+          />
+
+          <div class="files" *ngIf="files.length">
+            <div class="file" *ngFor="let f of files; let i = index">
+              <mat-icon>description</mat-icon>
+
+              <div class="meta">
+                <div class="name">{{ f.name }}</div>
+                <div class="size">{{ (f.size / 1024 / 1024) | number:'1.2-2' }} MB</div>
+              </div>
+
+              <button
+                mat-icon-button
+                type="button"
+                class="remove"
+                (click)="removeFile(i)"
+                aria-label="Retirer"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+
+            <div class="upload-footer">
+              <mat-icon>info</mat-icon>
+              <span>Total : {{ totalSizeMb() | number:'1.0-2' }} MB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <button class="btn-primary" mat-raised-button type="submit" [disabled]="loading">
+          <mat-icon>send</mat-icon>
+          <span *ngIf="!loading">Envoyer</span>
+          <mat-progress-spinner *ngIf="loading" diameter="18" mode="indeterminate"></mat-progress-spinner>
+        </button>
+
+        <p class="ok" *ngIf="successMsg">
+          <mat-icon>check_circle</mat-icon>
+          {{ successMsg }}
+        </p>
+
+        <p class="err" *ngIf="errorMsg">
+          <mat-icon>error</mat-icon>
+          {{ errorMsg }}
+        </p>
+      </form>
+    </mat-card>
+  </div>
+</div>
