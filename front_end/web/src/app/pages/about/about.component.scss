@@ -467,3 +467,18 @@
     transform: none !important;
   }
 }
+
+
+
+
+.contact-link {
+  color: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
