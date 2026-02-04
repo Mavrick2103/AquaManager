@@ -68,13 +68,18 @@ export class ArticleDetailsPageComponent implements OnInit {
           if (!a?.id) {
             this.notFound = true;
             this.article = null;
+            this.cdr.markForCheck();
             return;
           }
 
           this.article = a;
+
           const prepared = this.prepareContent(a.content || '');
           this.safeHtml = prepared.html;
           this.toc = prepared.toc;
+
+          // ✅ TRACK VIEW (ne bloque pas l'UI)
+          this.trackArticleView(slug);
 
           queueMicrotask(() => this.bindSmoothAnchorScroll());
           this.cdr.markForCheck();
@@ -118,7 +123,7 @@ export class ArticleDetailsPageComponent implements OnInit {
     for (const raw of lines) {
       const line = raw.trim();
 
-      // Headings markdown-like: ## / ### (si tu écris comme ça)
+      // Headings markdown-like: ## / ###
       const h2 = line.match(/^##\s+(.+)$/);
       const h3 = line.match(/^###\s+(.+)$/);
 
@@ -140,7 +145,7 @@ export class ArticleDetailsPageComponent implements OnInit {
         continue;
       }
 
-      // List "- item"
+      // List "- item" (ou "-- item", etc.)
       const li = line.match(/^-+\s+(.+)$/);
       if (li) {
         if (!inList) { html += '<ul>'; inList = true; }
@@ -164,10 +169,9 @@ export class ArticleDetailsPageComponent implements OnInit {
   }
 
   private inlineFormat(text: string): string {
-    // **bold**
+    // **bold** + *italic*
     let out = this.escapeHtml(text);
     out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    // *italic*
     out = out.replace(/\*(.+?)\*/g, '<em>$1</em>');
     return out;
   }
@@ -207,5 +211,35 @@ export class ArticleDetailsPageComponent implements OnInit {
 
   private computeApiOrigin(apiUrl: string): string {
     return String(apiUrl || '').replace(/\/api\/?$/, '');
+  }
+
+  // =========================
+  // ✅ TRACKING DES VUES
+  // =========================
+
+  private trackArticleView(slug: string): void {
+    const viewKey = this.getOrCreateViewKey();
+
+    this.api.trackView(slug, viewKey)
+      .pipe(take(1))
+      .subscribe({
+        next: () => {},
+        error: (err) => console.warn('track view failed', err),
+      });
+  }
+
+  private getOrCreateViewKey(): string {
+    const STORAGE_KEY = 'aqm_view_key';
+    const existing = localStorage.getItem(STORAGE_KEY);
+
+    if (existing && existing.length >= 16) return existing;
+
+    const created = (globalThis.crypto?.randomUUID?.() ?? this.fallbackKey());
+    localStorage.setItem(STORAGE_KEY, created);
+    return created;
+  }
+
+  private fallbackKey(): string {
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
   }
 }

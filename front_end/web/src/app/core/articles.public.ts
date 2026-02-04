@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders  } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -54,6 +54,15 @@ export class PublicArticlesApi {
   themes(): Observable<ThemeDto[]> {
     return this.http.get<ThemeDto[]>(`${this.baseUrl}/public/articles/themes`);
   }
+   trackView(slug: string, viewKey: string): Observable<void> {
+    const headers = new HttpHeaders({ 'x-view-key': viewKey });
+
+    return this.http.patch<void>(
+      `${this.baseUrl}/public/articles/${encodeURIComponent(slug)}/view`,
+      null,
+      { headers },
+    );
+}
 
   /**
    * Back: GET /api/public/articles/:slug
