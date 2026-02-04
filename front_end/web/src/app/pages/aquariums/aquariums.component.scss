@@ -32,9 +32,13 @@
     display:inline-flex; align-items:center;
     text-decoration:none; outline:none;
   }
+
+  /* ✅ FIX: le logo est défini ICI (desktop) */
   .logo{
-    height: 150px;
-    width: auto; display:block;
+    height: 90px;          /* <= plus petit sur PC */
+    width: auto;
+    max-width: 100%;
+    display:block;
   }
 
   h1{
@@ -112,11 +116,12 @@
    RESPONSIVE - Mes aquariums
 ========================= */
 
-/* Logo : jamais plus large que son conteneur */
+/* ✅ SUPPRIMÉ: ça écrasait tout avec height:auto
 .toolbar .logo{
   max-width: 100%;
   height: auto;
 }
+*/
 
 /* Tablette */
 @media (max-width: 920px){
@@ -125,27 +130,27 @@
   }
 
   .toolbar{
-    grid-template-columns: auto 1fr;   /* logo + titre */
-    grid-template-rows: auto auto;     /* + ligne bouton */
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
     row-gap: 10px;
     column-gap: 10px;
     padding: 0 6px;
   }
 
   .toolbar h1{
-    justify-self: start; /* au lieu de center */
+    justify-self: start;
     text-align: left;
     font-size: 1.4rem;
   }
 
   .toolbar .btn-primary{
-    grid-column: 1 / -1;  /* bouton sur toute la largeur */
+    grid-column: 1 / -1;
     justify-self: stretch;
     width: 100%;
   }
 
   .toolbar .logo{
-    height: 90px; /* ✅ au lieu de 150 */
+    height: 90px;
   }
 
   .grid{
@@ -154,7 +159,7 @@
   }
 
   .card{
-    grid-column: span 12; /* déjà ton media inside, mais on verrouille */
+    grid-column: span 12;
   }
 }
 
@@ -169,7 +174,7 @@
   }
 
   .toolbar .logo{
-    height: 64px; /* ✅ compact */
+    height: 64px;
   }
 
   .toolbar h1{
@@ -181,7 +186,6 @@
     padding: 12px 14px;
   }
 
-  /* Sur tout petit écran on vire le texte du bouton */
   .toolbar .btn-primary span{
     display: none;
   }
@@ -193,7 +197,7 @@
   .card .row{
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px; /* ✅ au lieu de "entre deux" */
+    gap: 6px;
   }
 
   .card mat-card-subtitle{
