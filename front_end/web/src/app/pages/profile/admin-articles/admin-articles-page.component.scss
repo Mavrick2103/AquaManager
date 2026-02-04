@@ -1,3 +1,9 @@
+/* ============================================================
+   AquaManager Admin – Articles
+   ✅ Sidebar IDENTIQUE AdminUsers (desktop + responsive)
+   ✅ + ton style articles conservé
+   ============================================================ */
+
 :host {
   display: block;
   padding: 0;
@@ -7,13 +13,14 @@
   overflow-x: hidden;
 }
 
+/* ========== LAYOUT ========== */
 .admin-layout {
   display: flex;
   min-height: calc(100vh - 64px);
   max-width: 100%;
 }
 
-/* SIDEBAR */
+/* ========== SIDEBAR (IDENTIQUE ADMIN-USERS) ========== */
 .sidebar {
   width: 270px;
   height: calc(100vh - 64px);
@@ -56,23 +63,31 @@
 
 .nav { padding: 4px 0 0; }
 
-::ng-deep .nav .mat-mdc-list-item {
+:host ::ng-deep .nav .mat-mdc-list-item {
   border-radius: 14px;
   margin: 4px 6px;
 }
-::ng-deep .nav .mat-mdc-list-item .mdc-list-item__primary-text {
+
+:host ::ng-deep .nav .mat-mdc-list-item .mdc-list-item__primary-text {
   font-weight: 800;
 }
-::ng-deep .nav .mat-mdc-list-item.active {
+
+:host ::ng-deep .nav .mat-mdc-list-item.active {
   background: rgba(63, 81, 181, 0.10);
   border: 1px solid rgba(63, 81, 181, 0.18);
 }
 
+:host ::ng-deep .nav .mat-mdc-list-item.active mat-icon {
+  opacity: 1;
+}
+
+/* footer collé en bas */
 .sidebar-footer {
   margin-top: auto;
   padding: 14px 10px 16px;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
+
 .back-btn {
   width: 100%;
   border-radius: 14px !important;
@@ -82,13 +97,17 @@
   gap: 10px;
 }
 
-/* CONTENT */
+/* ========== CONTENT ========== */
 .content {
   flex: 1;
   padding: 24px;
   max-width: 100%;
   overflow-x: hidden;
 }
+
+/* ============================================================
+   TON STYLE ARTICLES (conservé)
+   ============================================================ */
 
 .admin-card {
   max-width: 1180px;
@@ -156,6 +175,7 @@ mat-divider.divider {
   gap: 10px;
   align-items: center;
 }
+
 .empty {
   padding: 18px 10px 24px;
   display: flex;
@@ -257,26 +277,44 @@ mat-divider.divider {
   justify-content: space-between;
   align-items: center;
 }
+
 .muted {
   opacity: 0.75;
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
+
 .mini {
   font-size: 18px;
   width: 18px;
   height: 18px;
 }
 
+/* ✅ boutons sur card */
+.foot .right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn {
+  border-radius: 12px !important;
+  font-weight: 900;
+  padding: 8px 12px !important;
+  line-height: 1 !important;
+}
+
 /* form */
 .form { padding: 6px 2px 6px; }
+
 .grid-form {
   display: grid;
   grid-template-columns: repeat(4, minmax(190px, 1fr));
   gap: 12px;
   align-items: end;
 }
+
 .span2 { grid-column: span 2; }
 
 .actions {
@@ -285,6 +323,11 @@ mat-divider.divider {
   gap: 10px;
   flex-wrap: wrap;
 }
+
+/* ==========================================================
+   ✅ RESPONSIVE : ajoute les rules AdminUsers (sidebar top)
+   + garde tes breakpoints existants
+   ========================================================== */
 
 @media (max-width: 1200px) {
   .grid { grid-template-columns: repeat(2, minmax(260px, 1fr)); }
@@ -303,21 +346,7 @@ mat-divider.divider {
   .grid { grid-template-columns: 1fr; }
   .grid-form { grid-template-columns: 1fr; }
   .span2 { grid-column: span 1; }
-}
-.foot .right {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
 
-.btn {
-  border-radius: 12px !important;
-  font-weight: 900;
-  padding: 8px 12px !important;
-  line-height: 1 !important;
-}
-
-@media (max-width: 600px) {
   .foot {
     flex-direction: column;
     align-items: flex-start;
@@ -333,3 +362,54 @@ mat-divider.divider {
   }
 }
 
+/* ✅ AdminUsers <= 760px : sidebar devient une topbar */
+@media (max-width: 760px) {
+  .admin-layout { flex-direction: column; }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    top: auto;
+    border-right: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: 12px 12px 10px;
+  }
+
+  .brand {
+    justify-content: flex-start;
+    .logo { height: 58px; }
+  }
+
+  .sidebar-title { margin: 6px 8px 6px; }
+
+  :host ::ng-deep .nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 6px 0 0;
+  }
+
+  :host ::ng-deep .nav .mat-mdc-list-item {
+    margin: 0;
+    border-radius: 14px;
+  }
+
+  .sidebar-footer {
+    padding: 10px 0 0;
+    border-top: 0;
+  }
+
+  .back-btn { padding: 10px 12px !important; }
+
+  .content { padding: 12px; }
+}
+
+/* ✅ AdminUsers <= 420px : nav en 1 colonne */
+@media (max-width: 420px) {
+  :host ::ng-deep .nav { grid-template-columns: 1fr; }
+
+  .search { min-width: 100%; }
+  .header-actions { width: 100%; }
+  .header-actions button { flex: 1; min-width: 150px; }
+}

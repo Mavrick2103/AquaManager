@@ -1,35 +1,147 @@
-.wrap { border-radius: 18px; padding: 14px; max-width: 1180px; margin: 0 auto; }
+/* ✅ même style que tes pages admin (card + glow + responsive clean) */
+
+:host {
+  display: block;
+  padding: 0;
+  margin: 0;
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(180deg, rgba(63, 81, 181, 0.06), transparent 260px);
+  overflow-x: hidden;
+}
+
+/* mat-card */
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  border-radius: 18px;
+  padding: 18px 18px 12px;
+  overflow: hidden;
+  position: relative;
+
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* petit glow top comme tes autres admin-card */
+.wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 92px;
+  background:
+    radial-gradient(1000px 120px at 0% 0%, rgba(63, 81, 181, 0.18), transparent 60%),
+    radial-gradient(800px 120px at 100% 0%, rgba(0, 150, 136, 0.14), transparent 55%);
+  pointer-events: none;
+}
 
 .top {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 12px;
   align-items: center;
+  padding: 4px 0 10px;
 }
 
-.title h2 { margin: 0; font-weight: 1000; }
-.title p { margin: 2px 0 0; opacity: .7; }
+.title {
+  min-width: 0;
 
-.loading { display: flex; align-items: center; gap: 10px; padding: 16px 4px; opacity: .85; }
+  h2 {
+    margin: 0;
+    font-weight: 1000;
+    letter-spacing: -0.2px;
+  }
 
-.form { margin-top: 12px; }
+  p {
+    margin: 2px 0 0;
+    opacity: 0.72;
+    font-weight: 800;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.loading {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0 2px;
+  opacity: 0.85;
+}
+
+.form {
+  position: relative;
+  z-index: 1;
+  margin-top: 10px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(190px, 1fr));
   gap: 12px;
   align-items: end;
 }
+
 .span2 { grid-column: span 2; }
 
-.actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 
+/* boutons cohérents */
+button[mat-stroked-button],
+button[mat-flat-button] {
+  border-radius: 12px !important;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  padding: 8px 12px !important;
+
+  mat-icon { margin-right: 6px; }
+}
+
+/* input look pareil que ton admin */
+:host ::ng-deep .mat-mdc-form-field { width: 100%; }
+:host ::ng-deep .mat-mdc-text-field-wrapper {
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+:host ::ng-deep .mdc-notched-outline__leading,
+:host ::ng-deep .mdc-notched-outline__notch,
+:host ::ng-deep .mdc-notched-outline__trailing {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+:host ::ng-deep .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+:host ::ng-deep .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+:host ::ng-deep .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-color: rgba(63, 81, 181, 0.55) !important;
+}
+
+:host ::ng-deep .mat-mdc-floating-label {
+  color: rgba(71, 85, 105, 0.9) !important;
+  font-weight: 800;
+}
+
+/* responsive */
 @media (max-width: 900px) {
-  .top { grid-template-columns: 1fr; }
+  .top { grid-template-columns: 1fr; align-items: start; }
   .grid { grid-template-columns: repeat(2, minmax(190px, 1fr)); }
   .span2 { grid-column: span 2; }
 }
 
 @media (max-width: 600px) {
+  .wrap { padding: 16px 14px 10px; }
   .grid { grid-template-columns: 1fr; }
   .span2 { grid-column: span 1; }
   .actions button { width: 100%; justify-content: center; }

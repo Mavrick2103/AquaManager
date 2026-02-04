@@ -4,7 +4,9 @@
   margin: 0;
   min-height: calc(100vh - 64px);
   background: linear-gradient(180deg, rgba(63, 81, 181, 0.06), transparent 260px);
-  overflow-x: hidden; // ✅ supprime la barre horizontale inutile
+
+  /* ✅ stop scroll horizontal */
+  overflow-x: hidden;
 }
 
 /* ========== LAYOUT ========== */
@@ -39,7 +41,7 @@
   text-decoration: none;
 
   .logo {
-    height: 78px; // ✅ plus grand et lisible
+    height: 78px;
     width: auto;
     max-width: 100%;
     object-fit: contain;
@@ -61,27 +63,27 @@
 }
 
 /* style des items */
-::ng-deep .nav .mat-mdc-list-item {
+:host ::ng-deep .nav .mat-mdc-list-item {
   border-radius: 14px;
   margin: 4px 6px;
 }
 
-::ng-deep .nav .mat-mdc-list-item .mdc-list-item__primary-text {
+:host ::ng-deep .nav .mat-mdc-list-item .mdc-list-item__primary-text {
   font-weight: 800;
 }
 
-::ng-deep .nav .mat-mdc-list-item.active {
+:host ::ng-deep .nav .mat-mdc-list-item.active {
   background: rgba(63, 81, 181, 0.10);
   border: 1px solid rgba(63, 81, 181, 0.18);
 }
 
-::ng-deep .nav .mat-mdc-list-item.active mat-icon {
+:host ::ng-deep .nav .mat-mdc-list-item.active mat-icon {
   opacity: 1;
 }
 
 /* footer collé en bas */
 .sidebar-footer {
-  margin-top: auto; // ✅ colle en bas
+  margin-top: auto;
   padding: 14px 10px 16px;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
@@ -135,9 +137,7 @@
   padding: 6px 0 2px;
 }
 
-.titles {
-  min-width: 0;
-}
+.titles { min-width: 0; }
 
 h2 {
   font-size: 20px;
@@ -162,10 +162,10 @@ mat-divider.divider {
 }
 
 /* Search field */
-::ng-deep .mat-mdc-form-field .mdc-text-field {
+:host ::ng-deep .mat-mdc-form-field .mdc-text-field {
   border-radius: 14px !important;
 }
-::ng-deep .mat-mdc-form-field .mdc-text-field--filled {
+:host ::ng-deep .mat-mdc-form-field .mdc-text-field--filled {
   background: rgba(255, 255, 255, 0.92) !important;
 }
 
@@ -191,32 +191,24 @@ mat-divider.divider {
   }
 }
 
-.empty-title {
-  margin: 0;
-  font-weight: 900;
-}
-
-.empty-sub {
-  margin: 2px 0 0;
-  font-size: 13px;
-  opacity: 0.75;
-}
+.empty-title { margin: 0; font-weight: 900; }
+.empty-sub { margin: 2px 0 0; font-size: 13px; opacity: 0.75; }
 
 /* Table */
 .table-wrap {
   max-width: 100%;
-  overflow-x: auto;   // ✅ scroll seulement si besoin
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
 
 .users-table {
   width: 100%;
-  table-layout: fixed; // ✅ évite les débordements
+  table-layout: fixed;
   border-radius: 14px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(6px);
-  min-width: 860px; // ✅ si petit écran, c'est la table qui scroll
+  min-width: 860px;
 }
 
 th.mat-mdc-header-cell {
@@ -242,13 +234,8 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
   align-items: center;
   gap: 10px;
 
-  .avatar {
-    opacity: 0.7;
-  }
-
-  .name {
-    font-weight: 800;
-  }
+  .avatar { opacity: 0.7; }
+  .name { font-weight: 800; }
 }
 
 .mono {
@@ -297,9 +284,7 @@ button[mat-stroked-button] {
   letter-spacing: 0.2px;
   padding: 6px 10px !important;
 
-  mat-icon {
-    margin-right: 6px;
-  }
+  mat-icon { margin-right: 6px; }
 }
 
 button[mat-stroked-button][color="primary"] {
@@ -310,15 +295,16 @@ button[mat-stroked-button][color="warn"] {
   background: rgba(244, 67, 54, 0.06);
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-  .content {
-    padding: 14px;
-  }
+/* ==========================================================
+   ✅ RESPONSIVE (le vrai)
+   - à 900px: sidebar plus fine + header stack
+   - à 760px: sidebar devient topbar (plus aucun décalage)
+   ========================================================== */
 
-  .sidebar {
-    width: 240px;
-  }
+/* <= 900px */
+@media (max-width: 900px) {
+  .content { padding: 14px; }
+  .sidebar { width: 240px; }
 
   .admin-header {
     flex-direction: column;
@@ -326,7 +312,68 @@ button[mat-stroked-button][color="warn"] {
     gap: 10px;
   }
 
-  .search {
-    width: 100%;
+  .search { width: 100%; }
+}
+
+/* <= 760px : sidebar en haut */
+@media (max-width: 760px) {
+  .admin-layout {
+    flex-direction: column;
   }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;      /* ✅ stop sticky */
+    top: auto;
+    border-right: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: 12px 12px 10px;
+  }
+
+  .brand {
+    justify-content: flex-start;
+
+    .logo { height: 58px; }
+  }
+
+  .sidebar-title {
+    margin: 6px 8px 6px;
+  }
+
+  /* nav en grille (2 colonnes) */
+  :host ::ng-deep .nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 6px 0 0;
+  }
+
+  :host ::ng-deep .nav .mat-mdc-list-item {
+    margin: 0;
+    border-radius: 14px;
+  }
+
+  /* footer bouton profil full width */
+  .sidebar-footer {
+    padding: 10px 0 0;
+    border-top: 0;
+  }
+
+  .back-btn {
+    padding: 10px 12px !important;
+  }
+
+  .content {
+    padding: 12px;
+  }
+}
+
+/* <= 420px : nav en 1 colonne */
+@media (max-width: 420px) {
+  :host ::ng-deep .nav {
+    grid-template-columns: 1fr;
+  }
+
+  .users-table { min-width: 760px; } /* un peu moins large si tu veux */
 }

@@ -2,20 +2,49 @@
   display: block;
   min-height: calc(100vh - 64px);
   background: linear-gradient(180deg, rgba(63, 81, 181, 0.06), transparent 260px);
+
+  /* ✅ évite tout scroll horizontal */
+  overflow-x: hidden;
 }
 
 .shell {
   max-width: 980px;
   margin: 0 auto;
   padding: 18px 18px 30px;
+  box-sizing: border-box;
 }
 
+/* ✅ Topbar responsive */
 .topbar {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   align-items: center;
   margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.topbar > * {
+  min-width: 0;
+}
+
+/* ✅ sur mobile : boutons full width et centrés */
+@media (max-width: 640px) {
+  .shell {
+    padding: 14px 12px 24px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  /* boutons 100% */
+  :host ::ng-deep .topbar .mat-mdc-button-base {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .loading {
@@ -51,8 +80,10 @@
   gap: 8px;
   opacity: 0.85;
   font-size: 12px;
+  flex-wrap: wrap;
 
   .dot { opacity: 0.5; }
+
   .views {
     display: inline-flex;
     align-items: center;
@@ -83,6 +114,7 @@
   letter-spacing: -0.4px;
   line-height: 1.05;
   font-size: 38px;
+  word-break: break-word;
 }
 
 .excerpt {
@@ -115,6 +147,7 @@
   align-items: start;
 }
 
+/* ✅ TOC : sticky desktop, normal mobile */
 .toc {
   position: sticky;
   top: 80px;
@@ -139,6 +172,7 @@
       opacity: 0.85;
       font-weight: 800;
       line-height: 1.2;
+      word-break: break-word;
 
       &:hover { opacity: 1; color: rgba(63,81,181,1); }
       &.l3 { padding-left: 10px; opacity: 0.75; font-weight: 750; }
@@ -160,10 +194,28 @@
   line-height: 1.75;
   color: rgba(0,0,0,0.82);
 
-  // Style “article”
-  :deep(p) {
-    margin: 0 0 14px;
+  /* ✅ anti overflow images / tables */
+  :deep(img) {
+    max-width: 100%;
+    height: auto;
+    display: block;
   }
+
+  :deep(pre),
+  :deep(code) {
+    max-width: 100%;
+    overflow: auto;
+  }
+
+  :deep(table) {
+    width: 100%;
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  /* Style “article” */
+  :deep(p) { margin: 0 0 14px; }
 
   :deep(h2) {
     margin: 26px 0 10px;
@@ -180,18 +232,9 @@
     font-weight: 1000;
   }
 
-  :deep(ul) {
-    margin: 0 0 14px;
-    padding-left: 18px;
-  }
-
-  :deep(li) {
-    margin: 6px 0;
-  }
-
-  :deep(strong) {
-    font-weight: 1000;
-  }
+  :deep(ul) { margin: 0 0 14px; padding-left: 18px; }
+  :deep(li) { margin: 6px 0; }
+  :deep(strong) { font-weight: 1000; }
 }
 
 @media (max-width: 980px) {

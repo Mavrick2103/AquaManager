@@ -45,6 +45,8 @@ export interface ArticleDto {
   updatedAt: string;
   themeId: number;
   theme?: ThemeDto;
+  uniqueViewsPeriod?: number; // uniques sur la période (ex: 30j)
+  periodDays?: number;        // nb de jours utilisé (ex: 30)
 }
 
 @Component({

@@ -1,14 +1,15 @@
 /* ============================================================
-   AquaManager Admin – Light + Angular Material friendly
-   + Sidebar admin identique à AdminUsers
+   AquaManager Admin – Plants
+   ✅ Sidebar + responsive IDENTIQUES à AdminUsers
+   ✅ + ton style plants conservé
    ============================================================ */
 
 :host {
   display: block;
 
-  /* === Ajuste ici pour coller EXACTEMENT à ta charte AquaManager === */
-  --am-primary: #1976d2; /* bleu */
-  --am-accent: #00bcd4;  /* aqua/cyan */
+  /* === Ajuste ici si tu veux === */
+  --am-primary: #1976d2;
+  --am-accent: #00bcd4;
 
   --am-bg: #f6f9ff;
   --am-surface: #ffffff;
@@ -24,17 +25,18 @@
   min-height: calc(100vh - 64px);
   background: linear-gradient(180deg, rgba(63, 81, 181, 0.06), transparent 260px);
 
-  overflow-x: hidden; // ✅ supprime la barre horizontale inutile
+  /* ✅ stop scroll horizontal */
+  overflow-x: hidden;
 }
 
-/* ========== LAYOUT (identique) ========== */
+/* ========== LAYOUT (IDENTIQUE ADMIN-USERS) ========== */
 .admin-layout {
   display: flex;
   min-height: calc(100vh - 64px);
   max-width: 100%;
 }
 
-/* ========== SIDEBAR (identique) ========== */
+/* ========== SIDEBAR (IDENTIQUE ADMIN-USERS) ========== */
 .sidebar {
   width: 270px;
   height: calc(100vh - 64px);
@@ -59,7 +61,7 @@
   text-decoration: none;
 
   .logo {
-    height: 78px; // ✅ plus grand et lisible
+    height: 78px;
     width: auto;
     max-width: 100%;
     object-fit: contain;
@@ -93,6 +95,10 @@
   border: 1px solid rgba(63, 81, 181, 0.18);
 }
 
+:host ::ng-deep .nav .mat-mdc-list-item.active mat-icon {
+  opacity: 1;
+}
+
 .sidebar-footer {
   margin-top: auto;
   padding: 14px 10px 16px;
@@ -108,7 +114,7 @@
   gap: 10px;
 }
 
-/* ========== CONTENT ========== */
+/* ========== CONTENT (IDENTIQUE ADMIN-USERS) ========== */
 .content {
   flex: 1;
   padding: 24px;
@@ -116,7 +122,7 @@
   overflow-x: hidden;
 }
 
-/* ===================== TON STYLE EXISTANT (inchangé) ===================== */
+/* ===================== PAGE / PLANTS ===================== */
 
 .page {
   max-width: 1320px;
@@ -144,10 +150,7 @@
   border-radius: var(--am-radius);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 
-  .titles {
-    display: grid;
-    gap: 6px;
-  }
+  .titles { display: grid; gap: 6px; }
 
   .title {
     font-size: 18px;
@@ -185,10 +188,7 @@
   flex-wrap: wrap;
   margin-bottom: 10px;
 
-  .left {
-    display: grid;
-    gap: 4px;
-  }
+  .left { display: grid; gap: 4px; }
 
   .mode {
     font-weight: 900;
@@ -606,7 +606,13 @@
   }
 }
 
-/* RESPONSIVE */
+/* ==========================================================
+   ✅ RESPONSIVE
+   - garde tes breakpoints plants
+   - + ajoute ceux IDENTIQUES AdminUsers (sidebar top sur mobile)
+   ========================================================== */
+
+/* (tes règles plants) */
 @media (max-width: 1200px) {
   .grid { grid-template-columns: repeat(2, minmax(260px, 1fr)); }
   .grid-form { grid-template-columns: repeat(2, minmax(190px, 1fr)); }
@@ -627,4 +633,59 @@
   .preview-head { grid-template-columns: 1fr; }
   .p-img { width: 100%; height: 180px; }
   .kv { grid-template-columns: 1fr; }
+}
+
+/* ✅ (AdminUsers) <= 760px : sidebar devient topbar */
+@media (max-width: 760px) {
+  .admin-layout { flex-direction: column; }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static; /* ✅ stop sticky */
+    top: auto;
+    border-right: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: 12px 12px 10px;
+  }
+
+  .brand {
+    justify-content: flex-start;
+
+    .logo { height: 58px; }
+  }
+
+  .sidebar-title { margin: 6px 8px 6px; }
+
+  /* nav en grille (2 colonnes) */
+  :host ::ng-deep .nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 6px 0 0;
+  }
+
+  :host ::ng-deep .nav .mat-mdc-list-item {
+    margin: 0;
+    border-radius: 14px;
+  }
+
+  .sidebar-footer {
+    padding: 10px 0 0;
+    border-top: 0;
+  }
+
+  .back-btn { padding: 10px 12px !important; }
+
+  .content { padding: 12px; }
+  .page { padding: 12px; }
+}
+
+/* ✅ (AdminUsers) <= 420px : nav en 1 colonne */
+@media (max-width: 420px) {
+  :host ::ng-deep .nav { grid-template-columns: 1fr; }
+
+  .search { min-width: 100%; }
+  .toolbar-actions { width: 100%; }
+  .toolbar-actions button { flex: 1; min-width: 150px; }
 }

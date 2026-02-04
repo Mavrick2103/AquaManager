@@ -335,10 +335,55 @@
   }
 }
 
+
 @media (max-width: 560px) {
+  .controls {
+    padding: 10px;
+    border-radius: 16px;
+  }
   .page { padding: 14px 12px 24px; }
   .card { grid-column: span 12; }
   .card-link { grid-template-rows: 160px 1fr; }
+
+  /* ✅ 2 colonnes : Recherche + Thème sur la même ligne */
+  .controls .controls-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: center;
+  }
+
+  /* Actions en dessous sur toute la largeur */
+  .controls .actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* si tu veux que les boutons prennent chacun 50% */
+  .controls .actions button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Rend les champs + petits en hauteur */
+  ::ng-deep .controls .mat-mdc-form-field-infix {
+    min-height: 40px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  ::ng-deep .controls .mat-mdc-button-base {
+    height: 40px !important;
+    padding: 0 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .controls .hint {
+    margin-top: 6px;
+    font-size: 11px;
+  }
 }
 .brand-row {
   display: flex;
@@ -364,5 +409,3 @@
     margin: 0;
   }
 }
-
-

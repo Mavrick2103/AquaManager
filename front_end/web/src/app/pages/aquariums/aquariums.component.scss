@@ -107,3 +107,96 @@
 }
 
 .loading{ display:grid; place-items:center; padding: 60px 0; }
+
+/* =========================
+   RESPONSIVE - Mes aquariums
+========================= */
+
+/* Logo : jamais plus large que son conteneur */
+.toolbar .logo{
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tablette */
+@media (max-width: 920px){
+  :host{
+    padding: 12px;
+  }
+
+  .toolbar{
+    grid-template-columns: auto 1fr;   /* logo + titre */
+    grid-template-rows: auto auto;     /* + ligne bouton */
+    row-gap: 10px;
+    column-gap: 10px;
+    padding: 0 6px;
+  }
+
+  .toolbar h1{
+    justify-self: start; /* au lieu de center */
+    text-align: left;
+    font-size: 1.4rem;
+  }
+
+  .toolbar .btn-primary{
+    grid-column: 1 / -1;  /* bouton sur toute la largeur */
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .toolbar .logo{
+    height: 90px; /* ✅ au lieu de 150 */
+  }
+
+  .grid{
+    padding: 6px;
+    gap: 12px;
+  }
+
+  .card{
+    grid-column: span 12; /* déjà ton media inside, mais on verrouille */
+  }
+}
+
+/* Mobile */
+@media (max-width: 560px){
+  :host{
+    padding: 10px;
+  }
+
+  .toolbar{
+    margin-bottom: 8px;
+  }
+
+  .toolbar .logo{
+    height: 64px; /* ✅ compact */
+  }
+
+  .toolbar h1{
+    font-size: 1.2rem;
+    line-height: 1.1;
+  }
+
+  .toolbar .btn-primary{
+    padding: 12px 14px;
+  }
+
+  /* Sur tout petit écran on vire le texte du bouton */
+  .toolbar .btn-primary span{
+    display: none;
+  }
+
+  .grid{
+    gap: 10px;
+  }
+
+  .card .row{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px; /* ✅ au lieu de "entre deux" */
+  }
+
+  .card mat-card-subtitle{
+    font-size: 0.9rem;
+  }
+}

@@ -135,7 +135,8 @@
     <div class="right">
       <span class="muted">
         <mat-icon class="mini">visibility</mat-icon>
-        {{ a.viewsCount }}
+        {{ a.uniqueViewsPeriod || 0 }}
+
       </span>
 
       <!-- ✅ BOUTONS -->

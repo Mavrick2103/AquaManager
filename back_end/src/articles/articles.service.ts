@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { In, Like, Repository } from 'typeorm';
 
 import { Article } from './entities/article.entity';
 import { Theme } from './entities/theme.entity';
@@ -29,6 +29,18 @@ export class ArticlesService {
     return `${yyyy}-${mm}-${dd}`;
   }
 
+  private fromISODate(days: number): string {
+    const safeDays = Math.max(1, Math.min(365, Number(days || 30)));
+    const now = new Date();
+    const min = new Date(now);
+    min.setDate(min.getDate() - (safeDays - 1));
+
+    const yyyy = min.getFullYear();
+    const mm = String(min.getMonth() + 1).padStart(2, '0');
+    const dd = String(min.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
   private async ensureUniqueSlug(base: string, ignoreId?: number): Promise<string> {
     let slug = base || 'article';
     let i = 1;
@@ -41,6 +53,49 @@ export class ArticlesService {
       slug = `${base}-${i++}`;
       if (i > 2000) throw new BadRequestException('Unable to generate unique slug');
     }
+  }
+
+  /**
+   * Ajoute à chaque article :
+   * - uniqueViewsPeriod : total uniques sur {days} jours
+   * - periodDays : le nombre de jours utilisé
+   *
+   * ⚠️ Ne fait qu'UNE requête SQL groupée.
+   */
+  private async attachUniqueViewsPeriod<T extends Article>(
+    articles: T[],
+    days = 30,
+  ): Promise<Array<T & { uniqueViewsPeriod: number; periodDays: number }>> {
+    const safeDays = Math.max(1, Math.min(365, Number(days || 30)));
+    if (!articles?.length) {
+      return [];
+    }
+
+    const ids = articles.map((a) => a.id).filter(Boolean);
+    if (!ids.length) return articles.map((a) => ({ ...a, uniqueViewsPeriod: 0, periodDays: safeDays }));
+
+    const fromDay = this.fromISODate(safeDays);
+    const toDay = this.todayISODate();
+
+    const rows = await this.dailyRepo
+      .createQueryBuilder('d')
+      .select('d.articleId', 'articleId')
+      .addSelect('SUM(d.uniqueViews)', 'uniqueViewsPeriod')
+      .where('d.articleId IN (:...ids)', { ids })
+      .andWhere('d.day BETWEEN :fromDay AND :toDay', { fromDay, toDay })
+      .groupBy('d.articleId')
+      .getRawMany<{ articleId: number; uniqueViewsPeriod: string }>();
+
+    const map = new Map<number, number>();
+    rows.forEach((r) => {
+      map.set(Number(r.articleId), Number(r.uniqueViewsPeriod || 0));
+    });
+
+    return articles.map((a) => ({
+      ...(a as any),
+      uniqueViewsPeriod: map.get(a.id) ?? 0,
+      periodDays: safeDays,
+    }));
   }
 
   // ---------------- themes (admin) ----------------
@@ -57,15 +112,17 @@ export class ArticlesService {
   }
 
   // ---------------- articles (admin) ----------------
-  async adminList(params: { q?: string; themeId?: number; status?: string }) {
-    const { q, themeId, status } = params;
+  async adminList(params: { q?: string; themeId?: number; status?: string; days?: number }) {
+    const { q, themeId, status, days = 30 } = params;
 
     const whereBase: any = {};
     if (themeId) whereBase.themeId = themeId;
     if (status) whereBase.status = status;
 
+    let articles: Article[];
+
     if (q?.trim()) {
-      return this.articleRepo.find({
+      articles = await this.articleRepo.find({
         where: [
           { ...whereBase, title: Like(`%${q}%`) },
           { ...whereBase, excerpt: Like(`%${q}%`) },
@@ -73,13 +130,15 @@ export class ArticlesService {
         order: { updatedAt: 'DESC' },
         relations: ['theme'],
       });
+    } else {
+      articles = await this.articleRepo.find({
+        where: whereBase,
+        order: { updatedAt: 'DESC' },
+        relations: ['theme'],
+      });
     }
 
-    return this.articleRepo.find({
-      where: whereBase,
-      order: { updatedAt: 'DESC' },
-      relations: ['theme'],
-    });
+    return this.attachUniqueViewsPeriod(articles, days);
   }
 
   async adminGetById(id: number) {
@@ -136,8 +195,8 @@ export class ArticlesService {
   }
 
   // ---------------- public ----------------
-  async publicList(params: { q?: string; theme?: string }) {
-    const { q, theme } = params;
+  async publicList(params: { q?: string; theme?: string; days?: number }) {
+    const { q, theme, days = 30 } = params;
 
     let themeId: number | undefined;
     if (theme) {
@@ -149,8 +208,10 @@ export class ArticlesService {
     const baseWhere: any = { status: 'PUBLISHED' };
     if (themeId) baseWhere.themeId = themeId;
 
+    let articles: Article[];
+
     if (q?.trim()) {
-      return this.articleRepo.find({
+      articles = await this.articleRepo.find({
         where: [
           { ...baseWhere, title: Like(`%${q}%`) },
           { ...baseWhere, excerpt: Like(`%${q}%`) },
@@ -158,13 +219,15 @@ export class ArticlesService {
         order: { publishedAt: 'DESC' },
         relations: ['theme'],
       });
+    } else {
+      articles = await this.articleRepo.find({
+        where: baseWhere,
+        order: { publishedAt: 'DESC' },
+        relations: ['theme'],
+      });
     }
 
-    return this.articleRepo.find({
-      where: baseWhere,
-      order: { publishedAt: 'DESC' },
-      relations: ['theme'],
-    });
+    return this.attachUniqueViewsPeriod(articles, days);
   }
 
   async publicGetBySlug(slug: string) {
@@ -226,14 +289,7 @@ export class ArticlesService {
 
     const safeDays = Math.max(1, Math.min(365, Number(days || 30)));
 
-    const now = new Date();
-    const min = new Date(now);
-    min.setDate(min.getDate() - (safeDays - 1));
-
-    const yyyy = min.getFullYear();
-    const mm = String(min.getMonth() + 1).padStart(2, '0');
-    const dd = String(min.getDate()).padStart(2, '0');
-    const fromDay = `${yyyy}-${mm}-${dd}`;
+    const fromDay = this.fromISODate(safeDays);
     const toDay = this.todayISODate();
 
     const rows = await this.dailyRepo
