@@ -13,6 +13,7 @@ import { AdminModule } from './admin/admin.module';
 import { FishCardsModule } from './catalog/fish-cards/fish-card.module';
 import { PlantCardsModule } from './catalog/plant-cards/plant-cards.module';
 import { ContactModule } from './contact/contact.module';
+import { ArticlesModule } from './articles/articles.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { ContactModule } from './contact/contact.module';
     FishCardsModule,
     PlantCardsModule,
     ContactModule,
+    ArticlesModule,
   ],
 })
 export class AppModule {}

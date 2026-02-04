@@ -1,0 +1,230 @@
+<div class="admin-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" role="navigation" aria-label="Menu administration">
+    <a class="brand" routerLink="/" aria-label="Retour à l’accueil">
+      <img
+        src="/Logo_AquaManger.png"
+        alt="AquaManager"
+        class="logo"
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+
+    <div class="sidebar-title">ADMINISTRATION</div>
+
+    <mat-nav-list class="nav">
+      <a mat-list-item routerLink="/admin/metrics" routerLinkActive="active">
+        <mat-icon matListItemIcon>manage_accounts</mat-icon>
+        <span matListItemTitle>Dashboard</span>
+      </a>
+
+      <a mat-list-item routerLink="/admin/users" routerLinkActive="active">
+        <mat-icon matListItemIcon>group</mat-icon>
+        <span matListItemTitle>Utilisateurs</span>
+      </a>
+
+      <a mat-list-item routerLink="/admin/species/fish" routerLinkActive="active">
+        <mat-icon matListItemIcon>pets</mat-icon>
+        <span matListItemTitle>Poissons</span>
+      </a>
+
+      <a mat-list-item routerLink="/admin/species/plant" routerLinkActive="active">
+        <mat-icon matListItemIcon>local_florist</mat-icon>
+        <span matListItemTitle>Plantes</span>
+      </a>
+
+      <a mat-list-item routerLink="/admin/articles" routerLinkActive="active">
+        <mat-icon matListItemIcon>tips_and_updates</mat-icon>
+        <span matListItemTitle>Articles / Conseils</span>
+      </a>
+    </mat-nav-list>
+
+    <div class="sidebar-footer">
+      <a mat-stroked-button class="back-btn" routerLink="/profile" aria-label="Retour au profil">
+        <mat-icon>arrow_back</mat-icon>
+        Profil
+      </a>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <mat-card class="admin-card">
+      <header class="admin-header">
+        <div class="titles">
+          <h2>Articles / Conseils</h2>
+          <p class="subtitle">Lister et créer des articles (la page détail reste séparée).</p>
+        </div>
+
+        <div class="header-actions">
+          <button mat-flat-button color="primary" type="button" (click)="newArticle()">
+            <mat-icon>add</mat-icon>
+            Créer
+          </button>
+
+          <button mat-stroked-button type="button" (click)="refresh()" [disabled]="loading">
+            <mat-icon>refresh</mat-icon>
+            Rafraîchir
+          </button>
+        </div>
+      </header>
+
+      <mat-divider class="divider"></mat-divider>
+
+      <mat-tab-group [(selectedIndex)]="tabIndex" animationDuration="0ms">
+        <!-- ================= LISTE ================= -->
+        <mat-tab label="Liste">
+          <div class="tab-page">
+            <div class="toolbar">
+              <mat-form-field appearance="outline" class="search">
+                <mat-label>Rechercher</mat-label>
+                <input matInput [value]="search" (input)="onSearchChange($event)" placeholder="Titre, extrait, thème…" />
+                <mat-icon matSuffix>search</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="filter">
+                <mat-label>Statut</mat-label>
+                <mat-select [value]="statusFilter" (valueChange)="onStatusChange($event)">
+                  <mat-option [value]="''">Tous</mat-option>
+                  <mat-option [value]="'DRAFT'">Brouillon</mat-option>
+                  <mat-option [value]="'PUBLISHED'">Publié</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="filter">
+                <mat-label>Thème</mat-label>
+                <mat-select [value]="themeFilter" (valueChange)="onThemeChange($event)">
+                  <mat-option [value]="null">Tous</mat-option>
+                  <mat-option *ngFor="let t of themes" [value]="t.id">{{ t.name }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="loading" *ngIf="loading">
+              <mat-progress-spinner mode="indeterminate" diameter="18"></mat-progress-spinner>
+              <span>Chargement…</span>
+            </div>
+
+            <div class="empty" *ngIf="!loading && (!filtered || filtered.length === 0)">
+              <mat-icon>tips_and_updates</mat-icon>
+              <div>
+                <p class="empty-title">Aucun article</p>
+                <p class="empty-sub">Change tes filtres ou crée un article.</p>
+              </div>
+            </div>
+
+            <div class="grid" *ngIf="!loading && filtered?.length">
+              <mat-card class="card" *ngFor="let a of filtered" (click)="openArticle(a)">
+  <div class="card-head">
+    <div class="title">{{ a.title }}</div>
+
+    <div class="meta">
+      <span class="badge" [class.pub]="a.status==='PUBLISHED'" [class.draft]="a.status==='DRAFT'">
+        {{ a.status === 'PUBLISHED' ? 'Publié' : 'Brouillon' }}
+      </span>
+      <span class="pill">{{ a.theme?.name || themeName(a.themeId) }}</span>
+    </div>
+  </div>
+
+  <div class="excerpt">{{ a.excerpt || '—' }}</div>
+
+  <div class="foot">
+    <span class="muted">#{{ a.id }}</span>
+
+    <div class="right">
+      <span class="muted">
+        <mat-icon class="mini">visibility</mat-icon>
+        {{ a.viewsCount }}
+      </span>
+
+      <!-- ✅ BOUTONS -->
+      <button
+        mat-stroked-button
+        class="btn"
+        type="button"
+        (click)="goStats(a, $event)"
+        aria-label="Voir les statistiques"
+      >
+        <mat-icon>insights</mat-icon>
+        Stats
+      </button>
+
+      <button
+        mat-flat-button
+        color="primary"
+        class="btn"
+        type="button"
+        (click)="goEdit(a, $event)"
+        aria-label="Modifier l'article"
+      >
+        <mat-icon>edit</mat-icon>
+        Modifier
+      </button>
+    </div>
+  </div>
+</mat-card>
+
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- ================= CREATION ================= -->
+        <mat-tab label="Création">
+          <div class="tab-page">
+            <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+              <div class="grid-form">
+                <mat-form-field appearance="outline" class="span2">
+                  <mat-label>Titre *</mat-label>
+                  <input matInput formControlName="title" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="span2">
+                  <mat-label>Extrait</mat-label>
+                  <input matInput formControlName="excerpt" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Statut *</mat-label>
+                  <mat-select formControlName="status">
+                    <mat-option value="DRAFT">Brouillon</mat-option>
+                    <mat-option value="PUBLISHED">Publié</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Thème *</mat-label>
+                  <mat-select formControlName="themeId">
+                    <mat-option *ngFor="let t of themes" [value]="t.id">{{ t.name }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="span2">
+                  <mat-label>Cover image URL</mat-label>
+                  <input matInput formControlName="coverImageUrl" placeholder="/uploads/xxx.jpg ou https://..." />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="span2">
+                  <mat-label>Contenu *</mat-label>
+                  <textarea matInput rows="10" formControlName="content"></textarea>
+                </mat-form-field>
+              </div>
+
+              <div class="actions">
+                <button mat-flat-button color="primary" type="submit" [disabled]="saving || loading">
+                  <mat-icon>save</mat-icon>
+                  {{ saving ? 'Création…' : 'Créer' }}
+                </button>
+
+                <button mat-stroked-button type="button" (click)="tabIndex = 0" [disabled]="saving">
+                  <mat-icon>list</mat-icon>
+                  Retour liste
+                </button>
+              </div>
+            </form>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card>
+  </main>
+</div>

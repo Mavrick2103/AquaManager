@@ -132,7 +132,7 @@ export const routes: Routes = [
   {
     path: 'admin/metrics',
     loadComponent: () =>
-      import('./pages/admin-metrics/admin-metrics.component').then(
+      import('./pages/profile/admin-metrics/admin-metrics.component').then(
         (m) => m.AdminMetricsComponent
       ),
     canActivate: [AuthGuard],
@@ -147,7 +147,48 @@ export const routes: Routes = [
   loadComponent: () =>
     import('./pages/about/about.component').then((m) => m.AboutComponent),
   },
+ // ✅ ARTICLES ADMIN (protégé)
+{
+  path: 'admin/articles',
+  loadComponent: () =>
+    import('./pages/profile/admin-articles/admin-articles-page.component')
+      .then(m => m.AdminArticlesPageComponent),
+  canActivate: [AuthGuard, AdminGuard],
+  data: { title: 'Admin – Articles – AquaManager', robots: 'noindex' },
+},
+
+// ✅ ARTICLES PUBLICS (sans AuthGuard)
+{
+  path: 'articles',
+  loadComponent: () =>
+    import('./pages/articles/articles-page.component')
+      .then(m => m.ArticlesPageComponent),
+  data: { title: 'Articles – AquaManager', robots: 'index,follow' },
+},
+{
+  path: 'articles/:slug',
+  loadComponent: () =>
+    import('./pages/articles/article-details-page.component')
+      .then(m => m.ArticleDetailsPageComponent),
+},
+{
+  path: 'admin/articles/:id/stats',
+  loadComponent: () =>
+    import('./pages/profile/admin-articles/stats/admin-article-stats.component')
+      .then(m => m.AdminArticleStatsComponent),
+  canActivate: [AuthGuard, AdminGuard],
+  data: { title: 'Admin – Stats article – AquaManager', robots: 'noindex' },
+},
+{
+  path: 'admin/articles/:id/edit',
+  loadComponent: () =>
+    import('./pages/profile/admin-articles/edit/admin-article-edit.component')
+      .then(m => m.AdminArticleEditComponent),
+  canActivate: [AuthGuard, AdminGuard],
+  data: { title: 'Admin – Modifier article – AquaManager', robots: 'noindex' },
+},
+
 
   // ✅ 404 -> page login (sinon tu reboucles sur home protégée)
-  { path: '**', redirectTo: 'login' },
+{ path: '', component: HomeComponent, canActivate: [AuthGuard], pathMatch: 'full' },
 ];

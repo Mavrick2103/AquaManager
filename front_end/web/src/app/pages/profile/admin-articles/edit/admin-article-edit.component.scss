@@ -1,0 +1,36 @@
+.wrap { border-radius: 18px; padding: 14px; max-width: 1180px; margin: 0 auto; }
+
+.top {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.title h2 { margin: 0; font-weight: 1000; }
+.title p { margin: 2px 0 0; opacity: .7; }
+
+.loading { display: flex; align-items: center; gap: 10px; padding: 16px 4px; opacity: .85; }
+
+.form { margin-top: 12px; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(190px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+.span2 { grid-column: span 2; }
+
+.actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+@media (max-width: 900px) {
+  .top { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: repeat(2, minmax(190px, 1fr)); }
+  .span2 { grid-column: span 2; }
+}
+
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr; }
+  .span2 { grid-column: span 1; }
+  .actions button { width: 100%; justify-content: center; }
+}

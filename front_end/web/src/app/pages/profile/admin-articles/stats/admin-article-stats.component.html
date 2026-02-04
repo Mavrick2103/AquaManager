@@ -1,0 +1,58 @@
+<mat-card class="wrap">
+  <div class="top">
+    <button mat-stroked-button type="button" (click)="back()">
+      <mat-icon>arrow_back</mat-icon>
+      Retour
+    </button>
+
+    <div class="title">
+      <h2>Statistiques</h2>
+      <p>Article #{{ articleId }}</p>
+    </div>
+
+    <button mat-flat-button color="primary" type="button" (click)="refresh()">
+      <mat-icon>refresh</mat-icon>
+      Actualiser
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <mat-progress-spinner mode="indeterminate" diameter="22"></mat-progress-spinner>
+    <span>Chargement…</span>
+  </div>
+
+  <ng-container *ngIf="!loading && stats">
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k">Vues total</div>
+        <div class="v">{{ stats.totalViewsAllTime }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Vues ({{ stats.days }}j)</div>
+        <div class="v">{{ stats.totalViewsPeriod }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Uniques ({{ stats.days }}j)</div>
+        <div class="v">{{ stats.totalUniquePeriod }}</div>
+      </div>
+    </div>
+
+    <div class="table">
+      <div class="row head">
+        <div>Jour</div>
+        <div>Vues</div>
+        <div>Uniques</div>
+      </div>
+
+      <div class="row" *ngFor="let d of stats.daily">
+        <div>{{ d.day }}</div>
+        <div>{{ d.views }}</div>
+        <div>{{ d.uniqueViews }}</div>
+      </div>
+    </div>
+  </ng-container>
+
+  <div class="empty" *ngIf="!loading && !stats">
+    Aucune donnée.
+  </div>
+</mat-card>

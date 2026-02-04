@@ -1,0 +1,65 @@
+<div class="shell">
+  <div class="topbar">
+    <button mat-stroked-button type="button" (click)="back()">
+      <mat-icon>arrow_back</mat-icon>
+      Retour
+    </button>
+
+    <a mat-stroked-button routerLink="/articles">
+      <mat-icon>view_list</mat-icon>
+      Tous les articles
+    </a>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <mat-progress-spinner mode="indeterminate" diameter="24"></mat-progress-spinner>
+    <span>Chargement…</span>
+  </div>
+
+  <div class="notfound" *ngIf="!loading && notFound">
+    <h1>Article introuvable</h1>
+    <p>Vérifie le lien ou reviens à la liste.</p>
+    <a mat-flat-button color="primary" routerLink="/articles">Retour à la liste</a>
+  </div>
+
+  <ng-container *ngIf="!loading && article as a">
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="meta">
+          <span class="pill">{{ a.theme?.name || 'Conseils' }}</span>
+          <span class="dot">•</span>
+          <span class="date">{{ (a.publishedAt || a.createdAt) | date:'mediumDate' }}</span>
+          <span class="dot">•</span>
+        </div>
+
+        <h1 class="title">{{ a.title }}</h1>
+
+        <p class="excerpt" *ngIf="a.excerpt">{{ a.excerpt }}</p>
+
+        <div class="cover" *ngIf="coverSrc(a.coverImageUrl) as src">
+          <img [src]="src" loading="lazy" decoding="async" />
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="toc" *ngIf="toc?.length">
+        <div class="toc-title">Sommaire</div>
+        <nav class="toc-nav">
+          <a
+            *ngFor="let t of toc"
+            [attr.href]="'#' + t.id"
+            data-anchor="1"
+            [class.l3]="t.level === 3"
+          >
+            {{ t.text }}
+          </a>
+        </nav>
+      </aside>
+
+      <article class="content">
+        <div class="content-inner" [innerHTML]="safeHtml"></div>
+      </article>
+    </main>
+  </ng-container>
+</div>

@@ -36,6 +36,7 @@ services:
       JWT_EXPIRES: ${JWT_EXPIRES:-1h}
       JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-15d}
       CONTACT_TO_EMAIL: ${CONTACT_TO_EMAIL:-aquamanager.contact@gmail.com}
+      ANALYTICS_SALT: ${ANALYTICS_SALT:-change_me_long_random_string_32_chars_min}
 
 
       NODE_ENV: production
@@ -62,6 +63,7 @@ services:
     volumes:
       # ⚠️ Sur le VPS, crée /opt/aquamanager/uploads
       - /opt/aquamanager/uploads:/data/uploads
+      - /opt/aquamanager/tmp:/app/tmp
 
   frontend:
     build:
