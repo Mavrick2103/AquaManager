@@ -12,8 +12,12 @@ export class AdminMetricsController {
   @Get('metrics')
   @Roles('ADMIN')
   async metrics(@Query('range') range?: string) {
-    const allowed = new Set<MetricsRange>(['7d', '30d', '365d', 'all']);
-    const r = (range as MetricsRange) || '30d';
-    return this.service.getMetrics(allowed.has(r) ? r : '30d');
+    const allowed: MetricsRange[] = ['1d', '7d', '30d', '365d', 'all'];
+
+    const r: MetricsRange = allowed.includes(range as MetricsRange)
+      ? (range as MetricsRange)
+      : '1d';
+
+    return this.service.getMetrics(r);
   }
 }

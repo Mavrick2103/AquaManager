@@ -7,11 +7,17 @@ import { Aquarium } from '../aquariums/aquariums.entity';
 import { Task, TaskStatus } from '../tasks/task.entity';
 import { WaterMeasurement } from '../water-measurement/water-measurement.entity';
 
-export type MetricsRange = '7d' | '30d' | '365d' | 'all';
+export type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 
 function getFrom(range: MetricsRange): Date | null {
   const now = new Date();
+
   switch (range) {
+    case '1d': {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 1);
+      return d;
+    }
     case '7d': {
       const d = new Date(now);
       d.setDate(d.getDate() - 7);
@@ -42,23 +48,31 @@ export class AdminMetricsService {
     @InjectRepository(WaterMeasurement) private measurementsRepo: Repository<WaterMeasurement>,
   ) {}
 
+  /**
+   * Si ton User a bien un @CreateDateColumn() createdAt, alors ça existe vraiment en DB.
+   * Sinon, on désactive "newInRange" et le tri createdAt.
+   */
   private hasUserCreatedAt(): boolean {
-    // si tu as bien ajouté @CreateDateColumn() createdAt dans User, ça retourne true.
-    // sinon on renverra newInRange = null
-    return true;
+    return this.usersRepo.metadata.columns.some((c) => c.propertyName === 'createdAt');
   }
 
   async getMetrics(range: MetricsRange) {
     const from = getFrom(range);
+    const hasCreatedAt = this.hasUserCreatedAt();
 
     const [usersTotal, admins] = await Promise.all([
       this.usersRepo.count(),
       this.usersRepo.count({ where: { role: 'ADMIN' } as any }),
     ]);
 
-    // Nouveaux users sur période (si createdAt dispo)
+    // Nouveaux users sur période
     let newInRange: number | null = null;
-    if (from && this.hasUserCreatedAt()) {
+    if (!hasCreatedAt) {
+      newInRange = null;
+    } else if (!from) {
+      // all
+      newInRange = usersTotal;
+    } else {
       newInRange = await this.usersRepo.count({
         where: { createdAt: MoreThanOrEqual(from) } as any,
       });
@@ -66,7 +80,10 @@ export class AdminMetricsService {
 
     // Active users (période) = a créé une task OU une mesure sur la période
     let activeInRange = 0;
-    if (from) {
+    if (!from) {
+      // all : définition simple (sinon c'est un KPI ambigu)
+      activeInRange = usersTotal;
+    } else {
       const taskUsers = await this.tasksRepo
         .createQueryBuilder('t')
         .select('DISTINCT t.userId', 'userId')
@@ -87,12 +104,9 @@ export class AdminMetricsService {
     }
 
     // Derniers users (toujours)
-    // si tu as createdAt, tri par createdAt sinon tri par id
     const latest = await this.usersRepo.find({
       select: ['id', 'fullName', 'email', 'role', 'createdAt'] as any,
-      order: this.hasUserCreatedAt()
-        ? ({ createdAt: 'DESC' } as any)
-        : ({ id: 'DESC' } as any),
+      order: hasCreatedAt ? ({ createdAt: 'DESC' } as any) : ({ id: 'DESC' } as any),
       take: 10,
     });
 
@@ -121,9 +135,7 @@ export class AdminMetricsService {
     // Measurements
     const measurementsTotal = await this.measurementsRepo.count();
     const measurementsCreatedInRange = from
-      ? await this.measurementsRepo.count({
-          where: { createdAt: MoreThanOrEqual(from) } as any,
-        })
+      ? await this.measurementsRepo.count({ where: { createdAt: MoreThanOrEqual(from) } as any })
       : measurementsTotal;
 
     return {
@@ -135,7 +147,7 @@ export class AdminMetricsService {
         newInRange,
         activeInRange,
         latest,
-        note: this.hasUserCreatedAt()
+        note: hasCreatedAt
           ? undefined
           : "User n'a pas de createdAt : 'nouveaux utilisateurs' indisponible.",
       },

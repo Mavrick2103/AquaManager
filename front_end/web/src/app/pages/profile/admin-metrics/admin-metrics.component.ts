@@ -1,8 +1,8 @@
+// admin-metrics.component.ts
 import { Component } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
-
 import { RouterModule } from '@angular/router';
 
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -16,6 +16,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
+import { MatButtonToggleChange } from '@angular/material/button-toggle';
 
 type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 type Role = 'USER' | 'ADMIN';
@@ -42,6 +43,7 @@ interface AdminMetricsDto {
   imports: [
     CommonModule,
     RouterModule,
+    HttpClientModule,
 
     MatToolbarModule,
     MatCardModule,
@@ -84,6 +86,11 @@ export class AdminMetricsComponent {
     return `${base}${p}`;
   }
 
+  onRangeChange(ev: MatButtonToggleChange) {
+    const r = ev.value as MetricsRange;
+    this.setRange(r);
+  }
+
   setRange(r: MetricsRange) {
     if (this.range === r) return;
     this.range = r;
@@ -108,14 +115,14 @@ export class AdminMetricsComponent {
   }
 
   rangeLabel(): string {
-    if (this.range === '1d') return '1 derniers jours';
+    if (this.range === '1d') return 'Dernières 24h';
     if (this.range === '7d') return '7 derniers jours';
     if (this.range === '30d') return '30 derniers jours';
     if (this.range === '365d') return '12 derniers mois';
     return 'Depuis le début';
   }
 
-  kpi(value: number | null) {
-    return value === null ? '—' : value;
+  kpi(value: number | null): string {
+    return value === null ? '—' : String(value);
   }
 }
