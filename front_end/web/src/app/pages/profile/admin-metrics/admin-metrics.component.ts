@@ -62,7 +62,7 @@ export class AdminMetricsComponent {
   loading = true;
   error: string | null = null;
 
-  range: MetricsRange = 'all';
+  range: MetricsRange = '1d';
   metrics: AdminMetricsDto | null = null;
 
   displayedColumns = ['id', 'fullName', 'email', 'role'] as const;
