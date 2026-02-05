@@ -102,7 +102,7 @@ describe('RegisterComponent', () => {
       email: 'romain@test.com',
       password: 'Password123!',
     });
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/auth/connexion');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
     expect(component.loading()).toBeFalse();
     expect(component.errorMsg()).toBeNull();
   }));
