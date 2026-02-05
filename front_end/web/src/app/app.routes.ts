@@ -187,6 +187,12 @@ export const routes: Routes = [
   canActivate: [AuthGuard, AdminGuard],
   data: { title: 'Admin – Modifier article – AquaManager', robots: 'noindex' },
 },
+{
+  path: 'auth/connexion',
+  redirectTo: 'login',
+  pathMatch: 'full',
+},
+
 
 
   // ✅ 404 -> page login (sinon tu reboucles sur home protégée)

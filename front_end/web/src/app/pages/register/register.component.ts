@@ -1,6 +1,12 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
@@ -10,6 +16,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AuthService } from '../../core/auth.service';
 
@@ -23,17 +32,27 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   selector: 'app-register',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, RouterLink,
-    MatCardModule, MatFormFieldModule, MatInputModule,
-    MatIconModule, MatButtonModule, MatCheckboxModule, MatProgressSpinnerModule
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule,
+    MatButtonModule,
+    MatCheckboxModule,
+    MatProgressSpinnerModule,
+    MatSnackBarModule,
   ],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.scss',
+  styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
+  private snack = inject(MatSnackBar);
+  private destroyRef = inject(DestroyRef);
 
   hidePwd = signal(true);
   hideCfm = signal(true);
@@ -41,39 +60,66 @@ export class RegisterComponent {
   errorMsg = signal<string | null>(null);
 
   form = this.fb.group({
-    fullName: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.minLength(2)] }),
-    email: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
-    passwords: this.fb.group({
-      password: this.fb.control('', {
-        nonNullable: true,
-        validators: [
-          Validators.required,
-          Validators.minLength(8),
-          // 👉 maj, min, chiffre, caractère spécial
-          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/),
-        ],
-      }),
-      confirmPassword: this.fb.control('', { nonNullable: true, validators: [Validators.required] }),
-    }, { validators: passwordsMatch }),
-    acceptTos: this.fb.control(false, { nonNullable: true }),
+    fullName: this.fb.control('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(2)],
+    }),
+    email: this.fb.control('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    }),
+    passwords: this.fb.group(
+      {
+        password: this.fb.control('', {
+          nonNullable: true,
+          validators: [
+            Validators.required,
+            Validators.minLength(8),
+            // maj, min, chiffre, caractère spécial
+            Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/),
+          ],
+        }),
+        confirmPassword: this.fb.control('', {
+          nonNullable: true,
+          validators: [Validators.required],
+        }),
+      },
+      { validators: passwordsMatch }
+    ),
+    acceptTos: this.fb.control(false, {
+      nonNullable: true,
+      validators: [Validators.requiredTrue],
+    }),
   });
 
-  get fullName() { return this.form.controls.fullName; }
-  get email() { return this.form.controls.email; }
-  get passwords() { return this.form.controls.passwords; }
-  get password() { return this.passwords.get('password'); }
-  get confirmPassword() { return this.passwords.get('confirmPassword'); }
-  get acceptTos() { return this.form.controls.acceptTos; }
+  get fullName() {
+    return this.form.controls.fullName;
+  }
+  get email() {
+    return this.form.controls.email;
+  }
+  get passwords() {
+    return this.form.controls.passwords;
+  }
+  get password() {
+    return this.passwords.get('password');
+  }
+  get confirmPassword() {
+    return this.passwords.get('confirmPassword');
+  }
+  get acceptTos() {
+    return this.form.controls.acceptTos;
+  }
 
-  // 🔑 signal qui suit la valeur du mot de passe
+  // signal qui suit la valeur du mot de passe
   passwordValue = signal('');
 
   constructor() {
     const pwdCtrl = this.password;
     if (pwdCtrl) {
-      pwdCtrl.valueChanges.subscribe(v => {
-        this.passwordValue.set(v ?? '');
-      });
+      pwdCtrl.valueChanges
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((v) => this.passwordValue.set(v ?? ''));
     }
   }
 
@@ -84,17 +130,17 @@ export class RegisterComponent {
     if (/[A-Z]/.test(v)) s++;
     if (/[a-z]/.test(v)) s++;
     if (/\d/.test(v)) s++;
-    if (/[^A-Za-z0-9]/.test(v)) s++; // caractère spécial
+    if (/[^A-Za-z0-9]/.test(v)) s++;
     return Math.min(s, 5);
   });
 
   strengthLabel = computed(() => {
     const x = this.strength();
-    return ['Très faible','Faible','Moyenne','Bonne','Forte'][Math.max(0, x-1)] ?? 'Très faible';
+    return ['Très faible', 'Faible', 'Moyenne', 'Bonne', 'Forte'][Math.max(0, x - 1)] ?? 'Très faible';
   });
 
   async submit() {
-    console.log('[Register] submit triggered');
+    if (this.loading()) return;
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -109,15 +155,24 @@ export class RegisterComponent {
       const payload = {
         fullName: this.fullName.value,
         email: this.email.value,
-        password: this.password?.value as string,
+        password: String(this.password?.value ?? ''),
       };
-      console.log('[Register] payload', payload);
 
       await this.authService.register(payload);
-      await this.router.navigateByUrl('/auth/connexion');
+
+      // ✅ Message succès
+      this.snack.open(
+        'Compte créé ✅ Vérifie ton e-mail pour activer ton compte.',
+        'OK',
+        { duration: 4500 }
+      );
+
+      // ✅ Redirection correcte
+      await this.router.navigateByUrl('/login');
     } catch (e: any) {
-      console.error('[Register] error', e);
-      this.errorMsg.set(e?.error?.message ?? e?.message ?? 'Échec de la création de compte');
+      this.errorMsg.set(
+        e?.error?.message ?? e?.message ?? 'Échec de la création de compte'
+      );
     } finally {
       this.loading.set(false);
     }

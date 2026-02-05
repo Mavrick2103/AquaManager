@@ -27,6 +27,31 @@
 .k { font-weight: 900; opacity: .7; }
 .v { font-size: 26px; font-weight: 1000; margin-top: 6px; }
 
+/* ✅ GRAPH */
+.chart-wrap{
+  margin-top: 14px;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 16px;
+  background: rgba(255,255,255,.85);
+  padding: 12px;
+}
+
+.chart-head{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.chart-title h3{ margin:0; font-weight: 1000; }
+.chart-title p{ margin: 2px 0 0; opacity: .7; font-size: 13px; }
+
+.period-toggle{ border-radius: 12px; overflow: hidden; }
+
+.chart{ height: 320px; }
+
 .table { margin-top: 14px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(0,0,0,.08); }
 .row { display: grid; grid-template-columns: 1fr 120px 120px; padding: 10px 12px; background: rgba(255,255,255,.85); }
 .row:nth-child(even) { background: rgba(63,81,181,.04); }
@@ -38,4 +63,6 @@
   .top { grid-template-columns: 1fr; }
   .row { grid-template-columns: 1fr 90px 90px; }
   .kpis { grid-template-columns: 1fr; }
+
+  .chart{ height: 260px; }
 }

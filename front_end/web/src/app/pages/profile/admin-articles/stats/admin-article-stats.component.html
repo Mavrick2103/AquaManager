@@ -37,6 +37,36 @@
       </div>
     </div>
 
+    <!-- ✅ GRAPH -->
+    <div class="chart-wrap">
+      <div class="chart-head">
+        <div class="chart-title">
+          <h3>Vues</h3>
+          <p>Regroupées par {{ periodLabel() }}</p>
+        </div>
+
+        <mat-button-toggle-group
+          class="period-toggle"
+          [value]="period"
+          (change)="onPeriodChange($event.value)"
+        >
+          <mat-button-toggle value="week">Semaine</mat-button-toggle>
+          <mat-button-toggle value="month">Mois</mat-button-toggle>
+          <mat-button-toggle value="year">Année</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+
+      <div class="chart">
+        <canvas
+          baseChart
+          [type]="chartType"
+          [data]="chartData"
+          [options]="chartOptions"
+        ></canvas>
+      </div>
+    </div>
+
+    <!-- tableau brut (détail quotidien) -->
     <div class="table">
       <div class="row head">
         <div>Jour</div>
