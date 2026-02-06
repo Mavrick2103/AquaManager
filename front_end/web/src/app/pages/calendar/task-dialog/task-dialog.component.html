@@ -10,88 +10,240 @@
   </div>
 
   <form [formGroup]="form" class="form">
-    <div class="row row--2">
-      <mat-form-field appearance="outline">
-        <mat-label>Titre</mat-label>
-        <mat-icon matPrefix>edit</mat-icon>
-        <input
+    <!-- 1) Infos principales -->
+    <div class="section">
+      <div class="section-title">
+        <mat-icon>edit</mat-icon>
+        <div>
+          <div class="ttl">Informations</div>
+          <div class="sub">Définissez la tâche et son contexte.</div>
+        </div>
+      </div>
+
+      <div class="row row--2">
+        <mat-form-field appearance="outline">
+          <mat-label>Titre</mat-label>
+          <mat-icon matPrefix>title</mat-icon>
+
+          <!-- ✅ Auto title: disabled si type != OTHER -->
+          <input
+            matInput
+            formControlName="title"
+            placeholder="Ex. Changement d’eau 30 L"
+            [readonly]="form.get('type')?.value !== 'OTHER'"
+          />
+
+          <mat-hint align="end">{{ (form.get('title')?.value?.length || 0) }}/200</mat-hint>
+          <mat-error *ngIf="form.get('title')?.hasError('maxlength')">Maximum 200 caractères.</mat-error>
+          <mat-hint *ngIf="form.get('type')?.value !== 'OTHER'">
+            Le titre est généré automatiquement à partir du type.
+          </mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Type de tâche</mat-label>
+          <mat-icon matPrefix>category</mat-icon>
+          <mat-select formControlName="type">
+            <mat-option *ngFor="let t of types" [value]="t.value">
+              <mat-icon style="margin-right: 8px; vertical-align: middle">{{ t.icon }}</mat-icon>
+              {{ t.label }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('type')?.invalid">Choisissez un type.</mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="fld--desc">
+        <mat-label>Description</mat-label>
+        <mat-icon matPrefix>notes</mat-icon>
+        <textarea
           matInput
-          formControlName="title"
-          placeholder="Ex. Changement d’eau 30 L"
-        />
-        <mat-error *ngIf="form.get('title')?.hasError('maxlength')">
-          Maximum 200 caractères.
-        </mat-error>
+          rows="3"
+          formControlName="description"
+          placeholder="Notes, volumes, dosages, consignes…"
+        ></textarea>
       </mat-form-field>
 
+      <div class="row row--2">
+        <mat-form-field appearance="outline">
+          <mat-label>Date</mat-label>
+          <input matInput [matDatepicker]="dp" formControlName="date" />
+          <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+          <mat-datepicker #dp startView="month"></mat-datepicker>
+          <mat-error *ngIf="form.get('date')?.invalid">La date est requise.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Heure</mat-label>
+          <mat-icon matPrefix>schedule</mat-icon>
+          <input matInput type="time" formControlName="time" />
+        </mat-form-field>
+      </div>
+
       <mat-form-field appearance="outline">
-        <mat-label>Type de tâche</mat-label>
-        <mat-icon matPrefix>category</mat-icon>
-        <mat-select formControlName="type">
-          <mat-option *ngFor="let t of types" [value]="t.value">
-            {{ t.label }}
+        <mat-label>Aquarium</mat-label>
+        <mat-icon matPrefix>water</mat-icon>
+        <mat-select formControlName="aquariumId" [disabled]="!aquariums().length">
+          <mat-option *ngFor="let a of aquariums()" [value]="a.id">
+            {{ a.name }}
           </mat-option>
         </mat-select>
-        <mat-error *ngIf="form.get('type')?.invalid">
-          Choisissez un type.
-        </mat-error>
+        <mat-error *ngIf="form.get('aquariumId')?.invalid">Sélectionnez un aquarium.</mat-error>
       </mat-form-field>
     </div>
 
-    <mat-form-field appearance="outline" class="fld--desc">
-      <mat-label>Description</mat-label>
-      <mat-icon matPrefix>notes</mat-icon>
-      <textarea
-        matInput
-        rows="3"
-        formControlName="description"
-        placeholder="Notes, volumes, dosages, consignes…"
-      ></textarea>
-    </mat-form-field>
+    <mat-divider class="sep"></mat-divider>
 
-    <div class="row row--2">
-      <mat-form-field appearance="outline">
-        <mat-label>Date</mat-label>
-        <input matInput [matDatepicker]="dp" formControlName="date" />
-        <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
-        <mat-datepicker #dp startView="month"></mat-datepicker>
-        <mat-error *ngIf="form.get('date')?.invalid">
-          La date est requise.
-        </mat-error>
-      </mat-form-field>
+    <!-- 2) Répétition -->
+    <div class="section">
+      <div class="section-title">
+        <mat-icon>repeat</mat-icon>
+        <div>
+          <div class="ttl">Répétition</div>
+          <div class="sub">Transformez la tâche en routine (avec fin).</div>
+        </div>
+      </div>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Heure</mat-label>
-        <mat-icon matPrefix>schedule</mat-icon>
-        <input matInput type="time" formControlName="time" />
-      </mat-form-field>
+      <div class="repeat-head">
+        <mat-slide-toggle formControlName="isRepeat">
+          Tâche répétitive
+        </mat-slide-toggle>
+
+        <mat-form-field appearance="outline" class="repeat-mode" [class.disabled]="!form.get('isRepeat')?.value">
+          <mat-label>Fréquence</mat-label>
+          <mat-icon matPrefix>schedule</mat-icon>
+          <mat-select formControlName="repeatMode" [disabled]="!form.get('isRepeat')?.value">
+            <mat-option *ngFor="let o of repeatOptions" [value]="o.value">{{ o.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- ✅ durée -->
+      <div class="row row--2" *ngIf="form.get('isRepeat')?.value">
+        <mat-form-field appearance="outline">
+          <mat-label>Durée</mat-label>
+          <mat-icon matPrefix>hourglass_bottom</mat-icon>
+          <input matInput type="number" formControlName="repeatDurationWeeks" min="1" max="260" />
+          <span matSuffix>semaine(s)</span>
+          <mat-error *ngIf="form.get('repeatDurationWeeks')?.invalid">Entre 1 et 260.</mat-error>
+        </mat-form-field>
+
+        <div class="hint-card">
+          <mat-icon>info</mat-icon>
+          <div>
+            La routine commence à la <b>date/heure de la tâche</b> et s’arrête après cette durée.
+          </div>
+        </div>
+      </div>
+
+      <div class="row row--2" *ngIf="form.get('isRepeat')?.value && form.get('repeatMode')?.value === 'EVERY_X_WEEKS'">
+        <mat-form-field appearance="outline">
+          <mat-label>Répéter toutes les</mat-label>
+          <mat-icon matPrefix>calendar_month</mat-icon>
+          <input matInput type="number" formControlName="repeatEveryWeeks" min="2" max="12" />
+          <span matSuffix>semaines</span>
+          <mat-error *ngIf="form.get('repeatEveryWeeks')?.invalid">Entre 2 et 12.</mat-error>
+        </mat-form-field>
+
+        <div class="hint-card">
+          <mat-icon>tips_and_updates</mat-icon>
+          <div><b>Exemple</b> : toutes les 2 semaines, chaque lundi.</div>
+        </div>
+      </div>
+
+      <div class="week" *ngIf="isRepeatWeekly()">
+        <div class="week-label">
+          <mat-icon>event</mat-icon>
+          <span>Jours</span>
+        </div>
+
+        <div class="chips">
+          <button
+            type="button"
+            class="day"
+            *ngFor="let d of weekDays"
+            [class.on]="isDaySelected(d.key)"
+            (click)="toggleDay(d.key)"
+          >
+            {{ d.label }}
+          </button>
+        </div>
+
+        <div class="week-note">
+          <mat-icon>info</mat-icon>
+          <span>Astuce : sélectionnez “Lun” pour “tous les lundis”.</span>
+        </div>
+      </div>
     </div>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Aquarium</mat-label>
-      <mat-icon matPrefix>water</mat-icon>
-      <mat-select formControlName="aquariumId" [disabled]="!aquariums().length">
-        <mat-option *ngFor="let a of aquariums()" [value]="a.id">
-          {{ a.name }}
-        </mat-option>
-      </mat-select>
-      <mat-error *ngIf="form.get('aquariumId')?.invalid">
-        Sélectionnez un aquarium.
-      </mat-error>
-    </mat-form-field>
+    <mat-divider class="sep"></mat-divider>
+
+    <!-- 3) Fertilisation -->
+    <div class="section" *ngIf="form.get('type')?.value === 'FERTILIZATION'">
+      <div class="section-title">
+        <mat-icon>science</mat-icon>
+        <div>
+          <div class="ttl">Engrais</div>
+          <div class="sub">Ajoutez une ou plusieurs lignes (Fer, PO4, etc.).</div>
+        </div>
+
+        <span class="spacer"></span>
+
+        <button mat-stroked-button type="button" (click)="addFertilizerLine()">
+          <mat-icon>add</mat-icon>
+          Ajouter une ligne
+        </button>
+      </div>
+
+      <div class="fert-list" formArrayName="fertilizers">
+        <div class="fert-row" *ngFor="let fg of fertilizers.controls; let i = index" [formGroupName]="i">
+          <mat-form-field appearance="outline" class="fert-name">
+            <mat-label>Engrais</mat-label>
+            <mat-icon matPrefix>local_pharmacy</mat-icon>
+            <input matInput formControlName="name" placeholder="Ex. Fer / PO4 / K / Profito…" />
+            <mat-error *ngIf="fg.get('name')?.invalid">Nom requis.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="fert-qty">
+            <mat-label>Quantité</mat-label>
+            <mat-icon matPrefix>straighten</mat-icon>
+            <input matInput type="number" step="0.5" min="0.5" formControlName="qty" />
+            <mat-error *ngIf="fg.get('qty')?.invalid">> 0</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="fert-unit">
+            <mat-label>Unité</mat-label>
+            <mat-select formControlName="unit">
+              <mat-option value="ml">ml</mat-option>
+              <mat-option value="g">g</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button
+            mat-icon-button
+            type="button"
+            class="trash"
+            (click)="removeFertilizerLine(i)"
+            [disabled]="fertilizers.length === 1"
+            matTooltip="Supprimer"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+
+        <div class="form-error" *ngIf="form.hasError('fertilizersRequired')">
+          <mat-icon>error</mat-icon>
+          <span>Ajoutez au moins une ligne d’engrais valide (nom + quantité).</span>
+        </div>
+      </div>
+    </div>
   </form>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="actions">
-  <button mat-button mat-dialog-close type="button">
-    Annuler
-  </button>
-  <button
-    mat-flat-button
-    color="primary"
-    type="button"
-    (click)="save()"
-  >
+  <button mat-button mat-dialog-close type="button">Annuler</button>
+
+  <button mat-flat-button color="primary" type="button" (click)="save()">
     <mat-icon>save</mat-icon>
     Enregistrer
   </button>

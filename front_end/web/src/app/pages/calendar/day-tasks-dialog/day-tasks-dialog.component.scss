@@ -1,161 +1,217 @@
-:host {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  color: #1F3522;
+:host{
+  display:block;
+  width:100%;
+  min-width:0;
+  color:#1F3522;
 
-  --brand1: #009FE3;
-  --brand2: #39B54A;
-  --ink: #1F3522;
-  --muted: #4b5a54;
-  --line: rgba(0,0,0,.08);
-  --bg: #ffffff;
-  --bg-soft: #fbfcfd;
+  --brand1:#009FE3;
+  --brand2:#39B54A;
+  --ink:#1F3522;
+  --muted:#4b5a54;
+  --line:rgba(0,0,0,.08);
+  --bg:#ffffff;
+  --bg-soft:#fbfcfd;
 
-  padding: 1.25rem 1.75rem 1.5rem;
-  box-sizing: border-box;
+  padding: 1.05rem 1.25rem 1.25rem;
+  box-sizing:border-box;
+  overflow-x:hidden;
 }
 
-/* ===== En-tête ===== */
-.day-head {
+*, *::before, *::after{ box-sizing:border-box; }
+
+/* ===== Header ===== */
+.day-head{
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   justify-content:space-between;
   gap:.75rem;
-  padding-bottom: .5rem;
-  border-bottom: 1px solid var(--line);
+  padding-bottom:.75rem;
 
-  h2 {
+  h2{
     display:flex;
     align-items:center;
-    gap:.5rem;
+    gap:.55rem;
     margin:0;
-    font-weight:800;
+    font-weight:900;
     color:var(--ink);
     letter-spacing:.2px;
     text-transform: capitalize;
+    line-height:1.15;
   }
 }
 
-.sub {
-  margin:.75rem 0 .5rem;
-  font-weight:800;
+/* ✅ actions header */
+.head-actions{
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+}
+
+.add-btn{
+  box-shadow: 0 10px 22px rgba(0,0,0,.12);
+}
+
+/* petit bouton close plus “soft” */
+:host ::ng-deep .day-head button.mat-mdc-icon-button{
+  border-radius: 14px;
+  background: rgba(0,0,0,.04);
+}
+:host ::ng-deep .day-head button.mat-mdc-icon-button:hover{
+  background: rgba(0,0,0,.07);
+}
+
+.content{
+  padding-top: .85rem;
+  padding-bottom: .25rem;
+}
+
+.sub{
+  margin: .25rem 0 .65rem;
+  font-weight:900;
   color:var(--ink);
   letter-spacing:.2px;
 }
 
-.day-section + .day-section {
-  margin-top: 1.25rem;
-}
-
 /* ===== Liste ===== */
-.tasks {
-  display: grid;
-  gap: .6rem;
+.tasks{
+  display:grid;
+  gap:.7rem;
+  margin:0;
+  padding:0;
 }
 
-.task-item {
+/* MatListItem = compliqué => on force un layout stable */
+:host ::ng-deep .tasks .mat-mdc-list-item{
+  height:auto !important;
+}
+
+/* Carte */
+.task-item{
   --bar: color-mix(in oklab, var(--brand1) 55%, #fff);
   --bgType: #fff;
-  position: relative;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: .6rem .9rem .7rem .9rem;
-  background: var(--bgType);
-  transition: box-shadow .18s ease, transform .06s ease, border-color .18s ease;
 
-  &::before {
+  position:relative;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--bgType);
+  padding: .85rem 1rem .85rem 1rem;
+  transition: box-shadow .18s ease, transform .06s ease, border-color .18s ease;
+  cursor:pointer;
+
+  /* barre colorée */
+  &::before{
     content:"";
     position:absolute;
     left:0; top:0; bottom:0;
-    width:4px;
-    background: var(--bar);
-    border-top-left-radius:14px;
-    border-bottom-left-radius:14px;
+    width:5px;
+    background:var(--bar);
+    border-top-left-radius:16px;
+    border-bottom-left-radius:16px;
   }
 
-  &:hover {
+  &:hover{
     transform: translateY(-1px);
-    box-shadow: 0 10px 22px rgba(0,0,0,.08);
-    border-color: color-mix(in oklab, var(--bar) 45%, var(--line));
+    box-shadow: 0 12px 26px rgba(0,0,0,.08);
+    border-color: color-mix(in oklab, var(--bar) 35%, var(--line));
+  }
+
+  &:active{
+    transform: translateY(0px);
+    box-shadow: 0 8px 18px rgba(0,0,0,.06);
   }
 }
 
+/* couleurs types */
 .task-item.water_change,
-.task-item.water-change { --bar:#3ec3ff; --bgType:#f2f9ff; }
-.task-item.fertilization { --bar:#45d07a; --bgType:#f2fff7; }
-.task-item.trim          { --bar:#ff9a57; --bgType:#fff7f1; }
+.task-item.water-change{ --bar:#3ec3ff; --bgType:#f2f9ff; }
+.task-item.fertilization{ --bar:#45d07a; --bgType:#f2fff7; }
+.task-item.trim{ --bar:#ff9a57; --bgType:#fff7f1; }
 .task-item.water_test,
-.task-item.water-test    { --bar:#8f84ff; --bgType:#f6f4ff; }
-.task-item.other          { --bar: color-mix(in oklab, var(--brand1) 40%, var(--brand2)); }
+.task-item.water-test{ --bar:#8f84ff; --bgType:#f6f4ff; }
+.task-item.other{ --bar: color-mix(in oklab, var(--brand1) 40%, var(--brand2)); }
 
-.t-title {
-  font-weight:700;
+/* titre + aquarium */
+.t-title{
+  font-weight:900;
   display:flex;
+  flex-wrap:wrap;
   gap:.45rem;
-  align-items: baseline;
+  align-items:baseline;
   line-height:1.25;
+  padding-right:.25rem;
 }
-.t-aqua {
-  font-weight:600;
-  opacity:.7;
+
+.t-aqua{
+  font-weight:700;
+  opacity:.72;
 }
-.t-meta {
+
+/* meta pills */
+.t-meta{
   display:flex;
   align-items:center;
-  gap:.4rem;
-  flex-wrap: wrap;
-  color: var(--muted);
-  margin-top:.15rem;
+  gap:.45rem;
+  flex-wrap:wrap;
+  color:var(--muted);
+  margin-top:.35rem;
 
-  .pill {
+  .pill{
     display:inline-flex;
     align-items:center;
-    gap:.25rem;
-    padding:.12rem .5rem;
+    gap:.3rem;
+    padding:.16rem .55rem;
     border-radius:999px;
     font-size:.82rem;
     background:#f5f7f8;
     border:1px solid var(--line);
+    white-space:nowrap;
   }
-  .time mat-icon, .kind mat-icon {
+
+  .time mat-icon, .kind mat-icon{
     font-size:1rem;
     height:1rem;
     width:1rem;
   }
-  .dot-sep { opacity:.45; }
 }
-.t-desc {
-  margin-top:.45rem;
-  background: var(--bg-soft);
+
+.t-desc{
+  margin-top:.6rem;
+  background:var(--bg-soft);
   border:1px dashed var(--line);
-  padding:.55rem .7rem;
-  border-radius:10px;
+  padding:.65rem .75rem;
+  border-radius:12px;
   color:#2a2f2b;
-  font-size:.92rem;
+  font-size:.93rem;
   line-height:1.35;
 }
 
-.empty {
+/* empty */
+.empty{
   display:flex;
   align-items:center;
-  gap:.5rem;
-  color: var(--muted);
-  padding:.75rem 0;
+  gap:.55rem;
+  color:var(--muted);
+  padding:.85rem 0;
 }
 
-/* Actions du footer du dialog */
-.actions {
-  padding-top: .5rem;
+/* footer */
+.actions{
+  padding-top:.5rem;
   display:flex;
-  justify-content: flex-end;
+  justify-content:flex-end;
 }
 
 /* ===== Responsive ===== */
-@media (max-width: 720px) {
-  :host {
-    padding: 1rem;
-    min-width: 0;
-    width: 100%;
+@media (max-width: 720px){
+  :host{
+    padding: .9rem .9rem 1rem;
+  }
+
+  .day-head h2{
+    font-size:1.05rem;
+  }
+
+  .task-item{
+    padding:.8rem .85rem;
   }
 }

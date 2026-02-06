@@ -1,3 +1,4 @@
+<!-- calendar.component.html -->
 <section class="toolbar">
   <a class="brand" routerLink="/">
     <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
@@ -14,26 +15,25 @@
 <div class="page-wrap">
   <section class="cal -compact">
     <header class="cal__head">
-  <div class="cal__head-row">
-    <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()">
-      <mat-icon>chevron_left</mat-icon>
-    </button>
+      <div class="cal__head-row">
+        <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
 
-    <h1 class="cal__title">
-      <span class="cal__title--month">{{ fmt(currentMonth(),'MMMM') | titlecase }}</span>
-      <span class="cal__title--year">{{ fmt(currentMonth(),'yyyy') }}</span>
-    </h1>
+        <h1 class="cal__title">
+          <span class="cal__title--month">{{ fmt(currentMonth(),'MMMM') | titlecase }}</span>
+          <span class="cal__title--year">{{ fmt(currentMonth(),'yyyy') }}</span>
+        </h1>
 
-    <button mat-icon-button aria-label="Mois suivant" (click)="nextMonth()">
-      <mat-icon>chevron_right</mat-icon>
-    </button>
-  </div>
+        <button mat-icon-button aria-label="Mois suivant" (click)="nextMonth()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
 
-  <div class="cal__head-actions">
-    <button mat-stroked-button (click)="thisMonth()">Aujourd’hui</button>
-  </div>
-</header>
-
+      <div class="cal__head-actions">
+        <button mat-stroked-button (click)="thisMonth()">Aujourd’hui</button>
+      </div>
+    </header>
 
     <div class="cal__grid" role="grid" aria-label="Calendrier mensuel">
       <div class="cal__dow" *ngFor="let d of ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']">{{ d }}</div>
@@ -111,9 +111,10 @@
     <div class="footer-social">
       <h3>Suivez-nous</h3>
       <div class="social-icons">
-        <!--<a href="#" aria-label="Facebook"><mat-icon>facebook</mat-icon></a>-->
-        <a href="https://www.instagram.com/aquamanager_france/" aria-label="Instagram"><mat-icon>photo_camera</mat-icon></a>
-        <!--<a href="#" aria-label="Twitter"><mat-icon>alternate_email</mat-icon></a>-->
+        <a
+          href="https://www.instagram.com/aquamanager_france/"
+          aria-label="Instagram"
+        ><mat-icon>photo_camera</mat-icon></a>
       </div>
     </div>
   </div>

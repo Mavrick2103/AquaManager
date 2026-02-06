@@ -5,9 +5,10 @@ import { TaskService } from './task.service';
 import { TaskController } from './task.controller';
 import { Aquarium } from '../aquariums/aquariums.entity';
 import { User } from '../users/user.entity';
+import { TaskFertilizer } from './task-fertilizer.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Task, Aquarium, User])],
+  imports: [TypeOrmModule.forFeature([Task, TaskFertilizer, Aquarium, User])],
   providers: [TaskService],
   controllers: [TaskController],
 })

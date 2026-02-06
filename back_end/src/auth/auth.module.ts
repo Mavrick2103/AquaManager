@@ -1,3 +1,5 @@
+// src/auth/auth.module.ts
+
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -14,24 +16,33 @@ import { RolesGuard } from './guards/roles.guard';
 
 @Module({
   imports: [
-    ConfigModule,
+    // IMPORTANT: sans forRoot(), ConfigService peut ne pas charger ton .env => JWT_SECRET undefined => 401 partout
+    ConfigModule.forRoot({
+      isGlobal: true,
+      // envFilePath: '.env', // optionnel si ton .env est à la racine
+    }),
+
     UsersModule,
     MailModule,
+
     JwtModule.registerAsync({
-      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
         secret: cfg.get<string>('JWT_SECRET'),
+        // optionnel: valeur par défaut si tu fais parfois jwt.sign() sans expiresIn
+        signOptions: { expiresIn: cfg.get<string>('JWT_EXPIRES') || '15m' },
       }),
     }),
   ],
+  controllers: [AuthController],
   providers: [
     AuthService,
     JwtStrategy,
+
+    // Guards globaux (si tu les gardes ici, tu n'as plus besoin de @UseGuards partout)
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
-  controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

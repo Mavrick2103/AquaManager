@@ -5,9 +5,23 @@
     {{ data.date | date:'EEEE d MMMM y':'':'fr' }}
   </h2>
 
-  <button mat-icon-button aria-label="Fermer" (click)="close()">
-    <mat-icon>close</mat-icon>
-  </button>
+  <div class="head-actions">
+    <!-- ✅ bouton + -->
+    <button
+      mat-mini-fab
+      color="primary"
+      class="add-btn"
+      aria-label="Ajouter une tâche"
+      matTooltip="Ajouter une tâche"
+      (click)="addTask()"
+    >
+      <mat-icon>add</mat-icon>
+    </button>
+
+    <button mat-icon-button aria-label="Fermer" (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
 </header>
 
 <mat-divider></mat-divider>

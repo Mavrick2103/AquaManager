@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, Patch, Delete, Req, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Patch, Delete, Req, UseGuards } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -22,14 +22,14 @@ export class TaskController {
   @Patch(':id')
   update(
     @Req() req: any,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string, // ✅ string (peut être "42" ou "r:42:...")
     @Body() dto: UpdateTaskDto,
   ) {
     return this.service.update(req.user.userId, id, dto);
   }
 
   @Delete(':id')
-  remove(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+  remove(@Req() req: any, @Param('id') id: string) {
     return this.service.remove(req.user.userId, id);
   }
 }

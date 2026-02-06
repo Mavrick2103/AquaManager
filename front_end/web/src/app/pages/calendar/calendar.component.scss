@@ -1,3 +1,6 @@
+/* calendar.component.scss */
+/* (inchangé, je te le remets complet comme tu l'as donné) */
+
 :host {
   display: block;
   background:
@@ -34,10 +37,10 @@
 
   .brand { display:flex; align-items:center; min-width:0; }
   .logo {
-    height: 90px;       /* <= ajuste 70/80/90 selon ton goût */
+    height: 90px;
     width: auto;
     display: block;
-    max-width: 220px;   /* sécurité */
+    max-width: 220px;
     object-fit: contain;
   }
 
@@ -551,4 +554,9 @@
   .cal__head-row{
     grid-template-columns: 36px 1fr 36px;
   }
+}
+/* Force le texte + l’icône en blanc sur le bouton "Nouvelle tâche" */
+.toolbar .btn-primary,
+.toolbar .btn-primary * {
+  color: #fff !important;
 }

@@ -7,8 +7,9 @@ import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { Task, TasksService } from '../../../core/tasks.service';
+import { Task, TasksService, CreateTaskPayload } from '../../../core/tasks.service';
 import { TaskDetailDialogComponent } from '../day-tasks-dialog/task-detail-dialog/task-detail-dialog.component';
+import { TaskDialogComponent } from '../task-dialog/task-dialog.component'; // ⬅️ adapte si besoin
 
 type TaskType = 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
 
@@ -45,21 +46,58 @@ export class DayTasksDialogComponent {
     this.ref.close(changed);
   }
 
+  // ✅ NOUVEAU: bouton +
+  addTask() {
+    this.dialog
+      .open(TaskDialogComponent, {
+        data: { date: this.data.date },
+        width: '92vw',
+        maxWidth: '900px',
+        minWidth: '320px',
+        maxHeight: '92vh',
+        autoFocus: false,
+        restoreFocus: false,
+      })
+      .afterClosed()
+      .subscribe((payload: CreateTaskPayload | null | undefined) => {
+        if (!payload) return;
+
+        // ✅ création API
+        this.tasksApi.create(payload).subscribe({
+          next: (created) => {
+            this.data.tasks.push(created);
+            this.close(true);
+          },
+          error: (err) => {
+            console.error(err);
+            alert('Erreur lors de la création de la tâche.');
+          },
+        });
+      });
+  }
+
   openDetails(t: Task) {
     this.dialog
       .open(TaskDetailDialogComponent, {
-        width: '480px',
         data: { task: t },
-        autoFocus: 'dialog',
+        width: '92vw',
+        maxWidth: '900px',
+        minWidth: '320px',
+        maxHeight: '92vh',
+        autoFocus: false,
+        restoreFocus: false,
+        panelClass: ['task-detail-dialog-panel'],
       })
       .afterClosed()
       .subscribe((result) => {
         if (!result) return;
+
         if (result.deleted) {
           this.removeLocal(t.id);
           this.close(true);
           return;
         }
+
         if (result && result.id) {
           this.replaceLocal(result as Task);
           this.close(true);

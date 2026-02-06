@@ -60,6 +60,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* ton breakpoint d'origine (ok) */
 @media (max-width: 840px) {
   .row--2 {
     grid-template-columns: 1fr;
@@ -141,4 +142,290 @@ mat-form-field mat-icon[matPrefix] {
 
 :host ::ng-deep .mdc-text-field--outlined {
   background-color: #ffffff;
+}
+
+/* =========================
+   AJOUTS: Répétition + Engrais
+   ========================= */
+
+.section {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+}
+
+.sep {
+  border-top-color: rgba(0, 0, 0, 0.06);
+  margin: 0.2rem 0 0.4rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+
+  mat-icon {
+    color: var(--brand1);
+  }
+
+  .ttl {
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+
+  .sub {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+}
+
+/* ----- Répétition ----- */
+.repeat-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  gap: 12px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+:host ::ng-deep .mat-mdc-slide-toggle {
+  --mdc-switch-selected-handle-color: var(--brand2);
+  --mdc-switch-selected-track-color: rgba(57, 181, 74, 0.35);
+}
+
+/* FIX: le gros rond/chevauchement du slide-toggle (mobile + desktop) */
+:host ::ng-deep .mat-mdc-slide-toggle {
+  width: 100%;
+}
+:host ::ng-deep .mat-mdc-slide-toggle .mdc-form-field {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+:host ::ng-deep .mat-mdc-slide-toggle .mdc-switch {
+  margin: 0 !important;
+}
+:host ::ng-deep .mat-mdc-slide-toggle .mdc-label {
+  line-height: 1.2;
+  white-space: normal;
+}
+:host ::ng-deep .mat-mdc-slide-toggle .mdc-switch__track {
+  height: 20px;
+}
+:host ::ng-deep .mat-mdc-slide-toggle .mdc-switch__handle-track {
+  height: 20px;
+}
+
+.repeat-mode.disabled {
+  opacity: 0.7;
+  filter: grayscale(0.2);
+}
+
+.hint-card {
+  display: flex;
+  align-items: flex-start; /* ✅ mieux pour les textes longs */
+  gap: 10px;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(0, 159, 227, 0.06);
+  border: 1px solid rgba(0, 159, 227, 0.18);
+  color: var(--ink);
+
+  mat-icon {
+    color: var(--brand1);
+    opacity: 0.95;
+    margin-top: 1px; /* ✅ micro align */
+  }
+
+  b {
+    font-weight: 800;
+  }
+}
+
+.week {
+  margin-top: 8px;
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(57, 181, 74, 0.06);
+  border: 1px solid rgba(57, 181, 74, 0.18);
+}
+
+.week-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 8px;
+
+  mat-icon {
+    color: var(--brand2);
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.day {
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--ink);
+  transition: transform 0.06s ease, background 0.12s ease, border-color 0.12s ease;
+
+  &:hover {
+    border-color: rgba(0, 0, 0, 0.22);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.on {
+    border-color: rgba(0, 159, 227, 0.35);
+    background: rgba(0, 159, 227, 0.10);
+  }
+}
+
+.week-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: var(--muted);
+
+  mat-icon {
+    color: #d88500;
+  }
+}
+
+/* ----- Engrais (Fertilisation) ----- */
+.fert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.fert-row {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1fr)
+    minmax(110px, 150px)
+    minmax(90px, 110px)
+    44px;
+  gap: 10px;
+  align-items: center;
+
+  border-radius: 14px;
+  padding: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+}
+
+.fert-name mat-icon[matPrefix] {
+  color: var(--brand1);
+}
+
+.trash {
+  opacity: 0.85;
+}
+
+/* Bouton ajouter ligne: un peu plus “premium” */
+:host ::ng-deep .section-title button[mat-stroked-button] {
+  border-radius: 12px;
+  font-weight: 800;
+  border-color: rgba(0, 159, 227, 0.30);
+}
+
+/* Erreur globale */
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 0, 0, 0.06);
+  border: 1px solid rgba(255, 0, 0, 0.12);
+  color: #6a1a1a;
+
+  mat-icon {
+    opacity: 0.95;
+  }
+}
+
+/* Ajuste le look des cards dans le dialog (Mat content) */
+:host ::ng-deep .mat-mdc-dialog-content .section {
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
+}
+
+/* =========================================
+   RESPONSIVE CLEAN (sans doublons)
+   ========================================= */
+
+/* Tablette: tout en 1 colonne plus tôt */
+@media (max-width: 960px) {
+  .row--2 {
+    grid-template-columns: 1fr;
+  }
+
+  .repeat-head {
+    grid-template-columns: 1fr;
+  }
+
+  .repeat-mode {
+    width: 100%;
+  }
+}
+
+/* Mobile: engrais en layout compact et poubelle bien placée */
+@media (max-width: 720px) {
+  .fert-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "name name"
+      "qty unit"
+      ". trash";
+    gap: 10px;
+  }
+
+  .fert-name {
+    grid-area: name;
+  }
+  .fert-qty {
+    grid-area: qty;
+  }
+  .fert-unit {
+    grid-area: unit;
+  }
+  .trash {
+    grid-area: trash;
+    justify-self: end;
+  }
+}
+
+/* Très petit écran: actions en colonne */
+@media (max-width: 420px) {
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }

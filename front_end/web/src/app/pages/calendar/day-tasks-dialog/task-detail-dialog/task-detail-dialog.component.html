@@ -1,49 +1,244 @@
-<h2 mat-dialog-title>
+<h2 mat-dialog-title class="dlg-title">
   <mat-icon>assignment</mat-icon>
   Détails de la tâche
 </h2>
 
-<mat-dialog-content>
+<mat-dialog-content class="dlg-content">
   <form class="form">
-    <mat-form-field appearance="outline">
-      <mat-label>Titre</mat-label>
-      <input matInput [(ngModel)]="editing.title" name="title" required />
-    </mat-form-field>
+    <!-- 1) Infos -->
+    <div class="section">
+      <div class="section-title">
+        <mat-icon>edit</mat-icon>
+        <div>
+          <div class="ttl">Informations</div>
+          <div class="sub">Modifiez la tâche.</div>
+        </div>
+      </div>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Description</mat-label>
-      <textarea matInput rows="3" [(ngModel)]="editing.description" name="desc"></textarea>
-    </mat-form-field>
+      <div class="row row--2">
+        <mat-form-field appearance="outline">
+          <mat-label>Titre</mat-label>
+          <mat-icon matPrefix>title</mat-icon>
+          <input matInput [(ngModel)]="editing.title" name="title" required maxlength="200" />
+        </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Type</mat-label>
-      <mat-select [(ngModel)]="editing.type" name="type">
-        <mat-option value="WATER_CHANGE">Changement d’eau</mat-option>
-        <mat-option value="FERTILIZATION">Fertilisation</mat-option>
-        <mat-option value="TRIM">Taille / entretien</mat-option>
-        <mat-option value="WATER_TEST">Test de l’eau</mat-option>
-        <mat-option value="OTHER">Autre</mat-option>
-      </mat-select>
-    </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Type</mat-label>
+          <mat-icon matPrefix>category</mat-icon>
+          <mat-select [(ngModel)]="editing.type" name="type">
+            <mat-option value="WATER_CHANGE">Changement d’eau</mat-option>
+            <mat-option value="FERTILIZATION">Fertilisation</mat-option>
+            <mat-option value="TRIM">Taille / entretien</mat-option>
+            <mat-option value="WATER_TEST">Test de l’eau</mat-option>
+            <mat-option value="OTHER">Autre</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Date et heure</mat-label>
-      <input matInput type="datetime-local" [(ngModel)]="editing.dueAt" name="dueAt" />
-    </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Description</mat-label>
+        <mat-icon matPrefix>notes</mat-icon>
+        <textarea matInput rows="3" [(ngModel)]="editing.description" name="desc"></textarea>
+      </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Aquarium</mat-label>
-      <mat-select [(ngModel)]="selectedAquariumId" name="aquariumId">
-        <mat-option *ngFor="let aq of aquariums" [value]="aq.id">
-          {{ aq.name || ('Bac #' + aq.id) }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
+      <div class="row row--2">
+        <mat-form-field appearance="outline">
+          <mat-label>Date & heure</mat-label>
+          <mat-icon matPrefix>event</mat-icon>
+          <input matInput type="datetime-local" [(ngModel)]="editing.dueAtLocal" name="dueAt" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Aquarium</mat-label>
+          <mat-icon matPrefix>water</mat-icon>
+          <mat-select [(ngModel)]="selectedAquariumId" name="aquariumId">
+            <mat-option *ngFor="let aq of aquariums" [value]="aq.id">
+              {{ aq.name || ('Bac #' + aq.id) }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <mat-divider class="sep"></mat-divider>
+
+    <!-- 2) Répétition -->
+    <div class="section">
+      <div class="section-title">
+        <mat-icon>repeat</mat-icon>
+        <div>
+          <div class="ttl">Répétition</div>
+          <div class="sub">Activez une routine (avec fin).</div>
+        </div>
+      </div>
+
+      <div class="repeat-head">
+        <mat-slide-toggle [(ngModel)]="repeatOn" name="repeatOn">
+          Tâche répétitive
+        </mat-slide-toggle>
+
+        <mat-form-field appearance="outline" class="repeat-mode" [class.disabled]="!repeatOn">
+          <mat-label>Fréquence</mat-label>
+          <mat-icon matPrefix>schedule</mat-icon>
+          <mat-select [(ngModel)]="repeatMode" name="repeatMode" [disabled]="!repeatOn">
+            <mat-option value="DAILY">Tous les jours</mat-option>
+            <mat-option value="EVERY_2_DAYS">Tous les 2 jours</mat-option>
+            <mat-option value="WEEKLY">Toutes les semaines</mat-option>
+            <mat-option value="EVERY_X_WEEKS">Toutes les X semaines</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- ✅ Durée (toujours visible si répétition activée) -->
+      <div class="row row--2" *ngIf="repeatOn">
+        <mat-form-field appearance="outline">
+          <mat-label>Durée</mat-label>
+          <mat-icon matPrefix>hourglass_bottom</mat-icon>
+          <input
+            matInput
+            type="number"
+            [(ngModel)]="repeatDurationWeeks"
+            name="repeatDurationWeeks"
+            min="1"
+            max="260"
+          />
+          <span matSuffix>semaine(s)</span>
+        </mat-form-field>
+
+        <div class="hint-card">
+          <mat-icon>info</mat-icon>
+          <div>
+            La répétition commence à la <b>date/heure de la tâche</b> et s’arrête après cette durée.
+          </div>
+        </div>
+      </div>
+
+      <div class="row row--2" *ngIf="repeatOn && repeatMode === 'EVERY_X_WEEKS'">
+        <mat-form-field appearance="outline">
+          <mat-label>Répéter toutes les</mat-label>
+          <mat-icon matPrefix>calendar_month</mat-icon>
+          <input
+            matInput
+            type="number"
+            [(ngModel)]="repeatEveryWeeks"
+            name="repeatEveryWeeks"
+            min="2"
+            max="52"
+          />
+          <span matSuffix>semaines</span>
+        </mat-form-field>
+
+        <div class="hint-card">
+          <mat-icon>tips_and_updates</mat-icon>
+          <div><b>Exemple</b> : toutes les 2 semaines, chaque lundi.</div>
+        </div>
+      </div>
+
+      <div class="week" *ngIf="repeatOn && (repeatMode === 'WEEKLY' || repeatMode === 'EVERY_X_WEEKS')">
+        <div class="week-label">
+          <mat-icon>event</mat-icon>
+          <span>Jours</span>
+        </div>
+
+        <div class="chips">
+          <button
+            type="button"
+            class="day"
+            *ngFor="let d of weekDays"
+            [class.on]="isDaySelected(d.key)"
+            (click)="toggleDay(d.key)"
+          >
+            {{ d.label }}
+          </button>
+        </div>
+
+        <div class="week-note">
+          <mat-icon>info</mat-icon>
+          <span>Astuce : sélectionnez “Lun” pour “tous les lundis”.</span>
+        </div>
+      </div>
+    </div>
+
+    <mat-divider class="sep" *ngIf="editing.type === 'FERTILIZATION'"></mat-divider>
+
+    <!-- 3) Fertilisation -->
+    <div class="section" *ngIf="editing.type === 'FERTILIZATION'">
+      <div class="section-title">
+        <mat-icon>science</mat-icon>
+        <div>
+          <div class="ttl">Engrais</div>
+          <div class="sub">Modifiez les lignes d’engrais.</div>
+        </div>
+
+        <span class="spacer"></span>
+
+        <button mat-stroked-button type="button" (click)="addFertilizerLine()">
+          <mat-icon>add</mat-icon>
+          Ajouter
+        </button>
+      </div>
+
+      <div class="fert-list">
+        <div class="fert-row" *ngFor="let line of fertilization; let i = index; trackBy: trackByIndex">
+          <mat-form-field appearance="outline" class="fert-name">
+            <mat-label>Engrais</mat-label>
+            <mat-icon matPrefix>local_pharmacy</mat-icon>
+            <input matInput [(ngModel)]="line.name" [ngModelOptions]="{ standalone: true }" maxlength="40" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="fert-qty">
+            <mat-label>Quantité</mat-label>
+            <mat-icon matPrefix>straighten</mat-icon>
+            <input
+              matInput
+              type="number"
+              inputmode="decimal"
+              step="1"
+              min="0"
+              [(ngModel)]="line.qty"
+              [ngModelOptions]="{ standalone: true }"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="fert-unit">
+            <mat-label>Unité</mat-label>
+            <mat-select [(ngModel)]="line.unit" [ngModelOptions]="{ standalone: true }">
+              <mat-option value="ml">ml</mat-option>
+              <mat-option value="g">g</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button
+            mat-icon-button
+            type="button"
+            class="trash"
+            (click)="removeFertilizerLine(i)"
+            [disabled]="fertilization.length === 1"
+            matTooltip="Supprimer"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+
+        <div class="form-error" *ngIf="editing.type === 'FERTILIZATION' && !isFertilizationValid()">
+          <mat-icon>error</mat-icon>
+          <span>Ajoutez au moins une ligne valide (nom + quantité &gt; 0).</span>
+        </div>
+      </div>
+    </div>
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions>
-  <button mat-stroked-button (click)="cancel()">Fermer</button>
-  <button mat-stroked-button color="warn" (click)="delete()">Supprimer</button>
-  <button mat-flat-button color="primary" (click)="save()">Enregistrer</button>
+<mat-dialog-actions align="end" class="actions">
+  <button mat-button type="button" (click)="cancel()">Fermer</button>
+
+  <button mat-stroked-button color="warn" type="button" (click)="delete()">
+    <mat-icon>delete</mat-icon>
+    Supprimer
+  </button>
+
+  <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving">
+    <mat-icon>save</mat-icon>
+    Enregistrer
+  </button>
 </mat-dialog-actions>
