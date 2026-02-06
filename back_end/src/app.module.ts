@@ -14,6 +14,7 @@ import { FishCardsModule } from './catalog/fish-cards/fish-card.module';
 import { PlantCardsModule } from './catalog/plant-cards/plant-cards.module';
 import { ContactModule } from './contact/contact.module';
 import { ArticlesModule } from './articles/articles.module';
+import { SeoModule } from './seo/seo.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ArticlesModule } from './articles/articles.module';
     PlantCardsModule,
     ContactModule,
     ArticlesModule,
+    SeoModule,
   ],
 })
 export class AppModule {}

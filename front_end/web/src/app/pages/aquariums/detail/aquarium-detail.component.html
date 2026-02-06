@@ -6,7 +6,6 @@
   <h1 class="title-with-icon">
     Fiche aquarium
 
-    <!-- Bouton mobile : icône seule -->
     <button
       mat-icon-button
       class="settings-mobile"
@@ -19,7 +18,6 @@
     </button>
   </h1>
 
-  <!-- Bouton desktop : texte + icône -->
   <div class="actions">
     <button
       mat-stroked-button
@@ -66,7 +64,6 @@
   </div>
 </section>
 
-<!-- ========= Onglets ========= -->
 <mat-tab-group dynamicHeight class="tabs-group">
   <mat-tab label="Mesures">
     <div class="tab-section">
@@ -79,128 +76,61 @@
 
       <div class="mini-grid">
         <div class="mini-card">
-          <app-water-measurements-chart
-            [aquariumId]="id"
-            [waterType]="waterType"
-            metric="ph"
-          ></app-water-measurements-chart>
+          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="ph" />
         </div>
         <div class="mini-card">
-          <app-water-measurements-chart
-            [aquariumId]="id"
-            [waterType]="waterType"
-            metric="temp"
-          ></app-water-measurements-chart>
+          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="temp" />
         </div>
         <div class="mini-card">
-          <app-water-measurements-chart
-            [aquariumId]="id"
-            [waterType]="waterType"
-            metric="no2"
-          ></app-water-measurements-chart>
+          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no2" />
         </div>
         <div class="mini-card">
-          <app-water-measurements-chart
-            [aquariumId]="id"
-            [waterType]="waterType"
-            metric="no3"
-          ></app-water-measurements-chart>
+          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no3" />
         </div>
 
-        <!-- Eau douce -->
         <ng-container *ngIf="waterType === 'EAU_DOUCE'">
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="kh"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="kh" />
           </div>
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="gh"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="gh" />
           </div>
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="co2"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="co2" />
           </div>
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="po4"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="po4" />
           </div>
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="fe"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="fe" />
           </div>
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="k"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="k" />
           </div>
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="sio2"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="sio2" />
           </div>
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="nh3"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="nh3" />
           </div>
         </ng-container>
 
-        <!-- Eau de mer -->
         <ng-container *ngIf="waterType === 'EAU_DE_MER'">
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="dkh"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="dkh" />
           </div>
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="sal"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="sal" />
           </div>
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="ca"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="ca" />
           </div>
           <div class="mini-card">
-            <app-water-measurements-chart
-              [aquariumId]="id"
-              [waterType]="waterType"
-              metric="mg"
-            ></app-water-measurements-chart>
+            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="mg" />
           </div>
         </ng-container>
       </div>
 
-      <!-- ================= Historique des mesures ================= -->
       <section class="history" *ngIf="!loading">
         <div class="history-header">
           <h2>Historique des mesures</h2>
@@ -217,59 +147,61 @@
 
         <div class="history-table-wrapper">
           <table mat-table [dataSource]="displayedMeasurements" class="mat-elevation-z0">
-            <!-- Date -->
             <ng-container matColumnDef="measuredAt">
               <th mat-header-cell *matHeaderCellDef>Date</th>
-              <td mat-cell *matCellDef="let m">
-                {{ m.measuredAt | date: 'medium' }}
-              </td>
+              <td mat-cell *matCellDef="let m">{{ m.measuredAt | date: 'medium' }}</td>
             </ng-container>
 
-            <!-- Colonnes communes -->
             <ng-container matColumnDef="ph">
               <th mat-header-cell *matHeaderCellDef>pH</th>
               <td mat-cell *matCellDef="let m">{{ m.ph ?? '—' }}</td>
             </ng-container>
+
             <ng-container matColumnDef="temp">
               <th mat-header-cell *matHeaderCellDef>Temp (°C)</th>
               <td mat-cell *matCellDef="let m">{{ m.temp ?? '—' }}</td>
             </ng-container>
+
             <ng-container matColumnDef="no2">
               <th mat-header-cell *matHeaderCellDef>NO₂</th>
               <td mat-cell *matCellDef="let m">{{ m.no2 ?? '—' }}</td>
             </ng-container>
+
             <ng-container matColumnDef="no3">
               <th mat-header-cell *matHeaderCellDef>NO₃</th>
               <td mat-cell *matCellDef="let m">{{ m.no3 ?? '—' }}</td>
             </ng-container>
 
-            <!-- Eau douce -->
             <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="kh">
               <th mat-header-cell *matHeaderCellDef>KH</th>
               <td mat-cell *matCellDef="let m">{{ m.kh ?? '—' }}</td>
             </ng-container>
+
             <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="gh">
               <th mat-header-cell *matHeaderCellDef>GH</th>
               <td mat-cell *matCellDef="let m">{{ m.gh ?? '—' }}</td>
             </ng-container>
+
             <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="po4">
               <th mat-header-cell *matHeaderCellDef>PO₄</th>
               <td mat-cell *matCellDef="let m">{{ m.po4 ?? '—' }}</td>
             </ng-container>
+
             <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="fe">
               <th mat-header-cell *matHeaderCellDef>Fe</th>
               <td mat-cell *matCellDef="let m">{{ m.fe ?? '—' }}</td>
             </ng-container>
+
             <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="k">
               <th mat-header-cell *matHeaderCellDef>K</th>
               <td mat-cell *matCellDef="let m">{{ m.k ?? '—' }}</td>
             </ng-container>
 
-            <!-- Eau de mer -->
             <ng-container *ngIf="waterType === 'EAU_DE_MER'" matColumnDef="dkh">
               <th mat-header-cell *matHeaderCellDef>dKH</th>
               <td mat-cell *matCellDef="let m">{{ m.dkh ?? '—' }}</td>
             </ng-container>
+
             <ng-container *ngIf="waterType === 'EAU_DE_MER'" matColumnDef="salinity">
               <th mat-header-cell *matHeaderCellDef>Salinité</th>
               <td mat-cell *matCellDef="let m">{{ m.salinity ?? '—' }}</td>
@@ -278,11 +210,7 @@
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let m">
-                <button
-                  mat-icon-button
-                  color="warn"
-                  (click)="deleteMeasurement(m.id)"
-                >
+                <button mat-icon-button color="warn" (click)="deleteMeasurement(m.id)">
                   <mat-icon>delete</mat-icon>
                 </button>
               </td>
@@ -300,32 +228,123 @@
     </div>
   </mat-tab>
 
-  <mat-tab label="Espèces">
+  <mat-tab label="Dans mon Aquarium">
     <div class="tab-section">
       <div class="tab-actions">
-        <button mat-raised-button (click)="addSpecies()">
+        <button mat-raised-button (click)="openAddDialog()">
           <mat-icon>add</mat-icon>
-          <span>Ajouter une espèce</span>
+          <span>Ajouter</span>
         </button>
       </div>
 
-      <mat-list *ngIf="species.length; else emptySpecies">
-        <mat-list-item *ngFor="let s of species; let i = index">
-          <div matListItemTitle>{{ s.name }}</div>
-          <div matListItemLine>Quantité : {{ s.count }}</div>
+      <!-- ===== FISH GRID ===== -->
+      <h3 class="section-title">Poissons / Vivants</h3>
+
+      <div class="items-grid" *ngIf="fishInTank.length; else emptyFish">
+        <a
+          class="item-card item-card--link"
+          *ngFor="let r of fishInTank"
+          [routerLink]="fishDetailsLink(r.fishCard.id)"
+        >
+          <div class="thumb" *ngIf="fishImageUrl(r); else fishPh">
+            <img [src]="fishImageUrl(r)!" [alt]="r.fishCard.commonName" loading="lazy" />
+          </div>
+          <ng-template #fishPh>
+            <div class="thumb placeholder"><mat-icon>pets</mat-icon></div>
+          </ng-template>
+
+          <div class="body">
+            <div class="top">
+              <div class="name">{{ r.fishCard.commonName }}</div>
+
+              <div class="right">
+                <div class="qty">x{{ r.count }}</div>
+                <mat-icon class="chev" aria-hidden="true">chevron_right</mat-icon>
+              </div>
+            </div>
+
+            <div class="sub" *ngIf="r.fishCard.scientificName">
+              {{ r.fishCard.scientificName }}
+            </div>
+
+            <div
+              class="params"
+              *ngIf="
+                r.fishCard.tempMin != null || r.fishCard.tempMax != null ||
+                r.fishCard.phMin != null || r.fishCard.phMax != null ||
+                r.fishCard.khMin != null || r.fishCard.khMax != null
+              "
+            >
+              <span class="chip" *ngIf="r.fishCard.tempMin != null || r.fishCard.tempMax != null">
+                Temp <b>{{ r.fishCard.tempMin ?? '—' }}–{{ r.fishCard.tempMax ?? '—' }}°C</b>
+              </span>
+
+              <span class="chip" *ngIf="r.fishCard.phMin != null || r.fishCard.phMax != null">
+                pH <b>{{ r.fishCard.phMin ?? '—' }}–{{ r.fishCard.phMax ?? '—' }}</b>
+              </span>
+
+              <span class="chip" *ngIf="r.fishCard.khMin != null || r.fishCard.khMax != null">
+                KH <b>{{ r.fishCard.khMin ?? '—' }}–{{ r.fishCard.khMax ?? '—' }}</b>
+              </span>
+            </div>
+
+            <div class="cta">
+              <span>Voir la fiche</span>
+              <mat-icon aria-hidden="true">open_in_new</mat-icon>
+            </div>
+          </div>
+
           <button
             mat-icon-button
             color="warn"
-            (click)="removeSpecies(i)"
+            class="trash"
+            (click)="onRemoveFishClick($event, r.id)"
             aria-label="Supprimer"
           >
             <mat-icon>delete</mat-icon>
           </button>
-        </mat-list-item>
-      </mat-list>
+        </a>
+      </div>
 
-      <ng-template #emptySpecies>
-        <p class="empty-species">Aucune espèce enregistrée pour le moment.</p>
+      <ng-template #emptyFish>
+        <p class="empty-species">Aucun poisson/vivant enregistré.</p>
+      </ng-template>
+
+      <!-- ===== PLANTS GRID (inchangé visuellement) ===== -->
+      <h3 class="section-title section-title--spaced">Plantes</h3>
+
+      <div class="items-grid" *ngIf="plantsInTank.length; else emptyPlants">
+        <a class="item-card" *ngFor="let r of plantsInTank" [routerLink]="plantDetailsLink(r.plantCard.id)">
+          <div class="thumb" *ngIf="r.plantCard.imageUrl; else plantPh">
+            <img [src]="r.plantCard.imageUrl!" alt="" />
+          </div>
+          <ng-template #plantPh>
+            <div class="thumb placeholder"><mat-icon>eco</mat-icon></div>
+          </ng-template>
+
+          <div class="body">
+            <div class="top">
+              <div class="name">{{ r.plantCard.commonName }}</div>
+              <div class="qty">x{{ r.count }}</div>
+            </div>
+            <div class="sub" *ngIf="r.plantCard.scientificName">{{ r.plantCard.scientificName }}</div>
+            <div class="hint">Clique pour ouvrir la fiche</div>
+          </div>
+
+          <button
+            mat-icon-button
+            color="warn"
+            class="trash"
+            (click)="onRemovePlantClick($event, r.id)"
+            aria-label="Supprimer"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </a>
+      </div>
+
+      <ng-template #emptyPlants>
+        <p class="empty-species">Aucune plante enregistrée.</p>
       </ng-template>
     </div>
   </mat-tab>

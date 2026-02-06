@@ -14,5 +14,6 @@ import { ArticleUniqueView } from './entities/article-unique-view.entity';
   imports: [TypeOrmModule.forFeature([Article, Theme, ArticleViewDaily, ArticleUniqueView])],
   providers: [ArticlesService],
   controllers: [ArticlesPublicController, ArticlesAdminController],
+  exports: [ArticlesService], // ✅ AJOUTE ÇA
 })
 export class ArticlesModule {}

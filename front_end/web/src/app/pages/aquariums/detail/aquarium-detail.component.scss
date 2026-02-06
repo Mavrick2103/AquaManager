@@ -1,3 +1,5 @@
+/* aquarium-detail.component.scss */
+
 :root {
   --aqua: #009fe3;
   --green: #39b54a;
@@ -51,7 +53,6 @@
     display: block;
   }
 
-  /* ===== Titre + icône mobile ===== */
   .title-with-icon {
     margin: 0;
     font-weight: 800;
@@ -67,21 +68,16 @@
     gap: 8px;
 
     .settings-mobile {
-      display: none; /* masqué sur PC */
+      display: none;
     }
   }
 
-  /* ===== Gros bouton desktop ===== */
   .actions {
     display: inline-flex;
     gap: 10px;
     justify-self: end;
   }
 }
-
-/* =========================================
-   Toolbar responsive
-========================================= */
 
 @media (max-width: 768px) {
   :host {
@@ -92,7 +88,6 @@
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto;
     row-gap: 8px;
-    align-items: center;
 
     .logo {
       height: 72px;
@@ -104,13 +99,11 @@
       font-size: 1.1rem;
     }
 
-    /* ===== Activer la roue crantée mobile ===== */
     .title-with-icon .settings-mobile {
       display: inline-flex;
       margin-left: 6px;
     }
 
-    /* ===== Cacher le gros bouton ===== */
     .actions {
       display: none;
     }
@@ -118,7 +111,7 @@
 }
 
 /* =========================================
-   Hero (bandeau résumé)
+   Hero
 ========================================= */
 
 .hero {
@@ -199,7 +192,6 @@
   }
 }
 
-/* Hero responsive */
 @media (max-width: 900px) {
   .hero {
     grid-template-columns: 1fr;
@@ -231,7 +223,7 @@
 }
 
 /* =========================================
-   Onglets
+   Tabs
 ========================================= */
 
 .tabs-group {
@@ -271,7 +263,7 @@
 }
 
 /* =========================================
-   Graphiques
+   Charts
 ========================================= */
 
 .mini-grid {
@@ -294,7 +286,7 @@
 }
 
 /* =========================================
-   Historique des mesures
+   Measurements history
 ========================================= */
 
 .history {
@@ -355,8 +347,16 @@
 }
 
 /* =========================================
-   Espèces
+   Species / Plants
 ========================================= */
+
+.section-title {
+  margin: 8px 0 6px;
+}
+
+.section-title--spaced {
+  margin: 14px 0 6px;
+}
 
 .empty-species {
   opacity: 0.7;
@@ -371,4 +371,203 @@
   display: grid;
   place-items: center;
   padding: 60px 0;
+}
+
+/* =========================================
+   Cards (Fish / Plants)
+========================================= */
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .items-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === base card === */
+.item-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 14px;
+  align-items: center;
+
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  text-decoration: none;
+  color: inherit;
+
+  background:
+    radial-gradient(700px 280px at 0% 0%, rgba(0, 159, 227, 0.08), transparent 55%),
+    linear-gradient(180deg, #ffffff, #fbfeff);
+  box-shadow: var(--shadow-md);
+
+  transform: translateZ(0);
+  will-change: transform;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.item-card:hover {
+  transform: translateZ(0) scale(1.01);
+  border-color: rgba(0, 159, 227, 0.35);
+  box-shadow: var(--shadow-lg);
+}
+
+/* thumb */
+.item-card .thumb {
+  height: 56px;
+  width: 56px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f6f7f8;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: grid;
+  place-items: center;
+}
+
+.item-card .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-card .thumb.placeholder mat-icon {
+  opacity: 0.55;
+}
+
+/* body */
+.item-card .body {
+  min-width: 0;
+}
+
+.item-card .top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.item-card .name {
+  font-weight: 900;
+  font-size: 1.02rem;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-card .right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-card .qty {
+  font-weight: 900;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(0, 159, 227, 0.12);
+  color: var(--aqua);
+  flex: 0 0 auto;
+}
+
+.item-card .go {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  opacity: 0.45;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.item-card:hover .go {
+  opacity: 0.8;
+  transform: translateX(2px);
+}
+
+.item-card .sub {
+  margin-top: 4px;
+  opacity: 0.7;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* params chips */
+.item-card .params {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.item-card .params .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 0.82rem;
+  color: rgba(0, 0, 0, 0.72);
+}
+
+.item-card .params .chip b {
+  font-weight: 900;
+  color: var(--dark);
+}
+
+/* hint */
+.item-card .hint {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  opacity: 0.65;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-card .hint .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+/* trash (kept, not the focus) */
+.item-card .trash {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, transform 120ms ease, border-color 120ms ease;
+}
+
+.item-card .trash mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+}
+
+.item-card:hover .trash {
+  background: rgba(220, 53, 69, 0.10);
+  border-color: rgba(220, 53, 69, 0.18);
+  transform: scale(1.05);
+}
+
+.item-card .trash:active {
+  transform: scale(0.96);
 }

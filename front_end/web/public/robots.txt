@@ -1,6 +1,12 @@
 User-agent: *
 Allow: /
 
+Disallow: /register
+Disallow: /auth/
+Disallow: /aquariums
+Disallow: /calendar
+Disallow: /profile
+Disallow: /admin
 Disallow: /assets/
 
 Sitemap: https://aquamanager.fr/sitemap.xml

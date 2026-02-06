@@ -1,0 +1,126 @@
+<div class="dlg">
+  <!-- Header -->
+  <div class="dlg__header">
+    <div class="dlg__title">
+      <mat-icon class="dlg__title-ico">add_circle</mat-icon>
+      <div>
+        <div class="dlg__h1">Ajouter au bac</div>
+        <div class="dlg__sub">Recherche → sélection → quantité → ajouter</div>
+      </div>
+    </div>
+
+    <button mat-icon-button type="button" (click)="close()" aria-label="Fermer">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <mat-tab-group class="dlg__tabs" (selectedIndexChange)="onTabChange($event)">
+    <mat-tab label="Poissons / Vivants"></mat-tab>
+    <mat-tab label="Plantes"></mat-tab>
+  </mat-tab-group>
+
+  <!-- Search -->
+  <div class="dlg__search">
+    <mat-form-field appearance="outline" class="dlg__search-field">
+      <mat-label>Rechercher</mat-label>
+      <input
+        matInput
+        [formControl]="form.controls.search"
+        placeholder="Ex: CPO, Néon, Anubias…"
+        autocomplete="off"
+      />
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        (click)="form.patchValue({ search: '' })"
+        aria-label="Effacer"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <div class="dlg__hint" *ngIf="!loading && !(form.value.search?.trim() || '')">
+      Tape quelques lettres pour afficher des résultats.
+    </div>
+
+    <div class="dlg__loading" *ngIf="loading">
+      <mat-progress-spinner diameter="20"></mat-progress-spinner>
+      <span>Recherche…</span>
+    </div>
+
+    <div class="dlg__empty" *ngIf="!loading && (form.value.search?.trim() || '') && !items().length">
+      Aucun résultat.
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="list" *ngIf="!loading && items().length">
+    <ng-container *ngFor="let it of items(); trackBy: trackById">
+      <!-- Row -->
+      <button type="button" class="row" [class.row--active]="isSelected(it.id)" (click)="select(it)">
+        <div class="row__thumb" *ngIf="it.imgUrl; else ph">
+          <img [src]="it.imgUrl" [alt]="it.commonName" loading="lazy" />
+        </div>
+
+        <ng-template #ph>
+          <div class="row__thumb row__thumb--ph">
+            <mat-icon>{{ currentKind() === 'FISH' ? 'pets' : 'eco' }}</mat-icon>
+          </div>
+        </ng-template>
+
+        <div class="row__main">
+          <div class="row__title">
+            <span class="row__name">{{ it.commonName }}</span>
+            <span class="row__sci" *ngIf="it.scientificName">— {{ it.scientificName }}</span>
+          </div>
+
+          <div class="row__chips" *ngIf="it.chips.length">
+            <span class="chip" *ngFor="let c of it.chips">{{ c }}</span>
+          </div>
+        </div>
+
+        <div class="row__end">
+          <button
+            mat-icon-button
+            type="button"
+            class="row__link"
+            aria-label="Voir la fiche"
+            (click)="$event.stopPropagation(); openDetails(currentKind(), it.id)"
+          >
+            <mat-icon>open_in_new</mat-icon>
+          </button>
+          <mat-icon class="row__chev">chevron_right</mat-icon>
+        </div>
+      </button>
+
+      <!-- Inline actions -->
+      <div class="inline" *ngIf="isSelected(it.id)">
+        <div class="inline__left">
+          <div class="inline__label">Quantité</div>
+
+          <div class="stepper">
+            <button mat-stroked-button type="button" (click)="dec()">
+              <mat-icon>remove</mat-icon>
+            </button>
+
+            <div class="stepper__val">{{ form.value.count }}</div>
+
+            <button mat-stroked-button type="button" (click)="inc()">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="inline__right">
+          <button mat-stroked-button type="button" (click)="close()">Annuler</button>
+          <button mat-raised-button color="primary" type="button" (click)="confirmSelected()">
+            <mat-icon>add</mat-icon>
+            Ajouter
+          </button>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>

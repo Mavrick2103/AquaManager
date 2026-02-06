@@ -27,6 +27,7 @@ import { AquariumsService, Aquarium } from '../../../core/aquariums.service';
 import { WaterMeasurementsChartComponent } from './chart/chart.component';
 import { MeasurementDialogComponent } from './measurement-dialog.component';
 import { EditAquariumDialogComponent } from './edit-aquarium-dialog.component';
+import { AquariumAddItemDialogComponent } from './dialog_ajout/aquarium-add-item-dialog.component';
 
 type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER';
 
@@ -34,12 +35,10 @@ export interface WaterMeasurement {
   id: number;
   aquariumId: number;
   measuredAt: string;
-  // commun
   ph?: number | null;
   temp?: number | null;
   no2?: number | null;
   no3?: number | null;
-  // douce
   kh?: number | null;
   gh?: number | null;
   co2?: number | null;
@@ -48,47 +47,93 @@ export interface WaterMeasurement {
   k?: number | null;
   sio2?: number | null;
   nh3?: number | null;
-  // mer
   dkh?: number | null;
   salinity?: number | null;
   ca?: number | null;
   mg?: number | null;
 }
 
+type AquariumFishRow = {
+  id: number;
+  aquariumId: number;
+  count: number;
+  fishCard: {
+    id: number;
+    commonName: string;
+    scientificName?: string | null;
+    imageUrl?: string | null;
+
+    tempMin?: number | null;
+    tempMax?: number | null;
+    phMin?: number | null;
+    phMax?: number | null;
+    khMin?: number | null;
+    khMax?: number | null;
+  };
+};
+
+type AquariumPlantRow = {
+  id: number;
+  aquariumId: number;
+  count: number;
+  plantCard: { id: number; commonName: string; scientificName?: string | null; imageUrl?: string | null };
+};
+
 @Component({
   selector: 'app-aquarium-detail',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, RouterLink,
-    MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatSnackBarModule, MatDividerModule,
-    MatProgressSpinnerModule, MatChipsModule, MatDialogModule,
-    MatTabsModule, MatListModule, MatMenuModule, MatTableModule,
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatIconModule,
+    MatSnackBarModule,
+    MatDividerModule,
+    MatProgressSpinnerModule,
+    MatChipsModule,
+    MatDialogModule,
+    MatTabsModule,
+    MatListModule,
+    MatMenuModule,
+    MatTableModule,
+
     WaterMeasurementsChartComponent,
   ],
   templateUrl: './aquarium-detail.component.html',
   styleUrls: ['./aquarium-detail.component.scss'],
 })
 export class AquariumDetailComponent implements OnInit {
-  private route  = inject(ActivatedRoute);
-  private api    = inject(AquariumsService);
-  private http   = inject(HttpClient);
-  private fb     = inject(FormBuilder);
-  private snack  = inject(MatSnackBar);
+  private route = inject(ActivatedRoute);
+  private api = inject(AquariumsService);
+  private http = inject(HttpClient);
+  private fb = inject(FormBuilder);
+  private snack = inject(MatSnackBar);
   private router = inject(Router);
   private dialog = inject(MatDialog);
 
+  /** ✅ Origin API sans /api (car tes uploads sont servis sur /uploads hors /api) */
+  private readonly apiOrigin = (environment.apiUrl || '')
+    .replace(/\/$/, '')
+    .replace(/\/api$/, '')
+    .replace(/\/api\/$/, '');
+
   id!: number;
   loading = true;
-  saving  = false;
+  saving = false;
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(255)]],
     lengthCm: [0, [Validators.required, Validators.min(1)]],
-    widthCm:  [0, [Validators.required, Validators.min(1)]],
+    widthCm: [0, [Validators.required, Validators.min(1)]],
     heightCm: [0, [Validators.required, Validators.min(1)]],
     waterType: ['EAU_DOUCE' as WaterType, Validators.required],
-    startDate: [''], // ISO yyyy-MM-dd
+    startDate: [''],
   });
 
   measurements: WaterMeasurement[] = [];
@@ -97,14 +142,15 @@ export class AquariumDetailComponent implements OnInit {
   selectedLimit = 5;
   displayedMeasurements: WaterMeasurement[] = [];
 
+  fishInTank: AquariumFishRow[] = [];
+  plantsInTank: AquariumPlantRow[] = [];
+
   get displayedColumns(): string[] {
     const base = ['measuredAt', 'ph', 'temp', 'no2', 'no3'];
     const douce = ['kh', 'gh', 'po4', 'fe', 'k'];
     const mer = ['dkh', 'salinity'];
     return [...base, ...(this.waterType === 'EAU_DOUCE' ? douce : mer), 'actions'];
   }
-
-  species: { name: string; count: number }[] = [];
 
   async ngOnInit() {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
@@ -113,8 +159,24 @@ export class AquariumDetailComponent implements OnInit {
       this.router.navigate(['/aquariums']);
       return;
     }
+
     await this.load();
     await this.loadMeasurements();
+    await this.loadTankItems();
+  }
+
+  /** ✅ Construit l’URL d’image */
+  fishImageUrl(row: AquariumFishRow): string | null {
+    const p = row?.fishCard?.imageUrl?.trim();
+    if (!p) return null;
+
+    // déjà absolu
+    if (/^https?:\/\//i.test(p)) return p;
+
+    // p = "/uploads/..."
+    if (p.startsWith('/')) return `${this.apiOrigin}${p}`;
+
+    return `${this.apiOrigin}/${p}`;
   }
 
   async load() {
@@ -171,13 +233,13 @@ export class AquariumDetailComponent implements OnInit {
     }
   }
 
-  // ==== Dialog Mesures ====
   openMeasurementDialog() {
     const wt = this.waterType;
     const ref = this.dialog.open(MeasurementDialogComponent, {
       width: '720px',
       data: { aquariumId: this.id, type: wt },
     });
+
     ref.afterClosed().subscribe(async (saved: boolean) => {
       if (saved) {
         this.snack.open('Paramètres enregistrés ✅', 'OK', { duration: 2000 });
@@ -187,18 +249,15 @@ export class AquariumDetailComponent implements OnInit {
   }
 
   applyLimit() {
-    if (this.selectedLimit === 0) {
-      this.displayedMeasurements = this.measurements;
-    } else {
-      this.displayedMeasurements = this.measurements.slice(0, this.selectedLimit);
-    }
+    this.displayedMeasurements =
+      this.selectedLimit === 0 ? this.measurements : this.measurements.slice(0, this.selectedLimit);
   }
 
   async loadMeasurements() {
     try {
       const url = `${environment.apiUrl}/aquariums/${this.id}/measurements`;
       const res = await firstValueFrom(this.http.get<WaterMeasurement[]>(url));
-      this.measurements = [...res].sort(
+      this.measurements = [...(res ?? [])].sort(
         (a, b) => new Date(b.measuredAt).getTime() - new Date(a.measuredAt).getTime()
       );
       this.applyLimit();
@@ -223,20 +282,95 @@ export class AquariumDetailComponent implements OnInit {
     await this.loadMeasurements();
   }
 
-  // ==== Espèces (local / provisoire) ====
-  addSpecies() {
-    const name = (window.prompt('Nom de l’espèce :') || '').trim();
-    if (!name) return;
-    const countStr = window.prompt('Quantité :') || '1';
-    const count = Math.max(1, Number(countStr) || 1);
-    this.species = [...this.species, { name, count }];
+  async loadTankItems() {
+    try {
+      const fishUrl = `${environment.apiUrl}/aquariums/${this.id}/fish`;
+      const plantUrl = `${environment.apiUrl}/aquariums/${this.id}/plants`;
+
+      const [fish, plants] = await Promise.all([
+        firstValueFrom(this.http.get<AquariumFishRow[]>(fishUrl)),
+        firstValueFrom(this.http.get<AquariumPlantRow[]>(plantUrl)),
+      ]);
+
+      this.fishInTank = fish ?? [];
+      this.plantsInTank = plants ?? [];
+    } catch {
+      this.snack.open('Erreur lors du chargement des espèces/plantes', 'Fermer', { duration: 3000 });
+    }
   }
 
-  removeSpecies(i: number) {
-    this.species = this.species.filter((_, idx) => idx !== i);
+  fishDetailsLink(cardId: number): any[] {
+    return ['/fish-cards', cardId];
   }
 
-  // ==== Dialog “Modifier l’aquarium” ====
+  plantDetailsLink(cardId: number): any[] {
+    return ['/plant-cards', cardId];
+  }
+
+  onRemoveFishClick(ev: MouseEvent, rowId: number) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.removeFishRow(rowId);
+  }
+
+  onRemovePlantClick(ev: MouseEvent, rowId: number) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.removePlantRow(rowId);
+  }
+
+  openAddDialog() {
+    const ref = this.dialog.open(AquariumAddItemDialogComponent, {
+      width: '720px',
+      data: { aquariumId: this.id },
+      autoFocus: false,
+      restoreFocus: false,
+    });
+
+    ref.afterClosed().subscribe(
+      async (res: null | { kind: 'FISH' | 'PLANT'; cardId: number; count: number }) => {
+        if (!res) return;
+
+        try {
+          if (res.kind === 'FISH') {
+            const url = `${environment.apiUrl}/aquariums/${this.id}/fish`;
+            await firstValueFrom(this.http.post(url, { cardId: res.cardId, count: res.count }));
+          } else {
+            const url = `${environment.apiUrl}/aquariums/${this.id}/plants`;
+            await firstValueFrom(this.http.post(url, { cardId: res.cardId, count: res.count }));
+          }
+
+          this.snack.open('Ajouté ✅', 'OK', { duration: 1800 });
+          await this.loadTankItems();
+        } catch {
+          this.snack.open("Échec de l'ajout", 'Fermer', { duration: 2500 });
+        }
+      }
+    );
+  }
+
+  async removeFishRow(rowId: number) {
+    if (!confirm('Supprimer cet élément ?')) return;
+    try {
+      const url = `${environment.apiUrl}/aquariums/${this.id}/fish/${rowId}`;
+      await firstValueFrom(this.http.delete(url));
+      await this.loadTankItems();
+    } catch {
+      this.snack.open('Suppression impossible', 'Fermer', { duration: 2500 });
+    }
+  }
+
+  async removePlantRow(rowId: number) {
+    if (!confirm('Supprimer cet élément ?')) return;
+    try {
+      const url = `${environment.apiUrl}/aquariums/${this.id}/plants/${rowId}`;
+      await firstValueFrom(this.http.delete(url));
+      await this.loadTankItems();
+    } catch {
+      this.snack.open('Suppression impossible', 'Fermer', { duration: 2500 });
+    }
+  }
+
   openEditDialog() {
     const v = this.form.getRawValue();
 
@@ -257,13 +391,11 @@ export class AquariumDetailComponent implements OnInit {
     ref.afterClosed().subscribe(async (result) => {
       if (!result) return;
 
-      // click sur "Supprimer" dans le dialog
       if (result.delete === true) {
         await this.remove();
         return;
       }
 
-      // sinon, mise à jour : on colle les valeurs puis on sauvegarde
       this.form.patchValue({
         name: result.name,
         waterType: result.waterType,
@@ -272,6 +404,7 @@ export class AquariumDetailComponent implements OnInit {
         heightCm: Number(result.heightCm) || 0,
         startDate: result.startDate ?? '',
       });
+
       await this.save();
     });
   }
