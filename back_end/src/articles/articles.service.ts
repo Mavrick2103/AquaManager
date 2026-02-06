@@ -42,19 +42,19 @@ export class ArticlesService {
   }
 
   async listPublishedSlugsForSitemap(): Promise<Array<{ slug: string; lastmod: string }>> {
-  // ⚠️ adapte les champs selon ton entity (isPublished/status/publishedAt)
   const rows = await this.articleRepo
     .createQueryBuilder('a')
     .select(['a.slug AS slug', 'a.updatedAt AS updatedAt'])
-    .where('a.isPublished = :pub', { pub: true })
+    .where('a.status = :status', { status: 'PUBLISHED' })
     .andWhere('a.slug IS NOT NULL')
     .getRawMany<{ slug: string; updatedAt: Date }>();
 
   return rows.map((r) => ({
     slug: r.slug,
-    lastmod: new Date(r.updatedAt).toISOString().slice(0, 10), // YYYY-MM-DD
+    lastmod: new Date(r.updatedAt).toISOString().slice(0, 10),
   }));
 }
+
 
   private async ensureUniqueSlug(base: string, ignoreId?: number): Promise<string> {
     let slug = base || 'article';
