@@ -236,7 +236,7 @@ describe('Tasks (tests fonctionnels)', () => {
     repo.save.mockImplementation(async (t: any) => t);
 
     const dto = {
-      title: 'Nouveau titre',
+      title: 'Test de l’eau',
       description: 'Nouvelle description',
       dueAt: '2025-01-20T15:00:00.000Z',
       status: TaskStatus.DONE,
@@ -255,7 +255,7 @@ describe('Tasks (tests fonctionnels)', () => {
     expect(res).toEqual(
       expect.objectContaining({
         id: '7',
-        title: 'Nouveau titre',
+        title: 'Test de l’eau',
         description: 'Nouvelle description',
         status: TaskStatus.DONE,
         type: TaskType.WATER_TEST,

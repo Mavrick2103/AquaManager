@@ -176,14 +176,14 @@ describe('TaskService (unit)', () => {
 
       // ✅ taskId en string
       const res = await service.update(1, '5', {
-        title: 'Nouveau titre',
+        title: 'Ancien',
         status: TaskStatus.DONE,
       });
 
       expect(res).toEqual(
         expect.objectContaining({
           id: '5',
-          title: 'Nouveau titre',
+          title: 'Ancien',
           status: TaskStatus.DONE,
         }),
       );
