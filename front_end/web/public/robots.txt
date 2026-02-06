@@ -9,4 +9,4 @@ Disallow: /profile
 Disallow: /admin
 Disallow: /assets/
 
-Sitemap: https://aquamanager.fr/sitemap.xml
+Sitemap: https://aquamanager.fr/api/sitemap.xml
