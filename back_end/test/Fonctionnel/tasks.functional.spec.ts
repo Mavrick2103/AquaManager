@@ -136,58 +136,72 @@ describe('Tasks (tests fonctionnels)', () => {
   });
 
   it('create() -> crée une tâche pour un aquarium appartenant au user', async () => {
-    aqRepo.findOne.mockResolvedValue({
-      id: 5,
-      user: { id: 1 },
-    } as any);
+  aqRepo.findOne.mockResolvedValue({
+    id: 5,
+    user: { id: 1 },
+  } as any);
 
-    repo.create.mockImplementation((partial: any) => partial as any);
+  repo.create.mockImplementation((partial: any) => partial as any);
 
-    // ✅ Le service mappe à la fin => il faut que save renvoie un objet avec id + dueAt Date
-    repo.save.mockImplementation(async (t: any) => ({
-      ...t,
-      id: 10,
-      dueAt: t.dueAt instanceof Date ? t.dueAt : new Date(t.dueAt),
-    }));
+  // save renvoie un truc, ok, MAIS ton service refait sûrement un findOne derrière
+  repo.save.mockImplementation(async (t: any) => ({
+    ...t,
+    id: 10,
+    dueAt: t.dueAt instanceof Date ? t.dueAt : new Date(t.dueAt),
+  }));
 
-    const dto = {
+  // ✅ IMPORTANT : ton service fait très probablement un repo.findOne(...) après save
+  repo.findOne.mockResolvedValue({
+    id: 10,
+    title: 'Changement d’eau',
+    description: '30 % du volume',
+    dueAt: new Date('2025-01-15T10:00:00.000Z'),
+    status: TaskStatus.PENDING,
+    type: TaskType.WATER_CHANGE,
+    aquarium: { id: 5 },
+    user: { id: 1 },
+    fertilizers: [],
+  } as any);
+
+  const dto = {
+    title: 'Changement d’eau',
+    description: '30 % du volume',
+    dueAt: '2025-01-15T10:00:00.000Z',
+    aquariumId: 5,
+    type: TaskType.WATER_CHANGE,
+  };
+
+  const res = await controller.create(req, dto as any);
+
+  expect(aqRepo.findOne).toHaveBeenCalledWith({
+    where: { id: 5, user: { id: 1 } },
+    relations: { user: true },
+    select: { id: true } as any,
+  });
+
+  expect(repo.create).toHaveBeenCalledWith(
+    expect.objectContaining({
       title: 'Changement d’eau',
       description: '30 % du volume',
-      dueAt: '2025-01-15T10:00:00.000Z',
-      aquariumId: 5,
+      user: { id: 1 },
+      aquarium: expect.objectContaining({ id: 5 }),
+      status: TaskStatus.PENDING,
       type: TaskType.WATER_CHANGE,
-    };
+      dueAt: new Date('2025-01-15T10:00:00.000Z'),
+    }),
+  );
 
-    const res = await controller.create(req, dto as any);
+  // ✅ réponse mappée
+  expect(res).toEqual(
+    expect.objectContaining({
+      id: '10',
+      title: 'Changement d’eau',
+      type: TaskType.WATER_CHANGE,
+      dueAt: new Date('2025-01-15T10:00:00.000Z').toISOString(),
+    }),
+  );
+});
 
-    expect(aqRepo.findOne).toHaveBeenCalledWith({
-      where: { id: 5, user: { id: 1 } },
-      relations: { user: true },
-      select: { id: true } as any,
-    });
-
-    expect(repo.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Changement d’eau',
-        description: '30 % du volume',
-        user: { id: 1 },
-        aquarium: expect.objectContaining({ id: 5 }),
-        status: TaskStatus.PENDING,
-        type: TaskType.WATER_CHANGE,
-        dueAt: new Date('2025-01-15T10:00:00.000Z'),
-      }),
-    );
-
-    // ✅ Réponse mappée
-    expect(res).toEqual(
-      expect.objectContaining({
-        id: '10',
-        title: 'Changement d’eau',
-        type: TaskType.WATER_CHANGE,
-        dueAt: new Date('2025-01-15T10:00:00.000Z').toISOString(),
-      }),
-    );
-  });
 
   it('create() -> 404 si aquarium introuvable ou non autorisé', async () => {
     aqRepo.findOne.mockResolvedValue(null as any);

@@ -109,36 +109,49 @@ describe('TaskService (unit)', () => {
     });
 
     it('crée et sauvegarde une tâche', async () => {
-      aqRepo.findOne.mockResolvedValue({ id: 7, user: { id: 1 } } as any);
-      (repo.create as jest.Mock).mockImplementation((x: any) => x);
-      (repo.save as jest.Mock).mockImplementation(async (x: any) => ({
-        ...x,
-        id: 10,
-        dueAt: x.dueAt instanceof Date ? x.dueAt : new Date(x.dueAt),
-      }));
+  aqRepo.findOne.mockResolvedValue({ id: 7, user: { id: 1 } } as any);
+  (repo.create as jest.Mock).mockImplementation((x: any) => x);
 
-      const dueIso = '2025-10-01T10:00:00.000Z';
+  (repo.save as jest.Mock).mockImplementation(async (x: any) => ({
+    ...x,
+    id: 10,
+    dueAt: x.dueAt instanceof Date ? x.dueAt : new Date(x.dueAt),
+  }));
 
-      const res = await service.create(1, {
-        title: 'Changement eau',
-        description: '50%',
-        dueAt: dueIso,
-        aquariumId: 7,
-        type: TaskType.WATER_CHANGE,
-      });
+  // ✅ le service reload probablement la task après save
+  repo.findOne.mockResolvedValue({
+    id: 10,
+    title: 'Changement eau',
+    description: '50%',
+    dueAt: new Date('2025-10-01T10:00:00.000Z'),
+    status: TaskStatus.PENDING,
+    type: TaskType.WATER_CHANGE,
+    aquarium: { id: 7 },
+    user: { id: 1 },
+    fertilizers: [],
+  } as any);
 
-      expect(res).toEqual(
-        expect.objectContaining({
-          id: '10',
-          title: 'Changement eau',
-          description: '50%',
-          dueAt: new Date(dueIso).toISOString(),
-        }),
-      );
+  const res = await service.create(1, {
+    title: 'Changement eau',
+    description: '50%',
+    dueAt: '2025-10-01T10:00:00.000Z',
+    aquariumId: 7,
+    type: TaskType.WATER_CHANGE,
+  });
 
-      expect(repo.create).toHaveBeenCalled();
-      expect(repo.save).toHaveBeenCalled();
-    });
+  expect(res).toEqual(
+    expect.objectContaining({
+      id: '10',
+      title: 'Changement eau',
+      description: '50%',
+      dueAt: new Date('2025-10-01T10:00:00.000Z').toISOString(),
+    }),
+  );
+
+  expect(repo.create).toHaveBeenCalled();
+  expect(repo.save).toHaveBeenCalled();
+});
+
   });
 
   describe('update', () => {
