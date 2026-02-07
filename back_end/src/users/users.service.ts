@@ -1,18 +1,35 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import * as argon2 from 'argon2';
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 
 import { User } from './user.entity';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 
-
+// ⚠️ Ajuste les chemins si besoin
+import { Aquarium } from '../aquariums/aquariums.entity';
+import { WaterMeasurement } from '../water-measurement/water-measurement.entity';
+import { Task } from '../tasks/task.entity';
+import { AquariumFishCard } from '../catalog/aquarium-card-pivot/aquarium-fish-card.entity';
+import { AquariumPlantCard } from '../catalog/aquarium-card-pivot/aquarium-plant-card.entity';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private readonly repo: Repository<User>) {}
+  constructor(
+    @InjectRepository(User) private readonly repo: Repository<User>,
+    @InjectRepository(Aquarium) private readonly aqRepo: Repository<Aquarium>,
+    @InjectRepository(WaterMeasurement) private readonly wmRepo: Repository<WaterMeasurement>,
+    @InjectRepository(Task) private readonly taskRepo: Repository<Task>,
+    @InjectRepository(AquariumFishCard) private readonly aqFishRepo: Repository<AquariumFishCard>,
+    @InjectRepository(AquariumPlantCard) private readonly aqPlantRepo: Repository<AquariumPlantCard>,
+  ) {}
 
   findById(id: number) {
     return this.repo.findOne({ where: { id } });
@@ -58,6 +75,11 @@ export class UsersService {
     return true;
   }
 
+  async touchActivity(userId: number): Promise<void> {
+    if (!Number.isFinite(userId)) return;
+    await this.repo.update({ id: userId }, { lastActivityAt: new Date() });
+  }
+
   async findByEmailWithPassword(email: string): Promise<User | null> {
     return this.repo
       .createQueryBuilder('u')
@@ -72,16 +94,12 @@ export class UsersService {
 
     const password = await argon2.hash(dto.password);
 
-    const fullName =
-      dto.fullName?.trim().length
-        ? dto.fullName.trim()
-        : dto.email.split('@')[0];
+    const fullName = dto.fullName?.trim().length ? dto.fullName.trim() : dto.email.split('@')[0];
 
     const user = this.repo.create({
       email: dto.email,
       fullName,
       password,
-      // emailVerifiedAt null par défaut dans ta DB / entity
     });
 
     return this.repo.save(user);
@@ -97,12 +115,11 @@ export class UsersService {
       {
         emailVerifyTokenHash: tokenHash,
         emailVerifyExpiresAt: expiresAt,
-        emailVerifiedAt: null, // optionnel mais propre
+        emailVerifiedAt: null,
       },
     );
   }
 
-  // ✅ FIX : addSelect sur les champs select:false + update (pas save)
   async verifyEmailByTokenHash(tokenHash: string) {
     const user = await this.repo
       .createQueryBuilder('u')
@@ -113,11 +130,9 @@ export class UsersService {
 
     if (!user) return null;
 
-    // si expiré / pas de date → KO
     if (!user.emailVerifyExpiresAt) return null;
     if (user.emailVerifyExpiresAt.getTime() < Date.now()) return null;
 
-    // si déjà vérifié → OK (tu peux choisir de retourner null si tu veux)
     if (user.emailVerifiedAt) return user;
 
     await this.repo.update(
@@ -147,13 +162,12 @@ export class UsersService {
     return user;
   }
 
-  // ✅ FIX : addSelect sur expires/token + update (pas save)
   async resetPasswordByTokenHash(tokenHash: string, newPassword: string) {
     const user = await this.repo
       .createQueryBuilder('u')
       .addSelect('u.resetPasswordTokenHash')
       .addSelect('u.resetPasswordExpiresAt')
-      .addSelect('u.password') // utile si tu veux vérifier un truc, sinon pas obligatoire
+      .addSelect('u.password')
       .where('u.resetPasswordTokenHash = :tokenHash', { tokenHash })
       .getOne();
 
@@ -175,11 +189,19 @@ export class UsersService {
     return this.findById(user.id);
   }
 
-    async adminList(search?: string) {
+  // ✅ ADMIN: LIST
+  async adminList(search?: string) {
     const qb = this.repo.createQueryBuilder('u');
 
-    // ✅ on ne renvoie PAS password (select:false) + champs sensibles restent hors payload
-    qb.select(['u.id', 'u.fullName', 'u.email', 'u.role', 'u.createdAt']);
+    qb.select([
+      'u.id',
+      'u.fullName',
+      'u.email',
+      'u.role',
+      'u.createdAt',
+      'u.emailVerifiedAt',
+      'u.lastActivityAt', // ✅ AJOUTÉ
+    ]);
 
     if (search?.trim()) {
       const q = `%${search.trim().toLowerCase()}%`;
@@ -190,17 +212,100 @@ export class UsersService {
     return qb.getMany();
   }
 
+  // ✅ ADMIN: GET ONE
   async adminGetOne(id: number) {
     if (!Number.isFinite(id)) throw new BadRequestException('Id invalide');
 
     const user = await this.repo
       .createQueryBuilder('u')
-      .select(['u.id', 'u.fullName', 'u.email', 'u.role', 'u.createdAt'])
+      .select([
+        'u.id',
+        'u.fullName',
+        'u.email',
+        'u.role',
+        'u.createdAt',
+        'u.emailVerifiedAt',
+        'u.lastActivityAt', // ✅ AJOUTÉ
+      ])
       .where('u.id = :id', { id })
       .getOne();
 
     if (!user) throw new NotFoundException('Utilisateur introuvable');
     return user;
+  }
+
+  // ✅ ADMIN: GET FULL
+  async adminGetFull(id: number) {
+    if (!Number.isFinite(id)) throw new BadRequestException('Id invalide');
+
+    const user = await this.repo
+      .createQueryBuilder('u')
+      .select([
+        'u.id',
+        'u.fullName',
+        'u.email',
+        'u.role',
+        'u.createdAt',
+        'u.emailVerifiedAt',
+        'u.lastActivityAt', // ✅ AJOUTÉ
+      ])
+      .where('u.id = :id', { id })
+      .getOne();
+
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    const aquariums = await this.aqRepo
+      .createQueryBuilder('a')
+      .leftJoin('a.user', 'u')
+      .select([
+        'a.id',
+        'a.name',
+        'a.waterType',
+        'a.startDate',
+        'a.createdAt',
+        'a.lengthCm',
+        'a.widthCm',
+        'a.heightCm',
+        'a.volumeL',
+      ])
+      .where('u.id = :id', { id })
+      .orderBy('a.createdAt', 'DESC')
+      .getMany();
+
+    const aquariumIds = aquariums.map((a) => a.id);
+
+    const measurements = aquariumIds.length
+      ? await this.wmRepo.find({
+          where: { aquariumId: In(aquariumIds) },
+          order: { measuredAt: 'DESC' },
+          take: 500,
+        })
+      : [];
+
+    const tasks = await this.taskRepo.find({
+      where: { user: { id } as any },
+      order: { createdAt: 'DESC' },
+      take: 500,
+      relations: ['aquarium'],
+    });
+
+    const fish = aquariumIds.length
+      ? await this.aqFishRepo.find({
+          where: { aquariumId: In(aquariumIds) },
+          order: { createdAt: 'DESC' },
+          take: 500,
+        })
+      : [];
+
+    const plants = aquariumIds.length
+      ? await this.aqPlantRepo.find({
+          where: { aquariumId: In(aquariumIds) },
+          order: { createdAt: 'DESC' },
+          take: 500,
+        })
+      : [];
+
+    return { user, aquariums, measurements, fish, plants, tasks };
   }
 
   async adminUpdate(id: number, dto: AdminUpdateUserDto) {
@@ -233,7 +338,6 @@ export class UsersService {
     }
 
     if (Object.keys(patch).length === 0) {
-      // rien à modifier
       return this.adminGetOne(id);
     }
 
@@ -251,7 +355,6 @@ export class UsersService {
       await this.repo.delete(id);
       return { ok: true };
     } catch (e: any) {
-      // ✅ MySQL FK constraint fail (ex: user a des aquariums)
       if (e?.code === 'ER_ROW_IS_REFERENCED_2' || e?.errno === 1451) {
         throw new ConflictException(
           'Impossible de supprimer cet utilisateur : il possède des données liées (ex: aquariums). Supprime ses aquariums avant.',
@@ -260,5 +363,4 @@ export class UsersService {
       throw e;
     }
   }
-
 }

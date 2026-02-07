@@ -46,7 +46,11 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   users: AdminUser[] = [];
   searchCtrl = new FormControl<string>('', { nonNullable: true });
 
-  displayedColumns = ['createdAt', 'fullName', 'email', 'role', 'actions'];
+  // ✅ AJOUTÉ "status"
+  displayedColumns = ['id', 'createdAt', 'fullName', 'email', 'role', 'status', 'actions'];
+
+  // ✅ règle métier front: actif si vu il y a moins de 10 minutes
+  private readonly ACTIVE_MINUTES = 1;
 
   constructor(
     private readonly api: AdminUsersApi,
@@ -68,7 +72,6 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   back(): void {
-    // ✅ Retour “comme les autres pages”
     try {
       this.location.back();
     } catch {
@@ -80,13 +83,56 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     this.searchCtrl.setValue('');
   }
 
+  openUser(u: AdminUser): void {
+    this.router.navigate(['/admin/users', u.id]);
+  }
+
+  formatDate(value: string | Date): string {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '—';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  // ✅ Actif/Inactif
+  isActive(u: AdminUser): boolean {
+    if (!u?.lastActivityAt) return false;
+    const last = new Date(u.lastActivityAt).getTime();
+    if (!Number.isFinite(last)) return false;
+
+    const diffMs = Date.now() - last;
+    const diffMin = diffMs / 60000;
+    return diffMin <= this.ACTIVE_MINUTES;
+  }
+
+  // ✅ tooltip / texte d’aide
+  lastSeenLabel(u: AdminUser): string {
+    if (!u?.lastActivityAt) return 'Jamais';
+    const last = new Date(u.lastActivityAt).getTime();
+    if (!Number.isFinite(last)) return 'Jamais';
+
+    const diffMs = Date.now() - last;
+    const diffMin = Math.floor(diffMs / 60000);
+
+    if (diffMin <= 0) return 'À l’instant';
+    if (diffMin < 60) return `Il y a ${diffMin} min`;
+
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `Il y a ${diffH} h`;
+
+    const diffD = Math.floor(diffH / 24);
+    return `Il y a ${diffD} j`;
+  }
+
   reload(): void {
     const search = this.searchCtrl.value?.trim() || undefined;
 
     this.loading = true;
     this.api.list(search).subscribe({
       next: (rows) => {
-        this.users = [...rows].sort(
+        this.users = [...(rows ?? [])].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
         this.loading = false;
@@ -106,9 +152,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
           x.id === u.id ? { ...x, role: updated.role } : x,
         );
       },
-      error: () => {
-        // on ne fait rien
-      },
+      error: () => {},
     });
   }
 

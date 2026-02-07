@@ -377,3 +377,43 @@ button[mat-stroked-button][color="warn"] {
 
   .users-table { min-width: 760px; } /* un peu moins large si tu veux */
 }
+/* colonne id + email lisible */
+.id-cell { width: 70px; }
+.email-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ligne cliquable */
+.clickable-row {
+  cursor: pointer;
+}
+.clickable-row:hover td.mat-mdc-cell {
+  background: rgba(0, 150, 136, 0.06) !important;
+}
+/* ✅ status pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: rgba(255, 255, 255, 0.85);
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.status-pill.active {
+  background: rgba(0, 150, 136, 0.12);
+  border-color: rgba(0, 150, 136, 0.28);
+}
+
+.status-pill.inactive {
+  background: rgba(244, 67, 54, 0.10);
+  border-color: rgba(244, 67, 54, 0.24);
+}

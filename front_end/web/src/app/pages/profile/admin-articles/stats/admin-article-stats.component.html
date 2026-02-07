@@ -22,29 +22,24 @@
   </div>
 
   <ng-container *ngIf="!loading && stats">
-    <div class="kpis">
-      <div class="kpi">
-        <div class="k">Vues total</div>
-        <div class="v">{{ stats.totalViewsAllTime }}</div>
+    <!-- ===== CONTROLES ===== -->
+    <div class="controls">
+      <div class="ctrl">
+        <div class="ctrl-label">Période analysée</div>
+        <mat-button-toggle-group
+          class="range-toggle"
+          [value]="rangeDays"
+          (change)="onRangeChange($event.value)"
+        >
+          <mat-button-toggle [value]="7">7 jours</mat-button-toggle>
+          <mat-button-toggle [value]="30">30 jours</mat-button-toggle>
+          <mat-button-toggle [value]="90">90 jours</mat-button-toggle>
+          <mat-button-toggle [value]="365">365 jours</mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
-      <div class="kpi">
-        <div class="k">Vues ({{ stats.days }}j)</div>
-        <div class="v">{{ stats.totalViewsPeriod }}</div>
-      </div>
-      <div class="kpi">
-        <div class="k">Uniques ({{ stats.days }}j)</div>
-        <div class="v">{{ stats.totalUniquePeriod }}</div>
-      </div>
-    </div>
 
-    <!-- ✅ GRAPH -->
-    <div class="chart-wrap">
-      <div class="chart-head">
-        <div class="chart-title">
-          <h3>Vues</h3>
-          <p>Regroupées par {{ periodLabel() }}</p>
-        </div>
-
+      <div class="ctrl">
+        <div class="ctrl-label">Regrouper par</div>
         <mat-button-toggle-group
           class="period-toggle"
           [value]="period"
@@ -55,27 +50,85 @@
           <mat-button-toggle value="year">Année</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
+    </div>
 
-      <div class="chart">
+    <!-- ===== KPIs (clairs) ===== -->
+    <div class="kpis kpis-5">
+      <div class="kpi">
+        <div class="k">Vues totales (depuis toujours)</div>
+        <div class="v">{{ stats.totalViewsAllTime }}</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Vues sur {{ stats.days }} jours</div>
+        <div class="v">{{ stats.totalViewsPeriod }}</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Uniques sur {{ stats.days }} jours</div>
+        <div class="v">{{ stats.totalUniquePeriod }}</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Moyenne / jour</div>
+        <div class="v">{{ avgViewsPerDay }}</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Meilleur jour</div>
+        <div class="v small">{{ bestDayLabel }}</div>
+        <div class="sub">{{ bestDayViews }} vues</div>
+      </div>
+    </div>
+
+    <!-- ===== GRAPH 1 : DAILY ===== -->
+    <div class="chart-wrap">
+      <div class="chart-head">
+        <div class="chart-title">
+          <h3>Vues par jour</h3>
+          <p>Chaque point = 1 journée (format {{ '21/03/2025' }})</p>
+        </div>
+      </div>
+
+      <div class="chart chart-lg">
         <canvas
           baseChart
-          [type]="chartType"
-          [data]="chartData"
-          [options]="chartOptions"
+          [type]="dailyChartType"
+          [data]="dailyChartData"
+          [options]="dailyChartOptions"
         ></canvas>
       </div>
     </div>
 
-    <!-- tableau brut (détail quotidien) -->
+    <!-- ===== GRAPH 2 : GROUPED ===== -->
+    <div class="chart-wrap">
+      <div class="chart-head">
+        <div class="chart-title">
+          <h3>Vues regroupées</h3>
+          <p>{{ groupedLegend }}</p>
+        </div>
+      </div>
+
+      <div class="chart chart-md">
+        <canvas
+          baseChart
+          [type]="groupedChartType"
+          [data]="groupedChartData"
+          [options]="groupedChartOptions"
+        ></canvas>
+      </div>
+    </div>
+
+    <!-- ===== tableau brut ===== -->
     <div class="table">
       <div class="row head">
-        <div>Jour</div>
+        <div>Date</div>
         <div>Vues</div>
         <div>Uniques</div>
       </div>
 
       <div class="row" *ngFor="let d of stats.daily">
-        <div>{{ d.day }}</div>
+        <div>{{ formatDay(d.day) }}</div>
         <div>{{ d.views }}</div>
         <div>{{ d.uniqueViews }}</div>
       </div>

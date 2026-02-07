@@ -6,6 +6,8 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task, TaskStatus, TaskType, RepeatMode, WeekDayKey } from './task.entity';
 import { TaskFertilizer, FertilizerUnit } from './task-fertilizer.entity';
+import { UsersService } from '../users/users.service';
+
 
 type RepeatPayload =
   | null
@@ -24,6 +26,7 @@ export class TaskService {
     @InjectRepository(Task) private readonly repo: Repository<Task>,
     @InjectRepository(Aquarium) private readonly aqRepo: Repository<Aquarium>,
     @InjectRepository(TaskFertilizer) private readonly fertRepo: Repository<TaskFertilizer>,
+    private readonly usersService: UsersService,
   ) {}
 
   // =========================
@@ -324,6 +327,7 @@ export class TaskService {
     });
 
     const saved = await this.repo.save(task);
+    await this.usersService.touchActivity(userId);
 
     if (dto.type === TaskType.FERTILIZATION) {
       const lines = this.normalizeFertilization(dto.fertilization);
@@ -407,6 +411,7 @@ export class TaskService {
     }
 
     const saved = await this.repo.save(task);
+    await this.usersService.touchActivity(userId);
 
     if (dto.fertilization !== undefined) {
       await this.fertRepo.delete({ taskId: saved.id });
@@ -445,6 +450,7 @@ export class TaskService {
     if (!task || task.user.id !== userId) throw new NotFoundException();
 
     await this.repo.delete(id);
+    await this.usersService.touchActivity(userId);
     return { ok: true };
   }
 }

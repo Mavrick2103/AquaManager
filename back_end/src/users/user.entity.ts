@@ -30,6 +30,10 @@ export class User {
   @CreateDateColumn()
   createdAt: Date;
 
+  @Index()
+  @Column({ type: 'timestamp', nullable: true })
+  lastActivityAt: Date | null;
+
   // ✅ Email verification
   @Column({ type: 'timestamp', nullable: true })
   emailVerifiedAt: Date | null;

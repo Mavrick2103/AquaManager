@@ -187,6 +187,12 @@ export const routes: Routes = [
   canActivate: [AuthGuard, AdminGuard],
   data: { title: 'Admin – Modifier article – AquaManager', robots: 'noindex' },
 },
+
+{
+  path: 'admin/users/:id',
+  loadComponent: () =>
+    import('./pages/profile/admin-users/fiche_user/admin-user-detail.component').then(m => m.AdminUserDetailComponent),
+},
 {
   path: 'auth/connexion',
   redirectTo: 'login',

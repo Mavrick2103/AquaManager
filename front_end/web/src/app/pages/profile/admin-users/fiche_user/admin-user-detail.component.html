@@ -1,0 +1,310 @@
+<mat-card class="wrap">
+  <!-- HEADER -->
+  <header class="top">
+    <button mat-stroked-button class="back" type="button" (click)="back()">
+      <mat-icon>arrow_back</mat-icon>
+      Retour
+    </button>
+
+    <div class="title">
+      <h2>{{ headerTitle }}</h2>
+      <p>{{ headerSub }}</p>
+    </div>
+
+    <button mat-flat-button class="refresh" color="primary" type="button" (click)="load()">
+      <mat-icon>refresh</mat-icon>
+      Actualiser
+    </button>
+  </header>
+
+  <!-- LOADING / EMPTY -->
+  <div class="loading" *ngIf="loading">
+    <mat-progress-spinner mode="indeterminate" diameter="22"></mat-progress-spinner>
+    <span>Chargement…</span>
+  </div>
+
+  <div class="empty" *ngIf="!loading && !data">
+    <mat-icon>error_outline</mat-icon>
+    <div>
+      <div class="empty-title">Impossible de charger la fiche utilisateur</div>
+      <div class="empty-sub">Vérifie l’API /admin/users/{{ userId }}/full et ton token admin.</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <ng-container *ngIf="!loading && data">
+    <!-- SUMMARY CARDS -->
+    <section class="summary">
+      <div class="pill">
+        <mat-icon>person</mat-icon>
+        <div class="pill-text">
+          <div class="pill-title">Utilisateur</div>
+          <div class="pill-value mono">#{{ data.user.id }}</div>
+        </div>
+      </div>
+
+      <div class="pill">
+        <mat-icon>mail</mat-icon>
+        <div class="pill-text">
+          <div class="pill-title">Email</div>
+          <div class="pill-value mono clamp">{{ data.user.email }}</div>
+        </div>
+      </div>
+
+      <div class="pill">
+        <mat-icon>event</mat-icon>
+        <div class="pill-text">
+          <div class="pill-title">Inscription</div>
+          <div class="pill-value">{{ formatDate(data.user.createdAt) }}</div>
+        </div>
+      </div>
+
+      <div class="pill" [class.admin]="data.user.role === 'ADMIN'">
+        <mat-icon>{{ data.user.role === 'ADMIN' ? 'admin_panel_settings' : 'person' }}</mat-icon>
+        <div class="pill-text">
+          <div class="pill-title">Rôle</div>
+          <div class="pill-value">{{ data.user.role }}</div>
+        </div>
+      </div>
+    </section>
+
+    <mat-tab-group dynamicHeight class="tabs">
+      <!-- AQUARIUMS -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <span class="tab-label">
+            <mat-icon>water</mat-icon>
+            Aquariums
+            <span class="badge">{{ data.aquariums.length }}</span>
+          </span>
+        </ng-template>
+
+        <div class="tab">
+          <ng-container *ngIf="data.aquariums.length; else noAq">
+            <!-- DESKTOP TABLE -->
+            <div class="table-wrap desktop-only">
+              <table mat-table [dataSource]="data.aquariums" class="table">
+
+                <ng-container matColumnDef="id">
+                  <th mat-header-cell *matHeaderCellDef>ID</th>
+                  <td mat-cell *matCellDef="let a" class="mono">{{ a.id }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>Nom</th>
+                  <td mat-cell *matCellDef="let a">{{ a.name }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="waterType">
+                  <th mat-header-cell *matHeaderCellDef>Type</th>
+                  <td mat-cell *matCellDef="let a">
+                    <span class="chip" [class.douce]="a.waterType === 'EAU_DOUCE'" [class.mer]="a.waterType === 'EAU_DE_MER'">
+                      {{ a.waterType === 'EAU_DE_MER' ? 'Eau de mer' : 'Eau douce' }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="aquariumsCols"></tr>
+                <tr mat-row *matRowDef="let row; columns: aquariumsCols"></tr>
+              </table>
+            </div>
+          </ng-container>
+
+          <ng-template #noAq>
+            <div class="hint-block">
+              <mat-icon>info</mat-icon>
+              <span>Aucun aquarium.</span>
+            </div>
+          </ng-template>
+        </div>
+      </mat-tab>
+
+      <!-- MESURES -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <span class="tab-label">
+            <mat-icon>show_chart</mat-icon>
+            Mesures
+            <span class="badge">{{ data.measurements.length }}</span>
+          </span>
+        </ng-template>
+
+        <div class="tab">
+          <ng-container *ngIf="data.measurements.length; else noMeas">
+            <div class="table-wrap">
+              <table mat-table [dataSource]="data.measurements" class="table wide">
+
+                <ng-container matColumnDef="date">
+                  <th mat-header-cell *matHeaderCellDef>Date</th>
+                  <td mat-cell *matCellDef="let m">{{ formatDate(m.measuredAt) }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="aquariumId">
+                  <th mat-header-cell *matHeaderCellDef>Aquarium</th>
+                  <td mat-cell *matCellDef="let m" class="mono">#{{ m.aquariumId }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="ph">
+                  <th mat-header-cell *matHeaderCellDef>pH</th>
+                  <td mat-cell *matCellDef="let m">{{ m.ph ?? '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="temp">
+                  <th mat-header-cell *matHeaderCellDef>Temp</th>
+                  <td mat-cell *matCellDef="let m">{{ m.temp ?? '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="no2">
+                  <th mat-header-cell *matHeaderCellDef>NO₂</th>
+                  <td mat-cell *matCellDef="let m">{{ m.no2 ?? '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="no3">
+                  <th mat-header-cell *matHeaderCellDef>NO₃</th>
+                  <td mat-cell *matCellDef="let m">{{ m.no3 ?? '—' }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="measuresCols"></tr>
+                <tr mat-row *matRowDef="let row; columns: measuresCols"></tr>
+              </table>
+            </div>
+          </ng-container>
+
+          <ng-template #noMeas>
+            <div class="hint-block">
+              <mat-icon>info</mat-icon>
+              <span>Aucune mesure.</span>
+            </div>
+          </ng-template>
+        </div>
+      </mat-tab>
+
+      <!-- VIVANTS / PLANTES -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <span class="tab-label">
+            <mat-icon>pets</mat-icon>
+            Vivants / Plantes
+          </span>
+        </ng-template>
+
+        <div class="tab">
+          <div class="split">
+            <section class="box">
+              <div class="box-head">
+                <h3>Poissons / Vivants</h3>
+                <span class="badge">{{ data.fish.length }}</span>
+              </div>
+
+              <div *ngIf="data.fish.length; else noFish" class="list">
+                <div class="item" *ngFor="let f of data.fish">
+                  <div class="left">
+                    <div class="name">{{ f.fishCard.commonName || '—' }}</div>
+                    <div class="meta mono">Aquarium #{{ f.aquariumId }}</div>
+                  </div>
+                  <div class="right">
+                    <span class="qty">x{{ f.count }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <ng-template #noFish>
+                <div class="hint-block">
+                  <mat-icon>info</mat-icon>
+                  <span>Aucun vivant.</span>
+                </div>
+              </ng-template>
+            </section>
+
+            <section class="box">
+              <div class="box-head">
+                <h3>Plantes</h3>
+                <span class="badge">{{ data.plants.length }}</span>
+              </div>
+
+              <div *ngIf="data.plants.length; else noPlants" class="list">
+                <div class="item" *ngFor="let p of data.plants">
+                  <div class="left">
+                    <div class="name">{{ p.plantCard.commonName || '—' }}</div>
+                    <div class="meta mono">Aquarium #{{ p.aquariumId }}</div>
+                  </div>
+                  <div class="right">
+                    <span class="qty">x{{ p.count }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <ng-template #noPlants>
+                <div class="hint-block">
+                  <mat-icon>info</mat-icon>
+                  <span>Aucune plante.</span>
+                </div>
+              </ng-template>
+            </section>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- TACHES -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <span class="tab-label">
+            <mat-icon>checklist</mat-icon>
+            Tâches
+            <span class="badge">{{ data.tasks.length }}</span>
+          </span>
+        </ng-template>
+
+        <div class="tab">
+          <ng-container *ngIf="data.tasks.length; else noTasks">
+            <div class="table-wrap">
+              <table mat-table [dataSource]="data.tasks" class="table wide">
+
+                <ng-container matColumnDef="id">
+                  <th mat-header-cell *matHeaderCellDef>ID</th>
+                  <td mat-cell *matCellDef="let t" class="mono">{{ t.id }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="title">
+                  <th mat-header-cell *matHeaderCellDef>Titre</th>
+                  <td mat-cell *matCellDef="let t">{{ t.title }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>Statut</th>
+                  <td mat-cell *matCellDef="let t">
+                    <span class="status" [class.done]="t.status === 'DONE'">
+                      {{ t.status || '—' }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="dueAt">
+                  <th mat-header-cell *matHeaderCellDef>Échéance</th>
+                  <td mat-cell *matCellDef="let t">{{ formatDate(t.dueAt) }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="aquariumId">
+                  <th mat-header-cell *matHeaderCellDef>Aquarium</th>
+                  <td mat-cell *matCellDef="let t" class="mono">
+                    {{ t.aquariumId ?? t.aquarium?.id ?? '—' }}
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="tasksCols"></tr>
+                <tr mat-row *matRowDef="let row; columns: tasksCols"></tr>
+              </table>
+            </div>
+          </ng-container>
+
+          <ng-template #noTasks>
+            <div class="hint-block">
+              <mat-icon>info</mat-icon>
+              <span>Aucune tâche.</span>
+            </div>
+          </ng-template>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </ng-container>
+</mat-card>

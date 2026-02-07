@@ -33,6 +33,11 @@ export class AdminUsersController {
     return this.users.adminGetOne(Number(id));
   }
 
+   @Get(':id/full')
+  full(@Param('id') id: string) {
+    return this.users.adminGetFull(Number(id));
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
     return this.users.adminUpdate(Number(id), dto);
