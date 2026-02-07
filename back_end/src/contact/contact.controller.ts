@@ -14,7 +14,7 @@ import { MailService } from '../mail/mail.service';
 import { Public } from '../auth/decorators/public.decorator';
 
 const MAX_FILES = 5;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB / fichier
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB / fichier
 const ALLOWED_MIME = new Set([
   'image/png',
   'image/jpeg',

@@ -13,6 +13,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { PublicArticlesApi, ArticleDto, ThemeDto } from '../../core/articles.public';
 import { environment } from '../../../environments/environment';
+import { Location } from '@angular/common';
+
 
 @Component({
   selector: 'app-articles-page',
@@ -49,6 +51,7 @@ export class ArticlesPageComponent implements OnInit {
   constructor(
     private readonly api: PublicArticlesApi,
     private readonly cdr: ChangeDetectorRef,
+    private readonly location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -56,6 +59,16 @@ export class ArticlesPageComponent implements OnInit {
     this.setupSearch();
     this.refresh();
   }
+  goBack(): void {
+  // si historique possible -> back, sinon fallback
+  if (window.history.length > 1) {
+    this.location.back();
+    return;
+  }
+  // fallback propre
+  window.location.href = '/';
+}
+
 
   refresh(): void {
     this.loading = true;

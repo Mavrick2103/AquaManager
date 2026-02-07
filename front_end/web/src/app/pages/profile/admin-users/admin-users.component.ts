@@ -1,3 +1,4 @@
+// admin-users.component.ts
 import { CommonModule, Location } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -14,6 +15,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatListModule } from '@angular/material/list';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import { AdminUsersApi, AdminUser } from '../../../core/admin-users.service';
 
@@ -37,19 +39,30 @@ import { AdminUsersApi, AdminUser } from '../../../core/admin-users.service';
     MatTableModule,
     MatTooltipModule,
     MatListModule,
+    MatSlideToggleModule,
   ],
 })
 export class AdminUsersComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   loading = false;
+
+  // liste brute depuis l’API
   users: AdminUser[] = [];
+
+  // ✅ liste filtrée (affichée)
+  filteredUsers: AdminUser[] = [];
+
+  // 🔎 recherche texte
   searchCtrl = new FormControl<string>('', { nonNullable: true });
 
-  // ✅ AJOUTÉ "status"
+  // ✅ filtres front uniquement
+  activeOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
+  adminOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
+
   displayedColumns = ['id', 'createdAt', 'fullName', 'email', 'role', 'status', 'actions'];
 
-  // ✅ règle métier front: actif si vu il y a moins de 10 minutes
+  // actif si activité < 30 jours (à toi d’ajuster)
   private readonly ACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
 
   constructor(
@@ -61,9 +74,14 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.reload();
 
+    // recharge côté API uniquement quand le search change
     this.searchCtrl.valueChanges
       .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => this.reload());
+
+    // filtres 100% front : ne rappelle pas l'API
+    this.activeOnlyCtrl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.applyFilters());
+    this.adminOnlyCtrl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.applyFilters());
   }
 
   ngOnDestroy(): void {
@@ -96,24 +114,13 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     return `${dd}/${mm}/${yyyy}`;
   }
 
-  // ✅ Actif/Inactif
-  // isActive(u: AdminUser): boolean {
-  //   if (!u?.lastActivityAt) return false;
-  //   const last = new Date(u.lastActivityAt).getTime();
-  //   if (!Number.isFinite(last)) return false;
-
-  //   const diffMs = Date.now() - last;
-  //   const diffMin = diffMs / 60000;
-  //   return diffMin <= this.ACTIVE_MINUTES;
-  // }
   isActive(u: AdminUser): boolean {
-  if (!u?.lastActivityAt) return false;
-  const last = new Date(u.lastActivityAt).getTime();
-  if (!Number.isFinite(last)) return false;
-  return (Date.now() - last) <= this.ACTIVE_MS;
-}
+    if (!u?.lastActivityAt) return false;
+    const last = new Date(u.lastActivityAt).getTime();
+    if (!Number.isFinite(last)) return false;
+    return Date.now() - last <= this.ACTIVE_MS;
+  }
 
-  // ✅ tooltip / texte d’aide
   lastSeenLabel(u: AdminUser): string {
     if (!u?.lastActivityAt) return 'Jamais';
     const last = new Date(u.lastActivityAt).getTime();
@@ -136,11 +143,13 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     const search = this.searchCtrl.value?.trim() || undefined;
 
     this.loading = true;
+    // ⚠️ ici on garde ton endpoint actuel (search uniquement)
     this.api.list(search).subscribe({
       next: (rows) => {
         this.users = [...(rows ?? [])].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
+        this.applyFilters();
         this.loading = false;
       },
       error: () => {
@@ -149,14 +158,24 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     });
   }
 
+  applyFilters(): void {
+    const activeOnly = this.activeOnlyCtrl.value;
+    const adminOnly = this.adminOnlyCtrl.value;
+
+    this.filteredUsers = this.users.filter((u) => {
+      if (activeOnly && !this.isActive(u)) return false;
+      if (adminOnly && u.role !== 'ADMIN') return false;
+      return true;
+    });
+  }
+
   toggleRole(u: AdminUser): void {
     const nextRole: AdminUser['role'] = u.role === 'ADMIN' ? 'USER' : 'ADMIN';
 
     this.api.update(u.id, { role: nextRole }).subscribe({
       next: (updated) => {
-        this.users = this.users.map((x) =>
-          x.id === u.id ? { ...x, role: updated.role } : x,
-        );
+        this.users = this.users.map((x) => (x.id === u.id ? { ...x, role: updated.role } : x));
+        this.applyFilters(); // ✅ garde le filtre cohérent
       },
       error: () => {},
     });
@@ -169,6 +188,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     this.api.remove(u.id).subscribe({
       next: () => {
         this.users = this.users.filter((x) => x.id !== u.id);
+        this.applyFilters(); // ✅ garde le filtre cohérent
       },
       error: () => {},
     });

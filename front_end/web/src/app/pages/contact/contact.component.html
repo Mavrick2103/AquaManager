@@ -1,13 +1,27 @@
 <div class="contact-wrap">
   <div class="hero">
     <mat-card class="card">
-      <!-- Header -->
-      <div class="title">
+      <!-- TOP BAR : Retour + badge -->
+      <div class="topbar">
+        <button
+          class="back-btn"
+          mat-stroked-button
+          type="button"
+          (click)="goBack()"
+          aria-label="Retour"
+        >
+          <mat-icon>arrow_back</mat-icon>
+          <span class="back-txt">Retour</span>
+        </button>
+
         <div class="badge">
           <mat-icon>support_agent</mat-icon>
           Support AquaManager
         </div>
+      </div>
 
+      <!-- Header -->
+      <div class="title">
         <h1>Contact</h1>
         <p class="subtitle">
           Un bug, une question ou une idée ? Écris-nous ici, on te répondra au plus vite.

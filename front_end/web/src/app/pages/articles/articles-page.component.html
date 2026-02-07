@@ -1,35 +1,42 @@
 <div class="page">
   <!-- HERO -->
   <header class="hero">
-    <div class="hero-inner">
-      <div class="hero-left">
-  <!-- ✅ LOGO + TITRE -->
-  <div class="brand-row">
-    <img
-      class="app-logo"
-      src="./Logo_AquaManger.png"
-      alt="AquaManager"
-      loading="lazy"
-      decoding="async"
-    />
+  <div class="hero-inner">
+    <!-- Top bar -->
+    <div class="hero-top">
+      <button class="back-fab" mat-stroked-button type="button" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        <span class="back-txt">Retour</span>
+      </button>
 
-    <div class="brand-text">
       <div class="kicker">
         <mat-icon>tips_and_updates</mat-icon>
         Conseils AquaManager
       </div>
-
-      <h1>Articles</h1>
     </div>
+
+    <!-- Content -->
+    <div class="hero-main">
+      <img
+        class="app-logo"
+        src="./Logo_AquaManger.png"
+        alt="AquaManager"
+        loading="lazy"
+        decoding="async"
+      />
+
+      <div class="hero-text">
+        <h1>Articles</h1>
+        <p class="lead">
+          Maintenance, fertilisation, algues, cyclage… du concret, clair, actionnable.
+        </p>
+      </div>
+    </div>
+
+    <!-- (si tu gardes les bulles un jour, tu les mets dans hero-right) -->
   </div>
+</header>
 
-  <p class="lead">
-    Maintenance, fertilisation, algues, cyclage… du concret, clair, actionnable.
-  </p>
-</div>
-
-    </div>
-  </header>
 
   <!-- CONTROLS (sticky) -->
   <section class="controls" role="search" aria-label="Recherche d'articles">

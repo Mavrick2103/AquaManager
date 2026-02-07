@@ -417,3 +417,15 @@ button[mat-stroked-button][color="warn"] {
   background: rgba(244, 67, 54, 0.10);
   border-color: rgba(244, 67, 54, 0.24);
 }
+.filters {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .filters {
+    justify-content: flex-start;
+  }
+}

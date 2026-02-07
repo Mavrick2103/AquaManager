@@ -12,7 +12,9 @@
   --am-deep: #1F3522;
 }
 
-/* layout */
+/* =========================================================
+   LAYOUT
+========================================================= */
 .contact-wrap {
   min-height: 100dvh;
   display: grid;
@@ -28,44 +30,89 @@
   width: min(980px, 100%);
 }
 
-/* card */
+/* =========================================================
+   CARD
+========================================================= */
 .card {
   border-radius: 20px;
-  padding: 22px 22px 18px;
+  padding: 20px 22px 18px;
   background: rgba(255,255,255,.90);
   border: 1px solid rgba(0,0,0,.06);
   box-shadow: 0 14px 34px rgba(0,0,0,.10);
   backdrop-filter: blur(10px);
 }
 
-/* title */
+/* =========================================================
+   TOPBAR : Retour + badge (propre, pas chargé)
+========================================================= */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+/* Bouton retour */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0,0,0,.10);
+  transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    opacity: .9;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(0,159,227,.35);
+    box-shadow: 0 10px 18px rgba(0,0,0,.10);
+  }
+}
+
+/* Badge support (reprend ton style mais plus compact) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  background: rgba(0,159,227,.08);
+  border: 1px solid rgba(0,159,227,.18);
+  color: var(--am-deep);
+
+  mat-icon {
+    color: var(--am-aqua);
+    width: 20px;
+    height: 20px;
+    font-size: 18px;
+    line-height: 20px;
+  }
+}
+
+/* =========================================================
+   TITLE
+========================================================= */
 .title {
   text-align: center;
   margin-bottom: 14px;
 
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 14px;
-    border-radius: 999px;
-    font-weight: 900;
-    letter-spacing: .2px;
-    background: rgba(0,159,227,.08);
-    border: 1px solid rgba(0,159,227,.18);
-    color: var(--am-deep);
-
-    mat-icon {
-      color: var(--am-aqua);
-      width: 22px;
-      height: 22px;
-      font-size: 20px;
-      line-height: 22px;
-    }
-  }
-
   h1 {
-    margin: 12px 0 6px;
+    margin: 10px 0 6px;
     font-size: clamp(1.65rem, 2.8vw, 2.25rem);
     font-weight: 900;
     letter-spacing: -0.02em;
@@ -80,7 +127,9 @@
   }
 }
 
-/* form grid */
+/* =========================================================
+   FORM
+========================================================= */
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -102,13 +151,14 @@
   color: var(--am-green);
 }
 
-/* upload box */
+/* =========================================================
+   UPLOAD
+========================================================= */
 .upload {
   margin-top: 14px;
   padding: 14px;
   border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(0,159,227,.08), rgba(57,181,74,.06));
+  background: linear-gradient(180deg, rgba(0,159,227,.08), rgba(57,181,74,.06));
   border: 1px solid rgba(0,159,227,.14);
 
   .upload-head {
@@ -162,7 +212,9 @@
     box-shadow: 0 10px 20px rgba(0,0,0,.08);
     transition: transform .12s ease, box-shadow .2s ease;
 
-    mat-icon { color: var(--am-green); }
+    mat-icon {
+      color: var(--am-green);
+    }
 
     &:hover {
       transform: translateY(-1px);
@@ -186,7 +238,9 @@
     background: rgba(255,255,255,.92);
     border: 1px solid rgba(0,0,0,.06);
 
-    mat-icon { color: var(--am-aqua); }
+    mat-icon {
+      color: var(--am-aqua);
+    }
 
     .meta {
       min-width: 0;
@@ -229,7 +283,9 @@
   }
 }
 
-/* CTA */
+/* =========================================================
+   CTA
+========================================================= */
 .btn-primary {
   width: 100%;
   margin-top: 14px;
@@ -239,10 +295,12 @@
   color: #fff !important;
   font-weight: 900;
   letter-spacing: .2px;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+
   box-shadow: 0 14px 28px rgba(0,0,0,.14);
   transition: transform .12s ease, filter .2s ease, box-shadow .2s ease;
 
@@ -253,8 +311,11 @@
   }
 }
 
-/* feedback */
-.ok, .err {
+/* =========================================================
+   FEEDBACK
+========================================================= */
+.ok,
+.err {
   margin: 12px 0 0;
   display: flex;
   align-items: center;
@@ -269,10 +330,56 @@
   }
 }
 
-.ok { color: #1f7a3a; }
-.err { color: #b00020; }
+.ok {
+  color: #1f7a3a;
+}
+
+.err {
+  color: #b00020;
+}
+
+/* =========================================================
+   RESPONSIVE (mobile)
+========================================================= */
+@media (max-width: 560px) {
+  .card {
+    padding: 18px 16px 16px;
+  }
+
+  /* Retour en icône seule + badge plus compact */
+  .back-btn {
+    width: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 14px;
+
+    .back-txt {
+      display: none;
+    }
+  }
+
+  .badge {
+    padding: 6px 10px;
+    font-size: 12px;
+
+    mat-icon {
+      width: 18px;
+      height: 18px;
+      font-size: 16px;
+    }
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .pick, .btn-primary { transition: none !important; }
-  .pick:hover, .btn-primary:hover { transform: none !important; }
+  .pick,
+  .btn-primary,
+  .back-btn {
+    transition: none !important;
+  }
+
+  .pick:hover,
+  .btn-primary:hover,
+  .back-btn:hover {
+    transform: none !important;
+  }
 }

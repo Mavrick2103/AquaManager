@@ -75,6 +75,10 @@ export class ContactComponent {
 
   files: File[] = [];
 
+  goBack(): void {
+    this.location.back();
+  }
+
   // --- Files ---
   onPickFiles(ev: Event) {
     const input = ev.target as HTMLInputElement;
@@ -129,15 +133,13 @@ export class ContactComponent {
     }
 
     this.loading = true;
-
     const url = `${environment.apiUrl}/contact`;
 
     this.http.post<{ ok: true }>(url, fd).subscribe({
       next: () => {
         this.loading = false;
         this.successMsg = 'Message envoyé. Merci !';
-       // this.form.reset({ category: 'QUESTION', fromEmail: '', subject: '', message: '' });
-       // this.files = [];
+
         setTimeout(() => this.location.back(), 2000);
       },
       error: (err) => {
