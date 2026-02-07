@@ -50,7 +50,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   displayedColumns = ['id', 'createdAt', 'fullName', 'email', 'role', 'status', 'actions'];
 
   // ✅ règle métier front: actif si vu il y a moins de 10 minutes
-  private readonly ACTIVE_MINUTES = 1;
+  private readonly ACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
 
   constructor(
     private readonly api: AdminUsersApi,
@@ -97,15 +97,21 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   // ✅ Actif/Inactif
-  isActive(u: AdminUser): boolean {
-    if (!u?.lastActivityAt) return false;
-    const last = new Date(u.lastActivityAt).getTime();
-    if (!Number.isFinite(last)) return false;
+  // isActive(u: AdminUser): boolean {
+  //   if (!u?.lastActivityAt) return false;
+  //   const last = new Date(u.lastActivityAt).getTime();
+  //   if (!Number.isFinite(last)) return false;
 
-    const diffMs = Date.now() - last;
-    const diffMin = diffMs / 60000;
-    return diffMin <= this.ACTIVE_MINUTES;
-  }
+  //   const diffMs = Date.now() - last;
+  //   const diffMin = diffMs / 60000;
+  //   return diffMin <= this.ACTIVE_MINUTES;
+  // }
+  isActive(u: AdminUser): boolean {
+  if (!u?.lastActivityAt) return false;
+  const last = new Date(u.lastActivityAt).getTime();
+  if (!Number.isFinite(last)) return false;
+  return (Date.now() - last) <= this.ACTIVE_MS;
+}
 
   // ✅ tooltip / texte d’aide
   lastSeenLabel(u: AdminUser): string {

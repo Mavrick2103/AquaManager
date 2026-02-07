@@ -73,7 +73,7 @@
       </div>
 
       <div class="repeat-head">
-        <mat-slide-toggle [(ngModel)]="repeatOn" name="repeatOn">
+        <mat-slide-toggle [(ngModel)]="repeatOn" name="repeatOn" class="toggle-full">
           Tâche répétitive
         </mat-slide-toggle>
 
@@ -89,8 +89,8 @@
         </mat-form-field>
       </div>
 
-      <!-- ✅ Durée (toujours visible si répétition activée) -->
-      <div class="row row--2" *ngIf="repeatOn">
+      <!-- Durée -->
+      <div class="row row--2 repeat-duration-row" *ngIf="repeatOn">
         <mat-form-field appearance="outline">
           <mat-label>Durée</mat-label>
           <mat-icon matPrefix>hourglass_bottom</mat-icon>
@@ -113,6 +113,7 @@
         </div>
       </div>
 
+      <!-- every X weeks -->
       <div class="row row--2" *ngIf="repeatOn && repeatMode === 'EVERY_X_WEEKS'">
         <mat-form-field appearance="outline">
           <mat-label>Répéter toutes les</mat-label>
@@ -134,6 +135,7 @@
         </div>
       </div>
 
+      <!-- weekly days -->
       <div class="week" *ngIf="repeatOn && (repeatMode === 'WEEKLY' || repeatMode === 'EVERY_X_WEEKS')">
         <div class="week-label">
           <mat-icon>event</mat-icon>

@@ -1,3 +1,4 @@
+<!-- task-dialog.component.html -->
 <h2 mat-dialog-title class="dlg-title">
   <mat-icon>add_task</mat-icon>
   Nouvelle tâche
@@ -25,7 +26,6 @@
           <mat-label>Titre</mat-label>
           <mat-icon matPrefix>title</mat-icon>
 
-          <!-- ✅ Auto title: disabled si type != OTHER -->
           <input
             matInput
             formControlName="title"
@@ -100,16 +100,20 @@
         <mat-icon>repeat</mat-icon>
         <div>
           <div class="ttl">Répétition</div>
-          <div class="sub">Transformez la tâche en routine (avec fin).</div>
+          <div class="sub">Transformez la tâche en routine (avec fin optionnelle).</div>
         </div>
       </div>
 
       <div class="repeat-head">
-        <mat-slide-toggle formControlName="isRepeat">
+        <mat-slide-toggle formControlName="isRepeat" class="toggle-full">
           Tâche répétitive
         </mat-slide-toggle>
 
-        <mat-form-field appearance="outline" class="repeat-mode" [class.disabled]="!form.get('isRepeat')?.value">
+        <mat-form-field
+          appearance="outline"
+          class="repeat-mode"
+          [class.disabled]="!form.get('isRepeat')?.value"
+        >
           <mat-label>Fréquence</mat-label>
           <mat-icon matPrefix>schedule</mat-icon>
           <mat-select formControlName="repeatMode" [disabled]="!form.get('isRepeat')?.value">
@@ -118,8 +122,23 @@
         </mat-form-field>
       </div>
 
-      <!-- ✅ durée -->
-      <div class="row row--2" *ngIf="form.get('isRepeat')?.value">
+      <!-- fin / indéfini -->
+      <div class="row row--2 repeat-end-row" *ngIf="form.get('isRepeat')?.value">
+        <mat-slide-toggle formControlName="repeatHasEnd" class="toggle-full">
+          Fin de répétition
+        </mat-slide-toggle>
+
+        <div class="hint-card">
+          <mat-icon>info</mat-icon>
+          <div>Désactivé = <b>répétition indéfinie</b> (jusqu’à suppression/édition).</div>
+        </div>
+      </div>
+
+      <!-- durée -->
+      <div
+        class="row row--2 repeat-duration-row"
+        *ngIf="form.get('isRepeat')?.value && form.get('repeatHasEnd')?.value"
+      >
         <mat-form-field appearance="outline">
           <mat-label>Durée</mat-label>
           <mat-icon matPrefix>hourglass_bottom</mat-icon>
@@ -129,14 +148,15 @@
         </mat-form-field>
 
         <div class="hint-card">
-          <mat-icon>info</mat-icon>
-          <div>
-            La routine commence à la <b>date/heure de la tâche</b> et s’arrête après cette durée.
-          </div>
+          <mat-icon>tips_and_updates</mat-icon>
+          <div>La routine commence à la <b>date/heure de la tâche</b> et s’arrête après cette durée.</div>
         </div>
       </div>
 
-      <div class="row row--2" *ngIf="form.get('isRepeat')?.value && form.get('repeatMode')?.value === 'EVERY_X_WEEKS'">
+      <div
+        class="row row--2"
+        *ngIf="form.get('isRepeat')?.value && form.get('repeatMode')?.value === 'EVERY_X_WEEKS'"
+      >
         <mat-form-field appearance="outline">
           <mat-label>Répéter toutes les</mat-label>
           <mat-icon matPrefix>calendar_month</mat-icon>

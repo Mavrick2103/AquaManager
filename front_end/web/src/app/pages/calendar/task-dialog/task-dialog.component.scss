@@ -1,10 +1,20 @@
+/* task-dialog.component.scss */
 :host {
   --ink: #1f3522;
   --muted: #4b5a54;
   --line: rgba(0, 0, 0, 0.08);
   --brand1: #009fe3;
   --brand2: #39b54a;
+
   display: block;
+  box-sizing: border-box;
+}
+
+/* ✅ stop les débordements */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 /* ===== Titre ===== */
@@ -26,7 +36,8 @@
 
 /* ===== Contenu ===== */
 .dlg-content {
-  padding: 4px 10px 10px;
+  padding: 6px 12px 12px;
+  overflow: visible !important; /* ✅ évite un 2e scroll ici */
 }
 
 .info {
@@ -60,13 +71,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-/* ton breakpoint d'origine (ok) */
-@media (max-width: 840px) {
-  .row--2 {
-    grid-template-columns: 1fr;
-  }
-}
-
 .fld--desc textarea {
   min-height: 110px;
   resize: vertical;
@@ -74,6 +78,8 @@
 
 mat-form-field {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 mat-form-field mat-icon[matPrefix] {
@@ -89,6 +95,7 @@ mat-form-field mat-icon[matPrefix] {
   display: flex;
   justify-content: flex-end;
   gap: 0.7rem;
+  flex-wrap: wrap;
 
   button[mat-flat-button] {
     border-radius: 12px;
@@ -98,36 +105,67 @@ mat-form-field mat-icon[matPrefix] {
   }
 }
 
-@media (max-width: 600px) {
-  .actions {
-    padding-inline: 10px;
-  }
-
-  .actions button {
-    flex: 1;
-  }
-}
-
+/* ===== Dialog shell ===== */
 :host ::ng-deep .mat-mdc-dialog-surface {
   border-radius: 22px;
   max-width: 860px;
-  width: 95vw;
+  width: min(95vw, 860px);
   background: #f8fafc;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+
+  /* ✅ empêche la surface de scroller */
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 90vh !important;
+  overflow: hidden !important;
 }
 
 :host ::ng-deep .mat-mdc-dialog-container {
   max-height: none;
+  overflow: hidden !important; /* ✅ empêche un 2e scroll container */
 }
 
+/* ✅ UN SEUL SCROLL : le content */
 :host ::ng-deep .mat-mdc-dialog-content {
+  flex: 1 1 auto !important;
   max-width: 100%;
   box-sizing: border-box;
-  max-height: 65vh;
+  max-height: none !important; /* ✅ sinon double scroll */
   overflow-y: auto !important;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 53, 34, 0.35) transparent;
 }
 
+/* WebKit scrollbar (Chrome/Edge/Safari) */
+:host ::ng-deep .mat-mdc-dialog-content::-webkit-scrollbar {
+  width: 10px;
+}
+:host ::ng-deep .mat-mdc-dialog-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+:host ::ng-deep .mat-mdc-dialog-content::-webkit-scrollbar-thumb {
+  background: rgba(31, 53, 34, 0.22);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+:host ::ng-deep .mat-mdc-dialog-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(31, 53, 34, 0.32);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+/* ✅ actions ne doivent pas scroller */
+:host ::ng-deep .mat-mdc-dialog-actions {
+  flex: 0 0 auto !important;
+  overflow: hidden !important;
+}
+
+/* ===== Material text ===== */
 :host ::ng-deep .mat-mdc-form-field,
 :host ::ng-deep .mdc-text-field__input {
   font-size: 1rem;
@@ -145,14 +183,16 @@ mat-form-field mat-icon[matPrefix] {
 }
 
 /* =========================
-   AJOUTS: Répétition + Engrais
+   Sections
    ========================= */
-
 .section {
   background: #ffffff;
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 14px 14px 12px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .sep {
@@ -187,7 +227,9 @@ mat-form-field mat-icon[matPrefix] {
   }
 }
 
-/* ----- Répétition ----- */
+/* =========================
+   Répétition
+   ========================= */
 .repeat-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
@@ -196,33 +238,33 @@ mat-form-field mat-icon[matPrefix] {
   margin-top: 6px;
 }
 
+.toggle-full {
+  width: 100%;
+}
+
+/* Material switch: éviter chevauchements + label multi-ligne */
 :host ::ng-deep .mat-mdc-slide-toggle {
+  width: 100%;
   --mdc-switch-selected-handle-color: var(--brand2);
   --mdc-switch-selected-track-color: rgba(57, 181, 74, 0.35);
 }
 
-/* FIX: le gros rond/chevauchement du slide-toggle (mobile + desktop) */
-:host ::ng-deep .mat-mdc-slide-toggle {
-  width: 100%;
-}
 :host ::ng-deep .mat-mdc-slide-toggle .mdc-form-field {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
 :host ::ng-deep .mat-mdc-slide-toggle .mdc-switch {
   margin: 0 !important;
+  flex: 0 0 auto;
 }
+
 :host ::ng-deep .mat-mdc-slide-toggle .mdc-label {
   line-height: 1.2;
   white-space: normal;
-}
-:host ::ng-deep .mat-mdc-slide-toggle .mdc-switch__track {
-  height: 20px;
-}
-:host ::ng-deep .mat-mdc-slide-toggle .mdc-switch__handle-track {
-  height: 20px;
+  word-break: break-word;
 }
 
 .repeat-mode.disabled {
@@ -232,7 +274,7 @@ mat-form-field mat-icon[matPrefix] {
 
 .hint-card {
   display: flex;
-  align-items: flex-start; /* ✅ mieux pour les textes longs */
+  align-items: flex-start;
   gap: 10px;
   border-radius: 14px;
   padding: 10px 12px;
@@ -243,7 +285,8 @@ mat-form-field mat-icon[matPrefix] {
   mat-icon {
     color: var(--brand1);
     opacity: 0.95;
-    margin-top: 1px; /* ✅ micro align */
+    margin-top: 1px;
+    flex: 0 0 auto;
   }
 
   b {
@@ -251,6 +294,7 @@ mat-form-field mat-icon[matPrefix] {
   }
 }
 
+/* ===== Jours ===== */
 .week {
   margin-top: 8px;
   border-radius: 14px;
@@ -276,6 +320,7 @@ mat-form-field mat-icon[matPrefix] {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  max-width: 100%;
 }
 
 .day {
@@ -299,7 +344,7 @@ mat-form-field mat-icon[matPrefix] {
 
   &.on {
     border-color: rgba(0, 159, 227, 0.35);
-    background: rgba(0, 159, 227, 0.10);
+    background: rgba(0, 159, 227, 0.1);
   }
 }
 
@@ -316,21 +361,21 @@ mat-form-field mat-icon[matPrefix] {
   }
 }
 
-/* ----- Engrais (Fertilisation) ----- */
+/* =========================
+   Engrais
+   ========================= */
 .fert-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-top: 6px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .fert-row {
   display: grid;
-  grid-template-columns:
-    minmax(180px, 1fr)
-    minmax(110px, 150px)
-    minmax(90px, 110px)
-    44px;
+  grid-template-columns: minmax(180px, 1fr) minmax(110px, 150px) minmax(90px, 110px) 44px;
   gap: 10px;
   align-items: center;
 
@@ -341,6 +386,10 @@ mat-form-field mat-icon[matPrefix] {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
 }
 
+.fert-row > * {
+  min-width: 0;
+}
+
 .fert-name mat-icon[matPrefix] {
   color: var(--brand1);
 }
@@ -349,14 +398,12 @@ mat-form-field mat-icon[matPrefix] {
   opacity: 0.85;
 }
 
-/* Bouton ajouter ligne: un peu plus “premium” */
 :host ::ng-deep .section-title button[mat-stroked-button] {
   border-radius: 12px;
   font-weight: 800;
-  border-color: rgba(0, 159, 227, 0.30);
+  border-color: rgba(0, 159, 227, 0.3);
 }
 
-/* Erreur globale */
 .form-error {
   display: flex;
   align-items: center;
@@ -372,16 +419,15 @@ mat-form-field mat-icon[matPrefix] {
   }
 }
 
-/* Ajuste le look des cards dans le dialog (Mat content) */
 :host ::ng-deep .mat-mdc-dialog-content .section {
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
 }
 
 /* =========================================
-   RESPONSIVE CLEAN (sans doublons)
+   RESPONSIVE
    ========================================= */
 
-/* Tablette: tout en 1 colonne plus tôt */
+/* tablette */
 @media (max-width: 960px) {
   .row--2 {
     grid-template-columns: 1fr;
@@ -396,7 +442,41 @@ mat-form-field mat-icon[matPrefix] {
   }
 }
 
-/* Mobile: engrais en layout compact et poubelle bien placée */
+/* mobile */
+@media (max-width: 600px) {
+  .dlg-content {
+    padding: 6px 10px 10px;
+  }
+
+  .section {
+    padding: 12px 12px 10px;
+    border-radius: 14px;
+  }
+
+  /* ✅ lignes fin/durée => 1 colonne */
+  .repeat-end-row,
+  .repeat-duration-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .hint-card {
+    padding: 10px 10px;
+  }
+
+  /* ✅ boutons actions full width */
+  .actions {
+    padding: 8px 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* engrais compact */
 @media (max-width: 720px) {
   .fert-row {
     grid-template-columns: 1fr 1fr;
@@ -422,10 +502,9 @@ mat-form-field mat-icon[matPrefix] {
   }
 }
 
-/* Très petit écran: actions en colonne */
+/* très petit écran */
 @media (max-width: 420px) {
-  .actions {
-    flex-direction: column;
-    align-items: stretch;
+  .section {
+    padding: 0.85rem 0.85rem 0.8rem;
   }
 }

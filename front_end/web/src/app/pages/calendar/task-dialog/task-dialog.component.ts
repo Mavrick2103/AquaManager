@@ -1,3 +1,4 @@
+// task-dialog.component.ts
 import { Component, Inject, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -120,14 +121,17 @@ export class TaskDialogComponent implements OnInit {
       aquariumId: [null as number | null, Validators.required],
       type: ['OTHER' as TaskType, Validators.required],
 
+      // ===== Répétition =====
       isRepeat: [false],
       repeatMode: ['NONE' as RepeatMode],
       repeatEveryWeeks: [{ value: 2, disabled: true }, [Validators.min(2), Validators.max(12)]],
       repeatDays: this.fb.control<WeekDayKey[]>(['MON']),
 
-      // ✅ durée de la répétition
+      // ✅ NEW: fin de répétition (sinon indéfini)
+      repeatHasEnd: [{ value: false, disabled: true }],
       repeatDurationWeeks: [{ value: 4, disabled: true }, [Validators.min(1), Validators.max(260)]],
 
+      // ===== Fertilisation =====
       fertilizers: this.fb.array([]),
     },
     { validators: fertilizersRequiredWhenFertilization },
@@ -137,14 +141,18 @@ export class TaskDialogComponent implements OnInit {
     return this.form.get('fertilizers') as FormArray;
   }
 
-  // ✅ mapping type -> title
   private titleForType(type: TaskType): string | null {
     switch (type) {
-      case 'WATER_CHANGE': return 'Changement d’eau';
-      case 'FERTILIZATION': return 'Fertilisation';
-      case 'TRIM': return 'Taille / entretien';
-      case 'WATER_TEST': return 'Test de l’eau';
-      default: return null; // OTHER
+      case 'WATER_CHANGE':
+        return 'Changement d’eau';
+      case 'FERTILIZATION':
+        return 'Fertilisation';
+      case 'TRIM':
+        return 'Taille / entretien';
+      case 'WATER_TEST':
+        return 'Test de l’eau';
+      default:
+        return null; // OTHER
     }
   }
 
@@ -161,7 +169,7 @@ export class TaskDialogComponent implements OnInit {
 
     // type != OTHER => titre imposé
     titleCtrl.setValue(auto, { emitEvent: false });
-    titleCtrl.disable({ emitEvent: false }); // ✅ empêche l’édition
+    titleCtrl.disable({ emitEvent: false });
   }
 
   ngOnInit(): void {
@@ -169,7 +177,7 @@ export class TaskDialogComponent implements OnInit {
       this.form.patchValue({ date: this.data.date });
     }
 
-    // ✅ initialise titre auto au chargement
+    // init titre auto
     this.applyAutoTitle(this.form.get('type')!.value as TaskType);
 
     this.aquariumsApi.listMine().subscribe({
@@ -187,7 +195,7 @@ export class TaskDialogComponent implements OnInit {
       },
     });
 
-    // ✅ type change => titre auto + fertil
+    // type change => titre auto + fertil
     this.form.get('type')!.valueChanges.subscribe((t) => {
       const type = (t ?? 'OTHER') as TaskType;
       this.applyAutoTitle(type);
@@ -199,20 +207,35 @@ export class TaskDialogComponent implements OnInit {
       this.form.updateValueAndValidity();
     });
 
-    // repeat toggle => enable duration
+    // repeat toggle => active les contrôles de répétition
     this.form.get('isRepeat')!.valueChanges.subscribe((on) => {
+      const hasEndCtrl = this.form.get('repeatHasEnd')!;
       const durationCtrl = this.form.get('repeatDurationWeeks')!;
+
       if (!on) {
-        this.form.patchValue({ repeatMode: 'NONE' }, { emitEvent: false });
+        this.form.patchValue({ repeatMode: 'NONE', repeatHasEnd: false }, { emitEvent: false });
+        hasEndCtrl.disable({ emitEvent: false });
         durationCtrl.disable({ emitEvent: false });
       } else {
         if (this.form.get('repeatMode')!.value === 'NONE') {
           this.form.patchValue({ repeatMode: 'WEEKLY' }, { emitEvent: false });
         }
-        durationCtrl.enable({ emitEvent: false });
+        hasEndCtrl.enable({ emitEvent: false });
+
+        // si fin activée => durée activée, sinon indéfini => durée désactivée
+        if (hasEndCtrl.value) durationCtrl.enable({ emitEvent: false });
+        else durationCtrl.disable({ emitEvent: false });
       }
     });
 
+    // fin de répétition => enable/disable durée
+    this.form.get('repeatHasEnd')!.valueChanges.subscribe((hasEnd) => {
+      const durationCtrl = this.form.get('repeatDurationWeeks')!;
+      if (hasEnd && this.form.get('isRepeat')!.value) durationCtrl.enable({ emitEvent: false });
+      else durationCtrl.disable({ emitEvent: false });
+    });
+
+    // mode => toggle everyWeeks
     this.form.get('repeatMode')!.valueChanges.subscribe((mode) => {
       if (mode === 'NONE' && this.form.get('isRepeat')!.value) {
         this.form.patchValue({ isRepeat: false }, { emitEvent: false });
@@ -221,9 +244,9 @@ export class TaskDialogComponent implements OnInit {
         this.form.patchValue({ isRepeat: true }, { emitEvent: false });
       }
 
-      const ctrl = this.form.get('repeatEveryWeeks')!;
-      if (mode === 'EVERY_X_WEEKS') ctrl.enable({ emitEvent: false });
-      else ctrl.disable({ emitEvent: false });
+      const everyCtrl = this.form.get('repeatEveryWeeks')!;
+      if (mode === 'EVERY_X_WEEKS') everyCtrl.enable({ emitEvent: false });
+      else everyCtrl.disable({ emitEvent: false });
     });
   }
 
@@ -279,11 +302,13 @@ export class TaskDialogComponent implements OnInit {
     const mode = v.repeatMode as RepeatMode;
     if (!mode || mode === 'NONE') return null;
 
-    const durationWeeks = Number(v.repeatDurationWeeks ?? 4);
+    const hasEnd = !!v.repeatHasEnd;
+    const durationWeeks = hasEnd ? Number(v.repeatDurationWeeks ?? 4) : undefined;
 
     return {
       mode,
-      durationWeeks: Number.isFinite(durationWeeks) ? durationWeeks : 4,
+      // ✅ indéfini => durationWeeks absent
+      durationWeeks: hasEnd && Number.isFinite(durationWeeks) ? durationWeeks : undefined,
       everyWeeks: mode === 'EVERY_X_WEEKS' ? Number(v.repeatEveryWeeks ?? 2) : undefined,
       days: this.isRepeatWeekly() ? ((v.repeatDays ?? ['MON']) as WeekDayKey[]) : undefined,
     };

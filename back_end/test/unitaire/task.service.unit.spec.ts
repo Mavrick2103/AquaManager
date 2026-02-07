@@ -8,6 +8,7 @@ import { TaskService } from '../../src/tasks/task.service';
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
+import { UsersService } from '../../src/users/users.service';
 
 // ✅ ADAPTE CE CHEMIN SI BESOIN
 import { TaskFertilizer } from '../../src/tasks/task-fertilizer.entity';
@@ -16,6 +17,7 @@ describe('TaskService (unit)', () => {
   let service: TaskService;
   let repo: jest.Mocked<Repository<Task>>;
   let aqRepo: jest.Mocked<Repository<Aquarium>>;
+  let usersService: { touchActivity: jest.Mock };
 
   beforeEach(async () => {
     const taskRepoMock: Partial<jest.Mocked<Repository<Task>>> = {
@@ -39,12 +41,18 @@ describe('TaskService (unit)', () => {
       createQueryBuilder: jest.fn(),
     };
 
+    // ✅ MOCK UsersService car TaskService l'injecte et l'appelle (touchActivity)
+    usersService = {
+      touchActivity: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TaskService,
         { provide: getRepositoryToken(Task), useValue: taskRepoMock },
         { provide: getRepositoryToken(Aquarium), useValue: aqRepoMock },
         { provide: getRepositoryToken(TaskFertilizer), useValue: taskFertilizerRepoMock },
+        { provide: UsersService, useValue: usersService },
         { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
@@ -52,6 +60,8 @@ describe('TaskService (unit)', () => {
     service = module.get(TaskService);
     repo = module.get(getRepositoryToken(Task));
     aqRepo = module.get(getRepositoryToken(Aquarium));
+
+    jest.clearAllMocks();
   });
 
   function mockQB(results: any[]) {
@@ -70,7 +80,17 @@ describe('TaskService (unit)', () => {
   describe('findMine', () => {
     it('retourne les tâches du user (sans mois)', async () => {
       const due = new Date('2025-01-01T00:00:00.000Z');
-      const qb = mockQB([{ id: 1, title: 'T1', dueAt: due }]);
+      const qb = mockQB([
+        {
+          id: 1,
+          title: 'T1',
+          dueAt: due,
+          status: TaskStatus.PENDING,
+          type: TaskType.OTHER,
+          aquarium: { id: 7 },
+          fertilizers: [],
+        },
+      ]);
 
       const res = await service.findMine(42);
 
@@ -104,123 +124,156 @@ describe('TaskService (unit)', () => {
           dueAt: '2025-10-01T10:00:00.000Z',
           aquariumId: 99,
           type: TaskType.WATER_CHANGE,
-        }),
+        } as any),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('crée et sauvegarde une tâche', async () => {
-  aqRepo.findOne.mockResolvedValue({ id: 7, user: { id: 1 } } as any);
-  (repo.create as jest.Mock).mockImplementation((x: any) => x);
+      aqRepo.findOne.mockResolvedValue({ id: 7, user: { id: 1 } } as any);
+      (repo.create as jest.Mock).mockImplementation((x: any) => x);
 
-  (repo.save as jest.Mock).mockImplementation(async (x: any) => ({
-    ...x,
-    id: 10,
-    dueAt: x.dueAt instanceof Date ? x.dueAt : new Date(x.dueAt),
-  }));
+      (repo.save as jest.Mock).mockImplementation(async (x: any) => ({
+        ...x,
+        id: 10,
+        dueAt: x.dueAt instanceof Date ? x.dueAt : new Date(x.dueAt),
+      }));
 
-  // ✅ le service reload probablement la task après save
-  repo.findOne.mockResolvedValue({
-    id: 10,
-    title: 'Changement eau',
-    description: '50%',
-    dueAt: new Date('2025-10-01T10:00:00.000Z'),
-    status: TaskStatus.PENDING,
-    type: TaskType.WATER_CHANGE,
-    aquarium: { id: 7 },
-    user: { id: 1 },
-    fertilizers: [],
-  } as any);
+      // ✅ le service reload après save
+      (repo.findOne as jest.Mock).mockResolvedValue({
+        id: 10,
+        title: 'Changement d’eau', // ✅ auto-title
+        description: '50%',
+        dueAt: new Date('2025-10-01T10:00:00.000Z'),
+        status: TaskStatus.PENDING,
+        type: TaskType.WATER_CHANGE,
+        aquarium: { id: 7 },
+        user: { id: 1 },
+        fertilizers: [],
+      } as any);
 
-  const res = await service.create(1, {
-    title: 'Changement eau',
-    description: '50%',
-    dueAt: '2025-10-01T10:00:00.000Z',
-    aquariumId: 7,
-    type: TaskType.WATER_CHANGE,
-  });
+      const res = await service.create(1, {
+        title: 'Changement eau',
+        description: '50%',
+        dueAt: '2025-10-01T10:00:00.000Z',
+        aquariumId: 7,
+        type: TaskType.WATER_CHANGE,
+      } as any);
 
-  expect(res).toEqual(
-    expect.objectContaining({
-      id: '10',
-      title: 'Changement eau',
-      description: '50%',
-      dueAt: new Date('2025-10-01T10:00:00.000Z').toISOString(),
-    }),
-  );
+      expect(res).toEqual(
+        expect.objectContaining({
+          id: '10',
+          title: 'Changement d’eau',
+          description: '50%',
+          dueAt: new Date('2025-10-01T10:00:00.000Z').toISOString(),
+        }),
+      );
 
-  expect(repo.create).toHaveBeenCalled();
-  expect(repo.save).toHaveBeenCalled();
-});
-
+      expect(repo.create).toHaveBeenCalled();
+      expect(repo.save).toHaveBeenCalled();
+      expect(usersService.touchActivity).toHaveBeenCalledWith(1);
+    });
   });
 
   describe('update', () => {
     it('404 si tâche non trouvée ou non appartenant au user', async () => {
       repo.findOne.mockResolvedValue(null as any);
-
-      // ✅ taskId en string
       await expect(service.update(1, '23', {} as any)).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('met à jour les champs simples', async () => {
-      repo.findOne.mockResolvedValue({
+      const existing = {
         id: 5,
         title: 'Ancien',
+        description: null,
         dueAt: new Date('2025-01-01T00:00:00.000Z'),
+        status: TaskStatus.PENDING,
+        type: TaskType.OTHER, // ✅ important pour que title puisse être modifié si besoin
         user: { id: 1 },
         aquarium: { id: 7 },
         fertilizers: [],
-      } as any);
+      } as any;
 
+      // 1) findOne pour charger la task à update
+      (repo.findOne as jest.Mock).mockResolvedValueOnce(existing);
+
+      // save renvoie juste l'entité (peu importe)
       (repo.save as jest.Mock).mockImplementation(async (x: any) => x);
 
-      // ✅ taskId en string
-      const res = await service.update(1, '5', {
-        title: 'Ancien',
+      // 2) findOne après save pour reload "full"
+      (repo.findOne as jest.Mock).mockResolvedValueOnce({
+        ...existing,
         status: TaskStatus.DONE,
-      });
+        fertilizers: [],
+        aquarium: { id: 7 },
+      } as any);
+
+      const res = await service.update(1, '5', {
+        status: TaskStatus.DONE,
+      } as any);
 
       expect(res).toEqual(
         expect.objectContaining({
           id: '5',
           title: 'Ancien',
           status: TaskStatus.DONE,
+          type: TaskType.OTHER,
+          aquarium: expect.objectContaining({ id: 7 }),
         }),
       );
+
       expect(repo.save).toHaveBeenCalled();
+      expect(usersService.touchActivity).toHaveBeenCalledWith(1);
     });
 
     it("change d'aquarium en vérifiant l'appartenance", async () => {
-      repo.findOne.mockResolvedValue({
+      const existing = {
         id: 5,
         title: 'T',
+        description: null,
         dueAt: new Date('2025-01-01T00:00:00.000Z'),
+        status: TaskStatus.PENDING,
+        type: TaskType.OTHER,
         user: { id: 1 },
         aquarium: { id: 7 },
         fertilizers: [],
+      } as any;
+
+      // 1) charge la task
+      (repo.findOne as jest.Mock).mockResolvedValueOnce(existing);
+
+      // aquarium autorisé
+      aqRepo.findOne.mockResolvedValue({ id: 8, user: { id: 1 } } as any);
+
+      // save renvoie la task (peu importe)
+      (repo.save as jest.Mock).mockImplementation(async (x: any) => x);
+
+      // 2) reload full : aquarium doit être 8
+      (repo.findOne as jest.Mock).mockResolvedValueOnce({
+        ...existing,
+        aquarium: { id: 8 },
+        fertilizers: [],
       } as any);
 
-      aqRepo.findOne.mockResolvedValue({ id: 8, user: { id: 1 } } as any);
-      (repo.save as jest.Mock).mockImplementation(async (x: any) => ({
-        ...x,
-        aquarium: { id: 8 },
-      }));
-
-      // ✅ taskId en string
-      const res = await service.update(1, '5', { aquariumId: 8 });
+      const res = await service.update(1, '5', { aquariumId: 8 } as any);
 
       expect(res).toEqual(
         expect.objectContaining({
           id: '5',
           aquarium: expect.objectContaining({ id: 8 }),
+          status: TaskStatus.PENDING,
+          type: TaskType.OTHER,
         }),
       );
+
+      expect(usersService.touchActivity).toHaveBeenCalledWith(1);
     });
 
     it('404 si nouvel aquarium non autorisé', async () => {
-      repo.findOne.mockResolvedValue({
+      (repo.findOne as jest.Mock).mockResolvedValueOnce({
         id: 5,
         dueAt: new Date('2025-01-01T00:00:00.000Z'),
+        status: TaskStatus.PENDING,
+        type: TaskType.OTHER,
         user: { id: 1 },
         aquarium: { id: 7 },
         fertilizers: [],
@@ -228,16 +281,15 @@ describe('TaskService (unit)', () => {
 
       aqRepo.findOne.mockResolvedValue(null as any);
 
-      // ✅ taskId en string
-      await expect(service.update(1, '5', { aquariumId: 99 })).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.update(1, '5', { aquariumId: 99 } as any)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 
   describe('remove', () => {
     it('404 si non trouvé ou non appartenant au user', async () => {
       repo.findOne.mockResolvedValue(null as any);
-
-      // ✅ taskId en string
       await expect(service.remove(1, '9')).rejects.toBeInstanceOf(NotFoundException);
     });
 
@@ -245,10 +297,10 @@ describe('TaskService (unit)', () => {
       repo.findOne.mockResolvedValue({ id: 9, user: { id: 1 } } as any);
       (repo.delete as jest.Mock).mockResolvedValue({} as any);
 
-      // ✅ taskId en string
       const res = await service.remove(1, '9');
 
       expect(repo.delete).toHaveBeenCalledWith(9);
+      expect(usersService.touchActivity).toHaveBeenCalledWith(1);
       expect(res).toEqual({ ok: true });
     });
   });

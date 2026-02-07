@@ -1,12 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { NotFoundException } from '@nestjs/common';
 
 import { WaterMeasurementService } from '../../src/water-measurement/water-measurement.service';
 import { WaterMeasurement } from '../../src/water-measurement/water-measurement.entity';
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
 import { CreateWaterMeasurementDto } from '../../src/water-measurement/dto/create-water-measurement.dto';
-import { NotFoundException } from '@nestjs/common';
+
+import { UsersService } from '../../src/users/users.service'; // ✅ à mock
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
 
@@ -14,31 +16,34 @@ describe('WaterMeasurementService (unit)', () => {
   let service: WaterMeasurementService;
   let repo: jest.Mocked<Repository<WaterMeasurement>>;
   let aquas: jest.Mocked<Repository<Aquarium>>;
-
-  const waterRepoMock: Partial<jest.Mocked<Repository<WaterMeasurement>>> = {
-    find: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-    findOne: jest.fn(),
-    delete: jest.fn(),
-  };
-
-  const aquariumRepoMock: Partial<jest.Mocked<Repository<Aquarium>>> = {
-    findOne: jest.fn(),
-  };
+  let usersService: { touchActivity: jest.Mock };
 
   beforeEach(async () => {
+    const waterRepoMock: Partial<jest.Mocked<Repository<WaterMeasurement>>> = {
+      find: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
+      findOne: jest.fn(),
+      delete: jest.fn(),
+    };
+
+    const aquariumRepoMock: Partial<jest.Mocked<Repository<Aquarium>>> = {
+      findOne: jest.fn(),
+    };
+
+    const usersServiceMock = {
+      touchActivity: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WaterMeasurementService,
-        {
-          provide: getRepositoryToken(WaterMeasurement),
-          useValue: waterRepoMock,
-        },
-        {
-          provide: getRepositoryToken(Aquarium),
-          useValue: aquariumRepoMock,
-        },
+        { provide: getRepositoryToken(WaterMeasurement), useValue: waterRepoMock },
+        { provide: getRepositoryToken(Aquarium), useValue: aquariumRepoMock },
+
+        // ✅ LA LIGNE QUI MANQUAIT
+        { provide: UsersService, useValue: usersServiceMock },
+
         { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
@@ -46,6 +51,7 @@ describe('WaterMeasurementService (unit)', () => {
     service = module.get(WaterMeasurementService);
     repo = module.get(getRepositoryToken(WaterMeasurement));
     aquas = module.get(getRepositoryToken(Aquarium));
+    usersService = module.get(UsersService);
 
     jest.clearAllMocks();
   });
@@ -70,22 +76,21 @@ describe('WaterMeasurementService (unit)', () => {
         where: { id: aquariumId, user: { id: userId } },
         relations: ['user'],
       });
+
       expect(repo.find).toHaveBeenCalledWith({
         where: { aquariumId },
         order: { measuredAt: 'DESC' },
       });
+
       expect(res).toBe(measurements);
+      expect(usersService.touchActivity).not.toHaveBeenCalled(); // normal: ton code ne le fait pas ici
     });
 
     it('lève NotFoundException si aquarium non trouvé', async () => {
-      const userId = 1;
-      const aquariumId = 5;
+      aquas.findOne.mockResolvedValue(null as any);
 
-      aquas.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.listForAquarium(userId, aquariumId),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.listForAquarium(1, 5)).rejects.toBeInstanceOf(NotFoundException);
+      expect(repo.find).not.toHaveBeenCalled();
     });
   });
 
@@ -113,7 +118,7 @@ describe('WaterMeasurementService (unit)', () => {
         k: 10,
         sio2: 1,
         nh3: 0,
-        // champs eau de mer qui doivent être nettoyés
+        // champs eau de mer -> doivent finir à null
         dkh: 8,
         salinity: 35,
         ca: 400,
@@ -121,34 +126,32 @@ describe('WaterMeasurementService (unit)', () => {
         comment: '  test  ',
       } as any;
 
-      const createdEntity = { id: 10 } as any;
+      const createdEntity = { fake: true } as any;
       const savedEntity = { id: 10, saved: true } as any;
 
-      (repo.create as jest.Mock).mockReturnValue(createdEntity);
-      (repo.save as jest.Mock).mockResolvedValue(savedEntity);
+      repo.create.mockReturnValue(createdEntity);
+      repo.save.mockResolvedValue(savedEntity);
 
       const res = await service.createForAquarium(userId, aquariumId, dto);
 
-      expect(aquas.findOne).toHaveBeenCalled();
-      expect(repo.create).toHaveBeenCalledTimes(1);
-
       const createArg = (repo.create as jest.Mock).mock.calls[0][0];
 
-      // On vérifie que:
       expect(createArg.aquariumId).toBe(aquariumId);
       expect(createArg.measuredAt).toBeInstanceOf(Date);
-      // champs eau douce présents
+
       expect(createArg.kh).toBe(4);
       expect(createArg.gh).toBe(6);
-      // champs eau de mer nettoyés
+
+      // nettoyés (EAU_DOUCE)
       expect(createArg.dkh).toBeNull();
       expect(createArg.salinity).toBeNull();
       expect(createArg.ca).toBeNull();
       expect(createArg.mg).toBeNull();
-      // comment trim
+
       expect(createArg.comment).toBe('test');
 
       expect(repo.save).toHaveBeenCalledWith(createdEntity);
+      expect(usersService.touchActivity).toHaveBeenCalledWith(userId);
       expect(res).toBe(savedEntity);
     });
   });
@@ -166,31 +169,27 @@ describe('WaterMeasurementService (unit)', () => {
       } as any);
 
       repo.findOne.mockResolvedValue({ id, aquariumId } as any);
+      repo.delete.mockResolvedValue({} as any);
 
       const res = await service.deleteForAquarium(userId, aquariumId, id);
 
-      expect(aquas.findOne).toHaveBeenCalled();
       expect(repo.findOne).toHaveBeenCalledWith({ where: { id, aquariumId } });
       expect(repo.delete).toHaveBeenCalledWith({ id });
+      expect(usersService.touchActivity).toHaveBeenCalledWith(userId);
       expect(res).toEqual({ success: true });
     });
 
     it('lève NotFoundException si la mesure est absente', async () => {
-      const userId = 1;
-      const aquariumId = 3;
-      const id = 99;
-
       aquas.findOne.mockResolvedValue({
-        id: aquariumId,
+        id: 3,
         waterType: 'EAU_DOUCE',
-        user: { id: userId },
+        user: { id: 1 },
       } as any);
 
-      repo.findOne.mockResolvedValue(null);
+      repo.findOne.mockResolvedValue(null as any);
 
-      await expect(
-        service.deleteForAquarium(userId, aquariumId, id),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.deleteForAquarium(1, 3, 99)).rejects.toBeInstanceOf(NotFoundException);
+      expect(repo.delete).not.toHaveBeenCalled();
     });
   });
 });

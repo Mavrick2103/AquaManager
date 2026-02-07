@@ -1,6 +1,8 @@
+// src/tasks/task.service.ts
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { Aquarium } from '../aquariums/aquariums.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -8,12 +10,15 @@ import { Task, TaskStatus, TaskType, RepeatMode, WeekDayKey } from './task.entit
 import { TaskFertilizer, FertilizerUnit } from './task-fertilizer.entity';
 import { UsersService } from '../users/users.service';
 
-
 type RepeatPayload =
   | null
   | {
       mode: RepeatMode;
-      durationWeeks?: number; // ✅ NOUVEAU
+      /**
+       * optionnel : si absent => répétition indéfinie
+       * (repeatEndAt restera null)
+       */
+      durationWeeks?: number;
       everyWeeks?: number;
       days?: WeekDayKey[];
     };
@@ -35,6 +40,7 @@ export class TaskService {
   private parseTaskId(raw: string): number {
     if (!raw) throw new BadRequestException('Missing task id');
 
+    // ids virtuels: r:<baseId>:<dueAtIso>
     if (raw.startsWith('r:')) {
       const parts = raw.split(':');
       if (parts.length < 3) throw new BadRequestException('Invalid recurring task id');
@@ -53,21 +59,28 @@ export class TaskService {
   // =========================
   private autoTitleForType(type: TaskType): string | null {
     switch (type) {
-      case TaskType.WATER_CHANGE: return 'Changement d’eau';
-      case TaskType.FERTILIZATION: return 'Fertilisation';
-      case TaskType.TRIM: return 'Taille / entretien';
-      case TaskType.WATER_TEST: return 'Test de l’eau';
-      default: return null; // OTHER
+      case TaskType.WATER_CHANGE:
+        return 'Changement d’eau';
+      case TaskType.FERTILIZATION:
+        return 'Fertilisation';
+      case TaskType.TRIM:
+        return 'Taille / entretien';
+      case TaskType.WATER_TEST:
+        return 'Test de l’eau';
+      default:
+        return null; // OTHER
     }
   }
 
   // =========================
-  // Helpers: repeat end
+  // Helpers: repeat end (borne EXCLUSIVE)
   // =========================
   private computeRepeatEndAt(baseDueAt: Date, durationWeeks?: number): Date | null {
     const w = Number(durationWeeks);
+    // si durationWeeks absent/NaN/<=0 => pas de fin (répétition indéfinie)
     if (!Number.isFinite(w) || w <= 0) return null;
 
+    // 🔥 borne exclusive : dueAt + (w * 7 jours)
     const end = new Date(baseDueAt);
     end.setUTCDate(end.getUTCDate() + Math.floor(w) * 7);
     return end;
@@ -79,7 +92,7 @@ export class TaskService {
   private toRepeatResponse(t: Task): RepeatPayload {
     if (!t.isRepeat || t.repeatMode === RepeatMode.NONE) return null;
 
-    // durationWeeks = (repeatEndAt - dueAt) / 7j (approx)
+    // durationWeeks = (repeatEndAt - dueAt) / 7j (borne exclusive -> exact en semaines)
     let durationWeeks: number | undefined = undefined;
     if (t.repeatEndAt) {
       const diffMs = t.repeatEndAt.getTime() - t.dueAt.getTime();
@@ -89,7 +102,7 @@ export class TaskService {
 
     return {
       mode: t.repeatMode,
-      durationWeeks,
+      durationWeeks, // absent si indéfini
       everyWeeks: t.repeatMode === RepeatMode.EVERY_X_WEEKS ? (t.repeatEveryWeeks ?? 2) : undefined,
       days:
         t.repeatMode === RepeatMode.WEEKLY || t.repeatMode === RepeatMode.EVERY_X_WEEKS
@@ -146,7 +159,7 @@ export class TaskService {
   }
 
   private jsDayToKey(d: number): WeekDayKey {
-    return (['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d] as WeekDayKey);
+    return ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d] as WeekDayKey;
   }
 
   private addDaysUTC(date: Date, days: number) {
@@ -180,15 +193,16 @@ export class TaskService {
     const cursorStart = this.startOfDayUTC(start);
     const cursorEnd = this.startOfDayUTC(end);
 
+    // repeatEndAt null => indéfini (on génère juste sur le mois demandé)
     const endAt = t.repeatEndAt ? new Date(t.repeatEndAt) : null;
 
     const occurrences: Array<any> = [];
 
     for (let day = new Date(cursorStart); day < cursorEnd; day = this.addDaysUTC(day, 1)) {
-      // ✅ stop si on dépasse repeatEndAt
+      // ✅ borne EXCLUSIVE : si dueCandidate >= endAt => stop
       if (endAt) {
         const dueCandidate = this.sameTimeAs(baseDue, day);
-        if (dueCandidate.getTime() > endAt.getTime()) continue;
+        if (dueCandidate.getTime() >= endAt.getTime()) continue;
       }
 
       const dayKey = this.jsDayToKey(day.getUTCDay());
@@ -296,9 +310,8 @@ export class TaskService {
     const repeat = (dto.repeat ?? null) as RepeatPayload;
     const type = dto.type ?? TaskType.OTHER;
 
-    // ✅ titre auto back (sécurité)
     const auto = this.autoTitleForType(type);
-    const title = type === TaskType.OTHER ? dto.title : (auto ?? dto.title);
+    const title = type === TaskType.OTHER ? dto.title : auto ?? dto.title;
 
     const dueAt = new Date(dto.dueAt);
 
@@ -319,10 +332,10 @@ export class TaskService {
           ? (repeat.days ?? ['MON'])
           : null,
 
-      // ✅ fin de répétition
+      // ✅ si durationWeeks absent => repeatEndAt = null => indéfini
       repeatEndAt:
         repeat?.mode && repeat.mode !== RepeatMode.NONE
-          ? this.computeRepeatEndAt(dueAt, repeat.durationWeeks ?? 4)
+          ? this.computeRepeatEndAt(dueAt, repeat.durationWeeks)
           : null,
     });
 
@@ -374,7 +387,7 @@ export class TaskService {
     if (dto.dueAt !== undefined) task.dueAt = new Date(dto.dueAt);
     if (dto.status !== undefined) task.status = dto.status;
 
-    // ✅ type + titre auto
+    // type + titre auto
     if (dto.type !== undefined) {
       task.type = dto.type;
 
@@ -404,9 +417,10 @@ export class TaskService {
           ? (repeat.days ?? ['MON'])
           : null;
 
+      // ✅ si durationWeeks absent => repeatEndAt = null => indéfini
       task.repeatEndAt =
         repeat?.mode && repeat.mode !== RepeatMode.NONE
-          ? this.computeRepeatEndAt(task.dueAt, repeat.durationWeeks ?? 4)
+          ? this.computeRepeatEndAt(task.dueAt, repeat.durationWeeks)
           : null;
     }
 

@@ -1,24 +1,51 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 
 import { TaskController } from '../../src/tasks/task.controller';
 import { TaskService } from '../../src/tasks/task.service';
 import { Task, TaskStatus, TaskType } from '../../src/tasks/task.entity';
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
+import { UsersService } from '../../src/users/users.service';
 
-// ✅ ADAPTE CE CHEMIN SI BESOIN
+// ✅ adapte si besoin
 import { TaskFertilizer } from '../../src/tasks/task-fertilizer.entity';
 
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
 
+type TaskRepoMock = {
+  createQueryBuilder: jest.Mock;
+  findOne: jest.Mock;
+  create: jest.Mock;
+  save: jest.Mock;
+  delete: jest.Mock;
+};
+
+type AqRepoMock = {
+  findOne: jest.Mock;
+};
+
+type TaskFertilizerRepoMock = {
+  find: jest.Mock;
+  findOne: jest.Mock;
+  create: jest.Mock;
+  save: jest.Mock;
+  delete: jest.Mock;
+  createQueryBuilder: jest.Mock;
+};
+
+type UsersServiceMock = {
+  touchActivity: jest.Mock;
+};
+
 describe('Tasks (tests fonctionnels)', () => {
   let controller: TaskController;
-  let service: TaskService;
-  let repo: jest.Mocked<Repository<Task>>;
-  let aqRepo: jest.Mocked<Repository<Aquarium>>;
+
+  let repo: TaskRepoMock;
+  let aqRepo: AqRepoMock;
+  let fertRepo: TaskFertilizerRepoMock;
+  let usersService: UsersServiceMock;
 
   let qb: {
     leftJoin: jest.Mock;
@@ -41,7 +68,7 @@ describe('Tasks (tests fonctionnels)', () => {
       getMany: jest.fn(),
     };
 
-    const taskRepoMock: Partial<jest.Mocked<Repository<Task>>> = {
+    const taskRepoMock: TaskRepoMock = {
       createQueryBuilder: jest.fn().mockReturnValue(qb),
       findOne: jest.fn(),
       create: jest.fn(),
@@ -49,17 +76,21 @@ describe('Tasks (tests fonctionnels)', () => {
       delete: jest.fn(),
     };
 
-    const aqRepoMock: Partial<jest.Mocked<Repository<Aquarium>>> = {
+    const aqRepoMock: AqRepoMock = {
       findOne: jest.fn(),
     };
 
-    const taskFertilizerRepoMock: Partial<jest.Mocked<Repository<TaskFertilizer>>> = {
+    const taskFertilizerRepoMock: TaskFertilizerRepoMock = {
       find: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
       delete: jest.fn(),
       createQueryBuilder: jest.fn(),
+    };
+
+    const usersServiceMock: UsersServiceMock = {
+      touchActivity: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -69,14 +100,17 @@ describe('Tasks (tests fonctionnels)', () => {
         { provide: getRepositoryToken(Task), useValue: taskRepoMock },
         { provide: getRepositoryToken(Aquarium), useValue: aqRepoMock },
         { provide: getRepositoryToken(TaskFertilizer), useValue: taskFertilizerRepoMock },
+        { provide: UsersService, useValue: usersServiceMock },
         { provide: MailService, useValue: mailServiceMock },
       ],
     }).compile();
 
     controller = module.get(TaskController);
-    service = module.get(TaskService);
-    repo = module.get(getRepositoryToken(Task));
-    aqRepo = module.get(getRepositoryToken(Aquarium));
+
+    repo = module.get(getRepositoryToken(Task)) as any;
+    aqRepo = module.get(getRepositoryToken(Aquarium)) as any;
+    fertRepo = module.get(getRepositoryToken(TaskFertilizer)) as any;
+    usersService = module.get(UsersService) as any;
 
     jest.clearAllMocks();
   });
@@ -85,7 +119,6 @@ describe('Tasks (tests fonctionnels)', () => {
     const t1Due = new Date('2025-01-01T00:00:00.000Z');
     const t2Due = new Date('2025-01-02T00:00:00.000Z');
 
-    // ⚠️ Le service mappe => id string + dueAt ISO string + champs additionnels
     const tasksFromDb = [
       { id: 1, title: 'Changement d’eau', dueAt: t1Due } as any,
       { id: 2, title: 'Test NO3', dueAt: t2Due } as any,
@@ -120,12 +153,12 @@ describe('Tasks (tests fonctionnels)', () => {
   it('list() -> filtre les tâches par mois si month est fourni', async () => {
     const due = new Date('2025-03-10T10:00:00.000Z');
 
-    // ✅ IMPORTANT : dueAt doit être une Date sinon toISOString() casse
     qb.getMany.mockResolvedValue([{ id: 3, title: 'Taille des plantes', dueAt: due } as any]);
 
     const res = await controller.list(req, '2025-03');
 
     expect(qb.andWhere).toHaveBeenCalled();
+
     expect(res).toEqual([
       expect.objectContaining({
         id: '3',
@@ -136,72 +169,70 @@ describe('Tasks (tests fonctionnels)', () => {
   });
 
   it('create() -> crée une tâche pour un aquarium appartenant au user', async () => {
-  aqRepo.findOne.mockResolvedValue({
-    id: 5,
-    user: { id: 1 },
-  } as any);
+    aqRepo.findOne.mockResolvedValue({
+      id: 5,
+      user: { id: 1 },
+    } as any);
 
-  repo.create.mockImplementation((partial: any) => partial as any);
+    repo.create.mockImplementation((partial: any) => partial as any);
 
-  // save renvoie un truc, ok, MAIS ton service refait sûrement un findOne derrière
-  repo.save.mockImplementation(async (t: any) => ({
-    ...t,
-    id: 10,
-    dueAt: t.dueAt instanceof Date ? t.dueAt : new Date(t.dueAt),
-  }));
+    repo.save.mockImplementation(async (t: any) => ({
+      ...t,
+      id: 10,
+      dueAt: t.dueAt instanceof Date ? t.dueAt : new Date(t.dueAt),
+    }));
 
-  // ✅ IMPORTANT : ton service fait très probablement un repo.findOne(...) après save
-  repo.findOne.mockResolvedValue({
-    id: 10,
-    title: 'Changement d’eau',
-    description: '30 % du volume',
-    dueAt: new Date('2025-01-15T10:00:00.000Z'),
-    status: TaskStatus.PENDING,
-    type: TaskType.WATER_CHANGE,
-    aquarium: { id: 5 },
-    user: { id: 1 },
-    fertilizers: [],
-  } as any);
-
-  const dto = {
-    title: 'Changement d’eau',
-    description: '30 % du volume',
-    dueAt: '2025-01-15T10:00:00.000Z',
-    aquariumId: 5,
-    type: TaskType.WATER_CHANGE,
-  };
-
-  const res = await controller.create(req, dto as any);
-
-  expect(aqRepo.findOne).toHaveBeenCalledWith({
-    where: { id: 5, user: { id: 1 } },
-    relations: { user: true },
-    select: { id: true } as any,
-  });
-
-  expect(repo.create).toHaveBeenCalledWith(
-    expect.objectContaining({
+    repo.findOne.mockResolvedValue({
+      id: 10,
       title: 'Changement d’eau',
       description: '30 % du volume',
-      user: { id: 1 },
-      aquarium: expect.objectContaining({ id: 5 }),
+      dueAt: new Date('2025-01-15T10:00:00.000Z'),
       status: TaskStatus.PENDING,
       type: TaskType.WATER_CHANGE,
-      dueAt: new Date('2025-01-15T10:00:00.000Z'),
-    }),
-  );
+      aquarium: { id: 5 },
+      user: { id: 1 },
+      fertilizers: [],
+    } as any);
 
-  // ✅ réponse mappée
-  expect(res).toEqual(
-    expect.objectContaining({
-      id: '10',
+    const dto = {
       title: 'Changement d’eau',
+      description: '30 % du volume',
+      dueAt: '2025-01-15T10:00:00.000Z',
+      aquariumId: 5,
       type: TaskType.WATER_CHANGE,
-      dueAt: new Date('2025-01-15T10:00:00.000Z').toISOString(),
-    }),
-  );
-});
+    };
 
+    const res = await controller.create(req, dto as any);
+
+    expect(aqRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 5, user: { id: 1 } },
+      relations: { user: true },
+      select: { id: true } as any,
+    });
+
+    expect(repo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Changement d’eau',
+        description: '30 % du volume',
+        user: { id: 1 },
+        aquarium: expect.objectContaining({ id: 5 }),
+        status: TaskStatus.PENDING,
+        type: TaskType.WATER_CHANGE,
+        dueAt: new Date('2025-01-15T10:00:00.000Z'),
+      }),
+    );
+
+    expect(usersService.touchActivity).toHaveBeenCalledWith(1);
+
+    expect(res).toEqual(
+      expect.objectContaining({
+        id: '10',
+        title: 'Changement d’eau',
+        type: TaskType.WATER_CHANGE,
+        dueAt: new Date('2025-01-15T10:00:00.000Z').toISOString(),
+      }),
+    );
+  });
 
   it('create() -> 404 si aquarium introuvable ou non autorisé', async () => {
     aqRepo.findOne.mockResolvedValue(null as any);
@@ -217,6 +248,7 @@ describe('Tasks (tests fonctionnels)', () => {
 
     expect(repo.create).not.toHaveBeenCalled();
     expect(repo.save).not.toHaveBeenCalled();
+    expect(usersService.touchActivity).not.toHaveBeenCalled();
   });
 
   it('update() -> met à jour les champs simples d’une tâche appartenant au user', async () => {
@@ -245,13 +277,13 @@ describe('Tasks (tests fonctionnels)', () => {
 
     const res = await controller.update(req, '7', dto as any);
 
-    // ✅ ton service demande aussi fertilizers: true maintenant
     expect(repo.findOne).toHaveBeenCalledWith({
       where: { id: 7 },
       relations: { user: true, aquarium: true, fertilizers: true },
     });
 
-    // ✅ réponse mappée
+    expect(usersService.touchActivity).toHaveBeenCalledWith(1);
+
     expect(res).toEqual(
       expect.objectContaining({
         id: '7',
@@ -283,9 +315,7 @@ describe('Tasks (tests fonctionnels)', () => {
 
     repo.save.mockImplementation(async (t: any) => t);
 
-    const dto = { aquariumId: 6 };
-
-    const res = await controller.update(req, '8', dto as any);
+    const res = await controller.update(req, '8', { aquariumId: 6 } as any);
 
     expect(aqRepo.findOne).toHaveBeenCalledWith({
       where: { id: 6, user: { id: 1 } },
@@ -293,7 +323,8 @@ describe('Tasks (tests fonctionnels)', () => {
       select: { id: true } as any,
     });
 
-    // ✅ réponse mappée : aquarium => { id, name? } ou undefined
+    expect(usersService.touchActivity).toHaveBeenCalledWith(1);
+
     expect(res).toEqual(
       expect.objectContaining({
         id: '8',
@@ -327,6 +358,8 @@ describe('Tasks (tests fonctionnels)', () => {
       where: { id: 12 },
       relations: { user: true },
     });
+
+    expect(usersService.touchActivity).toHaveBeenCalledWith(1);
 
     expect(repo.delete).toHaveBeenCalledWith(12);
     expect(res).toEqual({ ok: true });

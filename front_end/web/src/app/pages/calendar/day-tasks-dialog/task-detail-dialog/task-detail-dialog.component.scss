@@ -1,237 +1,336 @@
-:host{
-  display:block;
-  box-sizing:border-box;
+:host {
+  display: block;
+  box-sizing: border-box;
 }
 
-/* ✅ évite les débordements horizontaux (le “jeu latéral”) */
-*, *::before, *::after{
-  box-sizing:border-box;
+/* ✅ stop les débordements */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-.dlg-title{
-  display:flex;
-  align-items:center;
-  gap:.55rem;
-  font-weight:900;
+.dlg-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 900;
 }
 
-.dlg-content{
-  padding-top:.25rem;
-  overflow-x:hidden; /* ✅ stop le scroll horizontal */
+.dlg-content {
+  padding-top: 0.25rem;
+  overflow-x: hidden;
 }
 
-.form{
-  display:grid;
-  gap:1rem;
-  width:100%;
-  max-width:100%;
+.form {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%;
 }
 
-.section{
-  border:1px solid rgba(0,0,0,.08);
-  border-radius:16px;
-  background:#fff;
-  padding:.9rem .9rem .8rem;
-  box-shadow:0 10px 22px rgba(0,0,0,.05);
-  width:100%;
-  max-width:100%;
-  overflow:hidden;
+.section {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  background: #fff;
+  padding: 0.9rem 0.9rem 0.8rem;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-.section-title{
-  display:flex;
-  align-items:flex-start;
-  gap:.65rem;
-  margin-bottom:.75rem;
+.section-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
 
-  .ttl{ font-weight:900; line-height:1.1; }
-  .sub{ font-size:.85rem; opacity:.75; margin-top:.1rem; }
-  .spacer{ flex:1; }
+  .ttl {
+    font-weight: 900;
+    line-height: 1.1;
+  }
+  .sub {
+    font-size: 0.85rem;
+    opacity: 0.75;
+    margin-top: 0.1rem;
+  }
+  .spacer {
+    flex: 1;
+  }
 }
 
-.row{ display:grid; gap:.75rem; }
-.row--2{ grid-template-columns:1fr 1fr; }
-
-.sep{ margin:.25rem 0; opacity:.6; }
-
-mat-form-field{
-  width:100%;
-  max-width:100%;
-  min-width:0;
+.row {
+  display: grid;
+  gap: 0.75rem;
+}
+.row--2 {
+  grid-template-columns: 1fr 1fr;
 }
 
-/* ✅ petit bloc “info / exemple” */
-.hint-card{
-  display:flex;
-  align-items:flex-start;
-  gap:.55rem;
-  padding:.75rem;
-  border-radius:14px;
-  border:1px solid rgba(0,0,0,.08);
-  background:linear-gradient(135deg,#fbfffd,#f3fbff);
-  color:rgba(0,0,0,.75);
+.sep {
+  margin: 0.25rem 0;
+  opacity: 0.6;
+}
 
-  mat-icon{
-    opacity:.8;
-    margin-top:.05rem;
+mat-form-field {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* ✅ hint card */
+.hint-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: linear-gradient(135deg, #fbfffd, #f3fbff);
+  color: rgba(0, 0, 0, 0.75);
+
+  mat-icon {
+    opacity: 0.8;
+    margin-top: 0.05rem;
+    flex: 0 0 auto;
   }
 
-  b{ font-weight:900; }
+  b {
+    font-weight: 900;
+  }
 }
 
-/* -------- Repeat -------- */
-.repeat-head{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:.75rem;
-  align-items:center;
-}
-.repeat-mode.disabled{ opacity:.6; }
-
-.week{
-  margin-top:.75rem;
-  background:linear-gradient(135deg,#f2fff6,#f2fbff);
-  border:1px solid rgba(0,0,0,.08);
-  border-radius:14px;
-  padding:.75rem;
-  width:100%;
-  overflow:hidden;
+/* =========================
+   Repeat
+   ========================= */
+.repeat-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  gap: 0.75rem;
+  align-items: center;
 }
 
-.week-label{
-  display:flex;
-  align-items:center;
-  gap:.45rem;
-  font-weight:800;
-  margin-bottom:.5rem;
+/* ✅ toggle full width (évite les labels qui cassent) */
+.toggle-full {
+  width: 100%;
 }
 
-.chips{
-  display:flex;
-  flex-wrap:wrap;
-  gap:.45rem;
-  max-width:100%;
+/* ✅ Material slide toggle label propre */
+:host ::ng-deep .mat-mdc-slide-toggle {
+  width: 100%;
+}
+:host ::ng-deep .mat-mdc-slide-toggle .mdc-form-field {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+:host ::ng-deep .mat-mdc-slide-toggle .mdc-switch {
+  margin: 0 !important;
+  flex: 0 0 auto;
+}
+:host ::ng-deep .mat-mdc-slide-toggle .mdc-label {
+  line-height: 1.2;
+  white-space: normal;
+  word-break: break-word;
 }
 
-.day{
-  border:1px solid rgba(0,0,0,.12);
-  background:#fff;
-  border-radius:999px;
-  padding:.35rem .7rem;
-  font-weight:800;
-  cursor:pointer;
-  transition: transform .06s ease, box-shadow .18s ease, background .18s ease;
-
-  &:hover{ transform:translateY(-1px); box-shadow:0 8px 18px rgba(0,0,0,.08); }
-  &.on{ background:rgba(0,159,227,.10); border-color:rgba(0,159,227,.35); }
+.repeat-mode.disabled {
+  opacity: 0.6;
 }
 
-.week-note{
-  margin-top:.5rem;
-  display:flex;
-  align-items:center;
-  gap:.45rem;
-  font-size:.85rem;
-  opacity:.8;
+/* ✅ Durée : sur mobile on veut 1 colonne propre */
+.repeat-duration-row {
+  align-items: start;
 }
 
-/* -------- Fert -------- */
-.fert-list{
-  display:grid;
-  gap:.75rem;
-  width:100%;
-  max-width:100%;
+/* ===== Week days ===== */
+.week {
+  margin-top: 0.75rem;
+  background: linear-gradient(135deg, #f2fff6, #f2fbff);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  padding: 0.75rem;
+  width: 100%;
+  overflow: hidden;
 }
 
-.fert-row{
-  display:grid;
-  grid-template-columns:
-    minmax(0, 1.35fr)
-    minmax(0, .9fr)
-    minmax(0, .55fr)
-    44px;
-  gap:.65rem;
-  align-items:center;
-  width:100%;
-  max-width:100%;
+.week-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
 }
 
-.fert-row > *{
-  min-width:0;
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  max-width: 100%;
 }
 
-.trash{
-  justify-self:end;
-  align-self:center;
-  border-radius:12px;
+.day {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.06s ease, box-shadow 0.18s ease, background 0.18s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  }
+
+  &.on {
+    background: rgba(0, 159, 227, 0.1);
+    border-color: rgba(0, 159, 227, 0.35);
+  }
 }
 
-.fert-qty input[type="number"]{
-  width:100%;
-  max-width:100%;
-  box-sizing:border-box;
-  padding-right:28px;
+.week-note {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
 }
 
-.fert-qty input[type="number"]::-webkit-inner-spin-button,
-.fert-qty input[type="number"]::-webkit-outer-spin-button{
-  opacity:1;
+/* =========================
+   Fert
+   ========================= */
+.fert-list {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.fert-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr) minmax(0, 0.55fr) 44px;
+  gap: 0.65rem;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+}
+
+.fert-row > * {
+  min-width: 0;
+}
+
+.trash {
+  justify-self: end;
+  align-self: center;
+  border-radius: 12px;
+}
+
+.fert-qty input[type='number'] {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding-right: 28px;
+}
+
+.fert-qty input[type='number']::-webkit-inner-spin-button,
+.fert-qty input[type='number']::-webkit-outer-spin-button {
+  opacity: 1;
 }
 
 :host ::ng-deep .fert-name .mat-mdc-form-field-infix,
-:host ::ng-deep .fert-qty  .mat-mdc-form-field-infix,
-:host ::ng-deep .fert-unit .mat-mdc-form-field-infix{
-  width:100%;
-  min-width:0;
+:host ::ng-deep .fert-qty .mat-mdc-form-field-infix,
+:host ::ng-deep .fert-unit .mat-mdc-form-field-infix {
+  width: 100%;
+  min-width: 0;
 }
 
-/* -------- Errors -------- */
-.form-error{
-  display:flex;
-  align-items:center;
-  gap:.5rem;
-  padding:.55rem .7rem;
-  border-radius:12px;
-  background:rgba(244,67,54,.08);
-  border:1px solid rgba(244,67,54,.18);
-  color:#b71c1c;
+/* =========================
+   Errors
+   ========================= */
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 12px;
+  background: rgba(244, 67, 54, 0.08);
+  border: 1px solid rgba(244, 67, 54, 0.18);
+  color: #b71c1c;
 }
 
-/* -------- Actions -------- */
-.actions{
-  padding:1rem;
-  display:flex;
-  gap:.6rem;
-  justify-content:flex-end;
+/* =========================
+   Actions
+   ========================= */
+.actions {
+  padding: 1rem;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  flex-wrap: wrap; /* ✅ si ça manque de place */
 }
 
-/* -------- Responsive -------- */
-@media (max-width: 760px){
-  .row--2{ grid-template-columns:1fr; }
-  .repeat-head{ grid-template-columns:1fr; }
-
-  .fert-row{
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "name name"
-      "qty  unit"
-      "trash trash";
-    column-gap:.6rem;
-    row-gap:.6rem;
+/* =========================
+   Responsive
+   ========================= */
+@media (max-width: 960px) {
+  .row--2 {
+    grid-template-columns: 1fr;
   }
 
-  .fert-name{ grid-area:name; }
-  .fert-qty{ grid-area:qty; }
-  .fert-unit{ grid-area:unit; }
-  .trash{ grid-area:trash; justify-self:end; }
+  .repeat-head {
+    grid-template-columns: 1fr;
+  }
+}
 
-  .actions{
-    flex-direction:column;
-    align-items:stretch;
+@media (max-width: 760px) {
+  /* fertilisation compacte */
+  .fert-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'name name'
+      'qty unit'
+      'trash trash';
+    column-gap: 0.6rem;
+    row-gap: 0.6rem;
+  }
 
-    button{
-      width:100%;
-      justify-content:center;
+  .fert-name {
+    grid-area: name;
+  }
+  .fert-qty {
+    grid-area: qty;
+  }
+  .fert-unit {
+    grid-area: unit;
+  }
+  .trash {
+    grid-area: trash;
+    justify-self: end;
+  }
+
+  /* actions full width */
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+
+    button {
+      width: 100%;
+      justify-content: center;
     }
+  }
+}
+
+@media (max-width: 420px) {
+  .section {
+    padding: 0.8rem 0.8rem 0.75rem;
+    border-radius: 14px;
+  }
+
+  .hint-card {
+    padding: 0.7rem 0.7rem;
   }
 }
