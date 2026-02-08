@@ -429,3 +429,18 @@ button[mat-stroked-button][color="warn"] {
     justify-content: flex-start;
   }
 }
+.role-field {
+  width: 170px;
+  margin: 0;
+}
+
+.role-ic {
+  margin-right: 10px;
+  transform: translateY(2px);
+}
+
+.saving {
+  display: inline-flex;
+  margin-left: 10px;
+  vertical-align: middle;
+}

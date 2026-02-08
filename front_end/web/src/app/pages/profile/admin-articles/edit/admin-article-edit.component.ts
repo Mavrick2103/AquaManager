@@ -13,15 +13,32 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { AdminArticlesService, ArticleDto, ArticleStatus, ThemeDto } from '../../../../core/admin-articles.service';
+import {
+  AdminArticlesService,
+  ArticleDto,
+  ArticleStatus,
+  ThemeDto,
+} from '../../../../core/admin-articles.service';
+import { UserService, UserMe } from '../../../../core/user.service';
+
+type AppRole = 'USER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN';
 
 @Component({
   selector: 'app-admin-article-edit',
   standalone: true,
   imports: [
-    CommonModule, RouterModule, ReactiveFormsModule,
-    MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatSnackBarModule, MatProgressSpinnerModule,
+    CommonModule,
+    RouterModule,
+    ReactiveFormsModule,
+
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatIconModule,
+    MatSnackBarModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './admin-article-edit.component.html',
   styleUrls: ['./admin-article-edit.component.scss'],
@@ -31,16 +48,20 @@ export class AdminArticleEditComponent implements OnInit {
   loading = false;
   saving = false;
   deleting = false;
+  actioning = false; // ✅ submit/approve/reject
 
   articleId = 0;
   article: ArticleDto | null = null;
   themes: ThemeDto[] = [];
+
+  me: (UserMe & { role?: string }) | null = null;
 
   form: FormGroup;
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly api: AdminArticlesService,
+    private readonly users: UserService,
     private readonly fb: FormBuilder,
     private readonly snack: MatSnackBar,
     private readonly router: Router,
@@ -52,18 +73,56 @@ export class AdminArticleEditComponent implements OnInit {
       excerpt: [''],
       content: ['', [Validators.required, Validators.minLength(10)]],
       coverImageUrl: [''],
-      status: ['DRAFT' as ArticleStatus, Validators.required],
+      status: ['DRAFT' as ArticleStatus, Validators.required], // ✅ admin only en pratique
       themeId: [null as number | null, Validators.required],
     });
   }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.articleId = Number(this.route.snapshot.paramMap.get('id') || 0);
+
+    // ✅ récupère le rôle pour adapter l’UI
+    try {
+      this.me = await this.users.getMe();
+    } catch {
+      this.me = null;
+    }
+
     this.load();
+  }
+
+  private get role(): AppRole {
+    const r = String(this.me?.role ?? '').toUpperCase();
+    if (r === 'ADMIN' || r === 'SUPERADMIN' || r === 'EDITOR' || r === 'USER') return r as AppRole;
+    return 'USER';
+  }
+
+  get isAdmin(): boolean {
+    return this.role === 'ADMIN' || this.role === 'SUPERADMIN';
+  }
+
+  get isEditor(): boolean {
+    // ✅ un admin a aussi accès aux écrans éditeur
+    return this.isAdmin || this.role === 'EDITOR';
   }
 
   back(): void {
     this.location.back();
+  }
+
+  statusLabel(s: ArticleStatus): string {
+    switch (s) {
+      case 'DRAFT':
+        return 'Brouillon';
+      case 'PENDING_REVIEW':
+        return 'En attente';
+      case 'PUBLISHED':
+        return 'Publié';
+      case 'REJECTED':
+        return 'Refusé';
+      default:
+        return String(s);
+    }
   }
 
   private load(): void {
@@ -72,16 +131,32 @@ export class AdminArticleEditComponent implements OnInit {
     this.loading = true;
     this.cdr.markForCheck();
 
+    // ✅ Themes :
+    // - idéalement: côté back, /admin/articles/themes doit accepter ADMIN + EDITOR (sinon 403)
     this.api.themes().pipe(take(1)).subscribe({
-      next: (t) => { this.themes = Array.isArray(t) ? t : []; this.cdr.markForCheck(); },
-      error: () => { this.themes = []; this.cdr.markForCheck(); },
+      next: (t) => {
+        this.themes = Array.isArray(t) ? t : [];
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.themes = [];
+        this.cdr.markForCheck();
+      },
     });
 
-    this.api.getById(this.articleId)
-      .pipe(finalize(() => { this.loading = false; this.cdr.markForCheck(); }))
+    this.api
+      .getById(this.articleId)
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (a) => {
           this.article = a;
+
+          // ✅ patch form
           this.form.patchValue({
             title: a.title,
             excerpt: a.excerpt ?? '',
@@ -90,6 +165,15 @@ export class AdminArticleEditComponent implements OnInit {
             status: a.status,
             themeId: a.themeId,
           });
+
+          // ✅ editor: le status n’est pas éditable → on le disable pour éviter d’envoyer PUBLISHED
+          if (!this.isAdmin) {
+            this.form.get('status')?.disable({ emitEvent: false });
+          } else {
+            // ✅ admin : au cas où on repasse sur un compte admin, on réactive
+            this.form.get('status')?.enable({ emitEvent: false });
+          }
+
           this.cdr.markForCheck();
         },
         error: (e) => {
@@ -107,20 +191,35 @@ export class AdminArticleEditComponent implements OnInit {
       return;
     }
 
+    // ✅ rawValue inclut les champs disabled
     const raw = this.form.getRawValue();
 
     this.saving = true;
     this.cdr.markForCheck();
 
-    this.api.update(this.articleId, {
+    // ✅ règles :
+    // - EDITOR : on n’envoie pas "status" (le back mettra PENDING_REVIEW)
+    // - ADMIN  : on envoie le status choisi
+    const payload: any = {
       title: String(raw.title).trim(),
       excerpt: raw.excerpt ? String(raw.excerpt).trim() : '',
       content: String(raw.content).trim(),
       coverImageUrl: raw.coverImageUrl ? String(raw.coverImageUrl).trim() : '',
-      status: raw.status,
       themeId: Number(raw.themeId),
-    })
-      .pipe(finalize(() => { this.saving = false; this.cdr.markForCheck(); }))
+    };
+
+    if (this.isAdmin) {
+      payload.status = raw.status;
+    }
+
+    this.api
+      .update(this.articleId, payload)
+      .pipe(
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (updated) => {
           this.article = updated;
@@ -129,7 +228,96 @@ export class AdminArticleEditComponent implements OnInit {
         },
         error: (e) => {
           console.error(e);
-          this.snack.open('Erreur mise à jour', 'OK', { duration: 3500 });
+          const msg = e?.error?.message || 'Erreur mise à jour';
+          this.snack.open(msg, 'OK', { duration: 3500 });
+        },
+      });
+  }
+
+  // ✅ EDITOR -> submit
+  submitForReview(): void {
+    if (!this.articleId) return;
+
+    this.actioning = true;
+    this.cdr.markForCheck();
+
+    // ✅ IMPORTANT : dans le service la vraie méthode s’appelle submitForReview()
+    // (et tu peux garder un alias submit() si tu veux).
+    this.api
+      .submitForReview(this.articleId)
+      .pipe(
+        finalize(() => {
+          this.actioning = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (updated) => {
+          this.article = updated;
+          this.snack.open('Envoyé à validation ✅', 'OK', { duration: 2200 });
+          this.cdr.markForCheck();
+        },
+        error: (e) => {
+          console.error(e);
+          this.snack.open(e?.error?.message || 'Impossible d’envoyer à validation', 'OK', { duration: 3500 });
+        },
+      });
+  }
+
+  // ✅ ADMIN -> approve
+  approve(): void {
+    if (!this.articleId) return;
+
+    this.actioning = true;
+    this.cdr.markForCheck();
+
+    this.api
+      .approve(this.articleId)
+      .pipe(
+        finalize(() => {
+          this.actioning = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (updated) => {
+          this.article = updated;
+          this.snack.open('Article publié ✅', 'OK', { duration: 2200 });
+          this.cdr.markForCheck();
+        },
+        error: (e) => {
+          console.error(e);
+          this.snack.open(e?.error?.message || 'Impossible de valider', 'OK', { duration: 3500 });
+        },
+      });
+  }
+
+  // ✅ ADMIN -> reject
+  reject(): void {
+    if (!this.articleId) return;
+
+    const reason = prompt('Raison du refus ?') ?? '';
+    // si cancel -> null, si vide -> ok aussi (back met une valeur par défaut)
+    this.actioning = true;
+    this.cdr.markForCheck();
+
+    this.api
+      .reject(this.articleId, reason)
+      .pipe(
+        finalize(() => {
+          this.actioning = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (updated) => {
+          this.article = updated;
+          this.snack.open('Article refusé', 'OK', { duration: 2200 });
+          this.cdr.markForCheck();
+        },
+        error: (e) => {
+          console.error(e);
+          this.snack.open(e?.error?.message || 'Impossible de refuser', 'OK', { duration: 3500 });
         },
       });
   }
@@ -142,8 +330,14 @@ export class AdminArticleEditComponent implements OnInit {
     this.deleting = true;
     this.cdr.markForCheck();
 
-    this.api.delete(this.articleId)
-      .pipe(finalize(() => { this.deleting = false; this.cdr.markForCheck(); }))
+    this.api
+      .delete(this.articleId)
+      .pipe(
+        finalize(() => {
+          this.deleting = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: () => {
           this.snack.open('Article supprimé', 'OK', { duration: 2200 });
@@ -151,7 +345,7 @@ export class AdminArticleEditComponent implements OnInit {
         },
         error: (e) => {
           console.error(e);
-          this.snack.open('Erreur suppression', 'OK', { duration: 3500 });
+          this.snack.open(e?.error?.message || 'Erreur suppression', 'OK', { duration: 3500 });
         },
       });
   }

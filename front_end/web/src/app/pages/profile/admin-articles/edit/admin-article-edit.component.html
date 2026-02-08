@@ -7,7 +7,13 @@
 
     <div class="title">
       <h2>Modifier l’article</h2>
-      <p *ngIf="article">#{{ article.id }} • {{ article.slug }}</p>
+      <p *ngIf="article">
+        #{{ article.id }} • {{ article.slug }}
+        <span class="badge" [class.pub]="article.status==='PUBLISHED'" [class.draft]="article.status==='DRAFT'"
+              [class.pending]="article.status==='PENDING_REVIEW'" [class.rejected]="article.status==='REJECTED'">
+          {{ statusLabel(article.status) }}
+        </span>
+      </p>
     </div>
 
     <button mat-stroked-button type="button" (click)="openPublic()" [disabled]="!article">
@@ -29,17 +35,31 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="span2">
-        <mat-label>Extrait</mat-label>
+        <mat-label>Syntèse</mat-label>
         <input matInput formControlName="excerpt" />
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Statut *</mat-label>
-        <mat-select formControlName="status">
-          <mat-option value="DRAFT">Brouillon</mat-option>
-          <mat-option value="PUBLISHED">Publié</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <!-- ✅ STATUT :
+           - ADMIN: choix complet
+           - EDITOR: lecture seule (affiché mais non modifiable) -->
+      <ng-container *ngIf="isAdmin; else editorStatus">
+        <mat-form-field appearance="outline">
+          <mat-label>Statut *</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="DRAFT">Brouillon</mat-option>
+            <mat-option value="PENDING_REVIEW">En attente</mat-option>
+            <mat-option value="PUBLISHED">Publié</mat-option>
+            <mat-option value="REJECTED">Refusé</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </ng-container>
+
+      <ng-template #editorStatus>
+        <mat-form-field appearance="outline">
+          <mat-label>Statut</mat-label>
+          <input matInput [value]="article ? statusLabel(article.status) : ''" disabled />
+        </mat-form-field>
+      </ng-template>
 
       <mat-form-field appearance="outline">
         <mat-label>Thème *</mat-label>
@@ -60,12 +80,57 @@
     </div>
 
     <div class="actions">
-      <button mat-flat-button color="primary" type="submit" [disabled]="saving || deleting">
+      <button *ngIf="!isEditor && isAdmin" mat-flat-button color="primary" type="submit" [disabled]="saving || deleting || actioning">
         <mat-icon>save</mat-icon>
         {{ saving ? 'Sauvegarde…' : 'Sauvegarder' }}
       </button>
 
-      <button mat-stroked-button color="warn" type="button" (click)="delete()" [disabled]="saving || deleting">
+      <!-- ✅ EDITOR : bouton submit -->
+      <button
+        *ngIf="isEditor && !isAdmin"
+        mat-stroked-button
+        color="primary"
+        type="button"
+        (click)="submitForReview()"
+        [disabled]="saving || deleting || actioning || !article"
+      >
+        <mat-icon>send</mat-icon>
+        Envoyer à validation
+      </button>
+
+      <!-- ✅ ADMIN : approve/reject si pending -->
+      <button
+        *ngIf="isAdmin && article?.status === 'PENDING_REVIEW'"
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="approve()"
+        [disabled]="saving || deleting || actioning"
+      >
+        <mat-icon>check</mat-icon>
+        Valider & publier
+      </button>
+
+      <button
+        *ngIf="isAdmin && article?.status === 'PENDING_REVIEW'"
+        mat-stroked-button
+        color="warn"
+        type="button"
+        (click)="reject()"
+        [disabled]="saving || deleting || actioning"
+      >
+        <mat-icon>block</mat-icon>
+        Refuser
+      </button>
+
+      <!-- delete : idéalement admin only (mais ton back le force déjà). -->
+      <button
+        mat-stroked-button
+        color="warn"
+        type="button"
+        (click)="delete()"
+        [disabled]="saving || deleting || actioning"
+      >
         <mat-icon>delete</mat-icon>
         {{ deleting ? 'Suppression…' : 'Supprimer' }}
       </button>

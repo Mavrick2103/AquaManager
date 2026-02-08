@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef,
   Component,
   OnInit,
+  inject,
 } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -22,8 +23,10 @@ import { MatListModule } from '@angular/material/list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AdminArticlesService } from '../../../core/admin-articles.service';
+import { UserService, UserMe } from '../../../core/user.service';
 
-export type ArticleStatus = 'DRAFT' | 'PUBLISHED';
+export type AppRole = 'USER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN';
+export type ArticleStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED';
 
 export interface ThemeDto {
   id: number;
@@ -45,8 +48,9 @@ export interface ArticleDto {
   updatedAt: string;
   themeId: number;
   theme?: ThemeDto;
-  uniqueViewsPeriod?: number; // uniques sur la période (ex: 30j)
-  periodDays?: number;        // nb de jours utilisé (ex: 30)
+  uniqueViewsPeriod?: number;
+  periodDays?: number;
+  authorId?: number; // utile si tu veux afficher “mes articles”
 }
 
 @Component({
@@ -74,10 +78,20 @@ export interface ArticleDto {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminArticlesPageComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly api = inject(AdminArticlesService);
+  private readonly snack = inject(MatSnackBar);
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly users = inject(UserService);
+
+  me!: UserMe & { role?: string };
+
   loading = false;
   saving = false;
 
-  tabIndex = 0; // 0 = Liste / 1 = Création
+  tabIndex = 0;
   search = '';
   statusFilter: '' | ArticleStatus = '';
   themeFilter: number | null = null;
@@ -86,30 +100,42 @@ export class AdminArticlesPageComponent implements OnInit {
   filtered: ArticleDto[] = [];
   themes: ThemeDto[] = [];
 
-  form: FormGroup;
+  form: FormGroup = this.fb.group({
+    title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(160)]],
+    excerpt: [''],
+    content: ['', [Validators.required, Validators.minLength(10)]],
+    coverImageUrl: [''],
+    // ✅ admin peut choisir DRAFT/PUBLISHED, editor sera forcé côté back
+    status: ['DRAFT' as ArticleStatus, Validators.required],
+    themeId: [null as number | null, Validators.required],
+  });
 
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly api: AdminArticlesService,
-    private readonly snack: MatSnackBar,
-    private readonly router: Router,
-    private readonly location: Location,
-    private readonly cdr: ChangeDetectorRef,
-  ) {
-    this.form = this.fb.group({
-      title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(160)]],
-      excerpt: [''],
-      content: ['', [Validators.required, Validators.minLength(10)]],
-      coverImageUrl: [''],
-      status: ['DRAFT' as ArticleStatus, Validators.required],
-      themeId: [null as number | null, Validators.required],
-    });
-  }
-
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    this.me = await this.users.getMe(); // ✅ récupère role
     this.refresh();
   }
 
+  // ===== roles =====
+  private get role(): AppRole {
+    const r = String(this.me?.role ?? '').toUpperCase();
+    if (r === 'ADMIN' || r === 'SUPERADMIN' || r === 'EDITOR' || r === 'USER') return r as AppRole;
+    return 'USER';
+  }
+
+  get isAdmin(): boolean {
+    return this.role === 'ADMIN' || this.role === 'SUPERADMIN';
+  }
+
+  get isEditor(): boolean {
+    return this.role === 'EDITOR';
+  }
+
+  get canSeeAdminOnlyMenus(): boolean {
+    // métriques + users uniquement admin
+    return this.isAdmin;
+  }
+
+  // ===== nav =====
   back(): void {
     this.location.back();
   }
@@ -118,7 +144,6 @@ export class AdminArticlesPageComponent implements OnInit {
     this.loading = true;
     this.cdr.markForCheck();
 
-    // Charge themes + list (en parallèle simple)
     this.api.themes()
       .pipe(
         take(1),
@@ -168,21 +193,13 @@ export class AdminArticlesPageComponent implements OnInit {
   }
 
   private applyClientFilter(): void {
-    // on garde un petit filtre client pour title/excerpt/theme en plus,
-    // mais la vraie recherche reste backend via refresh() si tu veux.
     const q = this.normalize(this.search);
     if (!q) {
       this.filtered = this.items;
       return;
     }
     this.filtered = this.items.filter((a) => {
-      const blob = [
-        a.title,
-        a.excerpt,
-        a.slug,
-        a.status,
-        a.theme?.name,
-      ].filter(Boolean).join(' | ');
+      const blob = [a.title, a.excerpt, a.slug, a.status, a.theme?.name].filter(Boolean).join(' | ');
       return this.normalize(blob).includes(q);
     });
   }
@@ -196,25 +213,27 @@ export class AdminArticlesPageComponent implements OnInit {
       status: 'DRAFT',
       themeId: this.themes?.[0]?.id ?? null,
     });
+
+    // ✅ si editor, on force visuellement DRAFT (il sera PENDING_REVIEW côté back)
+    if (this.isEditor) this.form.get('status')?.setValue('DRAFT');
+
     this.tabIndex = 1;
     this.cdr.markForCheck();
   }
 
- goStats(a: ArticleDto, ev: MouseEvent): void {
-  ev.stopPropagation();
-  this.router.navigate(['/admin/articles', a.id, 'stats']);
-}
+  goStats(a: ArticleDto, ev: MouseEvent): void {
+    ev.stopPropagation();
+    this.router.navigate(['/admin/articles', a.id, 'stats']);
+  }
 
-goEdit(a: ArticleDto, ev: MouseEvent): void {
-  ev.stopPropagation();
-  this.router.navigate(['/admin/articles', a.id, 'edit']);
-}
+  goEdit(a: ArticleDto, ev: MouseEvent): void {
+    ev.stopPropagation();
+    this.router.navigate(['/admin/articles', a.id, 'edit']);
+  }
 
-openArticle(a: ArticleDto): void {
-  // ouvre la page PUBLIC de l'article
-  this.router.navigate(['/articles', a.slug]);
-}
-
+  openArticle(a: ArticleDto): void {
+    this.router.navigate(['/articles', a.slug]);
+  }
 
   submit(): void {
     if (this.form.invalid) {
@@ -225,6 +244,9 @@ openArticle(a: ArticleDto): void {
 
     const raw = this.form.getRawValue();
 
+    // ✅ editor : pas de publish côté UI
+    const statusToSend: ArticleStatus = this.isAdmin ? raw.status : 'DRAFT';
+
     this.saving = true;
     this.cdr.markForCheck();
 
@@ -233,7 +255,7 @@ openArticle(a: ArticleDto): void {
       excerpt: raw.excerpt ? String(raw.excerpt).trim() : undefined,
       content: String(raw.content).trim(),
       coverImageUrl: raw.coverImageUrl ? String(raw.coverImageUrl).trim() : undefined,
-      status: raw.status,
+      status: statusToSend as any,
       themeId: Number(raw.themeId),
     })
       .pipe(
@@ -245,7 +267,10 @@ openArticle(a: ArticleDto): void {
       )
       .subscribe({
         next: (created) => {
-          this.snack.open(`Article créé (#${created.id})`, 'OK', { duration: 2200 });
+          const label = this.isAdmin
+            ? `Article créé (#${created.id})`
+            : `Article envoyé en validation (#${created.id})`;
+          this.snack.open(label, 'OK', { duration: 2200 });
           this.tabIndex = 0;
           this.refresh();
         },
@@ -253,7 +278,7 @@ openArticle(a: ArticleDto): void {
           console.error(err);
           const msg =
             err?.status === 401 ? '401 : pas connecté' :
-            err?.status === 403 ? '403 : pas ADMIN' :
+            err?.status === 403 ? '403 : interdit' :
             err?.status === 400 ? '400 : données invalides' :
             'Erreur création article';
           this.snack.open(msg, 'OK', { duration: 4500 });
@@ -266,8 +291,22 @@ openArticle(a: ArticleDto): void {
     return this.themes?.find(t => t.id === id)?.name ?? '—';
   }
 
+  badgeLabel(status: ArticleStatus): string {
+    switch (status) {
+      case 'PUBLISHED': return 'Publié';
+      case 'PENDING_REVIEW': return 'En validation';
+      case 'REJECTED': return 'Refusé';
+      default: return 'Brouillon';
+    }
+  }
+
   badgeClass(status: ArticleStatus): string {
-    return status === 'PUBLISHED' ? 'pub' : 'draft';
+    switch (status) {
+      case 'PUBLISHED': return 'pub';
+      case 'PENDING_REVIEW': return 'pending';
+      case 'REJECTED': return 'rejected';
+      default: return 'draft';
+    }
   }
 
   private normalize(v: unknown): string {

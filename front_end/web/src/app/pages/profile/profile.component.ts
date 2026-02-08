@@ -21,6 +21,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { AuthService } from '../../core/auth.service';
 import { UserService, UserMe } from '../../core/user.service';
 
+type AppRole = 'USER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN';
+
 @Component({
   selector: 'app-profile',
   standalone: true,
@@ -71,10 +73,7 @@ export class ProfileComponent implements OnInit {
     this.me = await this.users.getMe();
 
     const rawFullName = (this.me.fullName ?? '').trim();
-
-    const fullName = rawFullName.length > 0
-      ? rawFullName
-      : (this.me.email?.split('@')[0] ?? '');
+    const fullName = rawFullName.length > 0 ? rawFullName : (this.me.email?.split('@')[0] ?? '');
 
     this.form.patchValue({
       fullName,
@@ -92,11 +91,37 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  get isAdmin(): boolean {
-    const r = (this.me?.role || '').toLowerCase();
-    return r === 'admin' || r === 'superadmin';
+  private get role(): AppRole {
+    const r = String(this.me?.role ?? '').toUpperCase();
+    if (r === 'ADMIN' || r === 'SUPERADMIN' || r === 'EDITOR' || r === 'USER') return r as AppRole;
+    return 'USER';
   }
-  get isUser(): boolean { return !this.isAdmin; }
+
+  get isAdmin(): boolean {
+    return this.role === 'ADMIN' || this.role === 'SUPERADMIN';
+  }
+
+  get isEditorOnly(): boolean {
+    // ✅ rôle EXACT = EDITOR (sert pour l’affichage badge)
+    return this.role === 'EDITOR';
+  }
+
+  get isEditor(): boolean {
+    // ✅ un admin a aussi accès aux écrans éditeur
+    return this.isAdmin || this.role === 'EDITOR';
+  }
+
+  get roleLabel(): string {
+    if (this.isAdmin) return 'Admin';
+    if (this.role === 'EDITOR') return 'Éditeur';
+    return 'User';
+  }
+
+  get roleCss(): string {
+    if (this.isAdmin) return '-admin';
+    if (this.role === 'EDITOR') return '-editor';
+    return '-user';
+  }
 
   get fullNameCtrl() { return this.form.get('fullName')!; }
   get emailCtrl()    { return this.form.get('email')!; }

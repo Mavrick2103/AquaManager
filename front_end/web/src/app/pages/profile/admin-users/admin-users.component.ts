@@ -1,4 +1,3 @@
-// admin-users.component.ts
 import { CommonModule, Location } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -16,8 +15,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatListModule } from '@angular/material/list';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSelectModule } from '@angular/material/select';
 
-import { AdminUsersApi, AdminUser } from '../../../core/admin-users.service';
+import { AdminUsersApi, AdminUser, UserRole } from '../../../core/admin-users.service';
 
 @Component({
   standalone: true,
@@ -40,6 +40,7 @@ import { AdminUsersApi, AdminUser } from '../../../core/admin-users.service';
     MatTooltipModule,
     MatListModule,
     MatSlideToggleModule,
+    MatSelectModule,
   ],
 })
 export class AdminUsersComponent implements OnInit, OnDestroy {
@@ -47,16 +48,11 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
 
   loading = false;
 
-  // liste brute depuis l’API
   users: AdminUser[] = [];
-
-  // ✅ liste filtrée (affichée)
   filteredUsers: AdminUser[] = [];
 
-  // 🔎 recherche texte
   searchCtrl = new FormControl<string>('', { nonNullable: true });
 
-  // ✅ filtres front uniquement
   activeOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
   adminOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
 
@@ -64,6 +60,16 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
 
   // actif si activité < 30 jours (à toi d’ajuster)
   private readonly ACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
+
+  // ✅ options de rôle affichées
+  readonly roleOptions: Array<{ value: UserRole; label: string; icon: string }> = [
+    { value: 'USER', label: 'Utilisateur', icon: 'person' },
+    { value: 'EDITOR', label: 'Éditeur', icon: 'edit' },
+    { value: 'ADMIN', label: 'Admin', icon: 'admin_panel_settings' },
+  ];
+
+  // ✅ état “saving” par user id
+  private readonly saving = new Set<number>();
 
   constructor(
     private readonly api: AdminUsersApi,
@@ -143,7 +149,6 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     const search = this.searchCtrl.value?.trim() || undefined;
 
     this.loading = true;
-    // ⚠️ ici on garde ton endpoint actuel (search uniquement)
     this.api.list(search).subscribe({
       next: (rows) => {
         this.users = [...(rows ?? [])].sort(
@@ -169,15 +174,32 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     });
   }
 
-  toggleRole(u: AdminUser): void {
-    const nextRole: AdminUser['role'] = u.role === 'ADMIN' ? 'USER' : 'ADMIN';
+  isSaving(u: AdminUser): boolean {
+    return this.saving.has(u.id);
+  }
+
+  setRole(u: AdminUser, nextRole: UserRole): void {
+    const prevRole = u.role;
+    if (prevRole === nextRole) return;
+
+    // optimiste : update UI direct
+    this.users = this.users.map((x) => (x.id === u.id ? { ...x, role: nextRole } : x));
+    this.applyFilters();
+
+    this.saving.add(u.id);
 
     this.api.update(u.id, { role: nextRole }).subscribe({
       next: (updated) => {
         this.users = this.users.map((x) => (x.id === u.id ? { ...x, role: updated.role } : x));
-        this.applyFilters(); // ✅ garde le filtre cohérent
+        this.applyFilters();
+        this.saving.delete(u.id);
       },
-      error: () => {},
+      error: () => {
+        // revert si erreur
+        this.users = this.users.map((x) => (x.id === u.id ? { ...x, role: prevRole } : x));
+        this.applyFilters();
+        this.saving.delete(u.id);
+      },
     });
   }
 
@@ -185,12 +207,17 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     const ok = confirm(`Supprimer l’utilisateur "${u.fullName}" (${u.email}) ?`);
     if (!ok) return;
 
+    this.saving.add(u.id);
+
     this.api.remove(u.id).subscribe({
       next: () => {
         this.users = this.users.filter((x) => x.id !== u.id);
-        this.applyFilters(); // ✅ garde le filtre cohérent
+        this.applyFilters();
+        this.saving.delete(u.id);
       },
-      error: () => {},
+      error: () => {
+        this.saving.delete(u.id);
+      },
     });
   }
 

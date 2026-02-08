@@ -7,7 +7,7 @@ import { environment } from '../../environments/environment';
  *  TYPES
  *  ======================= */
 
-export type ArticleStatus = 'DRAFT' | 'PUBLISHED';
+export type ArticleStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED';
 
 export interface ThemeDto {
   id: number;
@@ -27,8 +27,19 @@ export interface ArticleDto {
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
+
   themeId: number;
   theme?: ThemeDto;
+
+  // ✅ stats optionnelles
+  uniqueViewsPeriod?: number;
+  periodDays?: number;
+
+  // ✅ workflow / ownership
+  authorId?: number;
+  reviewedById?: number | null;
+  reviewedAt?: string | null;
+  rejectReason?: string | null;
 }
 
 export interface ArticleStatsDto {
@@ -47,7 +58,10 @@ export type CreateArticlePayload = {
   excerpt?: string;
   content: string;
   coverImageUrl?: string;
-  status: ArticleStatus;
+
+  // ✅ admin only, editor ignoré côté back
+  status?: ArticleStatus;
+
   themeId: number;
 };
 
@@ -56,7 +70,10 @@ export type UpdateArticlePayload = Partial<{
   excerpt: string;
   content: string;
   coverImageUrl: string;
+
+  // ✅ admin only, editor ignoré côté back
   status: ArticleStatus;
+
   themeId: number;
 }>;
 
@@ -105,6 +122,33 @@ export class AdminArticlesService {
     return this.http.patch<ArticleDto>(`${this.baseUrl}/admin/articles/${id}`, payload, {
       withCredentials: true,
     });
+  }
+
+  // ✅ WORKFLOW (EDITOR + ADMIN selon le back)
+  submitForReview(id: number): Observable<ArticleDto> {
+    return this.http.post<ArticleDto>(
+      `${this.baseUrl}/admin/articles/${id}/submit`,
+      {},
+      { withCredentials: true },
+    );
+  }
+
+  // ✅ ADMIN only
+  approve(id: number): Observable<ArticleDto> {
+    return this.http.post<ArticleDto>(
+      `${this.baseUrl}/admin/articles/${id}/approve`,
+      {},
+      { withCredentials: true },
+    );
+  }
+
+  // ✅ ADMIN only
+  reject(id: number, reason: string): Observable<ArticleDto> {
+    return this.http.post<ArticleDto>(
+      `${this.baseUrl}/admin/articles/${id}/reject`,
+      { reason },
+      { withCredentials: true },
+    );
   }
 
   delete(id: number): Observable<{ ok: boolean }> {

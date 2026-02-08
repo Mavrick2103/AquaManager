@@ -1,4 +1,12 @@
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import type { ArticleStatus } from '../entities/article.entity';
 
 export class CreateArticleDto {
@@ -21,8 +29,9 @@ export class CreateArticleDto {
   @MaxLength(500)
   coverImageUrl?: string;
 
-  @IsEnum(['DRAFT', 'PUBLISHED'])
-  status: ArticleStatus;
+  @IsOptional()
+  @IsEnum(['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'REJECTED'])
+  status?: ArticleStatus;
 
   @IsInt()
   @Min(1)

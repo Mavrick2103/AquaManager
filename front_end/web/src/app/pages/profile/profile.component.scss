@@ -27,6 +27,12 @@
     background: #e6f1f7;
     border-color: #cfe5f1;
   }
+
+  &.-editor {
+    color: #3b2b10;
+    background: #fff1d6;
+    border-color: #ffe0a8;
+  }
 }
 
 /* ✅ logo responsive (FIX: ni énorme ni minuscule) */
@@ -279,6 +285,42 @@
   }
 }
 
+/* ===== Grille Éditeur (même style que Admin) ===== */
+.editor-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+}
+
+.editor-card {
+  grid-column: span 6;
+  border: 1px solid #e8f1ee;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  padding: 14px 16px;
+
+  .editor-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+
+    h3 { margin: 0; font-size: 1.08rem; font-weight: 700; color: #1F3522; }
+    mat-icon { color: #009FE3; }
+  }
+
+  p { margin: 4px 0 12px; color: #4b5a54; }
+
+  .editor-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    button[mat-stroked-button] { border-radius: 10px; }
+  }
+}
+
 .visually-hidden {
   position: absolute !important;
   height: 1px;
@@ -304,6 +346,9 @@
 
   .pref { grid-column: span 12; }
   .pref .w-240 { width: 100%; }
+
+  .admin-card { grid-column: span 12; }
+  .editor-card { grid-column: span 12; }
 }
 
 /* MOBILE */
@@ -367,6 +412,7 @@
 
   /* Admin boutons full width */
   .admin-card .admin-actions button { width: 100%; }
+  .editor-card .editor-actions button { width: 100%; }
 }
 
 /* ULTRA PETIT */

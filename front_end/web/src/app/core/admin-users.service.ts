@@ -3,11 +3,15 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+// ✅ Source de vérité pour les rôles
+export type UserRole = 'USER' | 'EDITOR' | 'ADMIN';
+
 export type AdminUser = {
   id: number;
   fullName: string;
   email: string;
-  role: 'USER' | 'ADMIN';
+  role: UserRole;
+
   createdAt: string;
   emailVerifiedAt: string | null;
 
@@ -59,14 +63,24 @@ export type AdminUserFishRow = {
   id: number;
   aquariumId: number;
   count: number;
-  fishCard: { id: number; commonName: string; scientificName?: string | null; imageUrl?: string | null };
+  fishCard: {
+    id: number;
+    commonName: string;
+    scientificName?: string | null;
+    imageUrl?: string | null;
+  };
 };
 
 export type AdminUserPlantRow = {
   id: number;
   aquariumId: number;
   count: number;
-  plantCard: { id: number; commonName: string; scientificName?: string | null; imageUrl?: string | null };
+  plantCard: {
+    id: number;
+    commonName: string;
+    scientificName?: string | null;
+    imageUrl?: string | null;
+  };
 };
 
 export type AdminUserFull = {

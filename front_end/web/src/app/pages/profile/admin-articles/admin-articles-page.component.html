@@ -14,16 +14,18 @@
     <div class="sidebar-title">ADMINISTRATION</div>
 
     <mat-nav-list class="nav">
-      <a mat-list-item routerLink="/admin/metrics" routerLinkActive="active">
+      <!-- ✅ ADMIN ONLY -->
+      <a *ngIf="canSeeAdminOnlyMenus" mat-list-item routerLink="/admin/metrics" routerLinkActive="active">
         <mat-icon matListItemIcon>manage_accounts</mat-icon>
         <span matListItemTitle>Dashboard</span>
       </a>
 
-      <a mat-list-item routerLink="/admin/users" routerLinkActive="active">
+      <a *ngIf="canSeeAdminOnlyMenus" mat-list-item routerLink="/admin/users" routerLinkActive="active">
         <mat-icon matListItemIcon>group</mat-icon>
         <span matListItemTitle>Utilisateurs</span>
       </a>
 
+      <!-- ✅ EDITOR + ADMIN -->
       <a mat-list-item routerLink="/admin/species/fish" routerLinkActive="active">
         <mat-icon matListItemIcon>pets</mat-icon>
         <span matListItemTitle>Poissons</span>
@@ -54,7 +56,7 @@
       <header class="admin-header">
         <div class="titles">
           <h2>Articles / Conseils</h2>
-          <p class="subtitle">Lister et créer des articles (la page détail reste séparée).</p>
+          <p class="subtitle">Lister et créer des articles.</p>
         </div>
 
         <div class="header-actions">
@@ -88,6 +90,8 @@
                 <mat-select [value]="statusFilter" (valueChange)="onStatusChange($event)">
                   <mat-option [value]="''">Tous</mat-option>
                   <mat-option [value]="'DRAFT'">Brouillon</mat-option>
+                  <mat-option [value]="'PENDING_REVIEW'">En validation</mat-option>
+                  <mat-option [value]="'REJECTED'">Refusé</mat-option>
                   <mat-option [value]="'PUBLISHED'">Publié</mat-option>
                 </mat-select>
               </mat-form-field>
@@ -116,56 +120,46 @@
 
             <div class="grid" *ngIf="!loading && filtered?.length">
               <mat-card class="card" *ngFor="let a of filtered" (click)="openArticle(a)">
-  <div class="card-head">
-    <div class="title">{{ a.title }}</div>
+                <div class="card-head">
+                  <div class="title">{{ a.title }}</div>
 
-    <div class="meta">
-      <span class="badge" [class.pub]="a.status==='PUBLISHED'" [class.draft]="a.status==='DRAFT'">
-        {{ a.status === 'PUBLISHED' ? 'Publié' : 'Brouillon' }}
-      </span>
-      <span class="pill">{{ a.theme?.name || themeName(a.themeId) }}</span>
-    </div>
-  </div>
+                  <div class="meta">
+                    <span class="badge"
+                          [class.pub]="a.status==='PUBLISHED'"
+                          [class.draft]="a.status==='DRAFT'"
+                          [class.pending]="a.status==='PENDING_REVIEW'"
+                          [class.rejected]="a.status==='REJECTED'">
+                      {{ badgeLabel(a.status) }}
+                    </span>
+                    <span class="pill">{{ a.theme?.name || themeName(a.themeId) }}</span>
+                  </div>
+                </div>
 
-  <div class="excerpt">{{ a.excerpt || '—' }}</div>
+                <div class="excerpt">{{ a.excerpt || '—' }}</div>
 
-  <div class="foot">
-    <span class="muted">#{{ a.id }}</span>
+                <div class="foot">
+                  <span class="muted">#{{ a.id }}</span>
 
-    <div class="right">
-      <span class="muted">
-        <mat-icon class="mini">visibility</mat-icon>
-        {{ a.uniqueViewsPeriod || 0 }}
+                  <div class="right">
+                    <span class="muted">
+                      <mat-icon class="mini">visibility</mat-icon>
+                      {{ a.uniqueViewsPeriod || 0 }}
+                    </span>
 
-      </span>
+                    <button mat-stroked-button class="btn" type="button"
+                            (click)="goStats(a, $event)" aria-label="Voir les statistiques">
+                      <mat-icon>insights</mat-icon>
+                      Stats
+                    </button>
 
-      <!-- ✅ BOUTONS -->
-      <button
-        mat-stroked-button
-        class="btn"
-        type="button"
-        (click)="goStats(a, $event)"
-        aria-label="Voir les statistiques"
-      >
-        <mat-icon>insights</mat-icon>
-        Stats
-      </button>
-
-      <button
-        mat-flat-button
-        color="primary"
-        class="btn"
-        type="button"
-        (click)="goEdit(a, $event)"
-        aria-label="Modifier l'article"
-      >
-        <mat-icon>edit</mat-icon>
-        Modifier
-      </button>
-    </div>
-  </div>
-</mat-card>
-
+                    <button mat-flat-button color="primary" class="btn" type="button"
+                            (click)="goEdit(a, $event)" aria-label="Modifier l'article">
+                      <mat-icon>edit</mat-icon>
+                      Modifier
+                    </button>
+                  </div>
+                </div>
+              </mat-card>
             </div>
           </div>
         </mat-tab>
@@ -187,10 +181,11 @@
 
                 <mat-form-field appearance="outline">
                   <mat-label>Statut *</mat-label>
-                  <mat-select formControlName="status">
+                  <mat-select formControlName="status" [disabled]="isEditor">
                     <mat-option value="DRAFT">Brouillon</mat-option>
-                    <mat-option value="PUBLISHED">Publié</mat-option>
+                    <mat-option *ngIf="isAdmin" value="PUBLISHED">Publié</mat-option>
                   </mat-select>
+                  <mat-hint *ngIf="isEditor">Un éditeur envoie toujours en validation.</mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
@@ -214,7 +209,7 @@
               <div class="actions">
                 <button mat-flat-button color="primary" type="submit" [disabled]="saving || loading">
                   <mat-icon>save</mat-icon>
-                  {{ saving ? 'Création…' : 'Créer' }}
+                  {{ saving ? 'Création…' : (isAdmin ? 'Créer' : 'Envoyer à validation') }}
                 </button>
 
                 <button mat-stroked-button type="button" (click)="tabIndex = 0" [disabled]="saving">

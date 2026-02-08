@@ -9,8 +9,9 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Theme } from './theme.entity';
+import { User } from '../../users/user.entity';
 
-export type ArticleStatus = 'DRAFT' | 'PUBLISHED';
+export type ArticleStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED';
 
 @Entity('articles')
 export class Article {
@@ -23,18 +24,21 @@ export class Article {
   @Column({ type: 'varchar', length: 220, unique: true })
   slug: string;
 
-  // ✅ force le type SQL (évite "Object")
   @Column({ type: 'varchar', length: 350, nullable: true, default: null })
   excerpt: string | null;
 
   @Column({ type: 'longtext' })
   content: string;
 
-  // ✅ force le type SQL
   @Column({ type: 'varchar', length: 500, nullable: true, default: null })
   coverImageUrl: string | null;
 
-  @Column({ type: 'enum', enum: ['DRAFT', 'PUBLISHED'], default: 'DRAFT' })
+  @Index()
+  @Column({
+    type: 'enum',
+    enum: ['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'REJECTED'],
+    default: 'DRAFT',
+  })
   status: ArticleStatus;
 
   @Column({ type: 'int', default: 0 })
@@ -42,6 +46,28 @@ export class Article {
 
   @Column({ type: 'datetime', precision: 6, nullable: true, default: null })
   publishedAt: Date | null;
+
+  @Index()
+  @Column({ type: 'int' })
+  authorId: number;
+
+  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'authorId' })
+  author: User;
+
+  @Index()
+  @Column({ type: 'int', nullable: true, default: null })
+  reviewedById: number | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'reviewedById' })
+  reviewedBy: User | null;
+
+  @Column({ type: 'datetime', precision: 6, nullable: true, default: null })
+  reviewedAt: Date | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true, default: null })
+  rejectReason: string | null;
 
   @Index()
   @Column({ type: 'int' })

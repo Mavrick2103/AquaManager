@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ROLES_KEY } from '../decorators/roles.decorator';
+import { ROLES_KEY, UserRole } from '../decorators/roles.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class RolesGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    const required = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+    const required = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
       ctx.getHandler(),
       ctx.getClass(),
     ]);
@@ -22,10 +22,11 @@ export class RolesGuard implements CanActivate {
 
     const req = ctx.switchToHttp().getRequest();
     const user = req.user;
+
     if (!user?.role) throw new ForbiddenException('Missing role');
 
-    const role = String(user.role).toUpperCase();
-    const needs = required.map(r => String(r).toUpperCase());
+    const role = String(user.role).toUpperCase() as UserRole;
+    const needs = required.map((r) => String(r).toUpperCase() as UserRole);
 
     if (!needs.includes(role)) throw new ForbiddenException('Insufficient role');
     return true;

@@ -7,9 +7,9 @@ import { Public } from '../auth/decorators/public.decorator';
 export class ArticlesPublicController {
   constructor(private readonly service: ArticlesService) {}
 
-   @Get('themes')
+  @Get('themes')
   themes() {
-    return this.service.listThemes(); // ou une méthode dédiée "publicThemes" si tu veux filtrer
+    return this.service.publicThemes();
   }
 
   @Get()

@@ -19,7 +19,8 @@
 
     <div class="quick-actions">
       <span class="role-pill" *ngIf="isAdmin">Admin</span>
-      <span class="role-pill -user" *ngIf="!isAdmin">User</span>
+      <span class="role-pill -editor" *ngIf="!isAdmin && isEditorOnly">Éditeur</span>
+      <span class="role-pill -user" *ngIf="!isAdmin && !isEditorOnly">User</span>
 
       <button mat-stroked-button color="warn" (click)="logout()" aria-label="Se déconnecter">
         <mat-icon>logout</mat-icon>
@@ -85,10 +86,13 @@
               <mat-icon>refresh</mat-icon> Annuler
             </button>
 
-            <button mat-flat-button color="primary"
+            <button
+              mat-flat-button
+              color="primary"
               type="button"
               (click)="saveAll()"
-              [disabled]="loading || form.invalid || !hasChanges">
+              [disabled]="loading || form.invalid || !hasChanges"
+            >
               <mat-icon *ngIf="!loading">save</mat-icon>
               <mat-progress-spinner *ngIf="loading" mode="indeterminate" diameter="18"></mat-progress-spinner>
               Enregistrer
@@ -98,7 +102,9 @@
 
         <mat-card class="danger-card" aria-live="polite">
           <h2>Zone dangereuse</h2>
-          <p>La suppression de votre compte est <strong>définitive</strong>. Toutes vos données associées seront supprimées.</p>
+          <p>
+            La suppression de votre compte est <strong>définitive</strong>. Toutes vos données associées seront supprimées.
+          </p>
           <button mat-flat-button color="warn" (click)="deleteAccount()">
             <mat-icon>delete_forever</mat-icon>
             Supprimer mon compte
@@ -113,47 +119,7 @@
       </ng-template>
 
       <section class="tab-pane">
-        <div class="prefs-grid">
-          <div class="pref">
-            <div class="pref-head">
-              <mat-icon>palette</mat-icon>
-              <h3>Thème</h3>
-            </div>
-            <mat-button-toggle-group
-              name="theme"
-              [(ngModel)]="prefs.theme"
-              (change)="savePreferences()"
-              aria-label="Choix du thème">
-              <mat-button-toggle value="system">Système</mat-button-toggle>
-              <mat-button-toggle value="light">Clair</mat-button-toggle>
-              <mat-button-toggle value="dark">Sombre</mat-button-toggle>
-            </mat-button-toggle-group>
-          </div>
-
-          <div class="pref">
-            <div class="pref-head">
-              <mat-icon>thermostat</mat-icon>
-              <h3>Unités des mesures</h3>
-            </div>
-            <mat-form-field appearance="fill" class="w-240">
-              <mat-label>Température</mat-label>
-              <mat-select [(ngModel)]="prefs.tempUnit" (selectionChange)="savePreferences()" aria-label="Unité de température">
-                <mat-option value="C">Celsius (°C)</mat-option>
-                <mat-option value="F">Fahrenheit (°F)</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <div class="pref">
-            <div class="pref-head">
-              <mat-icon>notifications</mat-icon>
-              <h3>Notifications</h3>
-            </div>
-            <mat-slide-toggle [(ngModel)]="prefs.notifyTasks" (change)="savePreferences()" aria-label="Activer les rappels de tâches">
-              Rappels de tâches
-            </mat-slide-toggle>
-          </div>
-        </div>
+        ...
       </section>
     </mat-tab>
 
@@ -163,15 +129,62 @@
       </ng-template>
 
       <section class="tab-pane">
-        <mat-card class="data-card">
-          <h2>Vos données</h2>
-          <p>Exportez l’ensemble de vos aquariums, mesures et tâches au format JSON.</p>
-          <button mat-stroked-button (click)="exportData()">
-            <mat-icon>download</mat-icon> Exporter mes données (.json)
-          </button>
-        </mat-card>
+        ...
       </section>
     </mat-tab> -->
+
+    <!-- ✅ ONGLET ÉDITEUR : visible si EDITOR ou ADMIN -->
+    <mat-tab *ngIf="isEditor">
+      <ng-template mat-tab-label>
+        <mat-icon>edit</mat-icon><span>Éditeur</span>
+      </ng-template>
+
+      <section class="tab-pane">
+        <div class="editor-grid">
+          <mat-card class="editor-card">
+            <div class="editor-head">
+              <mat-icon>tips_and_updates</mat-icon>
+              <h3>Articles / Conseils</h3>
+            </div>
+            <p>Créer / modifier des articles et gérer leurs thèmes.</p>
+            <div class="editor-actions">
+              <button mat-stroked-button color="primary" routerLink="/admin/articles">
+                <mat-icon>open_in_new</mat-icon>
+                Accéder
+              </button>
+            </div>
+          </mat-card>
+
+          <mat-card class="editor-card">
+            <div class="editor-head">
+              <mat-icon>pets</mat-icon>
+              <h3>Fiches poissons</h3>
+            </div>
+            <p>Créer / modifier les fiches poissons (paramètres, compatibilités, biotope…).</p>
+            <div class="editor-actions">
+              <button mat-stroked-button color="primary" routerLink="/admin/species/fish">
+                <mat-icon>open_in_new</mat-icon>
+                Accéder
+              </button>
+            </div>
+          </mat-card>
+
+          <mat-card class="editor-card">
+            <div class="editor-head">
+              <mat-icon>local_florist</mat-icon>
+              <h3>Fiches plantes</h3>
+            </div>
+            <p>Créer / modifier les fiches plantes (lumière, CO₂, sol, croissance…).</p>
+            <div class="editor-actions">
+              <button mat-stroked-button color="primary" routerLink="/admin/species/plant">
+                <mat-icon>open_in_new</mat-icon>
+                Accéder
+              </button>
+            </div>
+          </mat-card>
+        </div>
+      </section>
+    </mat-tab>
 
     <mat-tab *ngIf="isAdmin">
       <ng-template mat-tab-label>
@@ -222,8 +235,6 @@
                 <mat-icon>edit</mat-icon>
                 Gérer les plantes
               </button>
-
-
             </div>
           </mat-card>
 

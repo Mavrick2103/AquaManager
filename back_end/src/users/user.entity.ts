@@ -24,7 +24,7 @@ export class User {
   password: string;
 
   @Column({ default: 'USER' })
-  role: 'USER' | 'ADMIN';
+  role: 'USER' | 'ADMIN' | 'EDITOR';
 
   // ✅ utile pour tes metrics + tri par inscription
   @CreateDateColumn()
