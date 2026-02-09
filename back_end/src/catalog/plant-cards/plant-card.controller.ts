@@ -11,6 +11,8 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  ConflictException,
+  UnauthorizedException,
 } from '@nestjs/common';
 
 import { PlantCardsService } from './plant-card.service';
@@ -26,6 +28,9 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
+import { promises as fsp } from 'fs';
+
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
 function getUploadDir(): string {
   return process.env.UPLOAD_DIR?.trim() || join(process.cwd(), 'uploads');
@@ -40,10 +45,7 @@ function ensurePlantUploadDir(): string {
 function multerImageOptions() {
   return {
     storage: diskStorage({
-      destination: (req, file, cb) => {
-        const dir = ensurePlantUploadDir();
-        cb(null, dir);
-      },
+      destination: (req, file, cb) => cb(null, ensurePlantUploadDir()),
       filename: (req, file, cb) => {
         const ext = extname(file.originalname).toLowerCase();
         const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
@@ -58,29 +60,41 @@ function multerImageOptions() {
   };
 }
 
+async function safeUnlink(path?: string) {
+  if (!path) return;
+  try { await fsp.unlink(path); } catch {}
+}
+
+function mustUserId(value: unknown): number {
+  const id = Number(value);
+  if (!Number.isFinite(id) || id <= 0) throw new UnauthorizedException('Invalid token payload (missing userId)');
+  return id;
+}
+
 @Controller()
+@UseGuards(JwtAuthGuard)
 export class PlantCardsController {
   constructor(private readonly service: PlantCardsService) {}
 
   // =========================
-  // PUBLIC (USER) - GET only
+  // PUBLIC (USER) - APPROVED + ACTIVE ONLY
   // =========================
   @Get('plant-cards')
-  list(@Query('search') search?: string) {
-    return this.service.findAll(search, true);
+  listPublic(@Query('search') search?: string) {
+    return this.service.findAllPublic(search);
   }
 
   @Get('plant-cards/:id')
-  one(@Param('id') id: string) {
-    return this.service.findOne(Number(id));
+  onePublic(@Param('id') id: string) {
+    return this.service.findOnePublic(Number(id));
   }
 
   // =========================
-  // ADMIN - Upload image
+  // SHARED UPLOAD (ADMIN + EDITOR)
   // =========================
-  @Post('admin/plant-cards/upload')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Post('species/plant/upload')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'EDITOR')
   @UseInterceptors(FileInterceptor('file', multerImageOptions()))
   upload(@UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException('Fichier manquant');
@@ -88,62 +102,132 @@ export class PlantCardsController {
   }
 
   // =========================
-  // ADMIN - CREATE (JSON ou multipart)
+  // EDITOR - ONLY OWN
   // =========================
-  @Post('admin/plant-cards')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Get('editor/plant-cards')
+  @UseGuards(RolesGuard)
+  @Roles('EDITOR')
+  listEditor(
+    @CurrentUser('userId') userIdRaw: unknown,
+    @Query('search') search?: string,
+  ) {
+    const editorId = mustUserId(userIdRaw);
+    return this.service.findAllEditor(editorId, search);
+  }
+
+  @Post('editor/plant-cards')
+  @UseGuards(RolesGuard)
+  @Roles('EDITOR')
   @UseInterceptors(FileInterceptor('file', multerImageOptions()))
-  async create(
+  async createEditor(
+    @CurrentUser('userId') userIdRaw: unknown,
     @Body() dto: CreatePlantCardDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    // multipart: set imageUrl
-    if (file) {
-      dto.imageUrl = `/uploads/plants/${file.filename}`;
-    }
+    const editorId = mustUserId(userIdRaw);
+
+    if (file) dto.imageUrl = `/uploads/plants/${file.filename}`;
 
     try {
-      return await this.service.create(dto);
+      return await this.service.createEditor(dto, editorId);
     } catch (err) {
-      // si on a upload un fichier et que la création échoue (doublon, etc),
-      // on le supprime pour éviter de polluer /uploads
-      if (file) {
-        const filePath = join(getUploadDir(), 'plants', file.filename);
-        try { await fs.promises.unlink(filePath); } catch {}
-      }
+      const is409 = err instanceof ConflictException || (err as any)?.status === 409;
+      if (file && is409) await safeUnlink((file as any).path);
       throw err;
     }
   }
 
-  // =========================
-  // ADMIN - CRUD
-  // =========================
-  @Get('admin/plant-cards')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  listAdmin(@Query('search') search?: string) {
-    return this.service.findAll(search, false);
+  @Patch('editor/plant-cards/:id')
+  @UseGuards(RolesGuard)
+  @Roles('EDITOR')
+  updateEditor(
+    @CurrentUser('userId') userIdRaw: unknown,
+    @Param('id') id: string,
+    @Body() dto: UpdatePlantCardDto,
+  ) {
+    const editorId = mustUserId(userIdRaw);
+    return this.service.updateEditor(Number(id), dto, editorId);
   }
 
-  @Get('admin/plant-cards/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Delete('editor/plant-cards/:id')
+  @UseGuards(RolesGuard)
+  @Roles('EDITOR')
+  removeEditor(
+    @CurrentUser('userId') userIdRaw: unknown,
+    @Param('id') id: string,
+  ) {
+    const editorId = mustUserId(userIdRaw);
+    return this.service.removeEditor(Number(id), editorId);
+  }
+
+  // =========================
+  // ADMIN - CRUD + MODERATION
+  // =========================
+  @Get('admin/plant-cards')
+  @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  oneAdmin(@Param('id') id: string) {
-    return this.service.findOne(Number(id));
+  listAdmin(@Query('search') search?: string) {
+    return this.service.findAllAdmin(search);
+  }
+
+  @Post('admin/plant-cards')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @UseInterceptors(FileInterceptor('file', multerImageOptions()))
+  async createAdmin(
+    @CurrentUser('userId') userIdRaw: unknown,
+    @Body() dto: CreatePlantCardDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    const adminId = mustUserId(userIdRaw);
+
+    if (file) dto.imageUrl = `/uploads/plants/${file.filename}`;
+
+    try {
+      return await this.service.createAdmin(dto, adminId);
+    } catch (err) {
+      const is409 = err instanceof ConflictException || (err as any)?.status === 409;
+      if (file && is409) await safeUnlink((file as any).path);
+      throw err;
+    }
   }
 
   @Patch('admin/plant-cards/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  update(@Param('id') id: string, @Body() dto: UpdatePlantCardDto) {
-    return this.service.update(Number(id), dto);
+  updateAdmin(
+    @CurrentUser('userId') userIdRaw: unknown,
+    @Param('id') id: string,
+    @Body() dto: UpdatePlantCardDto,
+  ) {
+    const adminId = mustUserId(userIdRaw);
+    return this.service.updateAdmin(Number(id), dto, adminId);
+  }
+
+  @Post('admin/plant-cards/:id/approve')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  approve(@CurrentUser('userId') userIdRaw: unknown, @Param('id') id: string) {
+    const adminId = mustUserId(userIdRaw);
+    return this.service.approve(Number(id), adminId);
+  }
+
+  @Post('admin/plant-cards/:id/reject')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  reject(
+    @CurrentUser('userId') userIdRaw: unknown,
+    @Param('id') id: string,
+    @Body() body: { reason: string },
+  ) {
+    const adminId = mustUserId(userIdRaw);
+    return this.service.reject(Number(id), adminId, String(body?.reason ?? ''));
   }
 
   @Delete('admin/plant-cards/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  remove(@Param('id') id: string) {
-    return this.service.remove(Number(id));
+  removeAdmin(@Param('id') id: string) {
+    return this.service.removeAdmin(Number(id));
   }
 }

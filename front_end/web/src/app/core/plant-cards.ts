@@ -37,6 +37,8 @@ export type Propagation =
   | 'GRAINES'
   | 'AUCUNE';
 
+export type ModerationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface PlantCard {
   id: number;
 
@@ -76,6 +78,13 @@ export interface PlantCard {
   notes: string | null;
 
   imageUrl: string | null;
+
+  // moderation
+  status: ModerationStatus;
+  rejectReason: string | null;
+  createdBy: number | null;
+  approvedBy: number | null;
+  approvedAt: string | null;
 
   isActive: boolean;
   createdAt: string;
@@ -119,8 +128,8 @@ export type CreatePlantCardDto = {
   compatibility?: string | null;
   notes?: string | null;
 
-  // ⚠️ pas d'imageUrl ici (création multipart -> backend set l'URL)
-  isActive?: boolean;
+  imageUrl?: string | null;
+  isActive?: boolean; // admin only (editor ignored)
 };
 
 export type UpdatePlantCardDto = Partial<
@@ -128,6 +137,7 @@ export type UpdatePlantCardDto = Partial<
     commonName: string;
     waterType: WaterType;
     imageUrl: string | null;
+    isActive: boolean;
   }
 >;
 
@@ -137,6 +147,7 @@ export class PlantCardsApi {
 
   constructor(private readonly http: HttpClient) {}
 
+  // ADMIN
   listAdmin(search?: string): Observable<PlantCard[]> {
     let params = new HttpParams();
     if (search?.trim()) params = params.set('search', search.trim());
@@ -147,15 +158,8 @@ export class PlantCardsApi {
     });
   }
 
-  /**
-   * ✅ CREATE + IMAGE (multipart/form-data)
-   * POST /api/admin/plant-cards
-   * - fields: dto
-   * - file: "file" (optionnel)
-   */
-  createWithImage(dto: CreatePlantCardDto, file?: File): Observable<PlantCard> {
+  createAdminWithImage(dto: CreatePlantCardDto, file?: File): Observable<PlantCard> {
     const fd = new FormData();
-
     for (const [k, v] of Object.entries(dto)) {
       if (v === undefined || v === null || v === '') continue;
       fd.append(k, String(v));
@@ -167,26 +171,72 @@ export class PlantCardsApi {
     });
   }
 
-  /** Update JSON (PATCH) */
-  update(id: number, dto: UpdatePlantCardDto): Observable<PlantCard> {
+  updateAdmin(id: number, dto: UpdatePlantCardDto): Observable<PlantCard> {
     return this.http.patch<PlantCard>(`${this.baseUrl}/admin/plant-cards/${id}`, dto, {
       withCredentials: true,
     });
   }
 
-  /** Delete */
-  remove(id: number): Observable<{ ok: true }> {
+  approve(id: number): Observable<PlantCard> {
+    return this.http.post<PlantCard>(`${this.baseUrl}/admin/plant-cards/${id}/approve`, {}, { withCredentials: true });
+  }
+
+  reject(id: number, reason: string): Observable<PlantCard> {
+    return this.http.post<PlantCard>(
+      `${this.baseUrl}/admin/plant-cards/${id}/reject`,
+      { reason },
+      { withCredentials: true },
+    );
+  }
+
+  removeAdmin(id: number): Observable<{ ok: true }> {
     return this.http.delete<{ ok: true }>(`${this.baseUrl}/admin/plant-cards/${id}`, {
       withCredentials: true,
     });
   }
 
-  /** Upload image (pratique en EDIT) */
+  // EDITOR
+  listEditor(search?: string): Observable<PlantCard[]> {
+    let params = new HttpParams();
+    if (search?.trim()) params = params.set('search', search.trim());
+
+    return this.http.get<PlantCard[]>(`${this.baseUrl}/editor/plant-cards`, {
+      params,
+      withCredentials: true,
+    });
+  }
+
+  createEditorWithImage(dto: CreatePlantCardDto, file?: File): Observable<PlantCard> {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(dto)) {
+      if (v === undefined || v === null || v === '') continue;
+      fd.append(k, String(v));
+    }
+    if (file) fd.append('file', file);
+
+    return this.http.post<PlantCard>(`${this.baseUrl}/editor/plant-cards`, fd, {
+      withCredentials: true,
+    });
+  }
+
+  updateEditor(id: number, dto: UpdatePlantCardDto): Observable<PlantCard> {
+    return this.http.patch<PlantCard>(`${this.baseUrl}/editor/plant-cards/${id}`, dto, {
+      withCredentials: true,
+    });
+  }
+
+  removeEditor(id: number): Observable<{ ok: true }> {
+    return this.http.delete<{ ok: true }>(`${this.baseUrl}/editor/plant-cards/${id}`, {
+      withCredentials: true,
+    });
+  }
+
+  // SHARED UPLOAD (ADMIN + EDITOR)
   uploadImage(file: File): Observable<{ url: string }> {
     const fd = new FormData();
     fd.append('file', file);
 
-    return this.http.post<{ url: string }>(`${this.baseUrl}/admin/plant-cards/upload`, fd, {
+    return this.http.post<{ url: string }>(`${this.baseUrl}/species/plant/upload`, fd, {
       withCredentials: true,
     });
   }

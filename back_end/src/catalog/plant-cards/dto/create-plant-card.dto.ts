@@ -9,16 +9,16 @@ import {
   Min,
 } from 'class-validator';
 
-type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER' | 'SAUMATRE';
-type PlantCategory =
+export type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER' | 'SAUMATRE';
+export type PlantCategory =
   | 'TIGE' | 'ROSETTE' | 'RHIZOME' | 'MOUSSE' | 'GAZONNANTE' | 'BULBE' | 'FLOTTANTE' | 'EPIPHYTE';
-type PlantPlacement =
+export type PlantPlacement =
   | 'AVANT_PLAN' | 'MILIEU' | 'ARRIERE_PLAN' | 'SUR_SUPPORT' | 'SURFACE';
-type GrowthRate = 'LENTE' | 'MOYENNE' | 'RAPIDE';
-type Light = 'FAIBLE' | 'MOYEN' | 'FORT';
-type Co2 = 'AUCUN' | 'RECOMMANDE' | 'OBLIGATOIRE';
-type Difficulty = 'FACILE' | 'MOYEN' | 'DIFFICILE';
-type Propagation = 'BOUTURAGE' | 'STOLON' | 'RHIZOME' | 'DIVISION' | 'SPORES' | 'GRAINES' | 'AUCUNE';
+export type GrowthRate = 'LENTE' | 'MOYENNE' | 'RAPIDE';
+export type Light = 'FAIBLE' | 'MOYEN' | 'FORT';
+export type Co2 = 'AUCUN' | 'RECOMMANDE' | 'OBLIGATOIRE';
+export type Difficulty = 'FACILE' | 'MOYEN' | 'DIFFICILE';
+export type Propagation = 'BOUTURAGE' | 'STOLON' | 'RHIZOME' | 'DIVISION' | 'SPORES' | 'GRAINES' | 'AUCUNE';
 
 export class CreatePlantCardDto {
   @IsString()
@@ -90,6 +90,7 @@ export class CreatePlantCardDto {
   @IsOptional() @IsString()
   imageUrl?: string;
 
+  // admin peut décider, editor -> ignoré (forcé à false tant que PENDING)
   @IsOptional() @IsBoolean()
   isActive?: boolean;
 }

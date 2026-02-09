@@ -134,7 +134,7 @@
     </mat-tab> -->
 
     <!-- ✅ ONGLET ÉDITEUR : visible si EDITOR ou ADMIN -->
-    <mat-tab *ngIf="isEditor">
+    <mat-tab *ngIf="isEditor && !isAdmin ">
       <ng-template mat-tab-label>
         <mat-icon>edit</mat-icon><span>Éditeur</span>
       </ng-template>

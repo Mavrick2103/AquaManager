@@ -1,5 +1,5 @@
+<!-- admin-fish-cards.component.html -->
 <div class="admin-layout">
-  <!-- SIDEBAR (IDENTIQUE A ADMIN-USERS) -->
   <aside class="sidebar" role="navigation" aria-label="Menu administration">
     <a class="brand" routerLink="/" aria-label="Retour à l’accueil">
       <img
@@ -14,89 +14,90 @@
     <div class="sidebar-title">ADMINISTRATION</div>
 
     <mat-nav-list class="nav">
-      <a mat-list-item routerLink="/admin/metrics" routerLinkActive="active">
+      <a mat-list-item routerLink="/admin/metrics" routerLinkActive="active" *ngIf="isAdmin">
         <mat-icon matListItemIcon>manage_accounts</mat-icon>
         <span matListItemTitle>Dashboard</span>
       </a>
 
-      <a
-        mat-list-item
-        routerLink="/admin/users"
-        routerLinkActive="active"
-      >
+      <a mat-list-item routerLink="/admin/users" routerLinkActive="active" *ngIf="isAdmin">
         <mat-icon matListItemIcon>group</mat-icon>
         <span matListItemTitle>Utilisateurs</span>
       </a>
 
-      <a
-        mat-list-item
-        routerLink="/admin/species/fish"
-        routerLinkActive="active"
-      >
+      <a mat-list-item routerLink="/admin/species/fish" routerLinkActive="active">
         <mat-icon matListItemIcon>pets</mat-icon>
         <span matListItemTitle>Poissons</span>
       </a>
 
-      <a
-        mat-list-item
-        routerLink="/admin/species/plant"
-        routerLinkActive="active"
-      >
+      <a mat-list-item routerLink="/admin/species/plant" routerLinkActive="active">
         <mat-icon matListItemIcon>local_florist</mat-icon>
         <span matListItemTitle>Plantes</span>
       </a>
-      
-      <a
-        mat-list-item
-        routerLink="/admin/articles"
-        routerLinkActive="active"
-      >
+
+      <a mat-list-item routerLink="/admin/articles" routerLinkActive="active">
         <mat-icon matListItemIcon>tips_and_updates</mat-icon>
         <span matListItemTitle>Articles / Conseils</span>
       </a>
     </mat-nav-list>
 
     <div class="sidebar-footer">
-  <a
-    mat-stroked-button
-    class="back-btn"
-    routerLink="/profile"
-    aria-label="Retour au profil"
-  >
-    <mat-icon>arrow_back</mat-icon>
-    Profil
-  </a>
-</div>
+      <a mat-stroked-button class="back-btn" routerLink="/profile" aria-label="Retour au profil">
+        <mat-icon>arrow_back</mat-icon>
+        Profil
+      </a>
+    </div>
   </aside>
 
-  <!-- CONTENT -->
   <main class="content">
     <div class="page">
       <div class="header">
         <div class="titles">
-          <div class="title">Fiches Poissons (Admin)</div>
-          <div class="subtitle">Créer, modifier, supprimer — images & attributs complets</div>
+          <div class="title">
+            Fiches Poissons ({{ isAdmin ? 'Admin' : 'Éditeur' }})
+          </div>
+          <div class="subtitle" *ngIf="isAdmin">
+            Créer, modifier, supprimer — validation des fiches éditeurs
+          </div>
+          <div class="subtitle" *ngIf="isEditor">
+            Crée/modifie tes fiches — elles seront validées par un admin avant publication
+          </div>
         </div>
       </div>
 
       <mat-card class="tabs">
         <mat-tab-group [(selectedIndex)]="tabIndex" animationDuration="0ms">
-
           <!-- ================= LISTE ================= -->
           <mat-tab label="Liste">
             <div class="tab-page">
-              <div class="toolbar">
+              <div class="toolbar toolbar--sticky">
                 <div class="left">
-                  <div class="mode">Liste des poissons</div>
+                  <div class="mode">
+                    {{ isAdmin ? 'Toutes les fiches' : 'Mes fiches' }}
+                  </div>
                   <div class="muted small">Dernières créations en premier</div>
                 </div>
 
                 <div class="toolbar-actions">
                   <mat-form-field class="search" appearance="outline">
                     <mat-label>Rechercher (tous critères)</mat-label>
-                    <input matInput [value]="search" (input)="onSearchChange($event)">
+                    <input matInput [value]="search" (input)="onSearchChange($event)" />
                     <mat-icon matSuffix>search</mat-icon>
                   </mat-form-field>
+
+                  <!-- ✅ ADMIN ONLY : filtre "En attente" -->
+                  <button
+                    *ngIf="isAdmin"
+                    type="button"
+                    mat-stroked-button
+                    color="primary"
+                    (click)="togglePendingOnly()"
+                    [disabled]="loading"
+                    [class.active]="showPendingOnly"
+                    aria-label="Filtrer les fiches en attente"
+                  >
+                    <mat-icon>hourglass_top</mat-icon>
+                    {{ showPendingOnly ? 'En attente : ON' : 'En attente' }}
+                  </button>
 
                   <button mat-flat-button color="primary" type="button" (click)="newCard()">
                     <mat-icon>add</mat-icon>
@@ -138,11 +139,15 @@
 
                       <div class="sub">
                         <span class="pill">{{ r.waterType }}</span>
+                        <span class="pill" *ngIf="r.status">{{ badgeLabel(r.status) }}</span>
                         <span class="pill" *ngIf="r.temperament">{{ r.temperament }}</span>
                         <span class="pill" *ngIf="r.activity">{{ r.activity }}</span>
                       </div>
 
                       <div class="muted small" *ngIf="r.scientificName">{{ r.scientificName }}</div>
+                      <div class="muted small" *ngIf="r.status === 'REJECTED' && r.rejectReason">
+                        Motif: {{ r.rejectReason }}
+                      </div>
                     </div>
                   </div>
 
@@ -158,7 +163,12 @@
                   </div>
 
                   <div class="card-actions">
-                    <button mat-stroked-button color="primary" type="button" (click)="$event.stopPropagation(); selectRow(r)">
+                    <button
+                      mat-stroked-button
+                      color="primary"
+                      type="button"
+                      (click)="$event.stopPropagation(); selectRow(r)"
+                    >
                       <mat-icon>edit</mat-icon>
                       Modifier
                     </button>
@@ -175,20 +185,35 @@
           <!-- ================= CREATE / EDIT ================= -->
           <mat-tab [label]="selected ? 'Édition' : 'Création'">
             <div class="tab-page">
-              <div class="toolbar">
+              <div class="toolbar toolbar--sticky">
                 <div class="left">
                   <div class="mode">
                     {{ selected ? ('Modifier : #' + selected.id) : 'Créer une fiche poisson' }}
                   </div>
-                  <div class="muted small">
-                    {{ selected ? 'Clique une fiche dans la liste pour l’éditer' : 'Formulaire + preview' }}
+
+                  <div class="muted small" *ngIf="isEditor">
+                    Toute modification repasse automatiquement en validation.
                   </div>
                 </div>
 
                 <div class="toolbar-actions">
-                
+                  <!-- ADMIN moderation -->
+                  <ng-container *ngIf="isAdmin && selected">
+                    <button mat-stroked-button type="button" (click)="approveSelected()" [disabled]="saving || uploading">
+                      <mat-icon>check</mat-icon>
+                      Approuver
+                    </button>
 
-                  <button mat-stroked-button color="warn" type="button"
+                    <button mat-stroked-button color="warn" type="button" (click)="rejectSelected()" [disabled]="saving || uploading">
+                      <mat-icon>block</mat-icon>
+                      Rejeter
+                    </button>
+                  </ng-container>
+
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    type="button"
                     *ngIf="selected"
                     (click)="deleteSelected()"
                     [disabled]="saving || uploading"
@@ -199,11 +224,27 @@
                 </div>
               </div>
 
+              <!-- ✅ bloc statut -->
+              <mat-card class="form" style="margin-bottom: 12px;" *ngIf="selected as s">
+                <div class="section">
+                  <div class="section-title">Statut</div>
+
+                  <div class="kv">
+                    <div class="k">État</div>
+                    <div class="v">{{ badgeLabel(s.status) }}</div>
+
+                    <ng-container *ngIf="s.status === 'REJECTED'">
+                      <div class="k">Motif</div>
+                      <div class="v">{{ s.rejectReason || '—' }}</div>
+                    </ng-container>
+                  </div>
+                </div>
+              </mat-card>
+
               <div class="editor">
                 <!-- FORM -->
                 <mat-card class="form">
                   <form (ngSubmit)="submit()" [formGroup]="form">
-
                     <div class="section">
                       <div class="section-title">Identité</div>
 
@@ -260,6 +301,9 @@
                         </mat-form-field>
 
                         <mat-slide-toggle formControlName="isActive">Active</mat-slide-toggle>
+                        <div class="muted small" *ngIf="isEditor">
+                          Publication gérée par un admin (toi tu ne peux pas publier).
+                        </div>
                       </div>
                     </div>
 
@@ -383,7 +427,6 @@
                     <div class="section">
                       <div class="section-title">Image</div>
 
-                      <!-- CREATE: file gardé en mémoire -->
                       <div class="img-actions" *ngIf="!selected">
                         <input #fileCreate type="file" accept="image/*" hidden (change)="onFileSelectedCreate($event)" />
                         <button mat-stroked-button type="button" (click)="pickImage(fileCreate)" [disabled]="saving">
@@ -399,7 +442,6 @@
                         <span class="muted small" *ngIf="pendingCreateFile">{{ pendingCreateFile.name }}</span>
                       </div>
 
-                      <!-- EDIT: upload direct -->
                       <div class="img-actions" *ngIf="selected">
                         <input #fileEdit type="file" accept="image/*" hidden (change)="onFileSelectedEdit($event)" />
                         <button mat-stroked-button type="button" (click)="pickImage(fileEdit)" [disabled]="uploading || saving">
@@ -417,7 +459,7 @@
                     <div class="actions">
                       <button mat-flat-button color="primary" type="submit" [disabled]="saving || uploading">
                         <mat-icon>save</mat-icon>
-                        {{ selected ? 'Enregistrer' : 'Créer' }}
+                        {{ selected ? 'Enregistrer' : (isAdmin ? 'Créer' : 'Envoyer en validation') }}
                       </button>
 
                       <button mat-stroked-button type="button" (click)="tabIndex = 0" [disabled]="saving || uploading">
@@ -504,11 +546,9 @@
                     </div>
                   </mat-card>
                 </div>
-
               </div>
             </div>
           </mat-tab>
-
         </mat-tab-group>
       </mat-card>
     </div>

@@ -1,7 +1,9 @@
 /* ============================================================
    AquaManager Admin – Plants
    ✅ Sidebar + responsive IDENTIQUES à AdminUsers
-   ✅ + ton style plants conservé
+   ✅ + style plants conservé
+   ✅ + FIX champs trop gros (compact)
+   ✅ + bouton pending "active" style (comme fish)
    ============================================================ */
 
 :host {
@@ -233,10 +235,10 @@
 .small { font-size: 12px; }
 .muted { color: var(--am-muted); font-weight: 700; }
 
-/* LIST GRID */
+/* LIST GRID ✅ auto-fit (comme fish) */
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
 }
 
@@ -553,7 +555,9 @@
   .v { font-weight: 800; font-size: 12px; white-space: pre-wrap; }
 }
 
-/* Material touch-up */
+/* ==========================================================
+   ✅ Material touch-up + COMPACT FIX + bouton pending actif
+   ========================================================== */
 :host ::ng-deep {
   .tabs .mat-mdc-tab-header {
     background: #fff;
@@ -580,6 +584,20 @@
     background: rgba(15, 23, 42, 0.02);
   }
 
+  /* ✅ FIX : champs trop grands (comme fish) */
+  .mat-mdc-form-field-infix {
+    min-height: 44px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .mat-mdc-input-element,
+  .mdc-text-field__input {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+  }
+
   .mdc-notched-outline__leading,
   .mdc-notched-outline__notch,
   .mdc-notched-outline__trailing {
@@ -592,7 +610,10 @@
     border-color: rgba(25, 118, 210, 0.55) !important;
   }
 
+  /* ✅ FIX : labels énormes */
   .mat-mdc-floating-label {
+    font-size: 12px !important;
+    letter-spacing: 0.2px;
     color: rgba(71, 85, 105, 0.9) !important;
     font-weight: 800;
   }
@@ -603,6 +624,12 @@
   .mat-mdc-button {
     border-radius: 14px !important;
     font-weight: 900;
+  }
+
+  /* ✅ bouton "En attente" ON (comme fish) */
+  button.active.mat-mdc-outlined-button {
+    background: rgba(25, 118, 210, 0.08);
+    border-color: rgba(25, 118, 210, 0.35) !important;
   }
 }
 

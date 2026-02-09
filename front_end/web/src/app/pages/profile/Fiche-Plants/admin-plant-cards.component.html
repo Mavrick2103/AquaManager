@@ -1,5 +1,5 @@
+<!-- admin-plant-cards.component.html -->
 <div class="admin-layout">
-  <!-- SIDEBAR (IDENTIQUE A ADMIN-USERS) -->
   <aside class="sidebar" role="navigation" aria-label="Menu administration">
     <a class="brand" routerLink="/" aria-label="Retour à l’accueil">
       <img
@@ -14,12 +14,20 @@
     <div class="sidebar-title">ADMINISTRATION</div>
 
     <mat-nav-list class="nav">
-      <a mat-list-item routerLink="/admin/metrics" routerLinkActive="active">
+      <!-- ✅ ADMIN ONLY -->
+      <a
+        *ngIf="isAdmin"
+        mat-list-item
+        routerLink="/admin/metrics"
+        routerLinkActive="active"
+      >
         <mat-icon matListItemIcon>manage_accounts</mat-icon>
         <span matListItemTitle>Dashboard</span>
       </a>
 
+      <!-- ✅ ADMIN ONLY -->
       <a
+        *ngIf="isAdmin"
         mat-list-item
         routerLink="/admin/users"
         routerLinkActive="active"
@@ -28,7 +36,9 @@
         <span matListItemTitle>Utilisateurs</span>
       </a>
 
+      <!-- ✅ ADMIN + EDITOR -->
       <a
+        *ngIf="isAdmin || isEditor"
         mat-list-item
         routerLink="/admin/species/fish"
         routerLinkActive="active"
@@ -37,7 +47,9 @@
         <span matListItemTitle>Poissons</span>
       </a>
 
+      <!-- ✅ ADMIN + EDITOR -->
       <a
+        *ngIf="isAdmin || isEditor"
         mat-list-item
         routerLink="/admin/species/plant"
         routerLinkActive="active"
@@ -46,7 +58,9 @@
         <span matListItemTitle>Plantes</span>
       </a>
 
+      <!-- ✅ ADMIN + EDITOR -->
       <a
+        *ngIf="isAdmin || isEditor"
         mat-list-item
         routerLink="/admin/articles"
         routerLinkActive="active"
@@ -57,31 +71,32 @@
     </mat-nav-list>
 
     <div class="sidebar-footer">
-  <a
-    mat-stroked-button
-    class="back-btn"
-    routerLink="/profile"
-    aria-label="Retour au profil"
-  >
-    <mat-icon>arrow_back</mat-icon>
-    Profil
-  </a>
-</div>
+      <a
+        mat-stroked-button
+        class="back-btn"
+        routerLink="/profile"
+        aria-label="Retour au profil"
+      >
+        <mat-icon>arrow_back</mat-icon>
+        Profil
+      </a>
+    </div>
   </aside>
 
-  <!-- CONTENT -->
   <main class="content">
     <div class="page">
       <div class="header">
         <div class="titles">
-          <div class="title">Fiches Plantes (Admin)</div>
-          <div class="subtitle">Créer, modifier, supprimer — images & attributs complets</div>
+          <div class="title">Fiches Plantes</div>
+          <div class="subtitle">
+            {{ isAdmin ? 'Admin : CRUD + modération' : 'Éditeur : tes fiches uniquement (validation admin)' }}
+          </div>
         </div>
       </div>
 
       <mat-card class="tabs">
         <mat-tab-group [(selectedIndex)]="tabIndex" animationDuration="0ms">
-          <!-- ================= LISTE ================= -->
+          <!-- LISTE -->
           <mat-tab label="Liste">
             <div class="tab-page">
               <div class="toolbar">
@@ -93,9 +108,24 @@
                 <div class="toolbar-actions">
                   <mat-form-field class="search" appearance="outline">
                     <mat-label>Rechercher (tous critères)</mat-label>
-                    <input matInput [value]="search" (input)="onSearchChange($event)">
+                    <input matInput [value]="search" (input)="onSearchChange($event)" />
                     <mat-icon matSuffix>search</mat-icon>
                   </mat-form-field>
+
+                  <!-- ✅ ADMIN ONLY : filtre "En attente" -->
+                  <button
+                    *ngIf="isAdmin"
+                    type="button"
+                    mat-stroked-button
+                    color="primary"
+                    (click)="togglePendingOnly()"
+                    [disabled]="loading"
+                    [class.active]="showPendingOnly"
+                    aria-label="Filtrer les fiches en attente"
+                  >
+                    <mat-icon>hourglass_top</mat-icon>
+                    {{ showPendingOnly ? 'En attente : ON' : 'En attente' }}
+                  </button>
 
                   <button mat-flat-button color="primary" type="button" (click)="newCard()">
                     <mat-icon>add</mat-icon>
@@ -139,9 +169,13 @@
                         <span class="pill">{{ r.waterType }}</span>
                         <span class="pill" *ngIf="r.category">{{ r.category }}</span>
                         <span class="pill" *ngIf="r.growthRate">{{ r.growthRate }}</span>
+
+                        <!-- ✅ status -->
+                        <span class="pill" *ngIf="r.status">{{ badgeLabel(r.status) }}</span>
                       </div>
 
                       <div class="muted small" *ngIf="r.scientificName">{{ r.scientificName }}</div>
+                      <div class="muted small" *ngIf="r.rejectReason">Motif : {{ r.rejectReason }}</div>
                     </div>
                   </div>
 
@@ -157,7 +191,12 @@
                   </div>
 
                   <div class="card-actions">
-                    <button mat-stroked-button color="primary" type="button" (click)="$event.stopPropagation(); selectRow(r)">
+                    <button
+                      mat-stroked-button
+                      color="primary"
+                      type="button"
+                      (click)="$event.stopPropagation(); selectRow(r)"
+                    >
                       <mat-icon>edit</mat-icon>
                       Modifier
                     </button>
@@ -171,7 +210,7 @@
             </div>
           </mat-tab>
 
-          <!-- ================= CREATE / EDIT ================= -->
+          <!-- CREATE / EDIT -->
           <mat-tab [label]="selected ? 'Édition' : 'Création'">
             <div class="tab-page">
               <div class="toolbar">
@@ -185,7 +224,35 @@
                 </div>
 
                 <div class="toolbar-actions">
-                  <button mat-stroked-button color="warn" type="button"
+                  <!-- ✅ Admin moderation -->
+                  <button
+                    mat-stroked-button
+                    color="primary"
+                    type="button"
+                    *ngIf="isAdmin && selected"
+                    (click)="approveSelected()"
+                    [disabled]="saving || uploading"
+                  >
+                    <mat-icon>check_circle</mat-icon>
+                    Approuver
+                  </button>
+
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    type="button"
+                    *ngIf="isAdmin && selected"
+                    (click)="rejectSelected()"
+                    [disabled]="saving || uploading"
+                  >
+                    <mat-icon>cancel</mat-icon>
+                    Rejeter
+                  </button>
+
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    type="button"
                     *ngIf="selected"
                     (click)="deleteSelected()"
                     [disabled]="saving || uploading"
@@ -197,9 +264,9 @@
               </div>
 
               <div class="editor">
-                <!-- FORM -->
                 <mat-card class="form">
                   <form (ngSubmit)="submit()" [formGroup]="form">
+                    <!-- Identité -->
                     <div class="section">
                       <div class="section-title">Identité</div>
 
@@ -272,6 +339,7 @@
 
                     <mat-divider class="divider"></mat-divider>
 
+                    <!-- Exigences -->
                     <div class="section">
                       <div class="section-title">Exigences</div>
 
@@ -306,6 +374,7 @@
 
                     <mat-divider class="divider"></mat-divider>
 
+                    <!-- Paramètres d’eau -->
                     <div class="section">
                       <div class="section-title">Paramètres d’eau</div>
 
@@ -350,6 +419,7 @@
 
                     <mat-divider class="divider"></mat-divider>
 
+                    <!-- Nutriments -->
                     <div class="section">
                       <div class="section-title">Nutriments</div>
 
@@ -364,6 +434,7 @@
 
                     <mat-divider class="divider"></mat-divider>
 
+                    <!-- Maintenance -->
                     <div class="section">
                       <div class="section-title">Maintenance</div>
 
@@ -387,6 +458,7 @@
 
                     <mat-divider class="divider"></mat-divider>
 
+                    <!-- Image -->
                     <div class="section">
                       <div class="section-title">Image</div>
 
@@ -433,6 +505,7 @@
                   </form>
                 </mat-card>
 
+                <!-- PREVIEW -->
                 <div class="preview">
                   <mat-card class="preview-card">
                     <div class="preview-head">
@@ -440,6 +513,13 @@
                         <div class="p-title">{{ form.get('commonName')?.value || 'Nom commun' }}</div>
                         <div class="p-sub">{{ form.get('scientificName')?.value || 'Nom scientifique' }}</div>
                         <div class="p-pill">{{ form.get('waterType')?.value }}</div>
+
+                        <div class="muted small" *ngIf="selected?.status">
+                          Statut : {{ badgeLabel(selected?.status) }}
+                        </div>
+                        <div class="muted small" *ngIf="selected?.rejectReason">
+                          Motif : {{ selected?.rejectReason }}
+                        </div>
                       </div>
 
                       <div class="p-img">

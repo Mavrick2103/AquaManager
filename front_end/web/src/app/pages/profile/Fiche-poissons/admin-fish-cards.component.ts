@@ -1,3 +1,4 @@
+// admin-fish-cards.component.ts
 import {
   Component,
   ChangeDetectionStrategy,
@@ -33,16 +34,12 @@ import {
   Difficulty,
   CreateFishCardDto,
   UpdateFishCardDto,
+  ModerationStatus,
 } from '../../../core/fish-cards';
 import { AuthService } from '../../../core/auth.service';
+import { UserService } from '../../../core/user.service';
 
-type DuplicatePayload = {
-  code?: string;
-  message?: string;
-  existingId?: number;
-  existingCommonName?: string;
-  waterType?: WaterType;
-};
+type AppRole = 'USER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN';
 
 @Component({
   selector: 'app-admin-fish-cards',
@@ -78,7 +75,7 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
   saving = false;
   uploading = false;
 
-  tabIndex = 0; // 0 = Liste / 1 = Création/édition
+  tabIndex = 0;
 
   rows: FishCard[] = [];
   filtered: FishCard[] = [];
@@ -86,11 +83,23 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
 
   search = '';
 
+  // ✅ filtre admin : pending only
+  showPendingOnly = false;
+
   form: FormGroup;
 
-  // Image
   pendingCreateFile: File | null = null;
   imageBroken = false;
+
+  private role: AppRole = 'USER';
+
+  get isAdmin(): boolean {
+    return this.role === 'ADMIN' || this.role === 'SUPERADMIN';
+  }
+
+  get isEditor(): boolean {
+    return this.role === 'EDITOR';
+  }
 
   private readonly apiOrigin = this.computeApiOrigin(environment.apiUrl);
 
@@ -98,6 +107,7 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
     private readonly fb: FormBuilder,
     private readonly api: FishCardsApi,
     private readonly auth: AuthService,
+    private readonly users: UserService,
     private readonly snack: MatSnackBar,
     private readonly location: Location,
     private readonly cdr: ChangeDetectorRef,
@@ -142,7 +152,7 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.refresh();
+    this.bootstrap();
   }
 
   ngOnDestroy(): void {}
@@ -151,12 +161,17 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
     this.location.back();
   }
 
-  // =======================
-  // AUTH SAFE-GUARD (NO 401)
-  // =======================
-  private ensureAdminAuth$() {
-    if (this.auth.isAuthenticated()) return from(Promise.resolve(true));
+  // ✅ bouton admin : toggle pending filter
+  togglePendingOnly(): void {
+    if (!this.isAdmin) return;
+    this.showPendingOnly = !this.showPendingOnly;
+    this.applyClientFilter();
+    this.cdr.markForCheck();
+  }
 
+  // ---------- AUTH ----------
+  private ensureAuth$() {
+    if (this.auth.isAuthenticated()) return from(Promise.resolve(true));
     return from(this.auth.refreshAccessToken()).pipe(
       switchMap((tk) => {
         if (!tk) {
@@ -168,13 +183,49 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
     );
   }
 
+  private bootstrap(): void {
+    this.loading = true;
+    this.cdr.markForCheck();
+
+    this.ensureAuth$()
+      .pipe(
+        switchMap(() => from(this.users.getMe())),
+        take(1),
+        finalize(() => {
+          this.loading = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (me: any) => {
+          this.role = String(me?.role ?? 'USER').toUpperCase().trim() as AppRole;
+
+          // Editor: publication verrouillée
+          if (this.isEditor) this.form.get('isActive')?.disable({ emitEvent: false });
+          else this.form.get('isActive')?.enable({ emitEvent: false });
+
+          // ✅ filtre pending uniquement pour admin
+          if (!this.isAdmin) this.showPendingOnly = false;
+
+          this.cdr.markForCheck();
+          this.refresh();
+        },
+        error: (err) => {
+          if (String(err?.message || '') === 'NO_TOKEN') return;
+          console.error(err);
+          this.snack.open('Impossible de récupérer ton profil. Reconnecte-toi.', 'OK', { duration: 4500 });
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
   // ---------- LIST ----------
   refresh(): void {
     this.loading = true;
 
-    this.ensureAdminAuth$()
+    this.ensureAuth$()
       .pipe(
-        switchMap(() => this.api.listAdmin(this.search)),
+        switchMap(() => (this.isAdmin ? this.api.listAdmin(this.search) : this.api.listEditor(this.search))),
         take(1),
         finalize(() => {
           this.loading = false;
@@ -185,14 +236,12 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
         next: (rows) => {
           const safe = Array.isArray(rows) ? rows : [];
           safe.sort((a, b) => this.toTime(b.createdAt) - this.toTime(a.createdAt));
-
           this.rows = safe;
           this.applyClientFilter();
           this.cdr.markForCheck();
         },
         error: (err) => {
           if (String(err?.message || '') === 'NO_TOKEN') return;
-
           console.error(err);
           this.snack.open('Erreur chargement des fiches poissons', 'OK', { duration: 3500 });
           this.cdr.markForCheck();
@@ -209,11 +258,19 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
 
   private applyClientFilter(): void {
     const q = this.normalize(this.search);
-    if (!q) {
-      this.filtered = this.rows;
+
+    // 1) filtre recherche texte
+    const base = !q
+      ? this.rows
+      : this.rows.filter((r) => this.normalize(this.rowToSearchBlob(r)).includes(q));
+
+    // 2) filtre "pending only" (admin)
+    if (this.isAdmin && this.showPendingOnly) {
+      this.filtered = base.filter((r) => r.status === 'PENDING');
       return;
     }
-    this.filtered = this.rows.filter((r) => this.normalize(this.rowToSearchBlob(r)).includes(q));
+
+    this.filtered = base;
   }
 
   selectRow(r: FishCard): void {
@@ -258,6 +315,9 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
       imageUrl: r.imageUrl ?? '',
       isActive: r.isActive ?? true,
     });
+
+    if (this.isEditor) this.form.get('isActive')?.disable({ emitEvent: false });
+    else this.form.get('isActive')?.enable({ emitEvent: false });
 
     this.tabIndex = 1;
     this.cdr.markForCheck();
@@ -306,8 +366,75 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
       isActive: true,
     });
 
+    if (this.isEditor) this.form.get('isActive')?.disable({ emitEvent: false });
+    else this.form.get('isActive')?.enable({ emitEvent: false });
+
     this.tabIndex = 1;
     this.cdr.markForCheck();
+  }
+
+  // ---------- MODERATION UI (ADMIN ONLY) ----------
+  approveSelected(): void {
+    if (!this.isAdmin || !this.selected) return;
+
+    this.saving = true;
+    this.cdr.markForCheck();
+
+    this.ensureAuth$()
+      .pipe(
+        switchMap(() => this.api.approve(this.selected!.id)),
+        take(1),
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (updated) => {
+          this.snack.open(`Fiche approuvée (#${updated.id})`, 'OK', { duration: 2000 });
+          this.refresh();
+          this.selectRow(updated);
+        },
+        error: (err) => {
+          if (String(err?.message || '') === 'NO_TOKEN') return;
+          console.error(err);
+          this.snack.open('Erreur approbation', 'OK', { duration: 4000 });
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  rejectSelected(): void {
+    if (!this.isAdmin || !this.selected) return;
+
+    const reason = prompt('Motif de rejet (obligatoire) :');
+    if (!reason || !reason.trim()) return;
+
+    this.saving = true;
+    this.cdr.markForCheck();
+
+    this.ensureAuth$()
+      .pipe(
+        switchMap(() => this.api.reject(this.selected!.id, reason.trim())),
+        take(1),
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (updated) => {
+          this.snack.open(`Fiche rejetée (#${updated.id})`, 'OK', { duration: 2000 });
+          this.refresh();
+          this.selectRow(updated);
+        },
+        error: (err) => {
+          if (String(err?.message || '') === 'NO_TOKEN') return;
+          console.error(err);
+          this.snack.open('Erreur rejet', 'OK', { duration: 4000 });
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   // ---------- IMAGE ----------
@@ -355,7 +482,7 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
     this.imageBroken = false;
     this.cdr.markForCheck();
 
-    this.ensureAdminAuth$()
+    this.ensureAuth$()
       .pipe(
         switchMap(() => this.api.uploadImage(file)),
         take(1),
@@ -378,7 +505,7 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
             err?.status === 401
               ? '401 : pas connecté'
               : err?.status === 403
-                ? '403 : pas ADMIN'
+                ? '403 : rôle insuffisant'
                 : err?.status === 400
                   ? 'Image invalide (type/taille)'
                   : 'Erreur import image';
@@ -414,15 +541,17 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
 
     const raw = this.form.getRawValue();
 
-    // EDIT
     if (this.selected) {
       const dto = this.buildUpdatePayload(raw);
+
       this.saving = true;
       this.cdr.markForCheck();
 
-      this.ensureAdminAuth$()
+      this.ensureAuth$()
         .pipe(
-          switchMap(() => this.api.update(this.selected!.id, dto)),
+          switchMap(() =>
+            this.isAdmin ? this.api.updateAdmin(this.selected!.id, dto) : this.api.updateEditor(this.selected!.id, dto),
+          ),
           take(1),
           finalize(() => {
             this.saving = false;
@@ -431,23 +560,14 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
         )
         .subscribe({
           next: (updated) => {
-            this.snack.open(`Poisson modifié (#${updated.id})`, 'OK', { duration: 2200 });
+            this.snack.open(`Fiche enregistrée (#${updated.id})`, 'OK', { duration: 2200 });
             this.refresh();
             this.selectRow(updated);
           },
           error: (err) => {
             if (String(err?.message || '') === 'NO_TOKEN') return;
-
             console.error(err);
-
-            const dup = this.extractDuplicate(err);
-            if (dup) {
-              this.showDuplicateSnack(dup);
-              this.cdr.markForCheck();
-              return;
-            }
-
-            this.snack.open(this.prettyError(err, 'Erreur modification poisson'), 'OK', { duration: 4500 });
+            this.snack.open(this.prettyError(err, 'Erreur enregistrement'), 'OK', { duration: 4500 });
             this.cdr.markForCheck();
           },
         });
@@ -455,14 +575,18 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // CREATE
     const dto = this.buildCreatePayload(raw);
+
     this.saving = true;
     this.cdr.markForCheck();
 
-    this.ensureAdminAuth$()
+    this.ensureAuth$()
       .pipe(
-        switchMap(() => this.api.createWithImage(dto, this.pendingCreateFile ?? undefined)),
+        switchMap(() =>
+          this.isAdmin
+            ? this.api.createAdminWithImage(dto, this.pendingCreateFile ?? undefined)
+            : this.api.createEditorWithImage(dto, this.pendingCreateFile ?? undefined),
+        ),
         take(1),
         finalize(() => {
           this.saving = false;
@@ -471,13 +595,14 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (created) => {
-          this.snack.open(`Poisson créé (#${created.id})`, 'OK', { duration: 2200 });
-          this.pendingCreateFile = null;
+          const msg = this.isAdmin ? `Poisson créé (#${created.id})` : `Envoyé en validation (#${created.id})`;
+          this.snack.open(msg, 'OK', { duration: 2200 });
 
+          this.pendingCreateFile = null;
           this.tabIndex = 0;
           this.refresh();
-
           this.selected = null;
+
           this.form.reset({
             commonName: '',
             scientificName: '',
@@ -516,21 +641,15 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
             isActive: true,
           });
 
+          if (this.isEditor) this.form.get('isActive')?.disable({ emitEvent: false });
+          else this.form.get('isActive')?.enable({ emitEvent: false });
+
           this.cdr.markForCheck();
         },
         error: (err) => {
           if (String(err?.message || '') === 'NO_TOKEN') return;
-
           console.error(err);
-
-          const dup = this.extractDuplicate(err);
-          if (dup) {
-            this.showDuplicateSnack(dup);
-            this.cdr.markForCheck();
-            return;
-          }
-
-          this.snack.open(this.prettyError(err, 'Erreur création poisson'), 'OK', { duration: 4500 });
+          this.snack.open(this.prettyError(err, 'Erreur création'), 'OK', { duration: 4500 });
           this.cdr.markForCheck();
         },
       });
@@ -539,15 +658,15 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
   deleteSelected(): void {
     if (!this.selected) return;
 
-    const ok = confirm(`Supprimer la fiche poisson #${this.selected.id} ?`);
+    const ok = confirm(`Supprimer la fiche #${this.selected.id} ?`);
     if (!ok) return;
 
     this.saving = true;
     this.cdr.markForCheck();
 
-    this.ensureAdminAuth$()
+    this.ensureAuth$()
       .pipe(
-        switchMap(() => this.api.remove(this.selected!.id)),
+        switchMap(() => (this.isAdmin ? this.api.removeAdmin(this.selected!.id) : this.api.removeEditor(this.selected!.id))),
         take(1),
         finalize(() => {
           this.saving = false;
@@ -564,7 +683,6 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           if (String(err?.message || '') === 'NO_TOKEN') return;
-
           console.error(err);
           this.snack.open(this.prettyError(err, 'Erreur suppression'), 'OK', { duration: 4500 });
           this.cdr.markForCheck();
@@ -572,51 +690,18 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ---------- DUPLICATE UI ----------
-  private extractDuplicate(err: any): DuplicatePayload | null {
-    if (err?.status !== 409) return null;
-
-    const payload: DuplicatePayload = err?.error ?? {};
-    if (payload?.code && payload.code !== 'DUPLICATE_FISH_CARD') {
-      return { message: 'Cette fiche poisson existe déjà.' };
-    }
-    return payload;
-  }
-
-  private showDuplicateSnack(dup: DuplicatePayload): void {
-    const existingId = dup.existingId;
-    const existingName = dup.existingCommonName;
-
-    const text =
-      existingId && existingName
-        ? `Déjà en base : “${existingName}” (ID #${existingId}).`
-        : existingId
-          ? `Déjà en base (ID #${existingId}).`
-          : 'Cette fiche poisson existe déjà.';
-
-    const ref = this.snack.open(text, existingId ? 'Ouvrir' : 'OK', { duration: 7000 });
-
-    if (!existingId) return;
-
-    ref.onAction().pipe(take(1)).subscribe(() => {
-      const local = this.rows.find((r) => r.id === existingId);
-      if (local) {
-        this.selectRow(local);
-        return;
-      }
-
-      this.refresh();
-      setTimeout(() => {
-        const after = this.rows.find((r) => r.id === existingId);
-        if (after) this.selectRow(after);
-      }, 250);
-    });
-  }
-
   // ---------- helpers ----------
+  badgeLabel(status: ModerationStatus | null | undefined): string {
+    if (!status) return '—';
+    if (status === 'PENDING') return 'EN ATTENTE';
+    if (status === 'APPROVED') return 'APPROUVÉ';
+    if (status === 'REJECTED') return 'REJETÉ';
+    return status;
+  }
+
   private prettyError(err: any, fallback: string): string {
     if (err?.status === 401) return '401 : pas connecté';
-    if (err?.status === 403) return '403 : pas ADMIN';
+    if (err?.status === 403) return '403 : rôle insuffisant';
     if (err?.status === 400) return '400 : données invalides';
     if (err?.status === 409) return 'Doublon : déjà en base';
     return fallback;
@@ -636,6 +721,7 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
       'zone', 'diet', 'compatibility',
       'tempMin', 'tempMax', 'phMin', 'phMax', 'ghMin', 'ghMax', 'khMin', 'khMax',
       'behavior', 'breeding', 'breedingTips', 'notes',
+      'imageUrl',
     ];
 
     for (const k of keys) {
@@ -696,6 +782,8 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
       r.activity,
       r.temperament,
       r.difficulty,
+      r.status,
+      r.rejectReason,
       r.minVolumeL,
       r.minGroupSize,
       r.maxSizeCm,

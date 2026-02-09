@@ -42,6 +42,8 @@ export type Propagation =
   | 'GRAINES'
   | 'AUCUNE';
 
+export type ModerationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export function normalizeText(input?: string | null): string | null {
   const v = (input ?? '')
     .trim()
@@ -168,6 +170,23 @@ export class PlantCard {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   imageUrl: string | null;
+
+  // ✅ modération
+  @Column({ type: 'enum', enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'APPROVED' })
+  status: ModerationStatus;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  rejectReason: string | null;
+
+  // ✅ ownership / audit (sans FK pour éviter tes galères)
+  @Column({ type: 'int', nullable: true })
+  createdBy: number | null;
+
+  @Column({ type: 'int', nullable: true })
+  approvedBy: number | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  approvedAt: Date | null;
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;

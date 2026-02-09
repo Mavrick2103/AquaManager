@@ -5,29 +5,33 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  ManyToOne,
+  JoinColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { User } from '../../users/user.entity';
 
 export type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER' | 'SAUMATRE';
 export type Temperament = 'PACIFIQUE' | 'SEMI_AGRESSIF' | 'AGRESSIF';
 export type Activity = 'DIURNE' | 'NOCTURNE' | 'CREPUSCULAIRE';
 export type Difficulty = 'FACILE' | 'MOYEN' | 'DIFFICILE';
 
+export type ModerationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export function normalizeText(input?: string | null): string | null {
   const v = (input ?? '')
     .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // accents
-    .replace(/\s+/g, ' '); // espaces multiples -> 1
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
   return v ? v : null;
 }
 
 @Entity('fish_cards')
 @Index(['commonName'])
 @Index(['scientificName'])
-// ✅ Anti-doublons solides (DB-level)
 @Index('UQ_fish_water_common_norm', ['waterType', 'commonNameNormalized'], { unique: true })
 @Index('UQ_fish_water_scient_norm', ['waterType', 'scientificNameNormalized'], { unique: true })
 export class FishCard {
@@ -54,7 +58,7 @@ export class FishCard {
   })
   waterType: WaterType;
 
-  // ✅ champs techniques (dédoublonnage)
+  // ---------- Champs techniques (anti-doublons) ----------
   @Column({ type: 'varchar', length: 160 })
   commonNameNormalized: string;
 
@@ -142,9 +146,45 @@ export class FishCard {
   @Column({ type: 'varchar', length: 255, nullable: true })
   imageUrl: string | null;
 
-  // ---------- Statut ----------
+  // ---------- Publication ----------
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
+
+  // ---------- Modération ----------
+  @Column({
+    type: 'enum',
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+    default: 'PENDING',
+  })
+  status: ModerationStatus;
+
+  @Column({ type: 'text', nullable: true })
+  rejectReason: string | null;
+
+  // ---------- Ownership / review ----------
+  @Column({ type: 'int', nullable: true })
+  createdById: number | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'createdById' })
+  createdBy?: User | null;
+
+  @Column({ type: 'int', nullable: true })
+  updatedById: number | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'updatedById' })
+  updatedBy?: User | null;
+
+  @Column({ type: 'int', nullable: true })
+  reviewedById: number | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'reviewedById' })
+  reviewedBy?: User | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  reviewedAt: Date | null;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

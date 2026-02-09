@@ -18,9 +18,7 @@ type Temperament = 'PACIFIQUE' | 'SEMI_AGRESSIF' | 'AGRESSIF';
 type Activity = 'DIURNE' | 'NOCTURNE' | 'CREPUSCULAIRE';
 type Difficulty = 'FACILE' | 'MOYEN' | 'DIFFICILE';
 
-// ✅ helper: '' => undefined (utile avec FormData)
-const EmptyToUndef = () =>
-  Transform(({ value }) => (value === '' ? undefined : value));
+const EmptyToUndef = () => Transform(({ value }) => (value === '' ? undefined : value));
 
 export class CreateFishCardDto {
   @IsString()
@@ -45,13 +43,10 @@ export class CreateFishCardDto {
   @Length(2, 120)
   origin?: string;
 
-  // 🔥 si tu veux le rendre obligatoire, enlève IsOptional()
-  @IsOptional()
-  @EmptyToUndef()
+  // ✅ OBLIGATOIRE
   @IsIn(['EAU_DOUCE', 'EAU_DE_MER', 'SAUMATRE'])
-  waterType?: WaterType;
+  waterType: WaterType;
 
-  // ---------- Paramètres d’eau (FormData => string, donc @Type(() => Number))
   @IsOptional() @Type(() => Number) @IsNumber() tempMin?: number;
   @IsOptional() @Type(() => Number) @IsNumber() tempMax?: number;
 
@@ -64,7 +59,6 @@ export class CreateFishCardDto {
   @IsOptional() @Type(() => Number) @IsNumber() khMin?: number;
   @IsOptional() @Type(() => Number) @IsNumber() khMax?: number;
 
-  // ---------- Maintenance
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -79,10 +73,7 @@ export class CreateFishCardDto {
   @Max(1000)
   minGroupSize?: number;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  maxSizeCm?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() maxSizeCm?: number;
 
   @IsOptional()
   @Type(() => Number)
@@ -103,37 +94,18 @@ export class CreateFishCardDto {
 
   @IsOptional()
   @EmptyToUndef()
-  @IsString()
-  @Length(2, 120)
-  zone?: string;
-
-  @IsOptional()
-  @EmptyToUndef()
-  @IsString()
-  @Length(2, 120)
-  diet?: string;
-
-  @IsOptional()
-  @EmptyToUndef()
-  @IsString()
-  @Length(2, 120)
-  compatibility?: string;
-
-  @IsOptional()
-  @EmptyToUndef()
   @IsIn(['FACILE', 'MOYEN', 'DIFFICILE'])
   difficulty?: Difficulty;
 
-  // ---------- Textes
+  @IsOptional() @EmptyToUndef() @IsString() @Length(2, 120) zone?: string;
+  @IsOptional() @EmptyToUndef() @IsString() @Length(2, 120) diet?: string;
+  @IsOptional() @EmptyToUndef() @IsString() @Length(2, 120) compatibility?: string;
+
   @IsOptional() @EmptyToUndef() @IsString() behavior?: string;
   @IsOptional() @EmptyToUndef() @IsString() breeding?: string;
   @IsOptional() @EmptyToUndef() @IsString() breedingTips?: string;
   @IsOptional() @EmptyToUndef() @IsString() notes?: string;
 
-  // ---------- Image
-  // ✅ accepte:
-  // - /uploads/fish/xxxxx.jpg
-  // - https://... (si tu veux plus tard)
   @IsOptional()
   @EmptyToUndef()
   @IsString()
