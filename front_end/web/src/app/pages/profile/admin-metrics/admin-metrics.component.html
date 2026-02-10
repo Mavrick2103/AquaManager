@@ -207,7 +207,13 @@
           </div>
 
           <div class="chart-wrap" *ngIf="hasNewUsersSeries(); else noSeries">
-            <div class="chart-line" role="img" aria-label="Graphique (courbe) des nouveaux utilisateurs">
+            <div
+              class="chart-line"
+              role="img"
+              aria-label="Graphique (courbe) des nouveaux utilisateurs"
+              (mousemove)="onChartMove($event)"
+              (mouseleave)="onChartLeave()"
+            >
               <svg class="chart-svg" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
                 <!-- grille -->
                 <g class="grid">
@@ -228,13 +234,34 @@
                   <circle
                     *ngFor="let pt of linePoints(); let i = index"
                     class="pt"
+                    [class.active]="i === hoverIndex"
                     [attr.cx]="pt.x"
                     [attr.cy]="pt.y"
-                  >
-                    <title>{{ newUsersSeries()[i].label }} : {{ newUsersSeries()[i].count }}</title>
-                  </circle>
+                    (mouseenter)="setHoverIndex(i)"
+                  ></circle>
                 </g>
+
+                <!-- curseur vertical -->
+                <line
+                  *ngIf="hoverIndex !== null"
+                  class="cursor"
+                  [attr.x1]="linePoints()[hoverIndex].x"
+                  [attr.x2]="linePoints()[hoverIndex].x"
+                  y1="0"
+                  y2="260"
+                ></line>
               </svg>
+
+              <!-- tooltip -->
+              <div
+                class="tip"
+                *ngIf="hoverIndex !== null"
+                [style.left.px]="tipLeft"
+                [style.top.px]="tipTop"
+              >
+                <div class="tip-title">{{ newUsersSeries()[hoverIndex].label }}</div>
+                <div class="tip-value">{{ newUsersSeries()[hoverIndex].count }} inscrit(s)</div>
+              </div>
 
               <!-- labels X simplifiés -->
               <div class="xlabels" aria-hidden="true">
@@ -259,9 +286,7 @@
               <mat-icon>insights</mat-icon>
               <div>
                 <div class="chart-empty-title">Pas de données de série</div>
-                <div class="chart-empty-sub">
-                  evolution inscriptions
-                </div>
+                <div class="chart-empty-sub">evolution inscriptions</div>
               </div>
             </div>
           </ng-template>

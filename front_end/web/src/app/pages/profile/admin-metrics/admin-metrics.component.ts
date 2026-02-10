@@ -302,4 +302,48 @@ export class AdminMetricsComponent {
     if (mode === 'day') return `${dd}/${mm}`;
     return `${mm}/${String(d.getFullYear()).slice(-2)}`;
   }
+  hoverIndex: number | null = null;
+tipLeft = 0;
+tipTop = 0;
+
+setHoverIndex(i: number) {
+  this.hoverIndex = i;
+}
+
+onChartLeave() {
+  this.hoverIndex = null;
+}
+
+onChartMove(ev: MouseEvent) {
+  const pts = this.linePoints();
+  if (!pts.length) return;
+
+  const el = ev.currentTarget as HTMLElement;
+  const rect = el.getBoundingClientRect();
+
+  // position X de la souris en "coordonnées SVG" (0..1000)
+  const x = ((ev.clientX - rect.left) / rect.width) * 1000;
+
+  // prend le point le plus proche
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const d = Math.abs(pts[i].x - x);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  }
+
+  this.hoverIndex = best;
+
+  // position tooltip en pixels dans le conteneur
+  const px = (pts[best].x / 1000) * rect.width;
+  const py = (pts[best].y / 260) * rect.height;
+
+  // un peu au-dessus du point
+  this.tipLeft = px;
+  this.tipTop = Math.max(6, py - 48);
+}
+
 }
