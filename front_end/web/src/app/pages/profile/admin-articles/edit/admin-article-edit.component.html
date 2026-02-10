@@ -9,8 +9,13 @@
       <h2>Modifier l’article</h2>
       <p *ngIf="article">
         #{{ article.id }} • {{ article.slug }}
-        <span class="badge" [class.pub]="article.status==='PUBLISHED'" [class.draft]="article.status==='DRAFT'"
-              [class.pending]="article.status==='PENDING_REVIEW'" [class.rejected]="article.status==='REJECTED'">
+        <span
+          class="badge"
+          [class.pub]="article.status==='PUBLISHED'"
+          [class.draft]="article.status==='DRAFT'"
+          [class.pending]="article.status==='PENDING_REVIEW'"
+          [class.rejected]="article.status==='REJECTED'"
+        >
           {{ statusLabel(article.status) }}
         </span>
       </p>
@@ -39,9 +44,6 @@
         <input matInput formControlName="excerpt" />
       </mat-form-field>
 
-      <!-- ✅ STATUT :
-           - ADMIN: choix complet
-           - EDITOR: lecture seule (affiché mais non modifiable) -->
       <ng-container *ngIf="isAdmin; else editorStatus">
         <mat-form-field appearance="outline">
           <mat-label>Statut *</mat-label>
@@ -80,7 +82,14 @@
     </div>
 
     <div class="actions">
-      <button *ngIf="!isEditor && isAdmin" mat-flat-button color="primary" type="submit" [disabled]="saving || deleting || actioning">
+      <!-- ✅ FIX: admin => peut sauvegarder -->
+      <button
+        *ngIf="isAdmin"
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="saving || deleting || actioning"
+      >
         <mat-icon>save</mat-icon>
         {{ saving ? 'Sauvegarde…' : 'Sauvegarder' }}
       </button>
@@ -123,7 +132,6 @@
         Refuser
       </button>
 
-      <!-- delete : idéalement admin only (mais ton back le force déjà). -->
       <button
         mat-stroked-button
         color="warn"
