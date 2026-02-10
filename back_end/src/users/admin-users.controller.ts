@@ -30,17 +30,6 @@ export class AdminUsersController {
     return this.users.adminList(search);
   }
 
-  // ✅ NOUVEAU : série "nouveaux users" pour le dashboard
-  @Get('metrics/new-users')
-  newUsersSeries(@Query('range') range?: MetricsRange) {
-    const r: MetricsRange =
-      range === '1d' || range === '7d' || range === '30d' || range === '365d' || range === 'all'
-        ? range
-        : '1d';
-
-    return this.users.adminNewUsersSeries(r);
-  }
-
   @Get(':id')
   one(@Param('id') id: string) {
     return this.users.adminGetOne(Number(id));

@@ -21,7 +21,9 @@ import { catchError } from 'rxjs/operators';
 
 type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 type Role = 'USER' | 'ADMIN' | 'EDITOR';
+
 type NewUsersPoint = { label: string; count: number };
+type ActiveUsersPoint = { label: string; count: number };
 
 interface AdminMetricsDto {
   generatedAt: string;
@@ -31,7 +33,6 @@ interface AdminMetricsDto {
     admins: number;
     newInRange: number | null;
     activeInRange: number;
-    newSeries?: NewUsersPoint[];
     latest: Array<{ id: number; fullName: string; email: string; role: Role; createdAt?: string }>;
     note?: string;
   };
@@ -72,8 +73,18 @@ export class AdminMetricsComponent {
 
   displayedColumns = ['id', 'fullName', 'email', 'role'] as const;
 
-  // ✅ on garde la série séparée et stable (évite de recalculer 500 fois)
-  private _series: NewUsersPoint[] = [];
+  private _newUsersSeries: NewUsersPoint[] = [];
+  private _activeUsersSeries: ActiveUsersPoint[] = [];
+
+  // hover new users
+  hoverIndex: number | null = null;
+  tipLeft = 0;
+  tipTop = 0;
+
+  // hover active users
+  activeHoverIndex: number | null = null;
+  activeTipLeft = 0;
+  activeTipTop = 0;
 
   constructor(private http: HttpClient) {
     this.load();
@@ -97,46 +108,62 @@ export class AdminMetricsComponent {
   }
 
   load() {
-    this.loading = true;
-    this.error = null;
-    this.hoverIndex = null;
+  this.loading = true;
+  this.error = null;
 
-    const metrics$ = this.http.get<AdminMetricsDto>(this.api(`/admin/metrics?range=${this.range}`));
+  this.hoverIndex = null;
+  this.activeHoverIndex = null;
 
-    // ✅ VRAIE source du graph (pas latest)
-    const series$ = this.http
-      .get<NewUsersPoint[]>(this.api(`/admin/users/metrics/new-users?range=${this.range}`))
-      .pipe(
-        catchError((err) => {
-          console.error('new-users series error', err);
-          return of([] as NewUsersPoint[]);
-        }),
-      );
+  const metrics$ = this.http.get<AdminMetricsDto>(
+    this.api(`/admin/metrics?range=${this.range}`),
+  );
 
-    forkJoin({ metrics: metrics$, series: series$ }).subscribe({
-      next: ({ metrics, series }) => {
-        this.metrics = metrics;
+  const newUsers$ = this.http
+    .get<NewUsersPoint[]>(this.api(`/admin/metrics/series/new-users?range=${this.range}`))
+    .pipe(
+      catchError((err) => {
+        console.error('new-users series error', err);
+        return of([] as NewUsersPoint[]);
+      }),
+    );
 
-        // normalisation + sécurité
-        this._series = (Array.isArray(series) ? series : [])
-          .map((p) => ({
-            label: String((p as any)?.label ?? ''),
-            count: Number((p as any)?.count ?? 0),
-          }))
-          .filter((p) => p.label.length > 0);
+  const activeUsers$ = this.http
+    .get<ActiveUsersPoint[]>(this.api(`/admin/metrics/series/active-users?range=${this.range}`))
+    .pipe(
+      catchError((err) => {
+        console.error('active-users series error', err);
+        return of([] as ActiveUsersPoint[]);
+      }),
+    );
 
-        // optionnel: injecter aussi dans metrics si tu veux
-        this.metrics.users.newSeries = this._series;
+  forkJoin({ metrics: metrics$, newUsers: newUsers$, activeUsers: activeUsers$ }).subscribe({
+    next: ({ metrics, newUsers, activeUsers }) => {
+      this.metrics = metrics;
 
-        this.loading = false;
-      },
-      error: (err) => {
-        this.loading = false;
-        this.error = `HTTP ${err?.status ?? '?'} — ${err?.statusText ?? 'Erreur'}`;
-        console.error(err);
-      },
-    });
-  }
+      this._newUsersSeries = (Array.isArray(newUsers) ? newUsers : [])
+        .map((p) => ({
+          label: String((p as any)?.label ?? ''),
+          count: Number((p as any)?.count ?? 0),
+        }))
+        .filter((p) => p.label.length > 0);
+
+      this._activeUsersSeries = (Array.isArray(activeUsers) ? activeUsers : [])
+        .map((p) => ({
+          label: String((p as any)?.label ?? ''),
+          count: Number((p as any)?.count ?? 0),
+        }))
+        .filter((p) => p.label.length > 0);
+
+      this.loading = false;
+    },
+    error: (err) => {
+      this.loading = false;
+      this.error = `HTTP ${err?.status ?? '?'} — ${err?.statusText ?? 'Erreur'}`;
+      console.error(err);
+    },
+  });
+}
+
 
   rangeLabel(): string {
     if (this.range === '1d') return 'Dernières 24h';
@@ -177,33 +204,32 @@ export class AdminMetricsComponent {
   }
 
   // ============================
-  // ✅ GRAPH : nouveaux users (LINE)
+  // ✅ Graph 1 : Nouveaux users
   // ============================
-
   newUsersSeries(): NewUsersPoint[] {
-    return this._series;
+    return this._newUsersSeries;
   }
 
   hasNewUsersSeries(): boolean {
-    return this._series.length > 0;
+    return this._newUsersSeries.length > 0;
   }
 
   seriesHint(): string {
     return '';
   }
 
-  private maxSeriesCount(): number {
+  private maxNewUsersCount(): number {
     let m = 0;
-    for (const p of this._series) m = Math.max(m, Number(p?.count ?? 0));
+    for (const p of this._newUsersSeries) m = Math.max(m, Number(p?.count ?? 0));
     return m <= 0 ? 1 : m;
   }
 
   linePoints(): Array<{ x: number; y: number }> {
-    const arr = this._series;
+    const arr = this._newUsersSeries;
     const n = arr.length;
     if (!n) return [];
 
-    const max = this.maxSeriesCount();
+    const max = this.maxNewUsersCount();
 
     const left = 16;
     const right = 1000 - 16;
@@ -223,12 +249,18 @@ export class AdminMetricsComponent {
     });
   }
 
+  safePoint(i: number | null): { x: number; y: number } | null {
+    if (i === null) return null;
+    const pts = this.linePoints();
+    if (!pts.length) return null;
+    if (i < 0 || i >= pts.length) return null;
+    return pts[i];
+  }
+
   linePath(): string {
     const pts = this.linePoints();
     if (!pts.length) return '';
-    return pts
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
-      .join(' ');
+    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
   }
 
   lineAreaPath(): string {
@@ -239,22 +271,10 @@ export class AdminMetricsComponent {
     const first = pts[0];
     const last = pts[pts.length - 1];
 
-    const line = pts
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
-      .join(' ');
+    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
 
-    return `${line} L ${last.x.toFixed(2)} ${bottom.toFixed(2)} L ${first.x.toFixed(
-      2,
-    )} ${bottom.toFixed(2)} Z`;
+    return `${line} L ${last.x.toFixed(2)} ${bottom.toFixed(2)} L ${first.x.toFixed(2)} ${bottom.toFixed(2)} Z`;
   }
-
-  // ============================
-  // Hover / tooltip
-  // ============================
-
-  hoverIndex: number | null = null;
-  tipLeft = 0;
-  tipTop = 0;
 
   setHoverIndex(i: number) {
     this.hoverIndex = i;
@@ -270,7 +290,6 @@ export class AdminMetricsComponent {
 
     const el = ev.currentTarget as HTMLElement;
     const rect = el.getBoundingClientRect();
-
     const x = ((ev.clientX - rect.left) / rect.width) * 1000;
 
     let best = 0;
@@ -290,5 +309,109 @@ export class AdminMetricsComponent {
 
     this.tipLeft = px;
     this.tipTop = Math.max(6, py - 48);
+  }
+
+  // ============================
+  // ✅ Graph 2 : Utilisateurs actifs
+  // ============================
+  activeUsersSeries(): ActiveUsersPoint[] {
+    return this._activeUsersSeries;
+  }
+
+  hasActiveUsersSeries(): boolean {
+    return this._activeUsersSeries.length > 0;
+  }
+
+  private maxActiveUsersCount(): number {
+    let m = 0;
+    for (const p of this._activeUsersSeries) m = Math.max(m, Number(p?.count ?? 0));
+    return m <= 0 ? 1 : m;
+  }
+
+  activeLinePoints(): Array<{ x: number; y: number }> {
+    const arr = this._activeUsersSeries;
+    const n = arr.length;
+    if (!n) return [];
+
+    const max = this.maxActiveUsersCount();
+
+    const left = 16;
+    const right = 1000 - 16;
+    const top = 16;
+    const bottom = 260 - 24;
+
+    const spanX = Math.max(1, n - 1);
+    const w = right - left;
+    const h = bottom - top;
+
+    return arr.map((p, i) => {
+      const x = left + (w * i) / spanX;
+      const v = Number(p.count ?? 0);
+      const t = Math.min(1, Math.max(0, v / max));
+      const y = bottom - h * t;
+      return { x, y };
+    });
+  }
+
+  safeActivePoint(i: number | null): { x: number; y: number } | null {
+    if (i === null) return null;
+    const pts = this.activeLinePoints();
+    if (!pts.length) return null;
+    if (i < 0 || i >= pts.length) return null;
+    return pts[i];
+  }
+
+  activeLinePath(): string {
+    const pts = this.activeLinePoints();
+    if (!pts.length) return '';
+    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
+  }
+
+  activeLineAreaPath(): string {
+    const pts = this.activeLinePoints();
+    if (!pts.length) return '';
+
+    const bottom = 260 - 24;
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+
+    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
+
+    return `${line} L ${last.x.toFixed(2)} ${bottom.toFixed(2)} L ${first.x.toFixed(2)} ${bottom.toFixed(2)} Z`;
+  }
+
+  setActiveHoverIndex(i: number) {
+    this.activeHoverIndex = i;
+  }
+
+  onActiveChartLeave() {
+    this.activeHoverIndex = null;
+  }
+
+  onActiveChartMove(ev: MouseEvent) {
+    const pts = this.activeLinePoints();
+    if (!pts.length) return;
+
+    const el = ev.currentTarget as HTMLElement;
+    const rect = el.getBoundingClientRect();
+    const x = ((ev.clientX - rect.left) / rect.width) * 1000;
+
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const d = Math.abs(pts[i].x - x);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    }
+
+    this.activeHoverIndex = best;
+
+    const px = (pts[best].x / 1000) * rect.width;
+    const py = (pts[best].y / 260) * rect.height;
+
+    this.activeTipLeft = px;
+    this.activeTipTop = Math.max(6, py - 48);
   }
 }

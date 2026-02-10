@@ -68,12 +68,13 @@
         <span class="spacer"></span>
 
         <div class="range-wrap" aria-label="Période">
-          <mat-button-toggle-group class="range" [value]="range">
-            <mat-button-toggle value="1d" (click)="setRange('1d')">24h</mat-button-toggle>
-            <mat-button-toggle value="7d" (click)="setRange('7d')">7j</mat-button-toggle>
-            <mat-button-toggle value="30d" (click)="setRange('30d')">30j</mat-button-toggle>
-            <mat-button-toggle value="365d" (click)="setRange('365d')">1 an</mat-button-toggle>
-            <mat-button-toggle value="all" (click)="setRange('all')">Total</mat-button-toggle>
+          <!-- ✅ onRangeChange au lieu de click sur chaque bouton -->
+          <mat-button-toggle-group class="range" [value]="range" (change)="onRangeChange($event)">
+            <mat-button-toggle value="1d">24h</mat-button-toggle>
+            <mat-button-toggle value="7d">7j</mat-button-toggle>
+            <mat-button-toggle value="30d">30j</mat-button-toggle>
+            <mat-button-toggle value="365d">1 an</mat-button-toggle>
+            <mat-button-toggle value="all">Total</mat-button-toggle>
           </mat-button-toggle-group>
         </div>
       </mat-toolbar>
@@ -215,7 +216,6 @@
               (mouseleave)="onChartLeave()"
             >
               <svg class="chart-svg" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
-                <!-- grille -->
                 <g class="grid">
                   <line x1="0" y1="52" x2="1000" y2="52"></line>
                   <line x1="0" y1="104" x2="1000" y2="104"></line>
@@ -223,13 +223,9 @@
                   <line x1="0" y1="208" x2="1000" y2="208"></line>
                 </g>
 
-                <!-- zone sous la courbe -->
                 <path class="area" [attr.d]="lineAreaPath()"></path>
-
-                <!-- courbe -->
                 <path class="line" [attr.d]="linePath()"></path>
 
-                <!-- points -->
                 <g class="points">
                   <circle
                     *ngFor="let pt of linePoints(); let i = index"
@@ -241,21 +237,19 @@
                   ></circle>
                 </g>
 
-                <!-- curseur vertical -->
                 <line
-                  *ngIf="hoverIndex !== null"
+                  *ngIf="hoverIndex !== null && safePoint(hoverIndex)"
                   class="cursor"
-                  [attr.x1]="linePoints()[hoverIndex].x"
-                  [attr.x2]="linePoints()[hoverIndex].x"
+                  [attr.x1]="safePoint(hoverIndex)!.x"
+                  [attr.x2]="safePoint(hoverIndex)!.x"
                   y1="0"
                   y2="260"
                 ></line>
               </svg>
 
-              <!-- tooltip -->
               <div
                 class="tip"
-                *ngIf="hoverIndex !== null"
+                *ngIf="hoverIndex !== null && newUsersSeries()[hoverIndex]"
                 [style.left.px]="tipLeft"
                 [style.top.px]="tipTop"
               >
@@ -263,7 +257,6 @@
                 <div class="tip-value">{{ newUsersSeries()[hoverIndex].count }} inscrit(s)</div>
               </div>
 
-              <!-- labels X simplifiés -->
               <div class="xlabels" aria-hidden="true">
                 <span
                   *ngFor="let p of newUsersSeries(); let i = index"
@@ -291,6 +284,89 @@
             </div>
           </ng-template>
         </mat-card>
+        <!-- ✅ GRAPH : utilisateurs actifs -->
+<mat-card class="chart-card">
+  <div class="chart-head">
+    <div class="chart-head-text">
+      <h2>Utilisateurs actifs</h2>
+      <p>Utilisateurs ayant créé une tâche ou une mesure sur {{ rangeLabel() }}.</p>
+    </div>
+    <mat-icon aria-hidden="true">insights</mat-icon>
+  </div>
+
+  <div class="chart-wrap" *ngIf="hasActiveUsersSeries(); else noActiveSeries">
+    <div
+      class="chart-line"
+      role="img"
+      aria-label="Graphique (courbe) des utilisateurs actifs"
+      (mousemove)="onActiveChartMove($event)"
+      (mouseleave)="onActiveChartLeave()"
+    >
+      <svg class="chart-svg" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
+        <g class="grid">
+          <line x1="0" y1="52" x2="1000" y2="52"></line>
+          <line x1="0" y1="104" x2="1000" y2="104"></line>
+          <line x1="0" y1="156" x2="1000" y2="156"></line>
+          <line x1="0" y1="208" x2="1000" y2="208"></line>
+        </g>
+
+        <path class="area" [attr.d]="activeLineAreaPath()"></path>
+        <path class="line" [attr.d]="activeLinePath()"></path>
+
+        <g class="points">
+          <circle
+            *ngFor="let pt of activeLinePoints(); let i = index"
+            class="pt"
+            [class.active]="i === activeHoverIndex"
+            [attr.cx]="pt.x"
+            [attr.cy]="pt.y"
+            (mouseenter)="setActiveHoverIndex(i)"
+          ></circle>
+        </g>
+
+        <line
+          *ngIf="activeHoverIndex !== null && safeActivePoint(activeHoverIndex)"
+          class="cursor"
+          [attr.x1]="safeActivePoint(activeHoverIndex)!.x"
+          [attr.x2]="safeActivePoint(activeHoverIndex)!.x"
+          y1="0"
+          y2="260"
+        ></line>
+      </svg>
+
+      <div
+        class="tip"
+        *ngIf="activeHoverIndex !== null && activeUsersSeries()[activeHoverIndex]"
+        [style.left.px]="activeTipLeft"
+        [style.top.px]="activeTipTop"
+      >
+        <div class="tip-title">{{ activeUsersSeries()[activeHoverIndex].label }}</div>
+        <div class="tip-value">{{ activeUsersSeries()[activeHoverIndex].count }} actif(s)</div>
+      </div>
+
+      <div class="xlabels" aria-hidden="true">
+        <span
+          *ngFor="let p of activeUsersSeries(); let i = index"
+          class="xl"
+          [class.show]="i === 0 || i === activeUsersSeries().length - 1 || i % 6 === 0"
+        >
+          {{ p.label }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noActiveSeries>
+    <div class="chart-empty">
+      <mat-icon>insights</mat-icon>
+      <div>
+        <div class="chart-empty-title">Pas de données d’activité</div>
+        <div class="chart-empty-sub">Aucun événement sur la période.</div>
+      </div>
+    </div>
+  </ng-template>
+</mat-card>
+
 
         <mat-card class="table-card">
           <div class="table-head">
