@@ -17,9 +17,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-
 type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 type Role = 'USER' | 'ADMIN' | 'EDITOR';
 
@@ -34,10 +31,10 @@ interface AdminMetricsDto {
     newInRange: number | null;
     activeInRange: number;
 
-    // ✅ série alimentée par /admin/users/metrics/new-users
+    // ✅ idéal : renvoyé par le backend
     newSeries?: NewUsersPoint[];
 
-    // table "Derniers utilisateurs"
+    // ⚠️ fallback : seulement si createdAt est fourni
     latest: Array<{ id: number; fullName: string; email: string; role: Role; createdAt?: string }>;
     note?: string;
   };
@@ -99,27 +96,13 @@ export class AdminMetricsComponent {
     this.load();
   }
 
-  // ✅ Charge metrics + série (pas le fallback limité à 10)
   load() {
     this.loading = true;
     this.error = null;
 
-    const metrics$ = this.http.get<AdminMetricsDto>(this.api(`/admin/metrics?range=${this.range}`));
-    const series$ = this.http
-      .get<NewUsersPoint[]>(this.api(`/admin/users/metrics/new-users?range=${this.range}`))
-      .pipe(
-        catchError((err) => {
-          // on ne casse pas tout le dashboard si la série échoue
-          console.error('new-users series error', err);
-          return of([] as NewUsersPoint[]);
-        }),
-      );
-
-    forkJoin({ metrics: metrics$, series: series$ }).subscribe({
-      next: ({ metrics, series }) => {
-        // injecte la série dans la réponse metrics pour le chart
-        metrics.users.newSeries = Array.isArray(series) ? series : [];
-        this.metrics = metrics;
+    this.http.get<AdminMetricsDto>(this.api(`/admin/metrics?range=${this.range}`)).subscribe({
+      next: (res) => {
+        this.metrics = res;
         this.loading = false;
       },
       error: (err) => {
@@ -176,7 +159,7 @@ export class AdminMetricsComponent {
     const m = this.metrics;
     if (!m) return [];
 
-    // ✅ on utilise la vraie série backend (plus de limite à 10)
+    // ✅ cas parfait : API renvoie newSeries
     if (Array.isArray(m.users.newSeries) && m.users.newSeries.length) {
       return m.users.newSeries
         .map((p) => ({
@@ -186,7 +169,7 @@ export class AdminMetricsComponent {
         .filter((p) => p.label.length > 0);
     }
 
-    // fallback (au cas où la série échoue)
+    // ⚠️ fallback : bucketise latest (si createdAt présent)
     return this.buildSeriesFromLatest();
   }
 
@@ -255,13 +238,10 @@ export class AdminMetricsComponent {
       .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
       .join(' ');
 
-    return `${line} L ${last.x.toFixed(2)} ${bottom.toFixed(2)} L ${first.x.toFixed(
-      2,
-    )} ${bottom.toFixed(2)} Z`;
+    return `${line} L ${last.x.toFixed(2)} ${bottom.toFixed(2)} L ${first.x.toFixed(2)} ${bottom.toFixed(2)} Z`;
   }
 
   // ----- fallback (approx) -----
-  // (gardé uniquement si l’endpoint série est KO)
 
   private buildSeriesFromLatest(): NewUsersPoint[] {
     const m = this.metrics;
@@ -278,7 +258,7 @@ export class AdminMetricsComponent {
     if (m.range === '7d') return this.bucket(timestamps, 7, 'day');
     if (m.range === '30d') return this.bucket(timestamps, 30, 'day');
     if (m.range === '365d') return this.bucket(timestamps, 12, 'month');
-    return this.bucket(timestamps, 12, 'month');
+    return this.bucket(timestamps, 12, 'month'); // all => fallback 12 mois
   }
 
   private bucket(timestamps: number[], n: number, mode: 'hour' | 'day' | 'month'): NewUsersPoint[] {
@@ -289,14 +269,8 @@ export class AdminMetricsComponent {
       const d = new Date(now);
 
       if (mode === 'hour') d.setHours(now.getHours() - i, 0, 0, 0);
-      if (mode === 'day') {
-        d.setDate(now.getDate() - i);
-        d.setHours(0, 0, 0, 0);
-      }
-      if (mode === 'month') {
-        d.setMonth(now.getMonth() - i, 1);
-        d.setHours(0, 0, 0, 0);
-      }
+      if (mode === 'day') { d.setDate(now.getDate() - i); d.setHours(0, 0, 0, 0); }
+      if (mode === 'month') { d.setMonth(now.getMonth() - i, 1); d.setHours(0, 0, 0, 0); }
 
       const start = d.getTime();
       const end = this.nextBucketEnd(d, mode).getTime();
@@ -328,44 +302,48 @@ export class AdminMetricsComponent {
     if (mode === 'day') return `${dd}/${mm}`;
     return `${mm}/${String(d.getFullYear()).slice(-2)}`;
   }
-
   hoverIndex: number | null = null;
-  tipLeft = 0;
-  tipTop = 0;
+tipLeft = 0;
+tipTop = 0;
 
-  setHoverIndex(i: number) {
-    this.hoverIndex = i;
-  }
+setHoverIndex(i: number) {
+  this.hoverIndex = i;
+}
 
-  onChartLeave() {
-    this.hoverIndex = null;
-  }
+onChartLeave() {
+  this.hoverIndex = null;
+}
 
-  onChartMove(ev: MouseEvent) {
-    const pts = this.linePoints();
-    if (!pts.length) return;
+onChartMove(ev: MouseEvent) {
+  const pts = this.linePoints();
+  if (!pts.length) return;
 
-    const el = ev.currentTarget as HTMLElement;
-    const rect = el.getBoundingClientRect();
+  const el = ev.currentTarget as HTMLElement;
+  const rect = el.getBoundingClientRect();
 
-    const x = ((ev.clientX - rect.left) / rect.width) * 1000;
+  // position X de la souris en "coordonnées SVG" (0..1000)
+  const x = ((ev.clientX - rect.left) / rect.width) * 1000;
 
-    let best = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < pts.length; i++) {
-      const d = Math.abs(pts[i].x - x);
-      if (d < bestDist) {
-        bestDist = d;
-        best = i;
-      }
+  // prend le point le plus proche
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const d = Math.abs(pts[i].x - x);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
     }
-
-    this.hoverIndex = best;
-
-    const px = (pts[best].x / 1000) * rect.width;
-    const py = (pts[best].y / 260) * rect.height;
-
-    this.tipLeft = px;
-    this.tipTop = Math.max(6, py - 48);
   }
+
+  this.hoverIndex = best;
+
+  // position tooltip en pixels dans le conteneur
+  const px = (pts[best].x / 1000) * rect.width;
+  const py = (pts[best].y / 260) * rect.height;
+
+  // un peu au-dessus du point
+  this.tipLeft = px;
+  this.tipTop = Math.max(6, py - 48);
+}
+
 }
