@@ -367,114 +367,79 @@ export class UsersService {
     }
   }
 
-// ============================================================
-// ✅ ADMIN METRICS : série "nouveaux users" selon range
-// ============================================================
-async adminNewUsersSeries(range: MetricsRange): Promise<NewUsersPoint[]> {
-  const now = new Date();
-  const sub = (ms: number) => new Date(now.getTime() - ms);
+  // ============================================================
+  // ✅ ADMIN METRICS : série "nouveaux users" selon range
+  // ============================================================
+  async adminNewUsersSeries(range: MetricsRange): Promise<NewUsersPoint[]> {
+    const now = new Date();
+    const sub = (ms: number) => new Date(now.getTime() - ms);
 
-  // ✅ voir la vraie date de départ pour "all"
-  let allStart: Date | null = null;
-  if (range === 'all') {
-    const row = await this.repo
-      .createQueryBuilder('u')
-      .select('MIN(u.createdAt)', 'min')
-      .getRawOne<{ min: string | null }>();
+    const cfg =
+      range === '1d'
+        ? { buckets: 24, unit: 'hour' as const, start: sub(24 * 60 * 60 * 1000) }
+        : range === '7d'
+          ? { buckets: 7, unit: 'day' as const, start: sub(7 * 24 * 60 * 60 * 1000) }
+          : range === '30d'
+            ? { buckets: 30, unit: 'day' as const, start: sub(30 * 24 * 60 * 60 * 1000) }
+            : range === '365d'
+              ? { buckets: 12, unit: 'month' as const, start: sub(365 * 24 * 60 * 60 * 1000) }
+              : { buckets: 12, unit: 'month' as const, start: sub(365 * 24 * 60 * 60 * 1000) }; // all: 12 derniers mois
 
-    if (row?.min) {
-      const d = new Date(row.min);
-      if (!Number.isNaN(d.getTime())) allStart = d;
-    }
-  }
-
-  // ✅ config buckets
-  const cfg =
-    range === '1d'
-      ? { buckets: 24, unit: 'hour' as const, start: sub(24 * 60 * 60 * 1000) }
-      : range === '7d'
-        ? { buckets: 7, unit: 'day' as const, start: sub(7 * 24 * 60 * 60 * 1000) }
-        : range === '30d'
-          ? { buckets: 30, unit: 'day' as const, start: sub(30 * 24 * 60 * 60 * 1000) }
-          : range === '365d'
-            ? { buckets: 12, unit: 'month' as const, start: sub(365 * 24 * 60 * 60 * 1000) }
-            : (() => {
-                // ✅ all = depuis le début (par mois)
-                const start = allStart ?? sub(365 * 24 * 60 * 60 * 1000); // fallback 1 an si DB vide
-                const startMonth = new Date(start);
-                startMonth.setDate(1);
-                startMonth.setHours(0, 0, 0, 0);
-
-                // nombre de mois entre startMonth et now
-                const months =
-                  (now.getFullYear() - startMonth.getFullYear()) * 12 +
-                  (now.getMonth() - startMonth.getMonth()) +
-                  1;
-
-                return { buckets: Math.max(1, months), unit: 'month' as const, start: startMonth };
-              })();
-
-  const groupExpr =
-    cfg.unit === 'hour'
-      ? "DATE_FORMAT(u.createdAt, '%Y-%m-%d %H:00:00')"
-      : cfg.unit === 'day'
-        ? 'DATE(u.createdAt)'
-        : "DATE_FORMAT(u.createdAt, '%Y-%m-01')";
-
-  const rows: Array<{ g: string; c: string }> = await this.repo
-    .createQueryBuilder('u')
-    .select(groupExpr, 'g')
-    .addSelect('COUNT(*)', 'c')
-    .where('u.createdAt >= :start', { start: cfg.start })
-    .groupBy('g')
-    .orderBy('g', 'ASC')
-    .getRawMany();
-
-  const map = new Map<string, number>();
-  rows.forEach((r) => map.set(String(r.g), Number(r.c)));
-
-  const pad = (n: number) => String(n).padStart(2, '0');
-
-  const labelOf = (date: Date) => {
-    const dd = pad(date.getDate());
-    const mm = pad(date.getMonth() + 1);
-    if (cfg.unit === 'hour') return `${pad(date.getHours())}h`;
-    if (cfg.unit === 'day') return `${dd}/${mm}`;
-    return `${mm}/${String(date.getFullYear()).slice(-2)}`;
-  };
-
-  const series: NewUsersPoint[] = [];
-
-  // ✅ base dépend du range
-  const base = new Date(now);
-
-  for (let i = cfg.buckets - 1; i >= 0; i--) {
-    const x = new Date(base);
-
-    if (cfg.unit === 'hour') x.setHours(base.getHours() - i, 0, 0, 0);
-
-    if (cfg.unit === 'day') {
-      x.setDate(base.getDate() - i);
-      x.setHours(0, 0, 0, 0);
-    }
-
-    if (cfg.unit === 'month') {
-      // pour "all" avec beaucoup de mois ça marche car buckets est calculé
-      x.setMonth(base.getMonth() - i, 1);
-      x.setHours(0, 0, 0, 0);
-    }
-
-    const key =
+    const groupExpr =
       cfg.unit === 'hour'
-        ? `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())} ${pad(x.getHours())}:00:00`
+        ? "DATE_FORMAT(u.createdAt, '%Y-%m-%d %H:00:00')"
         : cfg.unit === 'day'
-          ? `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`
-          : `${x.getFullYear()}-${pad(x.getMonth() + 1)}-01`;
+          ? "DATE(u.createdAt)"
+          : "DATE_FORMAT(u.createdAt, '%Y-%m-01')";
 
-    series.push({ label: labelOf(x), count: map.get(key) ?? 0 });
+    const rows: Array<{ g: string; c: string }> = await this.repo
+      .createQueryBuilder('u')
+      .select(groupExpr, 'g')
+      .addSelect('COUNT(*)', 'c')
+      .where('u.createdAt >= :start', { start: cfg.start })
+      .groupBy('g')
+      .orderBy('g', 'ASC')
+      .getRawMany();
+
+    const map = new Map<string, number>();
+    rows.forEach((r) => map.set(String(r.g), Number(r.c)));
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    const labelOf = (date: Date) => {
+      const dd = pad(date.getDate());
+      const mm = pad(date.getMonth() + 1);
+      if (cfg.unit === 'hour') return `${pad(date.getHours())}h`;
+      if (cfg.unit === 'day') return `${dd}/${mm}`;
+      return `${mm}/${String(date.getFullYear()).slice(-2)}`;
+    };
+
+    const series: NewUsersPoint[] = [];
+    const base = new Date(now);
+
+    for (let i = cfg.buckets - 1; i >= 0; i--) {
+      const x = new Date(base);
+
+      if (cfg.unit === 'hour') x.setHours(base.getHours() - i, 0, 0, 0);
+      if (cfg.unit === 'day') {
+        x.setDate(base.getDate() - i);
+        x.setHours(0, 0, 0, 0);
+      }
+      if (cfg.unit === 'month') {
+        x.setMonth(base.getMonth() - i, 1);
+        x.setHours(0, 0, 0, 0);
+      }
+
+      const key =
+        cfg.unit === 'hour'
+          ? `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())} ${pad(x.getHours())}:00:00`
+          : cfg.unit === 'day'
+            ? `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`
+            : `${x.getFullYear()}-${pad(x.getMonth() + 1)}-01`;
+
+      series.push({ label: labelOf(x), count: map.get(key) ?? 0 });
+    }
+
+    return series;
   }
-
-  return series;
-}
-
 }

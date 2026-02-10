@@ -1,3 +1,4 @@
+// admin-metrics.component.ts
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -16,11 +17,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-
 type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 type Role = 'USER' | 'ADMIN' | 'EDITOR';
+
 type NewUsersPoint = { label: string; count: number };
 
 interface AdminMetricsDto {
@@ -31,7 +30,11 @@ interface AdminMetricsDto {
     admins: number;
     newInRange: number | null;
     activeInRange: number;
+
+    // ✅ idéal : renvoyé par le backend
     newSeries?: NewUsersPoint[];
+
+    // ⚠️ fallback : seulement si createdAt est fourni
     latest: Array<{ id: number; fullName: string; email: string; role: Role; createdAt?: string }>;
     note?: string;
   };
@@ -72,9 +75,6 @@ export class AdminMetricsComponent {
 
   displayedColumns = ['id', 'fullName', 'email', 'role'] as const;
 
-  // ✅ on garde la série séparée et stable (évite de recalculer 500 fois)
-  private _series: NewUsersPoint[] = [];
-
   constructor(private http: HttpClient) {
     this.load();
   }
@@ -99,35 +99,10 @@ export class AdminMetricsComponent {
   load() {
     this.loading = true;
     this.error = null;
-    this.hoverIndex = null;
 
-    const metrics$ = this.http.get<AdminMetricsDto>(this.api(`/admin/metrics?range=${this.range}`));
-
-    // ✅ VRAIE source du graph (pas latest)
-    const series$ = this.http
-      .get<NewUsersPoint[]>(this.api(`/admin/users/metrics/new-users?range=${this.range}`))
-      .pipe(
-        catchError((err) => {
-          console.error('new-users series error', err);
-          return of([] as NewUsersPoint[]);
-        }),
-      );
-
-    forkJoin({ metrics: metrics$, series: series$ }).subscribe({
-      next: ({ metrics, series }) => {
-        this.metrics = metrics;
-
-        // normalisation + sécurité
-        this._series = (Array.isArray(series) ? series : [])
-          .map((p) => ({
-            label: String((p as any)?.label ?? ''),
-            count: Number((p as any)?.count ?? 0),
-          }))
-          .filter((p) => p.label.length > 0);
-
-        // optionnel: injecter aussi dans metrics si tu veux
-        this.metrics.users.newSeries = this._series;
-
+    this.http.get<AdminMetricsDto>(this.api(`/admin/metrics?range=${this.range}`)).subscribe({
+      next: (res) => {
+        this.metrics = res;
         this.loading = false;
       },
       error: (err) => {
@@ -181,25 +156,45 @@ export class AdminMetricsComponent {
   // ============================
 
   newUsersSeries(): NewUsersPoint[] {
-    return this._series;
+    const m = this.metrics;
+    if (!m) return [];
+
+    // ✅ cas parfait : API renvoie newSeries
+    if (Array.isArray(m.users.newSeries) && m.users.newSeries.length) {
+      return m.users.newSeries
+        .map((p) => ({
+          label: String((p as any)?.label ?? ''),
+          count: Number((p as any)?.count ?? 0),
+        }))
+        .filter((p) => p.label.length > 0);
+    }
+
+    // ⚠️ fallback : bucketise latest (si createdAt présent)
+    return this.buildSeriesFromLatest();
   }
 
   hasNewUsersSeries(): boolean {
-    return this._series.length > 0;
+    return this.newUsersSeries().length > 0;
   }
 
   seriesHint(): string {
-    return '';
+    const m = this.metrics;
+    if (!m) return '';
+    if (m.users.newSeries?.length) return '';
+    return ``;
   }
 
+  // ---- Line chart math (SVG viewBox 0..1000 / 0..260) ----
+
   private maxSeriesCount(): number {
+    const s = this.newUsersSeries();
     let m = 0;
-    for (const p of this._series) m = Math.max(m, Number(p?.count ?? 0));
+    for (const p of s) m = Math.max(m, Number(p?.count ?? 0));
     return m <= 0 ? 1 : m;
   }
 
   linePoints(): Array<{ x: number; y: number }> {
-    const arr = this._series;
+    const arr = this.newUsersSeries();
     const n = arr.length;
     if (!n) return [];
 
@@ -243,52 +238,112 @@ export class AdminMetricsComponent {
       .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
       .join(' ');
 
-    return `${line} L ${last.x.toFixed(2)} ${bottom.toFixed(2)} L ${first.x.toFixed(
-      2,
-    )} ${bottom.toFixed(2)} Z`;
+    return `${line} L ${last.x.toFixed(2)} ${bottom.toFixed(2)} L ${first.x.toFixed(2)} ${bottom.toFixed(2)} Z`;
   }
 
-  // ============================
-  // Hover / tooltip
-  // ============================
+  // ----- fallback (approx) -----
 
-  hoverIndex: number | null = null;
-  tipLeft = 0;
-  tipTop = 0;
+  private buildSeriesFromLatest(): NewUsersPoint[] {
+    const m = this.metrics;
+    if (!m) return [];
 
-  setHoverIndex(i: number) {
-    this.hoverIndex = i;
+    const latest = m.users.latest ?? [];
+    const timestamps = latest
+      .map((u) => (u.createdAt ? new Date(u.createdAt).getTime() : NaN))
+      .filter((t) => Number.isFinite(t));
+
+    if (!timestamps.length) return [];
+
+    if (m.range === '1d') return this.bucket(timestamps, 24, 'hour');
+    if (m.range === '7d') return this.bucket(timestamps, 7, 'day');
+    if (m.range === '30d') return this.bucket(timestamps, 30, 'day');
+    if (m.range === '365d') return this.bucket(timestamps, 12, 'month');
+    return this.bucket(timestamps, 12, 'month'); // all => fallback 12 mois
   }
 
-  onChartLeave() {
-    this.hoverIndex = null;
-  }
+  private bucket(timestamps: number[], n: number, mode: 'hour' | 'day' | 'month'): NewUsersPoint[] {
+    const now = new Date();
+    const out: NewUsersPoint[] = [];
 
-  onChartMove(ev: MouseEvent) {
-    const pts = this.linePoints();
-    if (!pts.length) return;
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(now);
 
-    const el = ev.currentTarget as HTMLElement;
-    const rect = el.getBoundingClientRect();
+      if (mode === 'hour') d.setHours(now.getHours() - i, 0, 0, 0);
+      if (mode === 'day') { d.setDate(now.getDate() - i); d.setHours(0, 0, 0, 0); }
+      if (mode === 'month') { d.setMonth(now.getMonth() - i, 1); d.setHours(0, 0, 0, 0); }
 
-    const x = ((ev.clientX - rect.left) / rect.width) * 1000;
+      const start = d.getTime();
+      const end = this.nextBucketEnd(d, mode).getTime();
 
-    let best = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < pts.length; i++) {
-      const d = Math.abs(pts[i].x - x);
-      if (d < bestDist) {
-        bestDist = d;
-        best = i;
-      }
+      const count = timestamps.filter((t) => t >= start && t < end).length;
+
+      out.push({
+        label: this.bucketLabel(d, mode),
+        count,
+      });
     }
 
-    this.hoverIndex = best;
-
-    const px = (pts[best].x / 1000) * rect.width;
-    const py = (pts[best].y / 260) * rect.height;
-
-    this.tipLeft = px;
-    this.tipTop = Math.max(6, py - 48);
+    return out;
   }
+
+  private nextBucketEnd(d: Date, mode: 'hour' | 'day' | 'month'): Date {
+    const x = new Date(d);
+    if (mode === 'hour') x.setHours(x.getHours() + 1);
+    if (mode === 'day') x.setDate(x.getDate() + 1);
+    if (mode === 'month') x.setMonth(x.getMonth() + 1);
+    return x;
+  }
+
+  private bucketLabel(d: Date, mode: 'hour' | 'day' | 'month'): string {
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+
+    if (mode === 'hour') return `${String(d.getHours()).padStart(2, '0')}h`;
+    if (mode === 'day') return `${dd}/${mm}`;
+    return `${mm}/${String(d.getFullYear()).slice(-2)}`;
+  }
+  hoverIndex: number | null = null;
+tipLeft = 0;
+tipTop = 0;
+
+setHoverIndex(i: number) {
+  this.hoverIndex = i;
+}
+
+onChartLeave() {
+  this.hoverIndex = null;
+}
+
+onChartMove(ev: MouseEvent) {
+  const pts = this.linePoints();
+  if (!pts.length) return;
+
+  const el = ev.currentTarget as HTMLElement;
+  const rect = el.getBoundingClientRect();
+
+  // position X de la souris en "coordonnées SVG" (0..1000)
+  const x = ((ev.clientX - rect.left) / rect.width) * 1000;
+
+  // prend le point le plus proche
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const d = Math.abs(pts[i].x - x);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  }
+
+  this.hoverIndex = best;
+
+  // position tooltip en pixels dans le conteneur
+  const px = (pts[best].x / 1000) * rect.width;
+  const py = (pts[best].y / 260) * rect.height;
+
+  // un peu au-dessus du point
+  this.tipLeft = px;
+  this.tipTop = Math.max(6, py - 48);
+}
+
 }
