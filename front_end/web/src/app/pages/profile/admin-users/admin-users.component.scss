@@ -4,9 +4,16 @@
   margin: 0;
   min-height: calc(100vh - 64px);
   background: linear-gradient(180deg, rgba(63, 81, 181, 0.06), transparent 260px);
-
-  /* ✅ stop scroll horizontal */
   overflow-x: hidden;
+
+  --role-admin-bg: rgba(30, 167, 255, 0.18);
+  --role-admin-bd: rgba(30, 167, 255, 0.38);
+
+  --role-editor-bg: rgba(234, 179, 8, 0.22);
+  --role-editor-bd: rgba(234, 179, 8, 0.46);
+
+  --role-user-bg: rgba(15, 23, 42, 0.06);
+  --role-user-bd: rgba(15, 23, 42, 0.14);
 }
 
 /* ========== LAYOUT ========== */
@@ -57,12 +64,8 @@
   opacity: 0.65;
 }
 
-/* nav list */
-.nav {
-  padding: 4px 0 0;
-}
+.nav { padding: 4px 0 0; }
 
-/* style des items */
 :host ::ng-deep .nav .mat-mdc-list-item {
   border-radius: 14px;
   margin: 4px 6px;
@@ -77,11 +80,7 @@
   border: 1px solid rgba(63, 81, 181, 0.18);
 }
 
-:host ::ng-deep .nav .mat-mdc-list-item.active mat-icon {
-  opacity: 1;
-}
-
-/* footer collé en bas */
+/* footer */
 .sidebar-footer {
   margin-top: auto;
   padding: 14px 10px 16px;
@@ -152,16 +151,13 @@ h2 {
   font-size: 13px;
 }
 
-.search {
-  width: min(520px, 100%);
-}
+.search { width: min(520px, 100%); }
 
 mat-divider.divider {
   margin: 14px 0 12px;
   opacity: 0.8;
 }
 
-/* Search field */
 :host ::ng-deep .mat-mdc-form-field .mdc-text-field {
   border-radius: 14px !important;
 }
@@ -194,7 +190,15 @@ mat-divider.divider {
 .empty-title { margin: 0; font-weight: 900; }
 .empty-sub { margin: 2px 0 0; font-size: 13px; opacity: 0.75; }
 
-/* Table */
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* =========================
+   TABLE (desktop/tablette)
+   ========================= */
 .table-wrap {
   max-width: 100%;
   overflow-x: auto;
@@ -208,8 +212,17 @@ mat-divider.divider {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(6px);
-  min-width: 860px;
+  min-width: 980px;
 }
+
+/* ✅ largeur des colonnes */
+:host ::ng-deep .users-table .mat-column-id { width: 70px; }
+:host ::ng-deep .users-table .mat-column-createdAt { width: 140px; }
+:host ::ng-deep .users-table .mat-column-fullName { width: 220px; }
+:host ::ng-deep .users-table .mat-column-email { width: 220px; }
+:host ::ng-deep .users-table .mat-column-role { width: 240px; }
+:host ::ng-deep .users-table .mat-column-status { width: 150px; }
+:host ::ng-deep .users-table .mat-column-actions { width: 170px; }
 
 th.mat-mdc-header-cell {
   font-weight: 900;
@@ -229,6 +242,16 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
   background: rgba(63, 81, 181, 0.06);
 }
 
+/* colonne id + email lisible */
+.id-cell { width: 70px; }
+.email-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ligne cliquable */
+.clickable-row { cursor: pointer; }
+.clickable-row:hover td.mat-mdc-cell {
+  background: rgba(0, 150, 136, 0.06) !important;
+}
+
 .name-cell {
   display: inline-flex;
   align-items: center;
@@ -238,14 +261,8 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
   .name { font-weight: 800; }
 }
 
-.mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 13px;
-  opacity: 0.9;
-}
-
-/* role pill */
-.role-pill {
+/* ✅ status pill */
+.status-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -256,18 +273,125 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
   letter-spacing: 0.3px;
   border: 1px solid rgba(0, 0, 0, 0.10);
   background: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
 
   mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    opacity: 0.85;
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
   }
 }
 
-.role-pill.admin {
-  background: rgba(0, 150, 136, 0.10);
-  border-color: rgba(0, 150, 136, 0.22);
+.status-pill.active {
+  background: rgba(0, 150, 136, 0.12);
+  border-color: rgba(0, 150, 136, 0.28);
+}
+
+.status-pill.inactive {
+  background: rgba(244, 67, 54, 0.10);
+  border-color: rgba(244, 67, 54, 0.24);
+}
+
+.filters {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ================================
+   ROLE UI (badge -> menu)
+   ================================ */
+.role-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.role-cell.saving {
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.role-badge {
+  appearance: none;
+  border: 1px solid var(--role-user-bd);
+  background: var(--role-user-bg);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 950;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.04s ease, background 0.15s ease, border-color 0.15s ease;
+  color: rgba(0, 0, 0, 0.82);
+
+  &:hover { background: rgba(15, 23, 42, 0.08); }
+  &:active { transform: translateY(1px); }
+  &:disabled { cursor: not-allowed; opacity: 0.65; }
+
+  .role-badge-ic {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    opacity: 0.9;
+  }
+
+  .chev {
+    margin-left: 2px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    opacity: 0.65;
+  }
+}
+
+.role-badge.admin {
+  background: var(--role-admin-bg);
+  border-color: var(--role-admin-bd);
+  &:hover { background: rgba(30, 167, 255, 0.24); }
+}
+
+.role-badge.editor {
+  background: var(--role-editor-bg);
+  border-color: var(--role-editor-bd);
+  &:hover { background: rgba(234, 179, 8, 0.28); }
+}
+
+.saving-indicator {
+  display: inline-flex;
+  margin-left: 2px;
+  vertical-align: middle;
+}
+
+/* ✅ menu dropdown clean */
+:host ::ng-deep .role-menu {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+:host ::ng-deep .role-menu .mat-mdc-menu-content {
+  padding: 6px !important;
+}
+
+:host ::ng-deep .role-menu .mat-mdc-menu-item {
+  border-radius: 12px !important;
+  font-weight: 850;
+}
+
+:host ::ng-deep .role-menu .mat-mdc-menu-item:hover {
+  background: rgba(63, 81, 181, 0.08);
+}
+
+:host ::ng-deep .role-menu .mat-mdc-menu-item .mat-icon {
+  margin-right: 10px;
+  opacity: 0.85;
 }
 
 /* actions */
@@ -287,19 +411,15 @@ button[mat-stroked-button] {
   mat-icon { margin-right: 6px; }
 }
 
-button[mat-stroked-button][color="primary"] {
-  background: rgba(63, 81, 181, 0.06);
-}
-
 button[mat-stroked-button][color="warn"] {
   background: rgba(244, 67, 54, 0.06);
 }
 
-/* ==========================================================
-   ✅ RESPONSIVE (le vrai)
-   - à 900px: sidebar plus fine + header stack
-   - à 760px: sidebar devient topbar (plus aucun décalage)
-   ========================================================== */
+/* ================================
+   RESPONSIVE
+   ================================ */
+.table-desktop { display: block; }
+.users-cards { display: none; }
 
 /* <= 900px */
 @media (max-width: 900px) {
@@ -313,18 +433,17 @@ button[mat-stroked-button][color="warn"] {
   }
 
   .search { width: 100%; }
+  .filters { justify-content: flex-start; }
 }
 
-/* <= 760px : sidebar en haut */
+/* <= 760px : sidebar en haut + cards */
 @media (max-width: 760px) {
-  .admin-layout {
-    flex-direction: column;
-  }
+  .admin-layout { flex-direction: column; }
 
   .sidebar {
     width: 100%;
     height: auto;
-    position: static;      /* ✅ stop sticky */
+    position: static;
     top: auto;
     border-right: 0;
     border-bottom: 1px solid rgba(0,0,0,0.08);
@@ -333,15 +452,11 @@ button[mat-stroked-button][color="warn"] {
 
   .brand {
     justify-content: flex-start;
-
     .logo { height: 58px; }
   }
 
-  .sidebar-title {
-    margin: 6px 8px 6px;
-  }
+  .sidebar-title { margin: 6px 8px 6px; }
 
-  /* nav en grille (2 colonnes) */
   :host ::ng-deep .nav {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -354,93 +469,104 @@ button[mat-stroked-button][color="warn"] {
     border-radius: 14px;
   }
 
-  /* footer bouton profil full width */
   .sidebar-footer {
     padding: 10px 0 0;
     border-top: 0;
   }
 
-  .back-btn {
-    padding: 10px 12px !important;
+  .back-btn { padding: 10px 12px !important; }
+  .content { padding: 12px; }
+
+  /* ✅ switch table -> cards */
+  .table-desktop { display: none; }
+  .users-cards { display: grid; gap: 12px; }
+
+  /* Cards mobile */
+  .user-card {
+    border-radius: 18px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.86);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.06);
+    padding: 14px;
+    cursor: pointer;
   }
 
-  .content {
-    padding: 12px;
+  .uc-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .uc-title {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .uc-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 34px;
+    opacity: 0.75;
+  }
+
+  .uc-fullName {
+    font-weight: 950;
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  .uc-email {
+    font-size: 12px;
+    opacity: 0.8;
+    max-width: 56vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .uc-meta {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .uc-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(15, 23, 42, 0.04);
+    font-size: 12px;
+    font-weight: 800;
+    opacity: 0.9;
+  }
+
+  .uc-bottom {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .role-badge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .uc-delete {
+    width: 100%;
+    justify-content: center;
+    border-radius: 14px !important;
+    padding: 10px 12px !important;
+    font-weight: 900;
   }
 }
 
 /* <= 420px : nav en 1 colonne */
 @media (max-width: 420px) {
-  :host ::ng-deep .nav {
-    grid-template-columns: 1fr;
-  }
-
-  .users-table { min-width: 760px; } /* un peu moins large si tu veux */
-}
-/* colonne id + email lisible */
-.id-cell { width: 70px; }
-.email-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-/* ligne cliquable */
-.clickable-row {
-  cursor: pointer;
-}
-.clickable-row:hover td.mat-mdc-cell {
-  background: rgba(0, 150, 136, 0.06) !important;
-}
-/* ✅ status pill */
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-weight: 900;
-  font-size: 12px;
-  letter-spacing: 0.3px;
-  border: 1px solid rgba(0, 0, 0, 0.10);
-  background: rgba(255, 255, 255, 0.85);
-
-  mat-icon {
-    font-size: 14px;
-    width: 14px;
-    height: 14px;
-  }
-}
-
-.status-pill.active {
-  background: rgba(0, 150, 136, 0.12);
-  border-color: rgba(0, 150, 136, 0.28);
-}
-
-.status-pill.inactive {
-  background: rgba(244, 67, 54, 0.10);
-  border-color: rgba(244, 67, 54, 0.24);
-}
-.filters {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 900px) {
-  .filters {
-    justify-content: flex-start;
-  }
-}
-.role-field {
-  width: 170px;
-  margin: 0;
-}
-
-.role-ic {
-  margin-right: 10px;
-  transform: translateY(2px);
-}
-
-.saving {
-  display: inline-flex;
-  margin-left: 10px;
-  vertical-align: middle;
+  :host ::ng-deep .nav { grid-template-columns: 1fr; }
 }

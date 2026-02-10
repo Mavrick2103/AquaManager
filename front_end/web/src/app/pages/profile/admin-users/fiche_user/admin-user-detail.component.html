@@ -84,7 +84,6 @@
             <!-- DESKTOP TABLE -->
             <div class="table-wrap desktop-only">
               <table mat-table [dataSource]="data.aquariums" class="table">
-
                 <ng-container matColumnDef="id">
                   <th mat-header-cell *matHeaderCellDef>ID</th>
                   <td mat-cell *matCellDef="let a" class="mono">{{ a.id }}</td>
@@ -98,7 +97,9 @@
                 <ng-container matColumnDef="waterType">
                   <th mat-header-cell *matHeaderCellDef>Type</th>
                   <td mat-cell *matCellDef="let a">
-                    <span class="chip" [class.douce]="a.waterType === 'EAU_DOUCE'" [class.mer]="a.waterType === 'EAU_DE_MER'">
+                    <span class="chip"
+                      [class.douce]="a.waterType === 'EAU_DOUCE'"
+                      [class.mer]="a.waterType === 'EAU_DE_MER'">
                       {{ a.waterType === 'EAU_DE_MER' ? 'Eau de mer' : 'Eau douce' }}
                     </span>
                   </td>
@@ -107,6 +108,35 @@
                 <tr mat-header-row *matHeaderRowDef="aquariumsCols"></tr>
                 <tr mat-row *matRowDef="let row; columns: aquariumsCols"></tr>
               </table>
+            </div>
+
+            <!-- ✅ MOBILE CARDS -->
+            <div class="cards mobile-only">
+              <div class="card" *ngFor="let a of data.aquariums">
+                <div class="card-top">
+                  <div class="card-left">
+                    <div class="line1">{{ a.name || '—' }}</div>
+                    <div class="line2 mono">Aquarium #{{ a.id }}</div>
+                  </div>
+
+                  <span class="chip"
+                    [class.douce]="a.waterType === 'EAU_DOUCE'"
+                    [class.mer]="a.waterType === 'EAU_DE_MER'">
+                    {{ a.waterType === 'EAU_DE_MER' ? 'Mer' : 'Douce' }}
+                  </span>
+                </div>
+
+                <div class="kv">
+                  <div class="kv-row" *ngIf="a.volumeL">
+                    <span>Volume</span>
+                    <b>{{ a.volumeL }} L</b>
+                  </div>
+                  <div class="kv-row" *ngIf="a.startDate || a.createdAt">
+                    <span>Créé</span>
+                    <b>{{ formatDate(a.startDate || a.createdAt) }}</b>
+                  </div>
+                </div>
+              </div>
             </div>
           </ng-container>
 
@@ -131,9 +161,9 @@
 
         <div class="tab">
           <ng-container *ngIf="data.measurements.length; else noMeas">
-            <div class="table-wrap">
+            <!-- DESKTOP TABLE -->
+            <div class="table-wrap desktop-only">
               <table mat-table [dataSource]="data.measurements" class="table wide">
-
                 <ng-container matColumnDef="date">
                   <th mat-header-cell *matHeaderCellDef>Date</th>
                   <td mat-cell *matCellDef="let m">{{ formatDate(m.measuredAt) }}</td>
@@ -167,6 +197,26 @@
                 <tr mat-header-row *matHeaderRowDef="measuresCols"></tr>
                 <tr mat-row *matRowDef="let row; columns: measuresCols"></tr>
               </table>
+            </div>
+
+            <!-- ✅ MOBILE CARDS -->
+            <div class="cards mobile-only">
+              <div class="card" *ngFor="let m of data.measurements">
+                <div class="card-top">
+                  <div class="card-left">
+                    <div class="line1">{{ formatDate(m.measuredAt) }}</div>
+                    <div class="line2 mono">Aquarium #{{ m.aquariumId }}</div>
+                  </div>
+                  <span class="badge small">Mesure</span>
+                </div>
+
+                <div class="grid4">
+                  <div class="metric"><span>pH</span><b>{{ m.ph ?? '—' }}</b></div>
+                  <div class="metric"><span>Temp</span><b>{{ m.temp ?? '—' }}</b></div>
+                  <div class="metric"><span>NO₂</span><b>{{ m.no2 ?? '—' }}</b></div>
+                  <div class="metric"><span>NO₃</span><b>{{ m.no3 ?? '—' }}</b></div>
+                </div>
+              </div>
             </div>
           </ng-container>
 
@@ -257,9 +307,9 @@
 
         <div class="tab">
           <ng-container *ngIf="data.tasks.length; else noTasks">
-            <div class="table-wrap">
+            <!-- DESKTOP TABLE -->
+            <div class="table-wrap desktop-only">
               <table mat-table [dataSource]="data.tasks" class="table wide">
-
                 <ng-container matColumnDef="id">
                   <th mat-header-cell *matHeaderCellDef>ID</th>
                   <td mat-cell *matCellDef="let t" class="mono">{{ t.id }}</td>
@@ -294,6 +344,26 @@
                 <tr mat-header-row *matHeaderRowDef="tasksCols"></tr>
                 <tr mat-row *matRowDef="let row; columns: tasksCols"></tr>
               </table>
+            </div>
+
+            <!-- ✅ MOBILE CARDS -->
+            <div class="cards mobile-only">
+              <div class="card" *ngFor="let t of data.tasks">
+                <div class="card-top">
+                  <div class="card-left">
+                    <div class="line1">{{ t.title || '—' }}</div>
+                    <div class="line2 mono">#{{ t.id }} • Aquarium {{ t.aquariumId ?? t.aquarium?.id ?? '—' }}</div>
+                  </div>
+                  <span class="status" [class.done]="t.status === 'DONE'">{{ t.status || '—' }}</span>
+                </div>
+
+                <div class="kv">
+                  <div class="kv-row">
+                    <span>Échéance</span>
+                    <b>{{ formatDate(t.dueAt) }}</b>
+                  </div>
+                </div>
+              </div>
             </div>
           </ng-container>
 

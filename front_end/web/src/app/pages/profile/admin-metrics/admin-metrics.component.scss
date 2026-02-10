@@ -1,7 +1,4 @@
-/* ============================================================
-   Admin layout (sidebar identique AdminUsers) + ton style metrics
-   ============================================================ */
-
+/* admin-metrics.component.scss */
 :host {
   display: block;
 
@@ -31,12 +28,12 @@
   max-width: 100%;
 }
 
-/* ========== SIDEBAR (identique) ========== */
+/* ========== SIDEBAR ========== */
 .sidebar {
   width: 270px;
-  height: calc(100vh);
+  height: 100vh;
   position: sticky;
-  top: 0px;
+  top: 0;
 
   display: flex;
   flex-direction: column;
@@ -111,22 +108,34 @@
   overflow-x: hidden;
 }
 
-/* ====== TON DESIGN METRICS (adapté dans content) ====== */
+/* ====== PAGE ====== */
 .page {
   max-width: 1180px;
   margin: 0 auto;
   padding: 16px;
 }
 
+/* ====== TOOLBAR RESPONSIVE ====== */
 .toolbar {
   border-radius: 18px;
   border: 1px solid var(--am-border);
   background: linear-gradient(135deg, rgba(30, 167, 255, 0.12), rgba(34, 199, 184, 0.10));
   padding: 14px;
   height: auto;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 
-.brand { display: flex; align-items: center; gap: 12px; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  flex: 1 1 auto;
+}
 
 .brand-icon {
   width: 44px;
@@ -136,31 +145,37 @@
   place-items: center;
   background: rgba(255, 255, 255, 0.8);
   border: 1px solid var(--am-border);
+  flex: 0 0 auto;
 }
 
-.brand-title { font-size: 26px; font-weight: 900; }
-.brand-sub { margin-top: 4px; color: var(--am-muted); font-size: 13px; }
+.brand-text { min-width: 0; }
+.brand-title { font-size: 26px; font-weight: 900; line-height: 1.1; }
+.brand-sub {
+  margin-top: 4px;
+  color: var(--am-muted);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-.spacer { flex: 1; }
+.spacer { flex: 999 1 auto; }
 
-.home-btn {
-  border-radius: 14px;
-  margin-right: 10px;
-  mat-icon { margin-right: 6px; }
+.range-wrap {
+  flex: 1 1 360px;
+  min-width: 260px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .range {
   border-radius: 14px;
-  overflow: hidden;
+  overflow: auto;
   border: 1px solid var(--am-border);
   background: rgba(255, 255, 255, 0.75);
-
-  .mini {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    margin-right: 6px;
-  }
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
 }
 
 .state {
@@ -176,13 +191,16 @@
   &.error { background: rgba(239, 68, 68, 0.08); }
 }
 
+/* ====== KPI GRID ====== */
 .grid {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 12px;
 
-  @media (max-width: 900px) { grid-template-columns: 1fr; }
+  @media (max-width: 360px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .kpi {
@@ -204,21 +222,31 @@
     display: grid;
     place-items: center;
     background: rgba(15, 23, 42, 0.06);
+    flex: 0 0 auto;
   }
 
+  .kpi-meta { min-width: 0; }
   .kpi-label { font-size: 13px; color: var(--am-muted); }
-  .kpi-value { font-size: 34px; font-weight: 950; }
+  .kpi-value { font-size: 34px; font-weight: 950; line-height: 1.1; }
 
   .kpi-rows { padding: 10px 14px 14px; }
 
   .row {
     display: flex;
     justify-content: space-between;
+    gap: 12px;
     padding: 8px 0;
     border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 
+    span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     &:last-child { border-bottom: none; }
-    b { font-weight: 900; }
+    b { font-weight: 900; flex: 0 0 auto; }
   }
 
   .note {
@@ -247,6 +275,141 @@
 .kpi-measures { border-top: 3px solid rgba(99, 102, 241, 0.75); }
 .kpi-tasks { border-top: 3px solid rgba(34, 197, 94, 0.75); }
 
+/* =========================
+   ✅ CHART CARD (LINE)
+   ========================= */
+.chart-card {
+  margin-top: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--am-border);
+  background: rgba(255, 255, 255, 0.86);
+  overflow: hidden;
+
+  .chart-head {
+    padding: 14px 14px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+
+    h2 { margin: 0; font-size: 18px; font-weight: 900; }
+    p { margin: 4px 0 0; font-size: 12px; color: var(--am-muted); }
+  }
+
+  .chart-head-text { min-width: 0; }
+
+  .chart-wrap {
+    padding: 0 14px 14px;
+  }
+
+  /* ✅ line chart container */
+  .chart-line {
+    height: 190px;
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    background: rgba(248, 250, 252, 0.85);
+    overflow: hidden;
+
+    padding: 12px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .chart-svg {
+    width: 100%;
+    height: 150px;
+    display: block;
+  }
+
+  .grid line {
+    stroke: rgba(15, 23, 42, 0.10);
+    stroke-width: 1;
+  }
+
+  .area {
+    fill: rgba(30, 167, 255, 0.12);
+  }
+
+  .line {
+    fill: none;
+    stroke: rgba(30, 167, 255, 0.95);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .points .pt {
+    fill: rgba(30, 167, 255, 0.95);
+    stroke: rgba(255, 255, 255, 0.95);
+    stroke-width: 2;
+  }
+
+  .xlabels {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(26px, 1fr);
+    gap: 8px;
+    align-items: center;
+  }
+
+  .xl {
+    font-size: 11px;
+    font-weight: 900;
+    color: rgba(15, 23, 42, 0.58);
+    text-align: center;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition: opacity 120ms ease;
+
+    &.show { opacity: 1; }
+  }
+
+  .chart-hint {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px dashed rgba(15, 23, 42, 0.18);
+    background: rgba(30, 167, 255, 0.06);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    color: rgba(15, 23, 42, 0.72);
+    font-size: 12px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+    }
+  }
+
+  .chart-empty {
+    margin: 0 14px 14px;
+    padding: 14px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    background: rgba(15, 23, 42, 0.03);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    color: rgba(15, 23, 42, 0.75);
+
+    mat-icon {
+      font-size: 26px;
+      width: 26px;
+      height: 26px;
+      opacity: 0.85;
+    }
+
+    .chart-empty-title { font-weight: 900; }
+    .chart-empty-sub { margin-top: 2px; font-size: 12px; opacity: 0.8; }
+  }
+}
+
+/* ====== TABLE ====== */
 .table-card {
   margin-top: 14px;
   border-radius: 18px;
@@ -258,10 +421,13 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    gap: 12px;
 
     h2 { margin: 0; font-size: 18px; font-weight: 900; }
     p { margin: 4px 0 0; font-size: 12px; color: var(--am-muted); }
   }
+
+  .table-head-text { min-width: 0; }
 
   .table-wrap {
     margin: 0 14px 14px;
@@ -269,32 +435,55 @@
     overflow: auto;
     border: 1px solid rgba(15, 23, 42, 0.10);
     background: rgba(248, 250, 252, 0.85);
+    -webkit-overflow-scrolling: touch;
   }
 
-  table { width: 100%; min-width: 720px; }
+  table { width: 100%; min-width: 640px; }
   th { font-weight: 900; background: rgba(255, 255, 255, 0.95); }
   tr.mat-row:nth-child(even) td { background: rgba(15, 23, 42, 0.02); }
+
+  @media (max-width: 650px) {
+    table { min-width: 560px; }
+  }
+
+  @media (max-width: 420px) {
+    table { min-width: 520px; }
+  }
 }
 
+/* ====== ROLE CHIPS ====== */
 .chip {
-  font-weight: 900;
+  font-weight: 950;
   border: 1px solid rgba(15, 23, 42, 0.12);
   background: rgba(15, 23, 42, 0.06);
 
+  &.user {
+    background: rgba(15, 23, 42, 0.06);
+    border-color: rgba(15, 23, 42, 0.14);
+  }
+
   &.admin {
-    background: rgba(30, 167, 255, 0.16);
-    border-color: rgba(30, 167, 255, 0.30);
+    background: rgba(30, 167, 255, 0.18);
+    border-color: rgba(30, 167, 255, 0.34);
+  }
+
+  &.editor {
+    background: rgba(234, 179, 8, 0.22);
+    border-color: rgba(234, 179, 8, 0.45);
   }
 }
 
-/* RESPONSIVE sidebar */
+/* ====== RESPONSIVE GLOBAL ====== */
 @media (max-width: 900px) {
   .content { padding: 14px; }
   .sidebar { width: 240px; }
+  .page { padding: 12px; }
+  .brand-title { font-size: 22px; }
 }
 
 @media (max-width: 650px) {
   .admin-layout { display: block; }
+
   .sidebar {
     width: 100%;
     height: auto;
@@ -303,4 +492,19 @@
     border-right: none;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
+
+  .content { padding: 10px; }
+  .toolbar { padding: 12px; }
+
+  .range-wrap {
+    justify-content: flex-start;
+    flex: 1 1 100%;
+  }
+
+  .brand-title { font-size: 20px; }
+  .brand-sub { font-size: 12px; }
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }

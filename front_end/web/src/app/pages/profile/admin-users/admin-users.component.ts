@@ -15,7 +15,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatListModule } from '@angular/material/list';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatSelectModule } from '@angular/material/select';
+import { MatMenuModule } from '@angular/material/menu'; // ✅ menu pour le badge cliquable
 
 import { AdminUsersApi, AdminUser, UserRole } from '../../../core/admin-users.service';
 
@@ -40,7 +40,7 @@ import { AdminUsersApi, AdminUser, UserRole } from '../../../core/admin-users.se
     MatTooltipModule,
     MatListModule,
     MatSlideToggleModule,
-    MatSelectModule,
+    MatMenuModule, // ✅
   ],
 })
 export class AdminUsersComponent implements OnInit, OnDestroy {
@@ -61,7 +61,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   // actif si activité < 30 jours (à toi d’ajuster)
   private readonly ACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
 
-  // ✅ options de rôle affichées
+  // ✅ options de rôle affichées (menu)
   readonly roleOptions: Array<{ value: UserRole; label: string; icon: string }> = [
     { value: 'USER', label: 'Utilisateur', icon: 'person' },
     { value: 'EDITOR', label: 'Éditeur', icon: 'edit' },

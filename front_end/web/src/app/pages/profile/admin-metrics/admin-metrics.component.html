@@ -1,5 +1,6 @@
+<!-- admin-metrics.component.html -->
 <div class="admin-layout">
-  <!-- SIDEBAR (IDENTIQUE A ADMIN-USERS) -->
+  <!-- SIDEBAR -->
   <aside class="sidebar" role="navigation" aria-label="Menu administration">
     <a class="brand-side" routerLink="/" aria-label="Retour à l’accueil">
       <img
@@ -34,22 +35,18 @@
         <span matListItemTitle>Plantes</span>
       </a>
 
-      <a
-        mat-list-item
-        routerLink="/admin/articles"
-        routerLinkActive="active"
-      >
+      <a mat-list-item routerLink="/admin/articles" routerLinkActive="active">
         <mat-icon matListItemIcon>tips_and_updates</mat-icon>
         <span matListItemTitle>Articles / Conseils</span>
       </a>
     </mat-nav-list>
 
     <div class="sidebar-footer">
-  <a mat-stroked-button class="back-btn" routerLink="/profile" aria-label="Retour au profil">
-    <mat-icon>arrow_back</mat-icon>
-    Profil
-  </a>
-</div>
+      <a mat-stroked-button class="back-btn" routerLink="/profile" aria-label="Retour au profil">
+        <mat-icon>arrow_back</mat-icon>
+        Profil
+      </a>
+    </div>
   </aside>
 
   <!-- CONTENT -->
@@ -57,7 +54,7 @@
     <div class="page">
       <mat-toolbar class="toolbar" role="banner">
         <div class="brand">
-          <div class="brand-icon">
+          <div class="brand-icon" aria-hidden="true">
             <mat-icon>query_stats</mat-icon>
           </div>
           <div class="brand-text">
@@ -70,13 +67,15 @@
 
         <span class="spacer"></span>
 
-        <mat-button-toggle-group class="range" [value]="range" aria-label="Période">
-          <mat-button-toggle value="1d" (click)="setRange('1d')">24h</mat-button-toggle>
-          <mat-button-toggle value="7d" (click)="setRange('7d')">7j</mat-button-toggle>
-          <mat-button-toggle value="30d" (click)="setRange('30d')">30j</mat-button-toggle>
-          <mat-button-toggle value="365d" (click)="setRange('365d')">1 an</mat-button-toggle>
-          <mat-button-toggle value="all" (click)="setRange('all')">Total</mat-button-toggle>
-        </mat-button-toggle-group>
+        <div class="range-wrap" aria-label="Période">
+          <mat-button-toggle-group class="range" [value]="range">
+            <mat-button-toggle value="1d" (click)="setRange('1d')">24h</mat-button-toggle>
+            <mat-button-toggle value="7d" (click)="setRange('7d')">7j</mat-button-toggle>
+            <mat-button-toggle value="30d" (click)="setRange('30d')">30j</mat-button-toggle>
+            <mat-button-toggle value="365d" (click)="setRange('365d')">1 an</mat-button-toggle>
+            <mat-button-toggle value="all" (click)="setRange('all')">Total</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
       </mat-toolbar>
 
       <div class="state" *ngIf="loading">
@@ -91,11 +90,12 @@
 
       <ng-container *ngIf="metrics && !loading">
         <section class="grid">
+          <!-- USERS -->
           <mat-card class="kpi kpi-users">
             <div class="kpi-top">
-              <div class="kpi-icon"><mat-icon>group</mat-icon></div>
+              <div class="kpi-icon" aria-hidden="true"><mat-icon>group</mat-icon></div>
               <div class="kpi-meta">
-                <div class="kpi-label">Utilisateurs inscrits</div>
+                <div class="kpi-label">Utilisateurs</div>
                 <div class="kpi-value">{{ metrics.users.total }}</div>
               </div>
             </div>
@@ -103,69 +103,177 @@
             <mat-divider></mat-divider>
 
             <div class="kpi-rows">
-              <div class="row"><span>Admins</span><b>{{ metrics.users.admins }}</b></div>
-              <div class="row"><span>Actifs (période)</span><b>{{ metrics.users.activeInRange }}</b></div>
-              <div class="row"><span>Nouveaux (période)</span><b>{{ kpi(metrics.users.newInRange) }}</b></div>
+              <div class="row">
+                <span>Nouveaux sur la période</span>
+                <b>{{ kpi(metrics.users.newInRange) }}</b>
+              </div>
+
+              <div class="row">
+                <span>Actifs sur la période</span>
+                <b>{{ metrics.users.activeInRange }}</b>
+              </div>
+
+              <div class="row">
+                <span>Taux d’activité</span>
+                <b>{{ pct(metrics.users.activeInRange, metrics.users.total) }}</b>
+              </div>
+
+              <div class="row">
+                <span>Admins (total)</span>
+                <b>{{ metrics.users.admins }}</b>
+              </div>
             </div>
 
             <div class="note" *ngIf="metrics.users.note">
-              <mat-icon>info</mat-icon>
+              <mat-icon aria-hidden="true">info</mat-icon>
               <span>{{ metrics.users.note }}</span>
             </div>
           </mat-card>
 
+          <!-- AQUARIUMS -->
           <mat-card class="kpi kpi-aqua">
             <div class="kpi-top">
-              <div class="kpi-icon"><mat-icon>waves</mat-icon></div>
+              <div class="kpi-icon" aria-hidden="true"><mat-icon>waves</mat-icon></div>
               <div class="kpi-meta">
                 <div class="kpi-label">Aquariums</div>
                 <div class="kpi-value">{{ metrics.aquariums.total }}</div>
               </div>
             </div>
+
             <mat-divider></mat-divider>
+
             <div class="kpi-rows">
-              <div class="row"><span>Créés (période)</span><b>{{ metrics.aquariums.createdInRange }}</b></div>
+              <div class="row">
+                <span>Créés sur la période</span>
+                <b>{{ metrics.aquariums.createdInRange }}</b>
+              </div>
             </div>
           </mat-card>
 
+          <!-- MEASUREMENTS -->
           <mat-card class="kpi kpi-measures">
             <div class="kpi-top">
-              <div class="kpi-icon"><mat-icon>science</mat-icon></div>
+              <div class="kpi-icon" aria-hidden="true"><mat-icon>science</mat-icon></div>
               <div class="kpi-meta">
                 <div class="kpi-label">Mesures</div>
                 <div class="kpi-value">{{ metrics.measurements.total }}</div>
               </div>
             </div>
+
             <mat-divider></mat-divider>
+
             <div class="kpi-rows">
-              <div class="row"><span>Ajoutées (période)</span><b>{{ metrics.measurements.createdInRange }}</b></div>
+              <div class="row">
+                <span>Ajoutées sur la période</span>
+                <b>{{ metrics.measurements.createdInRange }}</b>
+              </div>
+
+              <div class="row">
+                <span>Moyenne / aquarium</span>
+                <b>{{ avg(metrics.measurements.total, metrics.aquariums.total, 1) }}</b>
+              </div>
             </div>
           </mat-card>
 
+          <!-- TASKS -->
           <mat-card class="kpi kpi-tasks">
             <div class="kpi-top">
-              <div class="kpi-icon"><mat-icon>checklist</mat-icon></div>
+              <div class="kpi-icon" aria-hidden="true"><mat-icon>checklist</mat-icon></div>
               <div class="kpi-meta">
                 <div class="kpi-label">Tâches</div>
                 <div class="kpi-value">{{ metrics.tasks.total }}</div>
               </div>
             </div>
+
             <mat-divider></mat-divider>
+
             <div class="kpi-rows">
-              <div class="row"><span>Créées (période)</span><b>{{ metrics.tasks.createdInRange }}</b></div>
-              <div class="row"><span>DONE (total)</span><b>{{ metrics.tasks.doneTotal }}</b></div>
-              <div class="row"><span>DONE (période)</span><b>{{ metrics.tasks.doneInRange }}</b></div>
+              <div class="row">
+                <span>Créées sur la période</span>
+                <b>{{ metrics.tasks.createdInRange }}</b>
+              </div>
             </div>
           </mat-card>
         </section>
 
+        <!-- ✅ GRAPH : nouveaux utilisateurs -->
+        <mat-card class="chart-card">
+          <div class="chart-head">
+            <div class="chart-head-text">
+              <h2>Nouveaux utilisateurs</h2>
+              <p>Évolution sur {{ rangeLabel() }}.</p>
+            </div>
+            <mat-icon aria-hidden="true">show_chart</mat-icon>
+          </div>
+
+          <div class="chart-wrap" *ngIf="hasNewUsersSeries(); else noSeries">
+            <div class="chart-line" role="img" aria-label="Graphique (courbe) des nouveaux utilisateurs">
+              <svg class="chart-svg" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
+                <!-- grille -->
+                <g class="grid">
+                  <line x1="0" y1="52" x2="1000" y2="52"></line>
+                  <line x1="0" y1="104" x2="1000" y2="104"></line>
+                  <line x1="0" y1="156" x2="1000" y2="156"></line>
+                  <line x1="0" y1="208" x2="1000" y2="208"></line>
+                </g>
+
+                <!-- zone sous la courbe -->
+                <path class="area" [attr.d]="lineAreaPath()"></path>
+
+                <!-- courbe -->
+                <path class="line" [attr.d]="linePath()"></path>
+
+                <!-- points -->
+                <g class="points">
+                  <circle
+                    *ngFor="let pt of linePoints(); let i = index"
+                    class="pt"
+                    [attr.cx]="pt.x"
+                    [attr.cy]="pt.y"
+                  >
+                    <title>{{ newUsersSeries()[i].label }} : {{ newUsersSeries()[i].count }}</title>
+                  </circle>
+                </g>
+              </svg>
+
+              <!-- labels X simplifiés -->
+              <div class="xlabels" aria-hidden="true">
+                <span
+                  *ngFor="let p of newUsersSeries(); let i = index"
+                  class="xl"
+                  [class.show]="i === 0 || i === newUsersSeries().length - 1 || i % 6 === 0"
+                >
+                  {{ p.label }}
+                </span>
+              </div>
+            </div>
+
+            <div class="chart-hint" *ngIf="seriesHint()">
+              <mat-icon aria-hidden="true">info</mat-icon>
+              <span>{{ seriesHint() }}</span>
+            </div>
+          </div>
+
+          <ng-template #noSeries>
+            <div class="chart-empty">
+              <mat-icon>insights</mat-icon>
+              <div>
+                <div class="chart-empty-title">Pas de données de série</div>
+                <div class="chart-empty-sub">
+                  evolution inscriptions
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </mat-card>
+
         <mat-card class="table-card">
           <div class="table-head">
-            <div>
+            <div class="table-head-text">
               <h2>Derniers utilisateurs</h2>
-              <p>Affichage trié (id/createdAt). Pour “tous”, on fera une page dédiée avec pagination.</p>
+              <p>Les derniers comptes créés (utile pour valider les rôles / inscriptions).</p>
             </div>
-            <mat-icon>manage_accounts</mat-icon>
+            <mat-icon aria-hidden="true">manage_accounts</mat-icon>
           </div>
 
           <div class="table-wrap">
@@ -189,7 +297,9 @@
                 <th mat-header-cell *matHeaderCellDef>Rôle</th>
                 <td mat-cell *matCellDef="let u">
                   <mat-chip-set>
-                    <mat-chip class="chip" [class.admin]="u.role === 'ADMIN'">{{ u.role }}</mat-chip>
+                    <mat-chip class="chip" [ngClass]="roleClass(u.role)">
+                      {{ roleLabel(u.role) }}
+                    </mat-chip>
                   </mat-chip-set>
                 </td>
               </ng-container>

@@ -15,7 +15,6 @@ export type AdminUser = {
   createdAt: string;
   emailVerifiedAt: string | null;
 
-  // ✅ AJOUTÉ (vient du back)
   lastActivityAt: string | null;
 };
 
@@ -56,6 +55,7 @@ export type AdminUserTask = {
   title: string;
   status: string;
   dueAt: string;
+  aquariumId?: number | null;
   aquarium?: { id: number; name?: string } | null;
 };
 
@@ -83,6 +83,34 @@ export type AdminUserPlantRow = {
   };
 };
 
+// ✅ EDITOR payload (retourné par /admin/users/:id/full)
+export type EditorArticleLite = {
+  id: number;
+  title: string;
+  createdAt: string;
+  status: string;
+};
+
+export type EditorFishCardLite = {
+  id: number;
+  commonName: string;
+  createdAt: string;
+  status: string;
+};
+
+export type EditorPlantCardLite = {
+  id: number;
+  commonName: string;
+  createdAt: string;
+  status: string;
+};
+
+export type AdminUserEditorPayload = {
+  articles: EditorArticleLite[];
+  fishCards: EditorFishCardLite[];
+  plantCards: EditorPlantCardLite[];
+};
+
 export type AdminUserFull = {
   user: AdminUser;
   aquariums: AdminUserAquarium[];
@@ -90,6 +118,9 @@ export type AdminUserFull = {
   fish: AdminUserFishRow[];
   plants: AdminUserPlantRow[];
   tasks: AdminUserTask[];
+
+  // ✅ AJOUT IMPORTANT : sinon ton onglet Publications ne peut pas marcher proprement
+  editor?: AdminUserEditorPayload;
 };
 
 @Injectable({ providedIn: 'root' })
