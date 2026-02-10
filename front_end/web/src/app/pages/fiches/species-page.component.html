@@ -1,0 +1,213 @@
+<div class="page">
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-top">
+        <button class="back-fab" mat-stroked-button type="button" (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon>
+          <span class="back-txt">Retour</span>
+        </button>
+
+        <div class="kicker">
+          <mat-icon>eco</mat-icon>
+          Base de connaissances
+        </div>
+      </div>
+
+      <div class="hero-main">
+        <img
+          class="app-logo"
+          src="./Logo_AquaManger.png"
+          alt="AquaManager"
+          loading="lazy"
+          decoding="async"
+        />
+
+        <div class="hero-text">
+          <h1>Fiches</h1>
+          <p class="lead">
+            Cherche une espèce et retrouve les paramètres utiles : volume, température, pH, lumière, CO₂…
+          </p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTROLS -->
+  <section class="controls" role="search" aria-label="Recherche de fiches">
+    <div class="controls-inner">
+      <mat-form-field appearance="outline" class="search">
+        <mat-label>Rechercher</mat-label>
+        <input
+          matInput
+          [formControl]="qCtrl"
+          placeholder="ex: néon, corydoras, anubias..."
+        />
+        <button
+          *ngIf="qCtrl.value"
+          matSuffix
+          mat-icon-button
+          (click)="qCtrl.setValue('')"
+          aria-label="Effacer"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="theme">
+        <mat-label>Type</mat-label>
+        <mat-select [formControl]="modeCtrl">
+          <mat-option [value]="'FISH'">Poissons</mat-option>
+          <mat-option [value]="'PLANT'">Plantes</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="water">
+        <mat-label>Eau</mat-label>
+        <mat-select [formControl]="waterCtrl">
+          <mat-option [value]="null">Tous</mat-option>
+          <mat-option [value]="'EAU_DOUCE'">Eau douce</mat-option>
+          <mat-option [value]="'SAUMATRE'">Saumâtre</mat-option>
+          <mat-option [value]="'EAU_DE_MER'">Eau de mer</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="actions">
+        <button mat-stroked-button type="button" (click)="clear()" [disabled]="loading">
+          <mat-icon>restart_alt</mat-icon>
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <div class="hint" *ngIf="!loading">
+      <span class="count">
+        <mat-icon>{{ isFish ? 'set_meal' : 'psychiatry' }}</mat-icon>
+        {{ itemsCount }} fiche{{ itemsCount > 1 ? 's' : '' }}
+      </span>
+      <span class="sep">•</span>
+      <span class="muted">Clique sur une carte pour voir le détail.</span>
+    </div>
+  </section>
+
+  <!-- STATES -->
+  <section class="state" *ngIf="loading">
+    <mat-progress-spinner mode="indeterminate" diameter="22"></mat-progress-spinner>
+    <span>Chargement…</span>
+  </section>
+
+  <section class="empty" *ngIf="!loading && itemsCount === 0">
+    <div class="empty-box">
+      <mat-icon class="empty-icon">search_off</mat-icon>
+      <div class="empty-title">Aucune fiche trouvée</div>
+      <div class="empty-sub">Essaye un autre mot-clé ou change le filtre.</div>
+      <button mat-flat-button color="primary" type="button" (click)="clear()">
+        Réinitialiser
+      </button>
+    </div>
+  </section>
+
+  <!-- GRID: FISH -->
+  <section class="grid" *ngIf="!loading && isFish && fishItems?.length">
+    <article class="card" *ngFor="let f of fishItems; trackBy: trackById">
+      <a class="card-link" [routerLink]="fishLink(f.id)" aria-label="Voir la fiche poisson">
+        <div class="cover" [class.no]="!f.imageUrl">
+          <ng-container *ngIf="coverSrc(f.imageUrl) as src; else noCoverFish">
+            <img [src]="src" loading="lazy" decoding="async" />
+          </ng-container>
+          <ng-template #noCoverFish>
+            <div class="no-cover">
+              <mat-icon>set_meal</mat-icon>
+              <span>Poisson</span>
+            </div>
+          </ng-template>
+
+          <div class="badge">
+            {{ labelWaterType(f.waterType) }}
+          </div>
+        </div>
+
+        <div class="body">
+          <h2 class="title">{{ f.commonName }}</h2>
+          <p class="excerpt" *ngIf="f.scientificName; else fishFallback">
+            <em>{{ f.scientificName }}</em>
+          </p>
+          <ng-template #fishFallback>
+            <p class="excerpt muted">Clique pour voir les paramètres.</p>
+          </ng-template>
+
+          <div class="chips">
+            <span class="chip" *ngIf="f.minVolumeL">
+              <mat-icon>warehouse</mat-icon> {{ f.minVolumeL }} L
+            </span>
+            <span class="chip" *ngIf="formatRange(f.tempMin, f.tempMax, '°C') as t">
+              <mat-icon>device_thermostat</mat-icon> {{ t }}
+            </span>
+            <span class="chip" *ngIf="formatRange(f.phMin, f.phMax, '') as ph">
+              <mat-icon>science</mat-icon> pH {{ ph }}
+            </span>
+          </div>
+
+          <div class="meta">
+            <span class="cta">
+              Voir
+              <mat-icon>arrow_forward</mat-icon>
+            </span>
+          </div>
+        </div>
+      </a>
+    </article>
+  </section>
+
+  <!-- GRID: PLANT -->
+  <section class="grid" *ngIf="!loading && !isFish && plantItems?.length">
+    <article class="card" *ngFor="let p of plantItems; trackBy: trackById">
+      <a class="card-link" [routerLink]="plantLink(p.id)" aria-label="Voir la fiche plante">
+        <div class="cover" [class.no]="!p.imageUrl">
+          <ng-container *ngIf="coverSrc(p.imageUrl) as src; else noCoverPlant">
+            <img [src]="src" loading="lazy" decoding="async" />
+          </ng-container>
+          <ng-template #noCoverPlant>
+            <div class="no-cover">
+              <mat-icon>psychiatry</mat-icon>
+              <span>Plante</span>
+            </div>
+          </ng-template>
+
+          <div class="badge">
+            {{ labelWaterType(p.waterType) }}
+          </div>
+        </div>
+
+        <div class="body">
+          <h2 class="title">{{ p.commonName }}</h2>
+          <p class="excerpt" *ngIf="p.scientificName; else plantFallback">
+            <em>{{ p.scientificName }}</em>
+          </p>
+          <ng-template #plantFallback>
+            <p class="excerpt muted">Clique pour voir les besoins.</p>
+          </ng-template>
+
+          <div class="chips">
+            <span class="chip" *ngIf="p.light">
+              <mat-icon>wb_sunny</mat-icon> {{ p.light }}
+            </span>
+            <span class="chip" *ngIf="p.co2">
+              <mat-icon>air</mat-icon> CO₂ {{ p.co2 }}
+            </span>
+            <span class="chip" *ngIf="formatRange(p.tempMin, p.tempMax, '°C') as t">
+              <mat-icon>device_thermostat</mat-icon> {{ t }}
+            </span>
+          </div>
+
+          <div class="meta">
+            <span class="cta">
+              Voir
+              <mat-icon>arrow_forward</mat-icon>
+            </span>
+          </div>
+        </div>
+      </a>
+    </article>
+  </section>
+</div>

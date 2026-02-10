@@ -201,6 +201,22 @@ export const routes: Routes = [
       ),
     canActivate: [AuthGuard, AdminOnlyGuard],
   },
+  {
+  path: 'species',
+  loadComponent: () => import('./pages/fiches/species-page.component').then(m => m.SpeciesPageComponent),
+},
+{
+  path: 'species/fish/:id',
+  loadComponent: () =>
+    import('./pages/fiches/details/fish-card-detail-page.component').then(m => m.FishCardDetailPageComponent),
+},
+{
+  path: 'species/plant/:id',
+  loadComponent: () =>
+    import('./pages/fiches/details/plant-card-detail-page.component').then(m => m.PlantCardDetailPageComponent),
+},
+
+
 
   // =========================
   // Redirects / 404

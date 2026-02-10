@@ -1,0 +1,204 @@
+<div class="page">
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-top">
+        <button class="back-fab" mat-stroked-button type="button" (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon>
+          <span class="back-txt">Retour</span>
+        </button>
+
+        <div class="kicker">
+          <mat-icon>set_meal</mat-icon>
+          Fiche poisson
+        </div>
+      </div>
+
+      <div class="hero-main" *ngIf="item as f; else heroLoading">
+        <div class="hero-media">
+          <ng-container *ngIf="coverSrc(f.imageUrl) as src; else noCover">
+            <img class="cover-img" [src]="src" alt="Photo de {{ f.commonName }}" />
+          </ng-container>
+          <ng-template #noCover>
+            <div class="no-cover">
+              <mat-icon>set_meal</mat-icon>
+              <div>Sans image</div>
+            </div>
+          </ng-template>
+
+          <div class="badge">{{ labelWaterType(f.waterType) }}</div>
+        </div>
+
+        <div class="hero-text">
+          <h1>{{ f.commonName }}</h1>
+          <p class="sub" *ngIf="f.scientificName"><em>{{ f.scientificName }}</em></p>
+
+          <div class="quick">
+            <span class="pill" *ngIf="f.minVolumeL">
+              <mat-icon>warehouse</mat-icon> {{ f.minVolumeL }} L min
+            </span>
+
+            <span class="pill" *ngIf="formatRange(f.tempMin, f.tempMax, '°C') as t">
+              <mat-icon>device_thermostat</mat-icon> {{ t }}
+            </span>
+
+            <span class="pill" *ngIf="formatRange(f.phMin, f.phMax, '') as ph">
+              <mat-icon>science</mat-icon> pH {{ ph }}
+            </span>
+
+            <span class="pill" *ngIf="labelTemperament(f.temperament) as temp">
+              <mat-icon>psychology</mat-icon> {{ temp }}
+            </span>
+
+            <span class="pill" *ngIf="labelDifficulty(f.difficulty) as d">
+              <mat-icon>signal_cellular_alt</mat-icon> {{ d }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #heroLoading>
+        <div class="hero-skeleton" *ngIf="loading">
+          <mat-progress-spinner mode="indeterminate" diameter="22"></mat-progress-spinner>
+          <span>Chargement…</span>
+        </div>
+      </ng-template>
+    </div>
+  </header>
+
+  <!-- EMPTY / NOT FOUND -->
+  <section class="empty" *ngIf="!loading && notFound">
+    <div class="empty-box">
+      <mat-icon class="empty-icon">error_outline</mat-icon>
+      <div class="empty-title">Fiche introuvable</div>
+      <div class="empty-sub">Soit elle n’existe pas, soit elle n’est pas publiée.</div>
+      <a mat-flat-button color="primary" routerLink="/species">Revenir aux fiches</a>
+    </div>
+  </section>
+
+  <!-- CONTENT -->
+  <ng-container *ngIf="!loading && item as f">
+    <section class="content">
+      <!-- Paramètres -->
+      <div class="section">
+        <h2>
+          <mat-icon>tune</mat-icon>
+          Paramètres & maintenance
+        </h2>
+
+        <div class="grid">
+          <div class="kv">
+            <div class="k">Température</div>
+            <div class="v">{{ formatRange(f.tempMin, f.tempMax, '°C') || '—' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">pH</div>
+            <div class="v">{{ formatRange(f.phMin, f.phMax, '') || '—' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">GH</div>
+            <div class="v">{{ formatRange(f.ghMin, f.ghMax, '') || '—' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">KH</div>
+            <div class="v">{{ formatRange(f.khMin, f.khMax, '') || '—' }}</div>
+          </div>
+
+          <div class="kv">
+            <div class="k">Volume minimum</div>
+            <div class="v">{{ f.minVolumeL ? (f.minVolumeL + ' L') : '—' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Taille de groupe</div>
+            <div class="v">{{ f.minGroupSize ?? '—' }}</div>
+          </div>
+
+          <div class="kv">
+            <div class="k">Taille adulte</div>
+            <div class="v">{{ f.maxSizeCm ? (f.maxSizeCm + ' cm') : '—' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Espérance de vie</div>
+            <div class="v">{{ f.lifespanYears ? (f.lifespanYears + ' ans') : '—' }}</div>
+          </div>
+
+          <div class="kv">
+            <div class="k">Zone</div>
+            <div class="v">{{ f.zone || '—' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Activité</div>
+            <div class="v">{{ labelActivity(f.activity) || '—' }}</div>
+          </div>
+
+          <div class="kv">
+            <div class="k">Tempérament</div>
+            <div class="v">{{ labelTemperament(f.temperament) || '—' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Difficulté</div>
+            <div class="v">{{ labelDifficulty(f.difficulty) || '—' }}</div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="grid two">
+          <div class="kv">
+            <div class="k">Famille</div>
+            <div class="v">{{ f.family || '—' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Origine</div>
+            <div class="v">{{ f.origin || '—' }}</div>
+          </div>
+
+          <div class="kv">
+            <div class="k">Régime</div>
+            <div class="v">{{ f.diet || '—' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Compatibilité</div>
+            <div class="v">{{ f.compatibility || '—' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Textes -->
+      <div class="section" *ngIf="f.behavior || f.breeding || f.breedingTips || f.notes">
+        <h2>
+          <mat-icon>description</mat-icon>
+          Infos utiles
+        </h2>
+
+        <div class="blocks">
+          <div class="block" *ngIf="f.behavior">
+            <div class="bt">Comportement</div>
+            <div class="bd">{{ f.behavior }}</div>
+          </div>
+
+          <div class="block" *ngIf="f.breeding">
+            <div class="bt">Reproduction</div>
+            <div class="bd">{{ f.breeding }}</div>
+          </div>
+
+          <div class="block" *ngIf="f.breedingTips">
+            <div class="bt">Conseils reproduction</div>
+            <div class="bd">{{ f.breedingTips }}</div>
+          </div>
+
+          <div class="block" *ngIf="f.notes">
+            <div class="bt">Notes</div>
+            <div class="bd">{{ f.notes }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="note">
+        <mat-icon>info</mat-icon>
+        Ces valeurs sont des repères. Adapte selon ton bac, tes paramètres réels et la souche.
+      </div>
+    </section>
+  </ng-container>
+</div>

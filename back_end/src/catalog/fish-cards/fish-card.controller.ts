@@ -30,6 +30,8 @@ import * as fs from 'fs';
 import { promises as fsp } from 'fs';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { Public } from '../../auth/decorators/public.decorator';
+
 
 function getUploadDir(): string {
   return process.env.UPLOAD_DIR?.trim() || join(process.cwd(), 'uploads');
@@ -82,11 +84,13 @@ export class FishCardsController {
   // =========================
   // PUBLIC (USER) - APPROVED + ACTIVE ONLY
   // =========================
+  @Public()
   @Get('fish-cards')
   listPublic(@Query('search') search?: string) {
     return this.service.findAllPublic(search);
   }
 
+  @Public()
   @Get('fish-cards/:id')
   onePublic(@Param('id') id: string) {
     return this.service.findOnePublic(Number(id));

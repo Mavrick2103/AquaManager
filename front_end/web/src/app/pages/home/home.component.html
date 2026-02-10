@@ -6,13 +6,26 @@
   <span class="spacer"></span>
 
   <button
-  mat-icon-button
-  aria-label="Conseils"
-  routerLink="/articles"
-  class="help-btn"
->
-  <mat-icon>tips_and_updates</mat-icon>
-</button>
+    mat-icon-button
+    aria-label="Fiches poissons et plantes"
+    matTooltip="Fiches poissons & plantes"
+    matTooltipPosition="below"
+    routerLink="/species"
+    class="species-btn"
+  >
+    <mat-icon>menu_book</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    aria-label="Conseils"
+    matTooltip="Conseils"
+    matTooltipPosition="below"
+    routerLink="/articles"
+    class="help-btn"
+  >
+    <mat-icon>tips_and_updates</mat-icon>
+  </button>
 
   <button
     mat-icon-button

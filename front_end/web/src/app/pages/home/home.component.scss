@@ -33,7 +33,7 @@
     flex: 1;
     min-width: 0;
   }
-
+  .species-btn,
   .help-btn,
   .profile-btn {
     color: #1F3522 !important;
@@ -427,6 +427,7 @@
     .logo-img { height: 56px; }
 
     /* boutons plus petits */
+    .species-btn,
     .help-btn,
     .profile-btn {
       width: 40px;
@@ -436,6 +437,7 @@
     }
 
     /* icônes plus petites */
+    .species-btn,
     .help-btn mat-icon,
     .profile-btn mat-icon {
       font-size: 22px;
