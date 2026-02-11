@@ -37,9 +37,9 @@
 /* ========== SIDEBAR ========== */
 .sidebar {
   width: 270px;
-  height: calc(100vh - 64px);
+  height: 100vh;
   position: sticky;
-  top: 64px;
+  top: 0;
 
   display: flex;
   flex-direction: column;
