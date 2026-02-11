@@ -29,11 +29,23 @@ export function normalizeText(input?: string | null): string | null {
   return v ? v : null;
 }
 
+/** slug util: "Néon rouge" => "neon-rouge" */
+function slugify(input?: string | null): string | null {
+  const n = normalizeText(input);
+  if (!n) return null;
+  return n
+    .replace(/[^a-z0-9 ]/g, '') // enlève tout sauf lettres/chiffres/espaces
+    .trim()
+    .replace(/\s+/g, '-') // espaces => tirets
+    .replace(/-+/g, '-'); // tirets multiples => 1 seul
+}
+
 @Entity('fish_cards')
 @Index(['commonName'])
 @Index(['scientificName'])
 @Index('UQ_fish_water_common_norm', ['waterType', 'commonNameNormalized'], { unique: true })
 @Index('UQ_fish_water_scient_norm', ['waterType', 'scientificNameNormalized'], { unique: true })
+@Index('UQ_fish_slug_norm', ['slugNormalized'], { unique: true })
 export class FishCard {
   @PrimaryGeneratedColumn()
   id: number;
@@ -57,6 +69,15 @@ export class FishCard {
     default: 'EAU_DOUCE',
   })
   waterType: WaterType;
+
+  // ---------- Slug (SEO) ----------
+  // URL: /poissons/:slug
+  @Column({ type: 'varchar', length: 180, nullable: true })
+  slug: string | null;
+
+  // valeur technique unique
+  @Column({ type: 'varchar', length: 180, nullable: true })
+  slugNormalized: string | null;
 
   // ---------- Champs techniques (anti-doublons) ----------
   @Column({ type: 'varchar', length: 160 })
@@ -195,7 +216,17 @@ export class FishCard {
   @BeforeInsert()
   @BeforeUpdate()
   private computeNormalized(): void {
+    // anti-doublons existants
     this.commonNameNormalized = normalizeText(this.commonName) ?? '';
     this.scientificNameNormalized = normalizeText(this.scientificName);
+
+    // slug auto si absent
+    // priorité: scientificName puis commonName
+    if (!this.slug || !this.slug.trim()) {
+      this.slug = slugify(this.scientificName) ?? slugify(this.commonName);
+    }
+
+    // slugNormalized (technique)
+    this.slugNormalized = slugify(this.slug);
   }
 }

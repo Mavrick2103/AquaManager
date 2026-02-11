@@ -1,3 +1,4 @@
+// src/catalog/fish-cards/fish-card.service.ts
 import {
   BadRequestException,
   ConflictException,
@@ -7,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
+
 import { FishCard, normalizeText, WaterType, ModerationStatus } from './fish-card.entity';
 import { CreateFishCardDto } from './dto/create-fish-card.dto';
 import { UpdateFishCardDto } from './dto/update-fish-card.dto';
@@ -24,6 +26,15 @@ function isDuplicateDbError(err: any): boolean {
   return false;
 }
 
+// slug helper (simple + stable)
+function slugify(input: string): string {
+  const s =
+    normalizeText(input)
+      ?.replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') ?? '';
+  return s;
+}
+
 type DuplicateInput = {
   commonName?: string | null;
   scientificName?: string | null;
@@ -32,9 +43,7 @@ type DuplicateInput = {
 
 @Injectable()
 export class FishCardsService {
-  constructor(
-    @InjectRepository(FishCard) private readonly repo: Repository<FishCard>,
-  ) {}
+  constructor(@InjectRepository(FishCard) private readonly repo: Repository<FishCard>) {}
 
   // ---------------------
   // DUPLICATE
@@ -64,6 +73,54 @@ export class FishCardsService {
     }
 
     return null;
+  }
+
+  // ---------------------
+  // SLUG (unique per table)
+  // ---------------------
+  private async buildUniqueSlug(
+    baseName: string,
+    excludeId?: number,
+  ): Promise<{ slug: string; slugNormalized: string }> {
+    const base = slugify(baseName);
+    if (!base) throw new BadRequestException('Impossible de générer un slug');
+
+    // On garde slugNormalized = slugify(baseName) (et on suffixe si collision)
+    let slug = base;
+    let attempt = 0;
+
+    while (true) {
+      const exists = await this.repo.findOne({
+        where: excludeId ? ({ slugNormalized: slug, id: { $ne: excludeId } } as any) : ({ slugNormalized: slug } as any),
+        select: { id: true } as any,
+      });
+
+      // ⚠️ TypeORM MySQL ne supporte pas $ne : on fait simple :
+      // si excludeId fourni, on vérifie et on compare l'id.
+      if (!exists) return { slug, slugNormalized: slug };
+
+      if (excludeId && exists.id === excludeId) return { slug, slugNormalized: slug };
+
+      attempt += 1;
+      slug = `${base}-${attempt}`;
+      if (attempt > 200) throw new ConflictException('Impossible de trouver un slug unique');
+    }
+  }
+
+  private async ensureSlugForEntity(entity: FishCard, excludeId?: number) {
+    // priorité: scientificName sinon commonName
+    const baseName = (entity.scientificName?.trim() || entity.commonName?.trim() || '').trim();
+    if (!baseName) return;
+
+    const slugNorm = (entity as any).slugNormalized as string | undefined | null;
+    const slug = (entity as any).slug as string | undefined | null;
+
+    // si déjà présent, on ne touche pas (sauf vide)
+    if (slugNorm && slug) return;
+
+    const built = await this.buildUniqueSlug(baseName, excludeId);
+    (entity as any).slug = built.slug;
+    (entity as any).slugNormalized = built.slugNormalized;
   }
 
   // ---------------------
@@ -98,10 +155,7 @@ export class FishCardsService {
   // ---------------------
   findAllAdmin(search?: string) {
     const where = search
-      ? [
-          { commonName: Like(`%${search}%`) },
-          { scientificName: Like(`%${search}%`) },
-        ]
+      ? [{ commonName: Like(`%${search}%`) }, { scientificName: Like(`%${search}%`) }]
       : {};
 
     return this.repo.find({
@@ -123,6 +177,9 @@ export class FishCardsService {
       createdById: adminId,
       updatedById: adminId,
     });
+
+    // ✅ slug auto si vide
+    await this.ensureSlugForEntity(entity);
 
     try {
       return await this.repo.save(entity);
@@ -151,6 +208,10 @@ export class FishCardsService {
     Object.assign(found, dto);
     found.updatedById = adminId;
 
+    // ✅ si tu changes le nom/scientifique et que tu veux regénérer slug :
+    // ici je ne le regénère QUE si slug est vide (sécurisant pour SEO)
+    await this.ensureSlugForEntity(found, id);
+
     try {
       return await this.repo.save(found);
     } catch (err) {
@@ -171,7 +232,9 @@ export class FishCardsService {
     found.reviewedById = adminId;
     found.reviewedAt = new Date();
 
-    // tu peux décider: auto-publish ou pas. Là je laisse isActive tel quel (par défaut true).
+    // ✅ sécurité slug avant publication
+    await this.ensureSlugForEntity(found, id);
+
     return this.repo.save(found);
   }
 
@@ -224,7 +287,6 @@ export class FishCardsService {
 
     const entity = this.repo.create({
       ...dto,
-      // ✅ forcer le workflow
       status: 'PENDING',
       rejectReason: null,
       createdById: editorId,
@@ -232,6 +294,9 @@ export class FishCardsService {
       reviewedById: null,
       reviewedAt: null,
     });
+
+    // ✅ slug auto (même en pending)
+    await this.ensureSlugForEntity(entity);
 
     try {
       return await this.repo.save(entity);
@@ -249,7 +314,7 @@ export class FishCardsService {
     if (!found) throw new NotFoundException('Fish card not found');
 
     if (found.createdById !== editorId) {
-      throw new ForbiddenException("Tu ne peux modifier que tes fiches.");
+      throw new ForbiddenException('Tu ne peux modifier que tes fiches.');
     }
 
     const next: DuplicateInput = {
@@ -261,9 +326,7 @@ export class FishCardsService {
     const dupId = await this.findDuplicateId(next, id);
     if (dupId) throw new ConflictException(`Fish card already exists (#${dupId})`);
 
-    // ✅ l’editor ne décide pas de la publication
     const { isActive, ...safeDto } = dto as any;
-
     Object.assign(found, safeDto);
 
     found.status = 'PENDING';
@@ -271,6 +334,9 @@ export class FishCardsService {
     found.updatedById = editorId;
     found.reviewedById = null;
     found.reviewedAt = null;
+
+    // ✅ slug si vide
+    await this.ensureSlugForEntity(found, id);
 
     try {
       return await this.repo.save(found);
@@ -288,7 +354,7 @@ export class FishCardsService {
     if (!found) throw new NotFoundException('Fish card not found');
 
     if (found.createdById !== editorId) {
-      throw new ForbiddenException("Tu ne peux supprimer que tes fiches.");
+      throw new ForbiddenException('Tu ne peux supprimer que tes fiches.');
     }
 
     const imageUrl = found.imageUrl;
@@ -297,6 +363,24 @@ export class FishCardsService {
     await this.deleteLocalUploadIfAny(imageUrl);
 
     return { ok: true };
+  }
+
+  // ---------------------
+  // SITEMAP
+  // ---------------------
+  async listPublishedSlugsForSitemap(): Promise<Array<{ slug: string; lastmod: string }>> {
+    const rows = await this.repo.find({
+      where: { isActive: true, status: 'APPROVED' as any } as any,
+      select: { slug: true, updatedAt: true, createdAt: true } as any,
+      order: { updatedAt: 'DESC' } as any,
+    });
+
+    return rows
+      .filter((r: any) => !!r.slug)
+      .map((r: any) => ({
+        slug: r.slug,
+        lastmod: new Date((r.updatedAt ?? r.createdAt) as any).toISOString().slice(0, 10),
+      }));
   }
 
   // ---------------------

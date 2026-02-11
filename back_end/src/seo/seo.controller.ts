@@ -1,6 +1,9 @@
+// src/seo/seo.controller.ts
 import { Controller, Get, Header } from '@nestjs/common';
 import { Public } from '../auth/decorators/public.decorator';
+
 import { ArticlesService } from '../articles/articles.service';
+import { FishCardsService } from '../catalog/fish-cards/fish-card.service';
 
 type SitemapUrl = {
   loc: string;
@@ -14,7 +17,10 @@ type SitemapUrl = {
 export class SeoController {
   private readonly baseUrl = 'https://aquamanager.fr';
 
-  constructor(private readonly articlesService: ArticlesService) {}
+  constructor(
+    private readonly articlesService: ArticlesService,
+    private readonly fishCardsService: FishCardsService,
+  ) {}
 
   @Get('sitemap.xml')
   @Header('Content-Type', 'application/xml; charset=utf-8')
@@ -24,9 +30,11 @@ export class SeoController {
       { loc: `${this.baseUrl}/a-propos-gestion-aquarium`, changefreq: 'monthly', priority: '0.8' },
       { loc: `${this.baseUrl}/contact`, changefreq: 'monthly', priority: '0.6' },
       { loc: `${this.baseUrl}/articles`, changefreq: 'weekly', priority: '0.9' },
+      { loc: `${this.baseUrl}/poissons`, changefreq: 'weekly', priority: '0.8' }, // si tu as une page listing
     ];
 
     const articles = await this.articlesService.listPublishedSlugsForSitemap();
+    const fishes = await this.fishCardsService.listPublishedSlugsForSitemap();
 
     const articleUrls: SitemapUrl[] = articles.map((a) => ({
       loc: `${this.baseUrl}/articles/${a.slug}`,
@@ -35,7 +43,14 @@ export class SeoController {
       priority: '0.7',
     }));
 
-    const urls: SitemapUrl[] = [...staticUrls, ...articleUrls];
+    const fishUrls: SitemapUrl[] = fishes.map((f) => ({
+      loc: `${this.baseUrl}/poissons/${f.slug}`,
+      lastmod: f.lastmod,
+      changefreq: 'monthly',
+      priority: '0.7',
+    }));
+
+    const urls: SitemapUrl[] = [...staticUrls, ...articleUrls, ...fishUrls];
 
     const body = urls
       .map((u) => {
@@ -46,9 +61,11 @@ export class SeoController {
       })
       .join('');
 
-    return `<?xml version="1.0" encoding="UTF-8"?>` +
+    return (
+      `<?xml version="1.0" encoding="UTF-8"?>` +
       `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` +
       body +
-      `</urlset>`;
+      `</urlset>`
+    );
   }
 }
