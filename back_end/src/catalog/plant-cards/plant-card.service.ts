@@ -371,4 +371,22 @@ export class PlantCardsService {
     const filePath = join(getUploadDir(), 'plants', filename);
     try { await fs.unlink(filePath); } catch {}
   }
+    async listPublishedSlugsForSitemap(): Promise<Array<{ slug: string; lastmod: string }>> {
+    const rows = await this.repo.find({
+      where: {
+        isActive: true,
+        status: 'APPROVED',
+      } as any,
+      select: { slug: true, updatedAt: true, createdAt: true } as any,
+      order: { updatedAt: 'DESC' } as any,
+    });
+
+    return rows
+      .filter((r: any) => !!r.slug)
+      .map((r: any) => ({
+        slug: r.slug,
+        lastmod: new Date((r.updatedAt ?? r.createdAt) as any).toISOString().slice(0, 10),
+      }));
+  }
+
 }

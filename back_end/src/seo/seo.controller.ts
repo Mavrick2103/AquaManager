@@ -1,9 +1,9 @@
-// src/seo/seo.controller.ts
 import { Controller, Get, Header } from '@nestjs/common';
 import { Public } from '../auth/decorators/public.decorator';
 
 import { ArticlesService } from '../articles/articles.service';
 import { FishCardsService } from '../catalog/fish-cards/fish-card.service';
+import { PlantCardsService } from '../catalog/plant-cards/plant-card.service';
 
 type SitemapUrl = {
   loc: string;
@@ -20,6 +20,7 @@ export class SeoController {
   constructor(
     private readonly articlesService: ArticlesService,
     private readonly fishCardsService: FishCardsService,
+    private readonly plantCardsService: PlantCardsService,
   ) {}
 
   @Get('sitemap.xml')
@@ -30,11 +31,15 @@ export class SeoController {
       { loc: `${this.baseUrl}/a-propos-gestion-aquarium`, changefreq: 'monthly', priority: '0.8' },
       { loc: `${this.baseUrl}/contact`, changefreq: 'monthly', priority: '0.6' },
       { loc: `${this.baseUrl}/articles`, changefreq: 'weekly', priority: '0.9' },
-      { loc: `${this.baseUrl}/poissons`, changefreq: 'weekly', priority: '0.8' }, // si tu as une page listing
+      { loc: `${this.baseUrl}/poissons`, changefreq: 'weekly', priority: '0.8' },
+      { loc: `${this.baseUrl}/plantes`, changefreq: 'weekly', priority: '0.8' },
     ];
 
-    const articles = await this.articlesService.listPublishedSlugsForSitemap();
-    const fishes = await this.fishCardsService.listPublishedSlugsForSitemap();
+    const [articles, fishes, plants] = await Promise.all([
+      this.articlesService.listPublishedSlugsForSitemap(),
+      this.fishCardsService.listPublishedSlugsForSitemap(),
+      this.plantCardsService.listPublishedSlugsForSitemap(),
+    ]);
 
     const articleUrls: SitemapUrl[] = articles.map((a) => ({
       loc: `${this.baseUrl}/articles/${a.slug}`,
@@ -50,7 +55,14 @@ export class SeoController {
       priority: '0.7',
     }));
 
-    const urls: SitemapUrl[] = [...staticUrls, ...articleUrls, ...fishUrls];
+    const plantUrls: SitemapUrl[] = plants.map((p) => ({
+      loc: `${this.baseUrl}/plantes/${p.slug}`,
+      lastmod: p.lastmod,
+      changefreq: 'monthly',
+      priority: '0.7',
+    }));
+
+    const urls: SitemapUrl[] = [...staticUrls, ...articleUrls, ...fishUrls, ...plantUrls];
 
     const body = urls
       .map((u) => {

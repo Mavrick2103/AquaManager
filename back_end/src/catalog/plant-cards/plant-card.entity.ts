@@ -54,15 +54,30 @@ export function normalizeText(input?: string | null): string | null {
   return v ? v : null;
 }
 
+/** slug util: "Anubias Nana" => "anubias-nana" */
+function slugify(input?: string | null): string | null {
+  const n = normalizeText(input);
+  if (!n) return null;
+  return n
+    .replace(/[^a-z0-9 ]/g, '') // enlève tout sauf lettres/chiffres/espaces
+    .trim()
+    .replace(/\s+/g, '-') // espaces => tirets
+    .replace(/-+/g, '-'); // tirets multiples => 1 seul
+}
+
 @Entity('plant_cards')
 @Index(['commonName'])
 @Index(['scientificName'])
 @Index('UQ_plant_water_common_norm', ['waterType', 'commonNameNormalized'], { unique: true })
 @Index('UQ_plant_water_scient_norm', ['waterType', 'scientificNameNormalized'], { unique: true })
+
+// ✅ slug unique (comme fish)
+@Index('UQ_plant_slug_norm', ['slugNormalized'], { unique: true })
 export class PlantCard {
   @PrimaryGeneratedColumn()
   id: number;
 
+  // ---------- Identité ----------
   @Column({ type: 'varchar', length: 120 })
   commonName: string;
 
@@ -84,6 +99,16 @@ export class PlantCard {
   @Column({ type: 'enum', enum: ['EAU_DOUCE', 'EAU_DE_MER', 'SAUMATRE'], default: 'EAU_DOUCE' })
   waterType: WaterType;
 
+  // ---------- Slug (SEO) ----------
+  // URL: /plantes/:slug
+  @Column({ type: 'varchar', length: 180, nullable: true })
+  slug: string | null;
+
+  // valeur technique unique
+  @Column({ type: 'varchar', length: 180, nullable: true })
+  slugNormalized: string | null;
+
+  // ---------- Catégories / placement ----------
   @Column({
     type: 'enum',
     enum: ['TIGE', 'ROSETTE', 'RHIZOME', 'MOUSSE', 'GAZONNANTE', 'BULBE', 'FLOTTANTE', 'EPIPHYTE'],
@@ -120,6 +145,7 @@ export class PlantCard {
   @Column({ type: 'enum', enum: ['FACILE', 'MOYEN', 'DIFFICILE'], nullable: true })
   difficulty: Difficulty | null;
 
+  // ---------- Paramètres ----------
   @Column({ type: 'decimal', precision: 4, scale: 1, nullable: true })
   tempMin: number | null;
 
@@ -144,6 +170,7 @@ export class PlantCard {
   @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
   khMax: number | null;
 
+  // ---------- Besoins ----------
   @Column({ type: 'boolean', nullable: true })
   needsFe: boolean | null;
 
@@ -159,6 +186,7 @@ export class PlantCard {
   @Column({ type: 'boolean', nullable: true })
   substrateRequired: boolean | null;
 
+  // ---------- Notes ----------
   @Column({ type: 'text', nullable: true })
   trimming: string | null;
 
@@ -171,14 +199,14 @@ export class PlantCard {
   @Column({ type: 'varchar', length: 255, nullable: true })
   imageUrl: string | null;
 
-  // ✅ modération
+  // ---------- Modération ----------
   @Column({ type: 'enum', enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'APPROVED' })
   status: ModerationStatus;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   rejectReason: string | null;
 
-  // ✅ ownership / audit (sans FK pour éviter tes galères)
+  // ---------- Ownership / audit ----------
   @Column({ type: 'int', nullable: true })
   createdBy: number | null;
 
@@ -200,7 +228,17 @@ export class PlantCard {
   @BeforeInsert()
   @BeforeUpdate()
   private computeNormalized(): void {
+    // anti-doublons existants
     this.commonNameNormalized = normalizeText(this.commonName) ?? '';
     this.scientificNameNormalized = normalizeText(this.scientificName);
+
+    // slug auto si absent
+    // priorité: scientificName puis commonName
+    if (!this.slug || !this.slug.trim()) {
+      this.slug = slugify(this.scientificName) ?? slugify(this.commonName);
+    }
+
+    // slugNormalized (technique)
+    this.slugNormalized = slugify(this.slug);
   }
 }

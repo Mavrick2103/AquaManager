@@ -11,7 +11,7 @@ import { WaterMeasurementModule } from './water-measurement/water-measurement.mo
 import { TaskModule } from './tasks/task.module';
 import { AdminModule } from './admin/admin.module';
 import { FishCardsModule } from './catalog/fish-cards/fish-card.module';
-import { PlantCardsModule } from './catalog/plant-cards/plant-cards.module';
+import { PlantCardsModule } from './catalog/plant-cards/plant-card.module';
 import { ContactModule } from './contact/contact.module';
 import { ArticlesModule } from './articles/articles.module';
 import { SeoModule } from './seo/seo.module';
