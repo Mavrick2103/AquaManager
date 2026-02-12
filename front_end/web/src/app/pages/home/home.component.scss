@@ -4,6 +4,20 @@
   background: linear-gradient(160deg, #e6f7ff, #f8fff8);
   font-family: 'Montserrat', 'Open Sans', sans-serif;
   color: #1F3522;
+
+  /* ✅ sticky offsets */
+  --topbar-h: 64px;
+
+  /* ✅ topbar icon buttons size */
+  --icon-btn: 44px;
+}
+
+/* MOBILE vars */
+@media (max-width: 560px) {
+  :host {
+    --topbar-h: 56px;
+    --icon-btn: 40px;
+  }
 }
 
 /* ====== Topbar ====== */
@@ -16,6 +30,11 @@
   gap: 8px;
   min-height: 64px;
 
+  /* ✅ FIX overlay: topbar sticky au-dessus du bandeau */
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+
   .brand {
     display: flex;
     align-items: center;
@@ -23,7 +42,8 @@
   }
 
   .logo-img {
-    height: 150px;
+    /* ✅ FIX: logo cohérent avec la hauteur */
+    height: 56px;
     width: auto;
     display: block;
     max-width: 100%;
@@ -33,23 +53,76 @@
     flex: 1;
     min-width: 0;
   }
+
+  /* ✅ FIX UX boutons icon */
   .species-btn,
   .help-btn,
   .profile-btn {
+    width: var(--icon-btn);
+    height: var(--icon-btn);
+    min-width: var(--icon-btn);
+    padding: 0 !important;
+
+    display: grid;
+    place-items: center;
+
     color: #1F3522 !important;
-    background: rgba(255,255,255,.22);
-    border: 1px solid rgba(255,255,255,.35);
+    background: rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
     border-radius: 14px;
     margin-left: 6px;
+
+    /* ✅ ripple ne déborde pas */
+    overflow: hidden;
+
+    transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.28);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba(255, 255, 255, 0.85);
+      outline-offset: 2px;
+    }
+
+    mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+      line-height: 22px;
+    }
+  }
+}
+
+/* MOBILE topbar */
+@media (max-width: 560px) {
+  .topbar {
+    padding: 0 10px;
+    min-height: 56px;
+
+    .logo-img {
+      height: 44px;
+    }
+
+    .species-btn,
+    .help-btn,
+    .profile-btn {
+      border-radius: 12px;
+      margin-left: 4px;
+    }
   }
 }
 
 /* ===== Bandeau annonce défilant ===== */
 .announce {
   position: sticky;
-  top: 0;
+  top: var(--topbar-h);
   z-index: 1000;
+
   background: rgba(251, 235, 60, 0.9);
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(8px);
@@ -400,18 +473,11 @@
 }
 
 /* ==========================================================
-   ✅ RESPONSIVE (TOPBAR + HOME)
+   ✅ RESPONSIVE (HOME)
    ========================================================== */
 
 /* TABLET */
 @media (max-width: 900px) {
-  .topbar {
-    padding: 0 12px;
-    min-height: 60px;
-
-    .logo-img { height: 90px; }
-  }
-
   .hero { padding: 32px 16px; }
   .grid { gap: 12px; margin: 1.25rem auto; }
   .card.kpi { min-width: 200px; padding: 1.2rem; }
@@ -419,34 +485,6 @@
 
 /* MOBILE */
 @media (max-width: 560px) {
-  /* topbar compact */
-  .topbar {
-    padding: 0 10px;
-    min-height: 56px;
-
-    .logo-img { height: 56px; }
-
-    /* boutons plus petits */
-    .species-btn,
-    .help-btn,
-    .profile-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      margin-left: 4px;
-    }
-
-    /* icônes plus petites */
-    .species-btn,
-    .help-btn mat-icon,
-    .profile-btn mat-icon {
-      font-size: 22px;
-      width: 22px;
-      height: 22px;
-      line-height: 22px;
-    }
-  }
-
   /* hero compact */
   .hero {
     padding: 22px 12px;
@@ -457,7 +495,7 @@
     .cta-row {
       gap: .6rem;
 
-      button[mat-raised-button]{
+      button[mat-raised-button] {
         width: 100%;
         padding: .6rem 1rem;
         border-radius: 12px;
@@ -498,8 +536,6 @@
 
 /* ULTRA PETIT */
 @media (max-width: 380px) {
-  .topbar .logo-img { height: 48px; }
-  .topbar .help-btn,
-  .topbar .profile-btn { width: 38px; height: 38px; }
+  .topbar .logo-img { height: 40px; }
   .hero h1 { font-size: 1.35rem; }
 }
