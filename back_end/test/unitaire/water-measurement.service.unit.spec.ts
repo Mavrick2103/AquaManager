@@ -160,7 +160,7 @@ describe('WaterMeasurementService (unit)', () => {
 
       expect(repo.save).toHaveBeenCalledWith(createdEntity);
       expect(usersService.touchActivity).toHaveBeenCalledWith(userId);
-      expect(res).toBe(savedEntity);
+      expect(res).toEqual({ measurement: savedEntity, recommendations: [] });
     });
   });
 
