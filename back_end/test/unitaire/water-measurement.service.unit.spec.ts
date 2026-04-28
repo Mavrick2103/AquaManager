@@ -34,6 +34,7 @@ describe('WaterMeasurementService (unit)', () => {
 
     const usersServiceMock = {
       touchActivity: jest.fn(),
+      hasAtLeastPlan: jest.fn().mockResolvedValue(false),
     };
 
     const recommendationServiceMock = {
