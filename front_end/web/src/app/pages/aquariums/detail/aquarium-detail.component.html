@@ -529,11 +529,16 @@
             </div>
 
             <div class="premium-hero__cta">
-              <button mat-raised-button color="primary" (click)="goToPricing()">
+              <button
+                  mat-raised-button
+                  color="primary"
+      
+                  [disabled]="checkoutLoading"
+                  > <!--(click)="startPremiumCheckout()"-->
                 <mat-icon>lock_open</mat-icon>
-                Passer Premium
+                  {{ checkoutLoading ? 'Redirection…' : 'Passer Premium (bientôt)' }}
               </button>
-              <button mat-stroked-button (click)="goToPricing()">Voir les offres</button>
+                <!--<button mat-stroked-button (click)="goToPricing()">Voir les offres</button> -->
             </div>
           </div>
 

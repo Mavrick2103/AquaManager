@@ -11,6 +11,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { BillingService } from '../../../core/billing.service';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -150,6 +151,7 @@ export class AquariumDetailComponent implements OnInit {
   private dialog = inject(MatDialog);
   private recosApi = inject(RecommendationsService);
   private targetsApi = inject(AquariumTargetsService);
+  private billing = inject(BillingService);
 
   /** Origin API sans /api (uploads servis sur /uploads) */
   private readonly apiOrigin = (environment.apiUrl || '')
@@ -264,6 +266,23 @@ export class AquariumDetailComponent implements OnInit {
     await this.loadMeasurements();
     await this.loadTankItems();
   }
+
+  checkoutLoading = false;
+
+async startPremiumCheckout() {
+  if (this.checkoutLoading) return;
+  this.checkoutLoading = true;
+
+  try {
+    const url = await this.billing.createPremiumCheckout();
+    window.location.href = url;
+  } catch (e) {
+    this.snack.open("Impossible d'ouvrir le paiement Stripe", 'Fermer', { duration: 3000 });
+    console.error(e);
+  } finally {
+    this.checkoutLoading = false;
+  }
+}
 
   // lazy load à l’ouverture onglet Solutions
   async onTabChange(index: number) {

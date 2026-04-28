@@ -18,6 +18,7 @@ import { ArticlesModule } from './articles/articles.module';
 import { SeoModule } from './seo/seo.module';
 import { RecommendationModule } from './recommendation/recommendation.module';
 import { AquariumTargetsModule } from './aquarium-targets/aquarium-targets.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { AquariumTargetsModule } from './aquarium-targets/aquarium-targets.modul
     SeoModule,
     RecommendationModule,
     AquariumTargetsModule,
+    BillingModule,
   ],
 })
 export class AppModule {}

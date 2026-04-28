@@ -20,6 +20,6 @@ export function typeOrmConfig(): TypeOrmModuleOptions {
     synchronize: syncEnabled && !isProd,
 
     // ✅ dev: true, prod: via env
-    logging: isProd ? loggingEnabled : true,
+    logging: isProd ? loggingEnabled : false,
   };
 }

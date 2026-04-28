@@ -7,6 +7,8 @@ import cookieParser from 'cookie-parser';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
+import * as bodyParser from 'body-parser';
+
 function getUploadDir(): string {
   // En prod (docker): /data/uploads
   // En local: back_end/uploads (car process.cwd() = back_end)
@@ -14,12 +16,23 @@ function getUploadDir(): string {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // ✅ IMPORTANT : on coupe le bodyParser interne de Nest
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
 
   const isProd = process.env.NODE_ENV === 'production';
 
   // ✅ API prefix
   app.setGlobalPrefix('api');
+
+  // ✅ Stripe webhook: RAW body obligatoire
+  // (plus tolérant que application/json, Stripe peut envoyer avec charset)
+  app.use('/api/billing/webhook', bodyParser.raw({ type: '*/*' }));
+
+  // ✅ Le reste: JSON normal
+  app.use(bodyParser.json({ limit: '2mb' }));
+  app.use(bodyParser.urlencoded({ extended: true, limit: '2mb' }));
 
   // ✅ Sert les fichiers uploadés (images) : /uploads/** (PAS sous /api)
   const uploadDir = getUploadDir();
@@ -33,7 +46,6 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
 
       // ✅ IMPORTANT pour FormData (multipart)
-      // Convertit "12" -> 12, "true" -> true, etc.
       transform: true,
       transformOptions: {
         enableImplicitConversion: true,
@@ -57,7 +69,7 @@ async function bootstrap() {
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-view-key'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-view-key', 'stripe-signature'],
   });
 
   const port = process.env.PORT || 3000;

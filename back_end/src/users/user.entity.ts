@@ -46,6 +46,18 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   subscriptionEndsAt: Date | null;
 
+  @Column({ type: 'varchar', length: 24, default: 'none' })
+  subscriptionStatus: 'none' | 'active' | 'trialing' | 'canceled' | 'past_due' | 'incomplete';
+
+      // ===== Stripe =====
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  stripeCustomerId: string | null;
+
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  stripeSubscriptionId: string | null;
+  
   // ✅ utile pour tes metrics + tri par inscription
   @CreateDateColumn()
   createdAt: Date;

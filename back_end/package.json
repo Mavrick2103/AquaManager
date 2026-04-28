@@ -61,7 +61,7 @@
     "@types/helmet": "^0.0.48",
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
-    "@types/node": "^22.10.7",
+    "@types/node": "^22.19.17",
     "@types/nodemailer": "^7.0.4",
     "@types/sanitize-html": "^2.16.0",
     "@types/supertest": "^6.0.3",

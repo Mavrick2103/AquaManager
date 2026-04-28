@@ -48,27 +48,67 @@ export class UsersService {
     return 'CLASSIC';
   }
 
+  async getBillingState(userId: number) {
+  return this.repo.findOne({
+    where: { id: userId },
+    select: {
+      id: true,
+      subscriptionStatus: true,
+      stripeCustomerId: true,
+      stripeSubscriptionId: true,
+      subscriptionPlan: true,
+      subscriptionEndsAt: true,
+    } as any,
+  });
+}
+
+async setStripeIds(userId: number, data: { stripeCustomerId?: string | null; stripeSubscriptionId?: string | null }) {
+  await this.repo.update(
+    { id: userId },
+    {
+      ...(data.stripeCustomerId !== undefined ? { stripeCustomerId: data.stripeCustomerId } : {}),
+      ...(data.stripeSubscriptionId !== undefined ? { stripeSubscriptionId: data.stripeSubscriptionId } : {}),
+    } as any,
+  );
+}
+
   /**
    * Retourne le plan "effectif" (si expiré => CLASSIC).
    */
   async getEffectivePlan(userId: number): Promise<SubscriptionPlan> {
-    const u = await this.repo.findOne({
-      where: { id: userId },
-      select: { id: true, subscriptionPlan: true, subscriptionEndsAt: true } as any,
-    });
-    if (!u) return 'CLASSIC';
+  const u = await this.repo.findOne({
+    where: { id: userId },
+    select: { id: true, subscriptionPlan: true, subscriptionEndsAt: true, subscriptionStatus: true } as any,
+  });
+  if (!u) return 'CLASSIC';
 
-    const plan = this.normalizePlan((u as any).subscriptionPlan);
-    const endsAt = (u as any).subscriptionEndsAt as Date | null;
+  const plan = this.normalizePlan((u as any).subscriptionPlan);
+  const endsAt = (u as any).subscriptionEndsAt as Date | null;
+  const status = String((u as any).subscriptionStatus ?? 'none');
 
-    if (endsAt && endsAt.getTime() < Date.now()) return 'CLASSIC';
-    return plan;
-  }
+  // expiré => classic
+  if (endsAt && endsAt.getTime() < Date.now()) return 'CLASSIC';
+
+  // pas actif => classic
+  if (!(status === 'active' || status === 'trialing')) return 'CLASSIC';
+
+  return plan;
+}
 
   async hasAtLeastPlan(userId: number, required: SubscriptionPlan): Promise<boolean> {
     const effective = await this.getEffectivePlan(userId);
     return PLAN_RANK[effective] >= PLAN_RANK[required];
   }
+
+  async setPlan(userId: number, plan: SubscriptionPlan, endsAt: Date | null = null) {
+  await this.repo.update(
+    { id: userId },
+    {
+      subscriptionPlan: this.normalizePlan(plan),
+      subscriptionEndsAt: endsAt,
+    } as any,
+  );
+}
 
   async updateProfile(userId: number, dto: UpdateMeDto) {
     const user = await this.repo.findOne({ where: { id: userId } });
@@ -182,6 +222,33 @@ export class UsersService {
     return this.findById(user.id);
   }
 
+  // users.service.ts
+async setStripeSubscriptionState(userId: number, patch: {
+  plan?: SubscriptionPlan;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  subscriptionStatus?: 'none' | 'active' | 'trialing' | 'canceled' | 'past_due' | 'incomplete';
+  subscriptionEndsAt?: Date | null;
+}) {
+  await this.repo.update(
+    { id: userId },
+    {
+      ...(patch.plan ? { subscriptionPlan: this.normalizePlan(patch.plan) } : {}),
+      ...(patch.stripeCustomerId !== undefined ? { stripeCustomerId: patch.stripeCustomerId } : {}),
+      ...(patch.stripeSubscriptionId !== undefined ? { stripeSubscriptionId: patch.stripeSubscriptionId } : {}),
+      ...(patch.subscriptionStatus ? { subscriptionStatus: patch.subscriptionStatus } : {}),
+      ...(patch.subscriptionEndsAt !== undefined ? { subscriptionEndsAt: patch.subscriptionEndsAt } : {}),
+    } as any,
+  );
+}
+
+async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<number | null> {
+  const u = await this.repo.findOne({
+    where: { stripeSubscriptionId } as any,
+    select: { id: true } as any,
+  });
+  return u?.id ?? null;
+}
   async setPasswordResetToken(email: string, tokenHash: string, expiresAt: Date) {
     const user = await this.repo.findOne({ where: { email } });
     if (!user) return null;
