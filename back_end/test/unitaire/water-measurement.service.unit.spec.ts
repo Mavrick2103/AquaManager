@@ -9,6 +9,7 @@ import { Aquarium } from '../../src/aquariums/aquariums.entity';
 import { CreateWaterMeasurementDto } from '../../src/water-measurement/dto/create-water-measurement.dto';
 
 import { UsersService } from '../../src/users/users.service'; // ✅ à mock
+import { RecommendationService } from '../../src/recommendation/recommendation.service';
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
 
@@ -35,6 +36,10 @@ describe('WaterMeasurementService (unit)', () => {
       touchActivity: jest.fn(),
     };
 
+    const recommendationServiceMock = {
+      refreshForAquarium: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WaterMeasurementService,
@@ -45,6 +50,8 @@ describe('WaterMeasurementService (unit)', () => {
         { provide: UsersService, useValue: usersServiceMock },
 
         { provide: MailService, useValue: mailServiceMock },
+
+        { provide: RecommendationService, useValue: recommendationServiceMock },
       ],
     }).compile();
 
