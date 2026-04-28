@@ -38,6 +38,14 @@ services:
       CONTACT_TO_EMAIL: ${CONTACT_TO_EMAIL:-aquamanager.contact@gmail.com}
       ANALYTICS_SALT: ${ANALYTICS_SALT:-change_me_long_random_string_32_chars_min}
 
+            # ✅ STRIPE
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRICE_PREMIUM: ${STRIPE_PRICE_PREMIUM}
+      STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-https://aquamanager.fr/pricing/success}
+      STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL:-https://aquamanager.fr/pricing/cancel}
+      STRIPE_PORTAL_RETURN_URL: ${STRIPE_PORTAL_RETURN_URL:-https://aquamanager.fr/profile}
+
 
       NODE_ENV: production
       PORT: 3000
