@@ -8,7 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 
-import { User } from './user.entity';
+import { User, PLAN_RANK, SubscriptionPlan } from './user.entity';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
@@ -36,6 +36,38 @@ export class UsersService {
 
   findById(id: number) {
     return this.repo.findOne({ where: { id } });
+  }
+
+  // =========================
+  // Subscription helpers
+  // =========================
+  private normalizePlan(p?: string | null): SubscriptionPlan {
+    const v = String(p ?? 'CLASSIC').toUpperCase();
+    if (v === 'PRO') return 'PRO';
+    if (v === 'PREMIUM') return 'PREMIUM';
+    return 'CLASSIC';
+  }
+
+  /**
+   * Retourne le plan "effectif" (si expiré => CLASSIC).
+   */
+  async getEffectivePlan(userId: number): Promise<SubscriptionPlan> {
+    const u = await this.repo.findOne({
+      where: { id: userId },
+      select: { id: true, subscriptionPlan: true, subscriptionEndsAt: true } as any,
+    });
+    if (!u) return 'CLASSIC';
+
+    const plan = this.normalizePlan((u as any).subscriptionPlan);
+    const endsAt = (u as any).subscriptionEndsAt as Date | null;
+
+    if (endsAt && endsAt.getTime() < Date.now()) return 'CLASSIC';
+    return plan;
+  }
+
+  async hasAtLeastPlan(userId: number, required: SubscriptionPlan): Promise<boolean> {
+    const effective = await this.getEffectivePlan(userId);
+    return PLAN_RANK[effective] >= PLAN_RANK[required];
   }
 
   async updateProfile(userId: number, dto: UpdateMeDto) {
@@ -201,6 +233,8 @@ export class UsersService {
       'u.fullName',
       'u.email',
       'u.role',
+      'u.subscriptionPlan',
+      'u.subscriptionEndsAt',
       'u.createdAt',
       'u.emailVerifiedAt',
       'u.lastActivityAt',
@@ -226,6 +260,8 @@ export class UsersService {
         'u.fullName',
         'u.email',
         'u.role',
+        'u.subscriptionPlan',
+        'u.subscriptionEndsAt',
         'u.createdAt',
         'u.emailVerifiedAt',
         'u.lastActivityAt',
@@ -248,6 +284,8 @@ export class UsersService {
         'u.fullName',
         'u.email',
         'u.role',
+        'u.subscriptionPlan',
+        'u.subscriptionEndsAt',
         'u.createdAt',
         'u.emailVerifiedAt',
         'u.lastActivityAt',
@@ -338,6 +376,16 @@ export class UsersService {
 
     if (dto.role !== undefined) {
       patch.role = dto.role;
+    }
+
+    if (dto.subscriptionPlan !== undefined) {
+      patch.subscriptionPlan = this.normalizePlan(dto.subscriptionPlan);
+    }
+
+    if (dto.subscriptionEndsAt !== undefined) {
+      // string ISO -> Date (ou null si vide)
+      const raw = String(dto.subscriptionEndsAt ?? '').trim();
+      patch.subscriptionEndsAt = raw ? new Date(raw) : null;
     }
 
     if (Object.keys(patch).length === 0) {

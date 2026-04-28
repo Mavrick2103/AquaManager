@@ -29,6 +29,7 @@
     "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/schedule": "^6.1.1",
     "@nestjs/typeorm": "^11.0.0",
     "@types/cookie-parser": "^1.4.10",
     "argon2": "^0.44.0",
@@ -47,6 +48,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sanitize-html": "^2.17.0",
+    "stripe": "^22.1.0",
     "typeorm": "^0.3.27"
   },
   "devDependencies": {

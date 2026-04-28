@@ -6,6 +6,7 @@ import { WaterMeasurement } from './water-measurement.entity';
 import { Aquarium } from '../aquariums/aquariums.entity';
 import { CreateWaterMeasurementDto } from './dto/create-water-measurement.dto';
 import { UsersService } from '../users/users.service'; // ✅
+import { RecommendationService } from '../recommendation/recommendation.service';
 
 @Injectable()
 export class WaterMeasurementService {
@@ -13,6 +14,7 @@ export class WaterMeasurementService {
     @InjectRepository(WaterMeasurement) private readonly repo: Repository<WaterMeasurement>,
     @InjectRepository(Aquarium) private readonly aquas: Repository<Aquarium>,
     private readonly usersService: UsersService, // ✅
+    private readonly recoService: RecommendationService,
   ) {}
 
   // vérification de l'appartenance de l'aquarium au user
@@ -92,7 +94,13 @@ export class WaterMeasurementService {
 
     await this.usersService.touchActivity(userId); // ✅ activité
 
-    return saved;
+    // ==== Feature payante: recommandations (PREMIUM+) ====
+    const isPremium = await this.usersService.hasAtLeastPlan(userId, 'PREMIUM');
+    const recommendations = isPremium
+      ? await this.recoService.generateForMeasurement({ userId, aquariumId, measurement: saved })
+      : [];
+
+    return { measurement: saved, recommendations };
   }
 
   // suppression d'une mesure

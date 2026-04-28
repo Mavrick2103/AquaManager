@@ -83,7 +83,7 @@
       <mat-form-field appearance="outline">
         <mat-label>Aquarium</mat-label>
         <mat-icon matPrefix>water</mat-icon>
-        <mat-select formControlName="aquariumId" [disabled]="!aquariums().length">
+        <mat-select formControlName="aquariumId">
           <mat-option *ngFor="let a of aquariums()" [value]="a.id">
             {{ a.name }}
           </mat-option>
@@ -116,7 +116,7 @@
         >
           <mat-label>Fréquence</mat-label>
           <mat-icon matPrefix>schedule</mat-icon>
-          <mat-select formControlName="repeatMode" [disabled]="!form.get('isRepeat')?.value">
+          <mat-select formControlName="repeatMode">
             <mat-option *ngFor="let o of repeatOptions" [value]="o.value">{{ o.label }}</mat-option>
           </mat-select>
         </mat-form-field>

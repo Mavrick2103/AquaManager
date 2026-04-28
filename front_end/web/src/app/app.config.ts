@@ -1,4 +1,4 @@
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, LOCALE_ID } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 
@@ -16,7 +16,6 @@ import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/cor
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 
-// ✅ IMPORTANT pour ng2-charts (Chart.js register)
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 export const appConfig: ApplicationConfig = {
@@ -28,9 +27,12 @@ export const appConfig: ApplicationConfig = {
 
     provideAnimations(),
 
-    // ✅ Charts (obligatoire sinon <canvas baseChart> = vide)
     provideCharts(withDefaultRegisterables()),
 
+    // ✅ DatePipe + i18n Angular
+    { provide: LOCALE_ID, useValue: 'fr-FR' },
+
+    // ✅ Angular Material Datepicker
     { provide: MAT_DATE_LOCALE, useValue: 'fr-FR' },
     provideNativeDateAdapter(),
     MatDatepickerModule,

@@ -8,6 +8,14 @@ import {
 } from 'typeorm';
 import { Aquarium } from '../aquariums/aquariums.entity';
 
+export type SubscriptionPlan = 'CLASSIC' | 'PREMIUM' | 'PRO';
+
+export const PLAN_RANK: Record<SubscriptionPlan, number> = {
+  CLASSIC: 0,
+  PREMIUM: 1,
+  PRO: 2,
+};
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
@@ -25,6 +33,18 @@ export class User {
 
   @Column({ default: 'USER' })
   role: 'USER' | 'ADMIN' | 'EDITOR';
+
+  // ===== Subscription (paywall) =====
+  @Column({
+    type: 'enum',
+    enum: ['CLASSIC', 'PREMIUM', 'PRO'],
+    default: 'CLASSIC',
+  })
+  subscriptionPlan: SubscriptionPlan;
+
+  // null = pas d'expiration (ex: bêta / accès à vie)
+  @Column({ type: 'timestamp', nullable: true })
+  subscriptionEndsAt: Date | null;
 
   // ✅ utile pour tes metrics + tri par inscription
   @CreateDateColumn()

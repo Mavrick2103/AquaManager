@@ -8,11 +8,13 @@ import { WaterMeasurementService } from './water-measurement.service';
 import { WaterMeasurementController } from './water-measurement.controller';
 
 import { UsersModule } from '../users/users.module'; // ✅ pour injecter UsersService
+import { RecommendationModule } from '../recommendation/recommendation.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([WaterMeasurement, Aquarium]),
     UsersModule, // ✅ IMPORTANT
+    RecommendationModule,
   ],
   providers: [WaterMeasurementService],
   controllers: [WaterMeasurementController],

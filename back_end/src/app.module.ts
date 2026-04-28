@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { typeOrmConfig } from './config/typeorm.config';
 
 import { UsersModule } from './users/users.module';
@@ -15,6 +16,8 @@ import { PlantCardsModule } from './catalog/plant-cards/plant-card.module';
 import { ContactModule } from './contact/contact.module';
 import { ArticlesModule } from './articles/articles.module';
 import { SeoModule } from './seo/seo.module';
+import { RecommendationModule } from './recommendation/recommendation.module';
+import { AquariumTargetsModule } from './aquarium-targets/aquarium-targets.module';
 
 @Module({
   imports: [
@@ -43,6 +46,7 @@ import { SeoModule } from './seo/seo.module';
     }),
 
     TypeOrmModule.forRoot(typeOrmConfig()),
+    ScheduleModule.forRoot(),
     UsersModule,
     AquariumsModule,
     AuthModule,
@@ -54,6 +58,8 @@ import { SeoModule } from './seo/seo.module';
     ContactModule,
     ArticlesModule,
     SeoModule,
+    RecommendationModule,
+    AquariumTargetsModule,
   ],
 })
 export class AppModule {}

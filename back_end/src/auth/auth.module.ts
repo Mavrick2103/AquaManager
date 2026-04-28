@@ -13,6 +13,7 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { PlanGuard } from './guards/plan.guard';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { RolesGuard } from './guards/roles.guard';
     // Guards globaux (si tu les gardes ici, tu n'as plus besoin de @UseGuards partout)
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: PlanGuard },
   ],
   exports: [AuthService, JwtModule],
 })
