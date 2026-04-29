@@ -8,8 +8,10 @@ import { WaterMeasurement } from '../../src/water-measurement/water-measurement.
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
 import { CreateWaterMeasurementDto } from '../../src/water-measurement/dto/create-water-measurement.dto';
 
-import { UsersService } from '../../src/users/users.service'; // ✅ à mock
+import { UsersService } from '../../src/users/users.service';
 import { RecommendationService } from '../../src/recommendation/recommendation.service';
+import { GamificationService } from '../../src/gamification/gamification.service';
+
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
 
@@ -17,7 +19,19 @@ describe('WaterMeasurementService (unit)', () => {
   let service: WaterMeasurementService;
   let repo: jest.Mocked<Repository<WaterMeasurement>>;
   let aquas: jest.Mocked<Repository<Aquarium>>;
-  let usersService: { touchActivity: jest.Mock };
+
+  let usersService: {
+    touchActivity: jest.Mock;
+    hasAtLeastPlan: jest.Mock;
+  };
+
+  let recommendationService: {
+    generateForMeasurement: jest.Mock;
+  };
+
+  let gamificationService: {
+    onMeasurementCreated: jest.Mock;
+  };
 
   beforeEach(async () => {
     const waterRepoMock: Partial<jest.Mocked<Repository<WaterMeasurement>>> = {
@@ -33,33 +47,40 @@ describe('WaterMeasurementService (unit)', () => {
     };
 
     const usersServiceMock = {
-      touchActivity: jest.fn(),
+      touchActivity: jest.fn().mockResolvedValue(undefined),
       hasAtLeastPlan: jest.fn().mockResolvedValue(false),
     };
 
     const recommendationServiceMock = {
-      refreshForAquarium: jest.fn().mockResolvedValue(undefined),
+      generateForMeasurement: jest.fn().mockResolvedValue([]),
+    };
+
+    const gamificationServiceMock = {
+      onMeasurementCreated: jest.fn().mockResolvedValue({ score: null }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WaterMeasurementService,
+
         { provide: getRepositoryToken(WaterMeasurement), useValue: waterRepoMock },
         { provide: getRepositoryToken(Aquarium), useValue: aquariumRepoMock },
 
-        // ✅ LA LIGNE QUI MANQUAIT
         { provide: UsersService, useValue: usersServiceMock },
+        { provide: RecommendationService, useValue: recommendationServiceMock },
+        { provide: GamificationService, useValue: gamificationServiceMock },
 
         { provide: MailService, useValue: mailServiceMock },
-
-        { provide: RecommendationService, useValue: recommendationServiceMock },
       ],
     }).compile();
 
     service = module.get(WaterMeasurementService);
     repo = module.get(getRepositoryToken(WaterMeasurement));
     aquas = module.get(getRepositoryToken(Aquarium));
+
     usersService = module.get(UsersService);
+    recommendationService = module.get(RecommendationService);
+    gamificationService = module.get(GamificationService);
 
     jest.clearAllMocks();
   });
@@ -91,7 +112,7 @@ describe('WaterMeasurementService (unit)', () => {
       });
 
       expect(res).toBe(measurements);
-      expect(usersService.touchActivity).not.toHaveBeenCalled(); // normal: ton code ne le fait pas ici
+      expect(usersService.touchActivity).not.toHaveBeenCalled();
     });
 
     it('lève NotFoundException si aquarium non trouvé', async () => {
@@ -126,7 +147,6 @@ describe('WaterMeasurementService (unit)', () => {
         k: 10,
         sio2: 1,
         nh3: 0,
-        // champs eau de mer -> doivent finir à null
         dkh: 8,
         salinity: 35,
         ca: 400,
@@ -150,7 +170,6 @@ describe('WaterMeasurementService (unit)', () => {
       expect(createArg.kh).toBe(4);
       expect(createArg.gh).toBe(6);
 
-      // nettoyés (EAU_DOUCE)
       expect(createArg.dkh).toBeNull();
       expect(createArg.salinity).toBeNull();
       expect(createArg.ca).toBeNull();
@@ -159,8 +178,21 @@ describe('WaterMeasurementService (unit)', () => {
       expect(createArg.comment).toBe('test');
 
       expect(repo.save).toHaveBeenCalledWith(createdEntity);
+
       expect(usersService.touchActivity).toHaveBeenCalledWith(userId);
-      expect(res).toEqual({ measurement: savedEntity, recommendations: [] });
+
+      expect(gamificationService.onMeasurementCreated).toHaveBeenCalledWith(
+        userId,
+        aquariumId,
+      );
+
+      expect(usersService.hasAtLeastPlan).toHaveBeenCalledWith(userId, 'PREMIUM');
+      expect(recommendationService.generateForMeasurement).not.toHaveBeenCalled();
+
+      expect(res).toEqual({
+        measurement: savedEntity,
+        recommendations: [],
+      });
     });
   });
 
