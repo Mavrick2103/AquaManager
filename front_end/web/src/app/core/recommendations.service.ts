@@ -35,13 +35,13 @@ export class RecommendationsService {
     return firstValueFrom(this.http.get<Recommendation[]>(url, { params }));
   }
 
-  accept(id: number) {
-    const url = `${this.base}/recommendations/${id}/accept`;
-    return firstValueFrom(this.http.post<Recommendation>(url, {}));
-  }
+  accept(id: number, body?: { dueAt: string }) {
+  return firstValueFrom(this.http.post(`${environment.apiUrl}/recommendations/${id}/accept`, body ?? {}));
+}
 
   reject(id: number) {
     const url = `${this.base}/recommendations/${id}/reject`;
     return firstValueFrom(this.http.post<Recommendation>(url, {}));
   }
+
 }

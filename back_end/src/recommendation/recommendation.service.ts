@@ -128,34 +128,36 @@ export class RecommendationService {
     });
   }
 
-  async accept(userId: number, id: number) {
-    const reco = await this.repo.findOne({ where: { id } });
-    if (!reco || reco.userId !== userId) throw new NotFoundException('Recommandation introuvable');
-    if (reco.status !== RecommendationStatus.PENDING)
-      throw new BadRequestException('Recommandation déjà traitée');
+  async accept(userId: number, id: number, overrideDueAt?: string) {
+  const reco = await this.repo.findOne({ where: { id } });
+  if (!reco || reco.userId !== userId) throw new NotFoundException('Recommandation introuvable');
+  if (reco.status !== RecommendationStatus.PENDING)
+    throw new BadRequestException('Recommandation déjà traitée');
 
-    const payload = reco.actionPayload;
-    if (!payload || !payload.aquariumId || !payload.dueAt || !payload.type) {
-      throw new BadRequestException('Action invalide');
-    }
-
-    // On utilise la logique existante du TaskService (validations + titres auto)
-    const createdTask = await this.taskService.create(userId, {
-      aquariumId: payload.aquariumId,
-      type: payload.type,
-      title: payload.title,
-      description: payload.description,
-      dueAt: payload.dueAt,
-      repeat: null,
-      fertilization: null,
-    } as any);
-
-    reco.status = RecommendationStatus.ACCEPTED;
-    reco.decidedAt = new Date();
-    await this.repo.save(reco);
-
-    return { recommendation: reco, createdTask };
+  const payload = reco.actionPayload;
+  if (!payload || !payload.aquariumId || !payload.type) {
+    throw new BadRequestException('Action invalide');
   }
+
+  const dueAt = overrideDueAt ?? payload.dueAt;
+  if (!dueAt) throw new BadRequestException('Date/heure manquante');
+
+  const createdTask = await this.taskService.create(userId, {
+    aquariumId: payload.aquariumId,
+    type: payload.type,
+    title: payload.title,
+    description: payload.description,
+    dueAt,
+    repeat: null,
+    fertilization: null,
+  } as any);
+
+  reco.status = RecommendationStatus.ACCEPTED;
+  reco.decidedAt = new Date();
+  await this.repo.save(reco);
+
+  return { recommendation: reco, createdTask };
+}
 
   async reject(userId: number, id: number) {
     const reco = await this.repo.findOne({ where: { id } });

@@ -12,6 +12,7 @@ import { firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { BillingService } from '../../../core/billing.service';
+import { RecommendationScheduleDialogComponent } from './recommendation-schedule-dialog.component';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -436,17 +437,34 @@ async startPremiumCheckout() {
     await this.loadPendingRecos();
   }
 
-  async acceptReco(id: number) {
-    if (!this.isPremium) return;
+  async acceptReco(r: Recommendation) {
+  if (!this.isPremium) return;
 
-    try {
-      await this.recosApi.accept(id);
-      this.snack.open('Solution acceptée ✅ (tâche créée)', 'OK', { duration: 2500 });
-      await this.loadPendingRecos();
-    } catch (e: any) {
-      this.snack.open(e?.error?.message || 'Impossible d’accepter', 'Fermer', { duration: 3000 });
-    }
+  const initial = (r as any)?.actionPayload?.dueAt ?? null;
+
+  const ref = this.dialog.open(RecommendationScheduleDialogComponent, {
+    width: '520px',
+    data: {
+      title: r.title,
+      message: r.message,
+      initialDueAt: initial, // ISO
+    },
+    autoFocus: false,
+    restoreFocus: false,
+  });
+
+  const res = await firstValueFrom(ref.afterClosed());
+  if (!res?.dueAt) return; // cancel
+
+  try {
+    // ✅ on passe la date choisie au back
+    await this.recosApi.accept(r.id, { dueAt: res.dueAt });
+    this.snack.open('Solution acceptée ✅ (tâche créée)', 'OK', { duration: 2500 });
+    await this.loadPendingRecos();
+  } catch (e: any) {
+    this.snack.open(e?.error?.message || 'Impossible d’accepter', 'Fermer', { duration: 3000 });
   }
+}
 
   async rejectReco(id: number) {
     if (!this.isPremium) return;

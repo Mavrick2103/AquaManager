@@ -30,41 +30,266 @@
   <button
     mat-icon-button
     aria-label="Profil"
-    [routerLink]="'/profile'"
+    routerLink="/profile"
     class="profile-btn"
   >
     <mat-icon>account_circle</mat-icon>
   </button>
 </mat-toolbar>
 
-<!-- ===== Bandeau annonce (défilement) ===== -->
+<!-- ===== Bandeau annonce ===== -->
 <div class="announce" role="status" aria-live="polite">
   <div class="announce__track">
     <span class="announce__item">
-      🚧 AquaManager est en cours de développement — certaines fonctionnalités peuvent changer. Merci pour votre patience !
+      🚧 AquaManager est en cours de développement — certaines fonctionnalités peuvent changer.
+      Merci pour votre patience !
     </span>
-    <!-- duplication pour boucle fluide -->
+
     <span class="announce__item" aria-hidden="true">
-      🚧 AquaManager est en cours de développement — certaines fonctionnalités peuvent changer. Merci pour votre patience !
+      🚧 AquaManager est en cours de développement — certaines fonctionnalités peuvent changer.
+      Merci pour votre patience !
     </span>
   </div>
 </div>
 
-
 <main class="home-main">
+  <!-- ===== HERO ===== -->
   <section class="hero">
     <p class="hello" *ngIf="userFullName">Bonjour {{ userFullName }} 👋</p>
+
     <h1>Gérez vos aquariums en toute clarté</h1>
+
     <p class="subtitle">
       Suivi des paramètres, entretiens planifiés, historique — tout au même endroit.
     </p>
+
     <div class="cta-row">
-      <button mat-raised-button routerLink="/aquariums">Mes aquariums</button>
-      <button mat-raised-button routerLink="/calendar">Calendrier</button>
+      <button mat-raised-button routerLink="/aquariums">
+        <mat-icon>water_drop</mat-icon>
+        Mes aquariums
+      </button>
+
+      <button mat-raised-button routerLink="/calendar">
+        <mat-icon>event</mat-icon>
+        Calendrier
+      </button>
     </div>
   </section>
 
-  <!-- KPI -->
+  <!-- ===== GAMIFICATION / PROGRESSION ===== -->
+  <section class="gamification-section" *ngIf="!gamificationLoading && gamification">
+    <div class="gm-dashboard">
+      <!-- Carte principale -->
+      <article class="gm-hero-card">
+        <div class="gm-hero-card__content">
+          <div class="gm-hero-card__left">
+            <div class="gm-top-row">
+              <div class="gm-pill">
+                <mat-icon>auto_awesome</mat-icon>
+                <span>Progression AquaManager</span>
+              </div>
+
+              <div class="gm-streak-pill">
+                <mat-icon>local_fire_department</mat-icon>
+                <span>
+                  {{ gamification.profile.currentStreak }}
+                  jour{{ gamification.profile.currentStreak > 1 ? 's' : '' }} d’affilé
+                </span>
+              </div>
+            </div>
+
+            <h2>Ton suivi aquariophile</h2>
+
+            <p>
+              Continue à mesurer, planifier et entretenir tes aquariums pour améliorer ton score.
+            </p>
+
+            <div class="gm-level-box">
+              <div>
+                <span class="gm-level-label">Niveau</span>
+                <strong>{{ gamification.profile.level }}</strong>
+              </div>
+
+              <div>
+                <span class="gm-level-label">XP total</span>
+                <strong>{{ gamification.profile.xp }}</strong>
+              </div>
+
+              <div>
+                <span class="gm-level-label">Série</span>
+                <strong>{{ gamification.profile.currentStreak }} j</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="gm-hero-card__right">
+            <div class="gm-score-circle">
+              <div>
+                <div class="gm-score-circle__value">
+                  {{ gamification.globalScore }}
+                  <span>/100</span>
+                </div>
+
+                <div class="gm-score-circle__label">
+                  Score global
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="gm-xp-panel">
+          <div class="gm-xp-panel__top">
+            <span>Progression vers le niveau suivant</span>
+            <strong>{{ xpPercent }}%</strong>
+          </div>
+
+          <mat-progress-bar
+            mode="determinate"
+            [value]="xpPercent"
+            class="gm-xp-bar"
+          ></mat-progress-bar>
+
+          <div class="gm-xp-panel__bottom">
+            <span>Encore {{ xpToNextLevel }} XP à gagner</span>
+          </div>
+
+          <div class="gm-achievements-block">
+            <div class="gm-achievements-title">
+              <mat-icon>emoji_events</mat-icon>
+              <span>Badges débloqués</span>
+            </div>
+
+            <div class="gm-achievements" *ngIf="gamification.achievements.length; else noBadges">
+              <div class="gm-achievement" *ngFor="let badge of gamification.achievements">
+                <mat-icon>emoji_events</mat-icon>
+                <span>{{ badge.title }}</span>
+              </div>
+            </div>
+
+            <ng-template #noBadges>
+              <div class="gm-no-achievement">
+                Aucun badge débloqué pour le moment.
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </article>
+
+      <!-- Grille secondaire -->
+      <div class="gm-dashboard-grid">
+        <!-- Aquariums -->
+        <section class="gm-panel">
+          <div class="gm-panel__header">
+            <div>
+              <span class="gm-panel__eyebrow">Suivi des bacs</span>
+              <h2>Mes aquariums</h2>
+            </div>
+
+            <a routerLink="/aquariums" class="gm-panel__link">
+              Voir tout
+              <mat-icon>arrow_forward</mat-icon>
+            </a>
+          </div>
+
+          <div class="gm-aquarium-list" *ngIf="topAquariums.length; else noAquariumScore">
+            <a
+              class="gm-aquarium"
+              *ngFor="let aq of topAquariums"
+              [routerLink]="['/aquariums', aq.id]"
+            >
+              <div class="gm-aquarium__icon">
+                <mat-icon>
+                  {{ aq.waterType === 'EAU_DE_MER' ? 'waves' : 'water_drop' }}
+                </mat-icon>
+              </div>
+
+              <div class="gm-aquarium__body">
+                <div class="gm-aquarium__name">{{ aq.name }}</div>
+                <div class="gm-aquarium__meta">
+                  {{ scoreModeLabel(aq.mode) }} · {{ aq.volumeL || 0 }} L
+                </div>
+              </div>
+
+              <div class="gm-aquarium__result">
+                <div class="gm-aquarium__score" [ngClass]="scoreClass(aq.status)">
+                  {{ aq.score }}
+                </div>
+
+                <!--
+                <div class="gm-aquarium__status">
+                  <mat-icon>{{ statusIcon(aq.status) }}</mat-icon>
+                  <span>{{ statusLabel(aq.status) }}</span>
+                </div>
+                -->
+              </div>
+            </a>
+          </div>
+
+          <ng-template #noAquariumScore>
+            <div class="gm-empty">
+              <mat-icon>info</mat-icon>
+              <span>Ajoute un aquarium et une mesure pour générer ton score.</span>
+            </div>
+          </ng-template>
+        </section>
+
+        <!-- Missions -->
+        <section class="gm-panel">
+          <div class="gm-panel__header">
+            <div>
+              <span class="gm-panel__eyebrow">Objectifs</span>
+              <h2>Missions de la semaine</h2>
+            </div>
+
+            <span class="gm-panel__tag">XP bonus</span>
+          </div>
+
+          <div class="gm-mission-list" *ngIf="activeMissions.length; else noMissions">
+            <div class="gm-mission" *ngFor="let mission of activeMissions">
+              <div class="gm-mission__header">
+                <div>
+                  <div class="gm-mission__title">{{ mission.title }}</div>
+                  <div class="gm-mission__desc">{{ mission.description }}</div>
+                </div>
+
+                <div class="gm-mission__xp">
+                  +{{ mission.xpReward }} XP
+                </div>
+              </div>
+
+              <div class="gm-mission__progress">
+                <span>{{ mission.progress }}/{{ mission.target }}</span>
+                <span>{{ mission.status === 'COMPLETED' ? 'Terminée' : 'En cours' }}</span>
+              </div>
+
+              <mat-progress-bar
+                mode="determinate"
+                [value]="missionPercent(mission)"
+                class="gm-mission__bar"
+              ></mat-progress-bar>
+            </div>
+          </div>
+
+          <ng-template #noMissions>
+            <div class="gm-empty">
+              <mat-icon>flag</mat-icon>
+              <span>Aucune mission disponible pour le moment.</span>
+            </div>
+          </ng-template>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <section class="gamification-section" *ngIf="gamificationLoading">
+    <div class="gm-loading">
+      <mat-icon>auto_awesome</mat-icon>
+      <span>Chargement de ta progression…</span>
+    </div>
+  </section>
+
+  <!-- ===== KPI ===== -->
   <section class="grid">
     <div class="card kpi -today" routerLink="/calendar">
       <div class="kpi-value">{{ todayTasksCount }}</div>
@@ -72,28 +297,33 @@
     </div>
 
     <div class="card kpi">
-      <div class="kpi-value">{{ monthlyMeasurementsCount}}</div>
+      <div class="kpi-value">{{ monthlyMeasurementsCount }}</div>
       <div class="kpi-label">Mesures d’eau ce mois-ci</div>
     </div>
 
-    <div class="card kpi">
+    <div class="card kpi" routerLink="/calendar">
       <div class="kpi-value">{{ upcomingTasks.length }}</div>
       <div class="kpi-label">Tâches à venir (7j)</div>
     </div>
   </section>
 
+  <!-- ===== ACTIVITÉS ===== -->
   <section class="activity-grid">
     <section class="card activity">
       <h2>Dernières activités</h2>
+
       <ul class="activity-list">
         <li *ngFor="let t of latestActivities">
           <mat-icon>{{ typeIcon(t.type) }}</mat-icon>
+
           <span class="txt">
             <strong>{{ t.title || typeLabel(t.type) }}</strong>
             <ng-container *ngIf="t.aquarium?.name"> — {{ t.aquarium?.name }}</ng-container>
           </span>
+
           <span class="time">{{ whenLabel(t) }}</span>
         </li>
+
         <li *ngIf="!latestActivities.length">
           <mat-icon>info</mat-icon>
           Aucune activité récente
@@ -103,13 +333,16 @@
 
     <section class="card activity">
       <h2>Activités à venir</h2>
+
       <ul class="activity-list">
         <li *ngFor="let t of upcomingTasks">
           <mat-icon>{{ typeIcon(t.type) }}</mat-icon>
+
           <span class="txt">
             <strong>{{ t.title }}</strong>
             <ng-container *ngIf="t.aquarium?.name"> — {{ t.aquarium?.name }}</ng-container>
           </span>
+
           <span class="time">{{ whenLabel(t) }}</span>
         </li>
 
@@ -121,16 +354,18 @@
     </section>
   </section>
 
+  <!-- ===== CALENDRIER ===== -->
   <section class="calendar-wrap">
     <app-week-calendar></app-week-calendar>
   </section>
 </main>
 
-<!-- ===== Footer ===== -->
+<!-- ===== FOOTER ===== -->
 <footer class="footer">
   <div class="footer-content">
     <div class="footer-brand">
       <img src="/Logo_AquaManger.png" alt="AquaManager" class="footer-logo" />
+
       <p class="footer-desc">
         AquaManager – Suivez, entretenez et sublimez vos aquariums en toute simplicité 🌿🐠
       </p>
@@ -138,6 +373,7 @@
 
     <div class="footer-links">
       <h3>Navigation</h3>
+
       <ul>
         <li><a routerLink="/a-propos-gestion-aquarium">A Propos</a></li>
         <li><a routerLink="/home">Accueil</a></li>
@@ -149,20 +385,27 @@
 
     <div class="footer-links">
       <h3>Légal</h3>
+
       <ul>
         <li><a routerLink="/legal">Mentions légales</a></li>
         <li><a routerLink="/privacy">Politique de confidentialité</a></li>
         <li><a routerLink="/terms">CGU</a></li>
-        <a routerLink="/contact" class="footer-policy">Contact</a>
+        <li><a routerLink="/contact" class="footer-policy">Contact</a></li>
       </ul>
     </div>
 
     <div class="footer-social">
       <h3>Suivez-nous</h3>
+
       <div class="social-icons">
-        <!--<a href="#" aria-label="Facebook"><mat-icon>facebook</mat-icon></a>-->
-        <a href="https://www.instagram.com/aquamanager_france/" aria-label="Instagram"><mat-icon>photo_camera</mat-icon></a>
-        <!--<a href="#" aria-label="Twitter"><mat-icon>alternate_email</mat-icon></a>-->
+        <a
+          href="https://www.instagram.com/aquamanager_france/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Instagram"
+        >
+          <mat-icon>photo_camera</mat-icon>
+        </a>
       </div>
     </div>
   </div>

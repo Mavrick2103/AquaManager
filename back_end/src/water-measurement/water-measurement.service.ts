@@ -5,35 +5,41 @@ import { Repository } from 'typeorm';
 import { WaterMeasurement } from './water-measurement.entity';
 import { Aquarium } from '../aquariums/aquariums.entity';
 import { CreateWaterMeasurementDto } from './dto/create-water-measurement.dto';
-import { UsersService } from '../users/users.service'; // ✅
+import { UsersService } from '../users/users.service';
 import { RecommendationService } from '../recommendation/recommendation.service';
+import { GamificationService } from '../gamification/gamification.service';
 
 @Injectable()
 export class WaterMeasurementService {
   constructor(
-    @InjectRepository(WaterMeasurement) private readonly repo: Repository<WaterMeasurement>,
-    @InjectRepository(Aquarium) private readonly aquas: Repository<Aquarium>,
-    private readonly usersService: UsersService, // ✅
+    @InjectRepository(WaterMeasurement)
+    private readonly repo: Repository<WaterMeasurement>,
+
+    @InjectRepository(Aquarium)
+    private readonly aquas: Repository<Aquarium>,
+
+    private readonly usersService: UsersService,
     private readonly recoService: RecommendationService,
+    private readonly gamificationService: GamificationService,
   ) {}
 
-  // vérification de l'appartenance de l'aquarium au user
+  // Vérification de l'appartenance de l'aquarium au user
   private async ensureOwnership(userId: number, aquariumId: number): Promise<Aquarium> {
     const aquarium = await this.aquas.findOne({
       where: { id: aquariumId, user: { id: userId } },
       relations: ['user'],
     });
 
-    if (!aquarium) throw new NotFoundException('Aquarium introuvable');
+    if (!aquarium) {
+      throw new NotFoundException('Aquarium introuvable');
+    }
+
     return aquarium;
   }
 
-  // liste des mesures
+  // Liste des mesures
   async listForAquarium(userId: number, aquariumId: number) {
     await this.ensureOwnership(userId, aquariumId);
-
-    // (optionnel) si tu veux compter la simple consultation comme activité :
-    // await this.usersService.touchActivity(userId);
 
     return this.repo.find({
       where: { aquariumId },
@@ -41,11 +47,15 @@ export class WaterMeasurementService {
     });
   }
 
-  // nouvelle mesure
-  async createForAquarium(userId: number, aquariumId: number, dto: CreateWaterMeasurementDto) {
+  // Nouvelle mesure
+  async createForAquarium(
+    userId: number,
+    aquariumId: number,
+    dto: CreateWaterMeasurementDto,
+  ) {
     const aquarium = await this.ensureOwnership(userId, aquariumId);
 
-    // ⚠️ évite de muter le dto si possible -> on copie
+    // On copie le DTO pour éviter de muter l'objet reçu
     const clean: CreateWaterMeasurementDto = { ...dto };
 
     if (aquarium.waterType === 'EAU_DOUCE') {
@@ -92,27 +102,51 @@ export class WaterMeasurementService {
 
     const saved = await this.repo.save(m);
 
-    await this.usersService.touchActivity(userId); // ✅ activité
+    // Activité utilisateur classique
+    await this.usersService.touchActivity(userId);
 
-    // ==== Feature payante: recommandations (PREMIUM+) ====
+    /**
+     * Gamification accessible à TOUS :
+     * - Classic => score de suivi, XP, streak, missions, badges
+     * - Premium => score santé + analyse des objectifs
+     */
+    await this.gamificationService.onMeasurementCreated(userId, aquariumId);
+
+    /**
+     * Recommandations détaillées uniquement Premium.
+     * C'est ici que la partie payante reste protégée.
+     */
     const isPremium = await this.usersService.hasAtLeastPlan(userId, 'PREMIUM');
+
     const recommendations = isPremium
-      ? await this.recoService.generateForMeasurement({ userId, aquariumId, measurement: saved })
+      ? await this.recoService.generateForMeasurement({
+          userId,
+          aquariumId,
+          measurement: saved,
+        })
       : [];
 
-    return { measurement: saved, recommendations };
+    return {
+      measurement: saved,
+      recommendations,
+    };
   }
 
-  // suppression d'une mesure
+  // Suppression d'une mesure
   async deleteForAquarium(userId: number, aquariumId: number, id: number) {
     await this.ensureOwnership(userId, aquariumId);
 
-    const measurement = await this.repo.findOne({ where: { id, aquariumId } });
-    if (!measurement) throw new NotFoundException('Mesure introuvable pour cet aquarium');
+    const measurement = await this.repo.findOne({
+      where: { id, aquariumId },
+    });
+
+    if (!measurement) {
+      throw new NotFoundException('Mesure introuvable pour cet aquarium');
+    }
 
     await this.repo.delete({ id });
 
-    await this.usersService.touchActivity(userId); // ✅ activité
+    await this.usersService.touchActivity(userId);
 
     return { success: true };
   }

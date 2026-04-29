@@ -453,16 +453,16 @@
 
                   <p class="sol-reco__msg">{{ r.message }}</p>
 
-                  <div class="sol-reco__meta">
+                  <!--<div class="sol-reco__meta">
                     <span class="pill">Règle : {{ r.ruleKey }}</span>
                     <span class="pill">{{ r.createdAt | date: 'short' }}</span>
-                  </div>
+                  </div>-->
 
                   <div class="sol-reco__actions">
                     <button mat-stroked-button color="warn" (click)="rejectReco(r.id)">
                       Refuser
                     </button>
-                    <button mat-raised-button color="primary" (click)="acceptReco(r.id)">
+                    <button mat-raised-button color="primary" (click)="acceptReco(r)">
                       Accepter & ajouter au planning
                     </button>
                   </div>

@@ -19,6 +19,7 @@ import { SeoModule } from './seo/seo.module';
 import { RecommendationModule } from './recommendation/recommendation.module';
 import { AquariumTargetsModule } from './aquarium-targets/aquarium-targets.module';
 import { BillingModule } from './billing/billing.module';
+import { GamificationModule } from './gamification/gamification.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { BillingModule } from './billing/billing.module';
     RecommendationModule,
     AquariumTargetsModule,
     BillingModule,
+    GamificationModule,
   ],
 })
 export class AppModule {}

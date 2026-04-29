@@ -78,27 +78,39 @@ async setStripeIds(userId: number, data: { stripeCustomerId?: string | null; str
   async getEffectivePlan(userId: number): Promise<SubscriptionPlan> {
   const u = await this.repo.findOne({
     where: { id: userId },
-    select: { id: true, subscriptionPlan: true, subscriptionEndsAt: true, subscriptionStatus: true } as any,
+    select: {
+      id: true,
+      role: true,
+      subscriptionPlan: true,
+      subscriptionEndsAt: true,
+      subscriptionStatus: true,
+    } as any,
   });
+
   if (!u) return 'CLASSIC';
+
+  const role = String((u as any).role ?? 'USER').toUpperCase();
+  if (role === 'ADMIN' || role === 'SUPERADMIN') {
+    // ✅ choix 1 : admin = premium à vie (recommandé pour debug / backoffice)
+    return 'PRO'; // ou 'PREMIUM' si tu veux
+  }
 
   const plan = this.normalizePlan((u as any).subscriptionPlan);
   const endsAt = (u as any).subscriptionEndsAt as Date | null;
   const status = String((u as any).subscriptionStatus ?? 'none');
 
-  // expiré => classic
   if (endsAt && endsAt.getTime() < Date.now()) return 'CLASSIC';
-
-  // pas actif => classic
   if (!(status === 'active' || status === 'trialing')) return 'CLASSIC';
 
   return plan;
 }
 
+  
+
   async hasAtLeastPlan(userId: number, required: SubscriptionPlan): Promise<boolean> {
-    const effective = await this.getEffectivePlan(userId);
-    return PLAN_RANK[effective] >= PLAN_RANK[required];
-  }
+  const effective = await this.getEffectivePlan(userId);
+  return PLAN_RANK[effective] >= PLAN_RANK[required];
+}
 
   async setPlan(userId: number, plan: SubscriptionPlan, endsAt: Date | null = null) {
   await this.repo.update(
