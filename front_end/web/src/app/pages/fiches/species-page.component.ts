@@ -24,6 +24,7 @@ type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER' | 'SAUMATRE';
 export type FishCardPublicDto = {
   id: number;
   commonName: string;
+  slug: string;
   scientificName: string | null;
   family: string | null;
   origin: string | null;
@@ -41,6 +42,7 @@ export type FishCardPublicDto = {
 export type PlantCardPublicDto = {
   id: number;
   commonName: string;
+  slug: string;
   scientificName: string | null;
   family: string | null;
   origin: string | null;
@@ -198,13 +200,13 @@ export class SpeciesPageComponent implements OnInit {
     return v;
   }
 
-  fishLink(id: number) {
-    return ['/species/fish', id];
-  }
+  fishLink(slug: string): string[] {
+  return ['/poissons', slug];
+}
 
-  plantLink(id: number) {
-    return ['/species/plant', id];
-  }
+plantLink(slug: string): string[] {
+  return ['/plantes', slug];
+}
 
   trackById = (_: number, it: { id: number }) => it.id;
 

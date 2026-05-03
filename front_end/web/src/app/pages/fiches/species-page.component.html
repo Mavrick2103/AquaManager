@@ -110,7 +110,7 @@
   <!-- GRID: FISH -->
   <section class="grid" *ngIf="!loading && isFish && fishItems?.length">
     <article class="card" *ngFor="let f of fishItems; trackBy: trackById">
-      <a class="card-link" [routerLink]="fishLink(f.id)" aria-label="Voir la fiche poisson">
+      <a class="card-link" [routerLink]="fishLink(f.slug)" aria-label="Voir la fiche poisson">
         <div class="cover" [class.no]="!f.imageUrl">
           <ng-container *ngIf="coverSrc(f.imageUrl) as src; else noCoverFish">
             <img [src]="src" loading="lazy" decoding="async" />
@@ -162,7 +162,7 @@
   <!-- GRID: PLANT -->
   <section class="grid" *ngIf="!loading && !isFish && plantItems?.length">
     <article class="card" *ngFor="let p of plantItems; trackBy: trackById">
-      <a class="card-link" [routerLink]="plantLink(p.id)" aria-label="Voir la fiche plante">
+      <a class="card-link" [routerLink]="plantLink(f.slug)" aria-label="Voir la fiche plante">
         <div class="cover" [class.no]="!p.imageUrl">
           <ng-container *ngIf="coverSrc(p.imageUrl) as src; else noCoverPlant">
             <img [src]="src" loading="lazy" decoding="async" />

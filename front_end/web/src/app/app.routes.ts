@@ -206,12 +206,12 @@ export const routes: Routes = [
   loadComponent: () => import('./pages/fiches/species-page.component').then(m => m.SpeciesPageComponent),
 },
 {
-  path: 'species/fish/:id',
+  path: 'poissons/:slug',
   loadComponent: () =>
     import('./pages/fiches/details/fish-card-detail-page.component').then(m => m.FishCardDetailPageComponent),
 },
 {
-  path: 'species/plant/:id',
+  path: 'plantes/:slug',
   loadComponent: () =>
     import('./pages/fiches/details/plant-card-detail-page.component').then(m => m.PlantCardDetailPageComponent),
 },
