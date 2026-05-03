@@ -110,7 +110,7 @@
   <!-- GRID: FISH -->
   <section class="grid" *ngIf="!loading && isFish && fishItems?.length">
     <article class="card" *ngFor="let f of fishItems; trackBy: trackById">
-      <a class="card-link" [routerLink]="fishLink(p.slug)" aria-label="Voir la fiche poisson">
+      <a class="card-link" [routerLink]="fishLink(f.slug)" aria-label="Voir la fiche poisson">
         <div class="cover" [class.no]="!f.imageUrl">
           <ng-container *ngIf="coverSrc(f.imageUrl) as src; else noCoverFish">
             <img [src]="src" loading="lazy" decoding="async" />
