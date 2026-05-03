@@ -150,6 +150,28 @@ export class FishCardsService {
     return row;
   }
 
+  async findOnePublicBySlug(slug: string) {
+  const cleanSlug = String(slug ?? '').trim().toLowerCase();
+
+  if (!cleanSlug) {
+    throw new NotFoundException('Fish card not found');
+  }
+
+  const row = await this.repo.findOne({
+    where: {
+      slug: cleanSlug,
+      isActive: true,
+      status: 'APPROVED' as ModerationStatus,
+    } as any,
+  });
+
+  if (!row) {
+    throw new NotFoundException('Fish card not found');
+  }
+
+  return row;
+}
+
   // ---------------------
   // ADMIN
   // ---------------------

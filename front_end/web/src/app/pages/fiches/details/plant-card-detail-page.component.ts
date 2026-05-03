@@ -20,6 +20,8 @@ type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER' | 'SAUMATRE';
 
 export type PlantCardPublicDto = {
   id: number;
+  slug: string;
+
   commonName: string;
   scientificName: string | null;
   family: string | null;
@@ -29,21 +31,21 @@ export type PlantCardPublicDto = {
   category: string | null;
   placement: string | null;
   growthRate: string | null;
-  maxHeightCm: number | null;
+  maxHeightCm: number | string | null;
   propagation: string | null;
 
   light: string | null;
   co2: string | null;
   difficulty: 'FACILE' | 'MOYEN' | 'DIFFICILE' | null;
 
-  tempMin: number | null;
-  tempMax: number | null;
-  phMin: number | null;
-  phMax: number | null;
-  ghMin: number | null;
-  ghMax: number | null;
-  khMin: number | null;
-  khMax: number | null;
+  tempMin: number | string | null;
+  tempMax: number | string | null;
+  phMin: number | string | null;
+  phMax: number | string | null;
+  ghMin: number | string | null;
+  ghMax: number | string | null;
+  khMin: number | string | null;
+  khMax: number | string | null;
 
   needsFe: boolean | null;
   needsNo3: boolean | null;
@@ -89,12 +91,14 @@ export class PlantCardDetailPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!Number.isFinite(id) || id <= 0) {
+    const slug = this.route.snapshot.paramMap.get('slug');
+
+    if (!slug) {
       this.notFound = true;
       return;
     }
-    this.fetch(id);
+
+    this.fetch(slug);
   }
 
   goBack(): void {
@@ -102,58 +106,80 @@ export class PlantCardDetailPageComponent implements OnInit {
       this.location.back();
       return;
     }
-    window.location.href = '/species';
+
+    window.location.href = '/plantes';
   }
 
   refresh(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!Number.isFinite(id) || id <= 0) return;
-    this.fetch(id);
+    const slug = this.route.snapshot.paramMap.get('slug');
+
+    if (!slug) return;
+
+    this.fetch(slug);
   }
 
   coverSrc(raw: unknown): string | null {
     const v = String(raw ?? '').trim();
     if (!v) return null;
 
-    if (/^https?:\/\//i.test(v) || v.startsWith('data:')) return v;
+    if (/^https?:\/\//i.test(v) || v.startsWith('data:')) {
+      return v;
+    }
 
     const normalized = v.startsWith('/') ? v : `/${v}`;
-    if (normalized.startsWith('/uploads/')) return `${this.apiOrigin}${normalized}`;
+
+    if (normalized.startsWith('/uploads/')) {
+      return `${this.apiOrigin}${normalized}`;
+    }
+
     return v;
   }
 
-  formatRange(min: number | null | undefined, max: number | null | undefined, unit: string): string | null {
+  formatRange(
+    min: number | string | null | undefined,
+    max: number | string | null | undefined,
+    unit: string,
+  ): string | null {
     const a = Number(min);
     const b = Number(max);
+
     const hasA = Number.isFinite(a);
     const hasB = Number.isFinite(b);
+
     if (!hasA && !hasB) return null;
     if (hasA && hasB) return `${a}–${b}${unit}`;
+
     return `${hasA ? a : b}${unit}`;
   }
 
   labelWaterType(v: WaterType): string {
     switch (v) {
-      case 'EAU_DOUCE': return 'Eau douce';
-      case 'EAU_DE_MER': return 'Eau de mer';
-      case 'SAUMATRE': return 'Saumâtre';
+      case 'EAU_DOUCE':
+        return 'Eau douce';
+      case 'EAU_DE_MER':
+        return 'Eau de mer';
+      case 'SAUMATRE':
+        return 'Saumâtre';
     }
   }
 
   yesNo(v: boolean | null | undefined): string {
     if (v === true) return 'Oui';
     if (v === false) return 'Non';
+
     return '—';
   }
 
-  private fetch(id: number): void {
+  private fetch(slug: string): void {
     this.loading = true;
     this.notFound = false;
     this.item = null;
     this.cdr.markForCheck();
 
     this.http
-      .get<PlantCardPublicDto>(`${environment.apiUrl}/plant-cards/${id}`)
+      .get<PlantCardPublicDto>(
+        `${environment.apiUrl}/plant-cards/by-slug/${encodeURIComponent(slug)}`,
+      )
       .pipe(
         take(1),
         finalize(() => {
@@ -164,6 +190,7 @@ export class PlantCardDetailPageComponent implements OnInit {
       .subscribe({
         next: (row) => {
           this.item = row ?? null;
+          this.notFound = !row;
           this.cdr.markForCheck();
         },
         error: (err) => {

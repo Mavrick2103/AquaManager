@@ -24,6 +24,8 @@ type Difficulty = 'FACILE' | 'MOYEN' | 'DIFFICILE';
 
 export type FishCardPublicDto = {
   id: number;
+  slug: string;
+
   commonName: string;
   scientificName: string | null;
   family: string | null;
@@ -91,12 +93,14 @@ export class FishCardDetailPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!Number.isFinite(id) || id <= 0) {
+    const slug = this.route.snapshot.paramMap.get('slug');
+
+    if (!slug) {
       this.notFound = true;
       return;
     }
-    this.fetch(id);
+
+    this.fetch(slug);
   }
 
   goBack(): void {
@@ -104,13 +108,16 @@ export class FishCardDetailPageComponent implements OnInit {
       this.location.back();
       return;
     }
-    window.location.href = '/species';
+
+    window.location.href = '/poissons';
   }
 
   refresh(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!Number.isFinite(id) || id <= 0) return;
-    this.fetch(id);
+    const slug = this.route.snapshot.paramMap.get('slug');
+
+    if (!slug) return;
+
+    this.fetch(slug);
   }
 
   coverSrc(raw: unknown): string | null {
@@ -121,62 +128,87 @@ export class FishCardDetailPageComponent implements OnInit {
 
     const normalized = v.startsWith('/') ? v : `/${v}`;
     if (normalized.startsWith('/uploads/')) return `${this.apiOrigin}${normalized}`;
+
     return v;
   }
 
-  formatRange(min: number | null | undefined, max: number | null | undefined, unit: string): string | null {
+  formatRange(
+    min: number | string | null | undefined,
+    max: number | string | null | undefined,
+    unit: string,
+  ): string | null {
     const a = Number(min);
     const b = Number(max);
+
     const hasA = Number.isFinite(a);
     const hasB = Number.isFinite(b);
+
     if (!hasA && !hasB) return null;
     if (hasA && hasB) return `${a}–${b}${unit}`;
+
     return `${hasA ? a : b}${unit}`;
   }
 
   labelWaterType(v: WaterType): string {
     switch (v) {
-      case 'EAU_DOUCE': return 'Eau douce';
-      case 'EAU_DE_MER': return 'Eau de mer';
-      case 'SAUMATRE': return 'Saumâtre';
+      case 'EAU_DOUCE':
+        return 'Eau douce';
+      case 'EAU_DE_MER':
+        return 'Eau de mer';
+      case 'SAUMATRE':
+        return 'Saumâtre';
     }
   }
 
   labelActivity(v: Activity | null): string | null {
     if (!v) return null;
+
     switch (v) {
-      case 'DIURNE': return 'Diurne';
-      case 'NOCTURNE': return 'Nocturne';
-      case 'CREPUSCULAIRE': return 'Crépusculaire';
+      case 'DIURNE':
+        return 'Diurne';
+      case 'NOCTURNE':
+        return 'Nocturne';
+      case 'CREPUSCULAIRE':
+        return 'Crépusculaire';
     }
   }
 
   labelTemperament(v: Temperament | null): string | null {
     if (!v) return null;
+
     switch (v) {
-      case 'PACIFIQUE': return 'Pacifique';
-      case 'SEMI_AGRESSIF': return 'Semi-agressif';
-      case 'AGRESSIF': return 'Agressif';
+      case 'PACIFIQUE':
+        return 'Pacifique';
+      case 'SEMI_AGRESSIF':
+        return 'Semi-agressif';
+      case 'AGRESSIF':
+        return 'Agressif';
     }
   }
 
   labelDifficulty(v: Difficulty | null): string | null {
     if (!v) return null;
+
     switch (v) {
-      case 'FACILE': return 'Facile';
-      case 'MOYEN': return 'Moyen';
-      case 'DIFFICILE': return 'Difficile';
+      case 'FACILE':
+        return 'Facile';
+      case 'MOYEN':
+        return 'Moyen';
+      case 'DIFFICILE':
+        return 'Difficile';
     }
   }
 
-  private fetch(id: number): void {
+  private fetch(slug: string): void {
     this.loading = true;
     this.notFound = false;
     this.item = null;
     this.cdr.markForCheck();
 
     this.http
-      .get<FishCardPublicDto>(`${environment.apiUrl}/fish-cards/${id}`)
+      .get<FishCardPublicDto>(
+        `${environment.apiUrl}/fish-cards/by-slug/${encodeURIComponent(slug)}`,
+      )
       .pipe(
         take(1),
         finalize(() => {
@@ -187,6 +219,7 @@ export class FishCardDetailPageComponent implements OnInit {
       .subscribe({
         next: (row) => {
           this.item = row ?? null;
+          this.notFound = !row;
           this.cdr.markForCheck();
         },
         error: (err) => {

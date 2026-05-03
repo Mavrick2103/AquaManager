@@ -91,6 +91,12 @@ export class FishCardsController {
   }
 
   @Public()
+@Get('fish-cards/by-slug/:slug')
+onePublicBySlug(@Param('slug') slug: string) {
+  return this.service.findOnePublicBySlug(slug);
+}
+
+  @Public()
   @Get('fish-cards/:id')
   onePublic(@Param('id') id: string) {
     return this.service.findOnePublic(Number(id));

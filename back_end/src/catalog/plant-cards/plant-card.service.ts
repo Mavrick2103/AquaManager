@@ -58,6 +58,28 @@ export class PlantCardsService {
     return found;
   }
 
+  async findOnePublicBySlug(slug: string) {
+  const cleanSlug = String(slug ?? '').trim().toLowerCase();
+
+  if (!cleanSlug) {
+    throw new NotFoundException('Plant card not found');
+  }
+
+  const found = await this.repo.findOne({
+    where: {
+      slug: cleanSlug,
+      isActive: true,
+      status: 'APPROVED' as const,
+    } as any,
+  });
+
+  if (!found) {
+    throw new NotFoundException('Plant card not found');
+  }
+
+  return found;
+}
+
   // =========================
   // EDITOR (ONLY OWN)
   // =========================

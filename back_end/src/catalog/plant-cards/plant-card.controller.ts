@@ -88,6 +88,12 @@ export class PlantCardsController {
   }
 
   @Public()
+@Get('plant-cards/by-slug/:slug')
+onePublicBySlug(@Param('slug') slug: string) {
+  return this.service.findOnePublicBySlug(slug);
+}
+
+  @Public()
   @Get('plant-cards/:id')
   onePublic(@Param('id') id: string) {
     return this.service.findOnePublic(Number(id));
