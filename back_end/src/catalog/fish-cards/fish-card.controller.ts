@@ -53,7 +53,7 @@ function multerImageOptions() {
         cb(null, `${randomUUID()}${allowed.includes(ext) ? ext : '.jpg'}`);
       },
     }),
-    limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
+    limits: { fileSize: 25 * 1024 * 1024 }, // 3MB
     fileFilter: (req: any, file: any, cb: any) => {
       const ok = ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype);
       cb(ok ? null : new BadRequestException('Type image non autorisé'), ok);
