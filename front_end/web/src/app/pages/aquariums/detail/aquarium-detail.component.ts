@@ -32,7 +32,6 @@ import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatBadgeModule } from '@angular/material/badge';
 
-
 import { AquariumsService, Aquarium } from '../../../core/aquariums.service';
 import { WaterMeasurementsChartComponent } from './chart/chart.component';
 import { MeasurementDialogComponent } from './measurement-dialog.component';
@@ -86,16 +85,19 @@ type AquariumFishRow = {
   count: number;
   fishCard: {
     id: number;
+    slug?: string | null;
     commonName: string;
     scientificName?: string | null;
     imageUrl?: string | null;
 
-    tempMin?: number | null;
-    tempMax?: number | null;
-    phMin?: number | null;
-    phMax?: number | null;
-    khMin?: number | null;
-    khMax?: number | null;
+    tempMin?: number | string | null;
+    tempMax?: number | string | null;
+    phMin?: number | string | null;
+    phMax?: number | string | null;
+    ghMin?: number | string | null;
+    ghMax?: number | string | null;
+    khMin?: number | string | null;
+    khMax?: number | string | null;
   };
 };
 
@@ -105,9 +107,19 @@ type AquariumPlantRow = {
   count: number;
   plantCard: {
     id: number;
+    slug?: string | null;
     commonName: string;
     scientificName?: string | null;
     imageUrl?: string | null;
+
+    tempMin?: number | string | null;
+    tempMax?: number | string | null;
+    phMin?: number | string | null;
+    phMax?: number | string | null;
+    ghMin?: number | string | null;
+    ghMax?: number | string | null;
+    khMin?: number | string | null;
+    khMax?: number | string | null;
   };
 };
 
@@ -154,7 +166,6 @@ export class AquariumDetailComponent implements OnInit {
   private targetsApi = inject(AquariumTargetsService);
   private billing = inject(BillingService);
 
-  /** Origin API sans /api (uploads servis sur /uploads) */
   private readonly apiOrigin = (environment.apiUrl || '')
     .replace(/\/$/, '')
     .replace(/\/api$/, '')
@@ -164,9 +175,10 @@ export class AquariumDetailComponent implements OnInit {
   loading = true;
   saving = false;
 
-  // Paywall
   isPremium = false;
   private solutionsLoadedOnce = false;
+
+  checkoutLoading = false;
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(255)]],
@@ -179,21 +191,16 @@ export class AquariumDetailComponent implements OnInit {
 
   measurements: WaterMeasurement[] = [];
 
-  // Onglet Solutions
   recosLoading = false;
   recos: Recommendation[] = [];
 
   targetsLoading = false;
   targets: AquariumTargetsDto | null = null;
-
-  // ✅ Form targets (Premium)
   targetsForm: FormGroup | null = null;
 
-  // options / labels pour template
   readonly profileLabels = PROFILE_LABELS;
   readonly paramLabels = PARAM_LABELS;
 
-  // limit table
   limitOptions = [5, 10, 20, 0];
   selectedLimit = 5;
   displayedMeasurements: WaterMeasurement[] = [];
@@ -205,58 +212,39 @@ export class AquariumDetailComponent implements OnInit {
     const base = ['measuredAt', 'ph', 'temp', 'no2', 'no3'];
     const douce = ['kh', 'gh', 'po4', 'fe', 'k'];
     const mer = ['dkh', 'salinity'];
+
     return [...base, ...(this.waterType === 'EAU_DOUCE' ? douce : mer), 'actions'];
   }
 
-  /** ✅ paramètres affichés dans le tableau d’objectifs, filtrés selon eau */
   get allParams(): ParamKey[] {
-    const wt = this.waterType;
     const commons: ParamKey[] = ['ph', 'temp', 'no2', 'no3', 'nh3'];
-
     const fresh: ParamKey[] = ['kh', 'gh', 'co2', 'po4', 'fe', 'k', 'sio2'];
     const salt: ParamKey[] = ['dkh', 'salinity', 'ca', 'mg'];
 
-    return wt === 'EAU_DOUCE' ? [...commons, ...fresh] : [...commons, ...salt];
+    return this.waterType === 'EAU_DOUCE'
+      ? [...commons, ...fresh]
+      : [...commons, ...salt];
   }
 
   get targetsGroup(): FormGroup | null {
     return (this.targetsForm?.get('targets') as FormGroup) ?? null;
   }
 
-  /** ✅ profils disponibles */
   get profileOptions(): TargetProfileKey[] {
     return this.waterType === 'EAU_DOUCE'
-      ? (['FRESH_COMMUNITY', 'FRESH_PLANTED', 'FRESH_SHRIMP', 'FRESH_CICHLID', 'CUSTOM'] as TargetProfileKey[])
+      ? ([
+          'FRESH_COMMUNITY',
+          'FRESH_PLANTED',
+          'FRESH_SHRIMP',
+          'FRESH_CICHLID',
+          'CUSTOM',
+        ] as TargetProfileKey[])
       : (['SALT_REEF', 'SALT_FISH_ONLY', 'CUSTOM'] as TargetProfileKey[]);
   }
 
-  // ===== Helpers typés pour template (fix TS7053 + propreté) =====
-
-  getProfileLabel(key?: TargetProfileKey | null): string {
-    const k = (key ?? (this.targets?.profileKey as TargetProfileKey | undefined) ?? 'CUSTOM') as TargetProfileKey;
-    return this.profileLabels[k] ?? 'Custom';
-  }
-
-  private getRange(key: ParamKey): TargetRange | null {
-    const t = this.targets?.targets as any;
-    const r = t?.[key] as TargetRange | undefined;
-    return r ?? null;
-  }
-
-  getTargetMin(key: ParamKey): string {
-    const r = this.getRange(key);
-    const v = r?.min;
-    return v === null || v === undefined ? '—' : String(v);
-  }
-
-  getTargetMax(key: ParamKey): string {
-    const r = this.getRange(key);
-    const v = r?.max;
-    return v === null || v === undefined ? '—' : String(v);
-  }
-
-  async ngOnInit() {
+  async ngOnInit(): Promise<void> {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
+
     if (!this.id) {
       this.snack.open('ID aquarium invalide', 'Fermer', { duration: 3000 });
       this.router.navigate(['/aquariums']);
@@ -268,57 +256,82 @@ export class AquariumDetailComponent implements OnInit {
     await this.loadTankItems();
   }
 
-  checkoutLoading = false;
+  getProfileLabel(key?: TargetProfileKey | null): string {
+    const k = (key ??
+      (this.targets?.profileKey as TargetProfileKey | undefined) ??
+      'CUSTOM') as TargetProfileKey;
 
-async startPremiumCheckout() {
-  if (this.checkoutLoading) return;
-  this.checkoutLoading = true;
-
-  try {
-    const url = await this.billing.createPremiumCheckout();
-    window.location.href = url;
-  } catch (e) {
-    this.snack.open("Impossible d'ouvrir le paiement Stripe", 'Fermer', { duration: 3000 });
-    console.error(e);
-  } finally {
-    this.checkoutLoading = false;
+    return this.profileLabels[k] ?? 'Custom';
   }
-}
 
-  // lazy load à l’ouverture onglet Solutions
-  async onTabChange(index: number) {
-    if (index !== 1) return; // 1 = Solutions
+  private getRange(key: ParamKey): TargetRange | null {
+    const t = this.targets?.targets as any;
+    const r = t?.[key] as TargetRange | undefined;
+
+    return r ?? null;
+  }
+
+  getTargetMin(key: ParamKey): string {
+    const r = this.getRange(key);
+    const v = r?.min;
+
+    return v === null || v === undefined ? '—' : String(v);
+  }
+
+  getTargetMax(key: ParamKey): string {
+    const r = this.getRange(key);
+    const v = r?.max;
+
+    return v === null || v === undefined ? '—' : String(v);
+  }
+
+  async startPremiumCheckout(): Promise<void> {
+    if (this.checkoutLoading) return;
+
+    this.checkoutLoading = true;
+
+    try {
+      const url = await this.billing.createPremiumCheckout();
+      window.location.href = url;
+    } catch (e) {
+      console.error(e);
+      this.snack.open("Impossible d'ouvrir le paiement Stripe", 'Fermer', {
+        duration: 3000,
+      });
+    } finally {
+      this.checkoutLoading = false;
+    }
+  }
+
+  async onTabChange(index: number): Promise<void> {
+    if (index !== 1) return;
     if (this.solutionsLoadedOnce) return;
-    this.solutionsLoadedOnce = true;
 
+    this.solutionsLoadedOnce = true;
     await this.detectPremiumAndLoadSolutions();
   }
 
-  private async detectPremiumAndLoadSolutions() {
+  private async detectPremiumAndLoadSolutions(): Promise<void> {
     this.targetsLoading = true;
 
     try {
-      // call premium léger => si 403 => classic
       this.targets = await this.targetsApi.getForAquarium(this.id);
       this.isPremium = true;
       this.buildTargetsForm(this.targets);
     } catch (e: any) {
       const status = e?.status ?? e?.error?.statusCode;
-      if (status === 403) {
-        this.isPremium = false;
-        this.targets = null;
-        this.targetsForm = null;
-        this.recos = [];
-        return;
-      }
 
       this.isPremium = false;
       this.targets = null;
       this.targetsForm = null;
       this.recos = [];
-      this.snack.open('Impossible de charger les solutions pour le moment', 'Fermer', {
-        duration: 3000,
-      });
+
+      if (status !== 403) {
+        this.snack.open('Impossible de charger les solutions pour le moment', 'Fermer', {
+          duration: 3000,
+        });
+      }
+
       return;
     } finally {
       this.targetsLoading = false;
@@ -327,17 +340,15 @@ async startPremiumCheckout() {
     await this.loadPendingRecos();
   }
 
-  // ===== Solutions =====
-
-  private buildTargetsForm(dto: AquariumTargetsDto) {
+  private buildTargetsForm(dto: AquariumTargetsDto): void {
     const profileKey = (dto?.profileKey ?? 'CUSTOM') as TargetProfileKey;
     const targets = dto?.targets ?? {};
 
     const group: Record<string, FormGroup> = {};
 
-    // on crée la structure pour TOUS les params connus
     for (const k of ALL_PARAMS) {
       const v = (targets as any)?.[k] as TargetRange | undefined;
+
       group[k] = this.fb.group({
         min: [v?.min ?? null],
         max: [v?.max ?? null],
@@ -350,33 +361,41 @@ async startPremiumCheckout() {
     });
   }
 
-  async applyTargetProfile(profileKey: TargetProfileKey) {
+  async applyTargetProfile(profileKey: TargetProfileKey): Promise<void> {
     if (!this.isPremium) return;
 
     this.targetsLoading = true;
+
     try {
       const dto = await this.targetsApi.updateForAquarium(this.id, { profileKey });
+
       this.targets = dto;
       this.buildTargetsForm(dto);
+
       this.snack.open('Profil appliqué ✅', 'OK', { duration: 1800 });
+
       await this.loadPendingRecos();
-    } catch (e: any) {
-      this.snack.open("Impossible d'appliquer le profil", 'Fermer', { duration: 2500 });
+    } catch (e) {
+      console.error(e);
+      this.snack.open("Impossible d'appliquer le profil", 'Fermer', {
+        duration: 2500,
+      });
     } finally {
       this.targetsLoading = false;
     }
   }
 
-  async saveCustomTargets() {
+  async saveCustomTargets(): Promise<void> {
     if (!this.isPremium || !this.targetsForm) return;
 
     const raw = this.targetsForm.getRawValue() as any;
     const formTargets = raw.targets ?? {};
 
-    // On ne renvoie que les valeurs remplies
     const cleaned: TargetsJson = {};
+
     for (const k of ALL_PARAMS) {
       const row = formTargets?.[k];
+
       const min = row?.min;
       const max = row?.max;
 
@@ -392,6 +411,7 @@ async startPremiumCheckout() {
     }
 
     this.targetsLoading = true;
+
     try {
       const dto = await this.targetsApi.updateForAquarium(this.id, {
         profileKey: 'CUSTOM',
@@ -402,135 +422,167 @@ async startPremiumCheckout() {
       this.buildTargetsForm(dto);
 
       this.snack.open('Objectifs sauvegardés ✅', 'OK', { duration: 2000 });
+
       await this.loadPendingRecos();
-    } catch (e: any) {
-      this.snack.open("Impossible de sauvegarder les objectifs", 'Fermer', { duration: 3000 });
+    } catch (e) {
+      console.error(e);
+      this.snack.open('Impossible de sauvegarder les objectifs', 'Fermer', {
+        duration: 3000,
+      });
     } finally {
       this.targetsLoading = false;
     }
   }
 
-  async loadPendingRecos() {
+  async loadPendingRecos(): Promise<void> {
     if (!this.isPremium) return;
 
     this.recosLoading = true;
+
     try {
       const list = await this.recosApi.listPending(this.id);
       this.recos = Array.isArray(list) ? list : [];
     } catch (e: any) {
       const status = e?.status ?? e?.error?.statusCode;
+
       if (status === 403) {
         this.isPremium = false;
         this.recos = [];
       } else {
-        this.snack.open('Impossible de charger les solutions', 'Fermer', { duration: 3000 });
+        this.snack.open('Impossible de charger les solutions', 'Fermer', {
+          duration: 3000,
+        });
       }
     } finally {
       this.recosLoading = false;
     }
   }
 
-  async refreshSolutions() {
+  async refreshSolutions(): Promise<void> {
     if (!this.isPremium) return;
 
     await this.loadTargets();
     await this.loadPendingRecos();
   }
 
-  async acceptReco(r: Recommendation) {
-  if (!this.isPremium) return;
+  async acceptReco(r: Recommendation): Promise<void> {
+    if (!this.isPremium) return;
 
-  const initial = (r as any)?.actionPayload?.dueAt ?? null;
+    const initial = (r as any)?.actionPayload?.dueAt ?? null;
 
-  const ref = this.dialog.open(RecommendationScheduleDialogComponent, {
-    width: '520px',
-    data: {
-      title: r.title,
-      message: r.message,
-      initialDueAt: initial, // ISO
-    },
-    autoFocus: false,
-    restoreFocus: false,
-  });
+    const ref = this.dialog.open(RecommendationScheduleDialogComponent, {
+      width: '520px',
+      data: {
+        title: r.title,
+        message: r.message,
+        initialDueAt: initial,
+      },
+      autoFocus: false,
+      restoreFocus: false,
+    });
 
-  const res = await firstValueFrom(ref.afterClosed());
-  if (!res?.dueAt) return; // cancel
+    const res = await firstValueFrom(ref.afterClosed());
 
-  try {
-    // ✅ on passe la date choisie au back
-    await this.recosApi.accept(r.id, { dueAt: res.dueAt });
-    this.snack.open('Solution acceptée ✅ (tâche créée)', 'OK', { duration: 2500 });
-    await this.loadPendingRecos();
-  } catch (e: any) {
-    this.snack.open(e?.error?.message || 'Impossible d’accepter', 'Fermer', { duration: 3000 });
+    if (!res?.dueAt) return;
+
+    try {
+      await this.recosApi.accept(r.id, { dueAt: res.dueAt });
+
+      this.snack.open('Solution acceptée ✅ (tâche créée)', 'OK', {
+        duration: 2500,
+      });
+
+      await this.loadPendingRecos();
+    } catch (e: any) {
+      this.snack.open(e?.error?.message || 'Impossible d’accepter', 'Fermer', {
+        duration: 3000,
+      });
+    }
   }
-}
 
-  async rejectReco(id: number) {
+  async rejectReco(id: number): Promise<void> {
     if (!this.isPremium) return;
 
     try {
       await this.recosApi.reject(id);
+
       this.snack.open('Solution refusée', 'OK', { duration: 2000 });
+
       await this.loadPendingRecos();
     } catch (e: any) {
-      this.snack.open(e?.error?.message || 'Impossible de refuser', 'Fermer', { duration: 3000 });
+      this.snack.open(e?.error?.message || 'Impossible de refuser', 'Fermer', {
+        duration: 3000,
+      });
     }
   }
 
   severityLabel(s: Recommendation['severity']): string {
     if (s === 'URGENT') return 'Urgent';
     if (s === 'WARN') return 'Attention';
+
     return 'Info';
   }
 
-  async loadTargets() {
+  async loadTargets(): Promise<void> {
     if (!this.isPremium) return;
 
     this.targetsLoading = true;
+
     try {
       const dto = await this.targetsApi.getForAquarium(this.id);
+
       this.targets = dto;
       this.buildTargetsForm(dto);
     } catch (e: any) {
       const status = e?.status ?? e?.error?.statusCode;
+
       if (status === 403) {
         this.isPremium = false;
-        this.targets = null;
-        this.targetsForm = null;
-      } else {
-        this.targets = null;
-        this.targetsForm = null;
       }
+
+      this.targets = null;
+      this.targetsForm = null;
     } finally {
       this.targetsLoading = false;
     }
   }
 
-  goToPricing() {
+  goToPricing(): void {
     this.router.navigate(['/pricing']);
   }
 
-  // ===== Utils images =====
-
   fishImageUrl(row: AquariumFishRow): string | null {
     const p = row?.fishCard?.imageUrl?.trim();
-    if (!p) return null;
 
+    if (!p) return null;
     if (/^https?:\/\//i.test(p)) return p;
     if (p.startsWith('/')) return `${this.apiOrigin}${p}`;
+
     return `${this.apiOrigin}/${p}`;
   }
 
-  // ===== Core load =====
+  plantImageUrl(row: AquariumPlantRow): string | null {
+    const p = row?.plantCard?.imageUrl?.trim();
 
-  async load() {
+    if (!p) return null;
+    if (/^https?:\/\//i.test(p)) return p;
+    if (p.startsWith('/')) return `${this.apiOrigin}${p}`;
+
+    return `${this.apiOrigin}/${p}`;
+  }
+
+  async load(): Promise<void> {
     this.loading = true;
+
     try {
       const a = await firstValueFrom(this.api.getById(this.id));
+
       if (a) this.form.patchValue(a as any);
     } catch {
-      this.snack.open('Impossible de charger cet aquarium', 'Fermer', { duration: 3000 });
+      this.snack.open('Impossible de charger cet aquarium', 'Fermer', {
+        duration: 3000,
+      });
+
       this.router.navigate(['/aquariums']);
     } finally {
       this.loading = false;
@@ -539,9 +591,11 @@ async startPremiumCheckout() {
 
   get liters(): number {
     const v = this.form.value;
+
     const L = Number(v.lengthCm) || 0;
     const W = Number(v.widthCm) || 0;
     const H = Number(v.heightCm) || 0;
+
     return Math.round((L * W * H) / 1000);
   }
 
@@ -549,13 +603,18 @@ async startPremiumCheckout() {
     return (this.form?.value?.waterType ?? 'EAU_DOUCE') as WaterType;
   }
 
-  async save() {
+  async save(): Promise<void> {
     if (this.form.invalid) return;
+
     this.saving = true;
+
     try {
       const dto = this.form.getRawValue() as Partial<Aquarium>;
+
       await firstValueFrom(this.api.update(this.id, dto));
+
       this.form.markAsPristine();
+
       this.snack.open('Modifications enregistrées', 'OK', { duration: 2000 });
     } catch {
       this.snack.open('Échec de la sauvegarde', 'Fermer', { duration: 3000 });
@@ -564,12 +623,16 @@ async startPremiumCheckout() {
     }
   }
 
-  async remove() {
+  async remove(): Promise<void> {
     if (!confirm('Supprimer définitivement cet aquarium ?')) return;
+
     this.saving = true;
+
     try {
       await firstValueFrom(this.api.remove(this.id));
+
       this.snack.open('Aquarium supprimé', 'OK', { duration: 2000 });
+
       this.router.navigate(['/aquariums']);
     } catch {
       this.snack.open('Échec de la suppression', 'Fermer', { duration: 3000 });
@@ -578,64 +641,75 @@ async startPremiumCheckout() {
     }
   }
 
-  // ===== Measurements =====
-
-  openMeasurementDialog() {
-    const wt = this.waterType;
+  openMeasurementDialog(): void {
     const ref = this.dialog.open(MeasurementDialogComponent, {
       width: '720px',
-      data: { aquariumId: this.id, type: wt },
+      data: {
+        aquariumId: this.id,
+        type: this.waterType,
+      },
     });
 
     ref.afterClosed().subscribe(async (saved: boolean) => {
-      if (saved) {
-        this.snack.open('Paramètres enregistrés ✅', 'OK', { duration: 2000 });
-        await this.reloadMeasurements();
+      if (!saved) return;
 
-        if (this.isPremium) {
-          await this.loadPendingRecos();
-        }
+      this.snack.open('Paramètres enregistrés ✅', 'OK', {
+        duration: 2000,
+      });
+
+      await this.reloadMeasurements();
+
+      if (this.isPremium) {
+        await this.loadPendingRecos();
       }
     });
   }
 
-  applyLimit() {
+  applyLimit(): void {
     this.displayedMeasurements =
-      this.selectedLimit === 0 ? this.measurements : this.measurements.slice(0, this.selectedLimit);
+      this.selectedLimit === 0
+        ? this.measurements
+        : this.measurements.slice(0, this.selectedLimit);
   }
 
-  async loadMeasurements() {
+  async loadMeasurements(): Promise<void> {
     try {
       const url = `${environment.apiUrl}/aquariums/${this.id}/measurements`;
       const res = await firstValueFrom(this.http.get<WaterMeasurement[]>(url));
+
       this.measurements = [...(res ?? [])].sort(
-        (a, b) => new Date(b.measuredAt).getTime() - new Date(a.measuredAt).getTime()
+        (a, b) => new Date(b.measuredAt).getTime() - new Date(a.measuredAt).getTime(),
       );
+
       this.applyLimit();
     } catch {
-      this.snack.open('Erreur lors du chargement des mesures', 'Fermer', { duration: 3000 });
+      this.snack.open('Erreur lors du chargement des mesures', 'Fermer', {
+        duration: 3000,
+      });
     }
   }
 
-  async deleteMeasurement(id: number) {
+  async deleteMeasurement(id: number): Promise<void> {
     if (!confirm('Supprimer cette mesure ?')) return;
+
     try {
       const url = `${environment.apiUrl}/aquariums/${this.id}/measurements/${id}`;
+
       await firstValueFrom(this.http.delete<void>(url));
+
       this.snack.open('Mesure supprimée', 'OK', { duration: 2000 });
+
       await this.loadMeasurements();
     } catch {
       this.snack.open('Échec de la suppression', 'Fermer', { duration: 3000 });
     }
   }
 
-  async reloadMeasurements() {
+  async reloadMeasurements(): Promise<void> {
     await this.loadMeasurements();
   }
 
-  // ===== Tank items =====
-
-  async loadTankItems() {
+  async loadTankItems(): Promise<void> {
     try {
       const fishUrl = `${environment.apiUrl}/aquariums/${this.id}/fish`;
       const plantUrl = `${environment.apiUrl}/aquariums/${this.id}/plants`;
@@ -648,31 +722,35 @@ async startPremiumCheckout() {
       this.fishInTank = fish ?? [];
       this.plantsInTank = plants ?? [];
     } catch {
-      this.snack.open('Erreur lors du chargement des espèces/plantes', 'Fermer', { duration: 3000 });
+      this.snack.open('Erreur lors du chargement des espèces/plantes', 'Fermer', {
+        duration: 3000,
+      });
     }
   }
 
-  fishDetailsLink(cardId: number): any[] {
-    return ['/fish-cards', cardId];
+  fishDetailsLink(fish: AquariumFishRow['fishCard']): any[] {
+    return ['/poissons', fish.slug || fish.id];
   }
 
-  plantDetailsLink(cardId: number): any[] {
-    return ['/plant-cards', cardId];
+  plantDetailsLink(plant: AquariumPlantRow['plantCard']): any[] {
+    return ['/plantes', plant.slug || plant.id];
   }
 
-  onRemoveFishClick(ev: MouseEvent, rowId: number) {
+  onRemoveFishClick(ev: MouseEvent, rowId: number): void {
     ev.preventDefault();
     ev.stopPropagation();
+
     this.removeFishRow(rowId);
   }
 
-  onRemovePlantClick(ev: MouseEvent, rowId: number) {
+  onRemovePlantClick(ev: MouseEvent, rowId: number): void {
     ev.preventDefault();
     ev.stopPropagation();
+
     this.removePlantRow(rowId);
   }
 
-  openAddDialog() {
+  openAddDialog(): void {
     const ref = this.dialog.open(AquariumAddItemDialogComponent, {
       width: '720px',
       data: { aquariumId: this.id },
@@ -687,96 +765,275 @@ async startPremiumCheckout() {
         try {
           if (res.kind === 'FISH') {
             const url = `${environment.apiUrl}/aquariums/${this.id}/fish`;
-            await firstValueFrom(this.http.post(url, { cardId: res.cardId, count: res.count }));
+
+            await firstValueFrom(
+              this.http.post(url, {
+                cardId: res.cardId,
+                count: res.count,
+              }),
+            );
           } else {
             const url = `${environment.apiUrl}/aquariums/${this.id}/plants`;
-            await firstValueFrom(this.http.post(url, { cardId: res.cardId, count: res.count }));
+
+            await firstValueFrom(
+              this.http.post(url, {
+                cardId: res.cardId,
+                count: res.count,
+              }),
+            );
           }
 
           this.snack.open('Ajouté ✅', 'OK', { duration: 1800 });
+
           await this.loadTankItems();
+
+          if (this.isPremium) {
+            await this.loadPendingRecos();
+          }
         } catch {
           this.snack.open("Échec de l'ajout", 'Fermer', { duration: 2500 });
         }
-      }
+      },
     );
   }
 
-  async removeFishRow(rowId: number) {
+  async removeFishRow(rowId: number): Promise<void> {
     if (!confirm('Supprimer cet élément ?')) return;
+
     try {
       const url = `${environment.apiUrl}/aquariums/${this.id}/fish/${rowId}`;
+
       await firstValueFrom(this.http.delete(url));
       await this.loadTankItems();
+
+      if (this.isPremium) {
+        await this.loadPendingRecos();
+      }
     } catch {
       this.snack.open('Suppression impossible', 'Fermer', { duration: 2500 });
     }
   }
-  
-  async removePlantRow(rowId: number) {
+
+  async removePlantRow(rowId: number): Promise<void> {
     if (!confirm('Supprimer cet élément ?')) return;
+
     try {
       const url = `${environment.apiUrl}/aquariums/${this.id}/plants/${rowId}`;
+
       await firstValueFrom(this.http.delete(url));
       await this.loadTankItems();
+
+      if (this.isPremium) {
+        await this.loadPendingRecos();
+      }
     } catch {
       this.snack.open('Suppression impossible', 'Fermer', { duration: 2500 });
     }
   }
 
-  // ===== Health status (Premium / Solutions) =====
+  private toNumber(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') return null;
 
-/** Dernière mesure (la plus récente) */
-get lastMeasurement(): WaterMeasurement | null {
-  return this.measurements?.length ? this.measurements[0] : null;
-}
+    const n = Number(value);
 
-private inRange(value: number, min?: number | null, max?: number | null): boolean {
-  if (min !== null && min !== undefined && value < min) return false;
-  if (max !== null && max !== undefined && value > max) return false;
-  return true;
-}
+    return Number.isFinite(n) ? n : null;
+  }
 
-/** Retourne la liste des paramètres hors plage par rapport aux targets */
-get outOfTargetParams(): Array<{ key: ParamKey; value: number; min: number | null; max: number | null }> {
-  if (!this.isPremium) return [];
-  if (!this.targets?.targets) return [];
-  const m = this.lastMeasurement;
-  if (!m) return [];
+  private roundTarget(value: number): number {
+    return Math.round(value * 10) / 10;
+  }
 
-  const outs: Array<{ key: ParamKey; value: number; min: number | null; max: number | null }> = [];
+  private addWeightedRange(
+    collector: Record<string, { minSum: number; maxSum: number; weightSum: number }>,
+    key: ParamKey,
+    min: unknown,
+    max: unknown,
+    weight: number,
+  ): void {
+    const minValue = this.toNumber(min);
+    const maxValue = this.toNumber(max);
 
-  // on check uniquement les params affichés/pertinents pour le type d’eau
-  for (const key of this.allParams) {
-    const val = (m as any)[key] as number | null | undefined;
-    if (val === null || val === undefined) continue; // pas mesuré => on ignore
+    if (minValue === null && maxValue === null) return;
 
-    const r = (this.targets.targets as any)?.[key] as TargetRange | undefined;
-    if (!r) continue; // pas de cible => on ignore
+    const safeMin = minValue ?? maxValue;
+    const safeMax = maxValue ?? minValue;
 
-    const min = r.min ?? null;
-    const max = r.max ?? null;
+    if (safeMin === null || safeMax === null) return;
 
-    if (!this.inRange(Number(val), min, max)) {
-      outs.push({ key, value: Number(val), min, max });
+    if (!collector[key]) {
+      collector[key] = {
+        minSum: 0,
+        maxSum: 0,
+        weightSum: 0,
+      };
+    }
+
+    collector[key].minSum += safeMin * weight;
+    collector[key].maxSum += safeMax * weight;
+    collector[key].weightSum += weight;
+  }
+
+  private buildSpeciesAverageTargets(): TargetsJson {
+    const collector: Record<string, { minSum: number; maxSum: number; weightSum: number }> = {};
+
+    for (const row of this.fishInTank) {
+      const fish = row.fishCard;
+      const weight = Math.max(1, Number(row.count) || 1);
+
+      this.addWeightedRange(collector, 'temp', fish.tempMin, fish.tempMax, weight);
+      this.addWeightedRange(collector, 'ph', fish.phMin, fish.phMax, weight);
+      this.addWeightedRange(collector, 'gh', fish.ghMin, fish.ghMax, weight);
+      this.addWeightedRange(collector, 'kh', fish.khMin, fish.khMax, weight);
+    }
+
+    for (const row of this.plantsInTank) {
+      const plant = row.plantCard;
+      const weight = Math.max(1, Number(row.count) || 1);
+
+      this.addWeightedRange(collector, 'temp', plant.tempMin, plant.tempMax, weight);
+      this.addWeightedRange(collector, 'ph', plant.phMin, plant.phMax, weight);
+      this.addWeightedRange(collector, 'gh', plant.ghMin, plant.ghMax, weight);
+      this.addWeightedRange(collector, 'kh', plant.khMin, plant.khMax, weight);
+    }
+
+    const targets: TargetsJson = {};
+
+    for (const key of Object.keys(collector) as ParamKey[]) {
+      const row = collector[key];
+
+      if (!row || row.weightSum <= 0) continue;
+
+      (targets as any)[key] = {
+        min: this.roundTarget(row.minSum / row.weightSum),
+        max: this.roundTarget(row.maxSum / row.weightSum),
+      };
+    }
+
+    if (this.waterType === 'EAU_DOUCE') {
+      (targets as any).no2 = { min: 0, max: 0 };
+      (targets as any).nh3 = { min: 0, max: 0 };
+    }
+
+    return targets;
+  }
+
+  get hasSpeciesAverageTargets(): boolean {
+    const targets = this.buildSpeciesAverageTargets();
+
+    return Object.keys(targets).length > 0;
+  }
+
+  get speciesAveragePreview(): TargetsJson {
+    return this.buildSpeciesAverageTargets();
+  }
+
+  async applySpeciesAverageTargets(): Promise<void> {
+    if (!this.isPremium) return;
+
+    const targets = this.buildSpeciesAverageTargets();
+
+    if (!Object.keys(targets).length) {
+      this.snack.open('Aucune donnée suffisante sur les espèces du bac', 'Fermer', {
+        duration: 2500,
+      });
+
+      return;
+    }
+
+    this.targetsLoading = true;
+
+    try {
+      const dto = await this.targetsApi.updateForAquarium(this.id, {
+        profileKey: 'CUSTOM',
+        targets,
+      });
+
+      this.targets = dto;
+      this.buildTargetsForm(dto);
+
+      this.snack.open('Objectifs calculés depuis les espèces ✅', 'OK', {
+        duration: 2500,
+      });
+
+      await this.loadPendingRecos();
+    } catch (e) {
+      console.error(e);
+
+      this.snack.open('Impossible d’appliquer les objectifs du bac', 'Fermer', {
+        duration: 3000,
+      });
+    } finally {
+      this.targetsLoading = false;
     }
   }
 
-  return outs;
-}
+  get lastMeasurement(): WaterMeasurement | null {
+    return this.measurements?.length ? this.measurements[0] : null;
+  }
 
-/** Bac OK : pas de recos + rien hors cible */
-get isTankHealthy(): boolean {
-  if (!this.isPremium) return false;
-  if (this.recosLoading || this.targetsLoading) return false;
-  if (!this.targets || !this.targetsForm) return false;
-  if (!this.lastMeasurement) return false;
-  if (this.recos?.length) return false;
+  private inRange(value: number, min?: number | null, max?: number | null): boolean {
+    if (min !== null && min !== undefined && value < min) return false;
+    if (max !== null && max !== undefined && value > max) return false;
 
-  return this.outOfTargetParams.length === 0;
-}
+    return true;
+  }
 
-  openEditDialog() {
+  get outOfTargetParams(): Array<{
+    key: ParamKey;
+    value: number;
+    min: number | null;
+    max: number | null;
+  }> {
+    if (!this.isPremium) return [];
+    if (!this.targets?.targets) return [];
+
+    const m = this.lastMeasurement;
+
+    if (!m) return [];
+
+    const outs: Array<{
+      key: ParamKey;
+      value: number;
+      min: number | null;
+      max: number | null;
+    }> = [];
+
+    for (const key of this.allParams) {
+      const val = (m as any)[key] as number | null | undefined;
+
+      if (val === null || val === undefined) continue;
+
+      const r = (this.targets.targets as any)?.[key] as TargetRange | undefined;
+
+      if (!r) continue;
+
+      const min = r.min ?? null;
+      const max = r.max ?? null;
+
+      if (!this.inRange(Number(val), min, max)) {
+        outs.push({
+          key,
+          value: Number(val),
+          min,
+          max,
+        });
+      }
+    }
+
+    return outs;
+  }
+
+  get isTankHealthy(): boolean {
+    if (!this.isPremium) return false;
+    if (this.recosLoading || this.targetsLoading) return false;
+    if (!this.targets || !this.targetsForm) return false;
+    if (!this.lastMeasurement) return false;
+    if (this.recos?.length) return false;
+
+    return this.outOfTargetParams.length === 0;
+  }
+
+  openEditDialog(): void {
     const v = this.form.getRawValue();
 
     const ref = this.dialog.open(EditAquariumDialogComponent, {

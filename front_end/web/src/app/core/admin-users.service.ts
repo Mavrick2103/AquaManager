@@ -6,19 +6,52 @@ import { environment } from '../../environments/environment';
 // ✅ Source de vérité pour les rôles
 export type UserRole = 'USER' | 'EDITOR' | 'ADMIN';
 
+// ✅ Source de vérité pour les abonnements
+export type SubscriptionPlan = 'CLASSIC' | 'PREMIUM' | 'PRO';
+
+export type SubscriptionStatus =
+  | 'none'
+  | 'active'
+  | 'trialing'
+  | 'canceled'
+  | 'past_due'
+  | 'incomplete';
+
+export type GrantSubscriptionDuration =
+  | '14d'
+  | '1m'
+  | '3m'
+  | '6m'
+  | '1y'
+  | 'lifetime';
+
 export type AdminUser = {
   id: number;
   fullName: string;
   email: string;
   role: UserRole;
 
+  // ✅ Abonnement / paywall
+  subscriptionPlan: SubscriptionPlan;
+  subscriptionEndsAt: string | null;
+  subscriptionStatus: SubscriptionStatus;
+
   createdAt: string;
   emailVerifiedAt: string | null;
-
   lastActivityAt: string | null;
 };
 
-export type UpdateAdminUserDto = Partial<Pick<AdminUser, 'fullName' | 'email' | 'role'>>;
+export type UpdateAdminUserDto = Partial<
+  Pick<
+    AdminUser,
+    'fullName' | 'email' | 'role' | 'subscriptionPlan' | 'subscriptionEndsAt'
+  >
+>;
+
+export type GrantSubscriptionDto = {
+  plan: Exclude<SubscriptionPlan, 'CLASSIC'>;
+  duration: GrantSubscriptionDuration;
+};
 
 export type AdminUserAquarium = {
   id: number;
@@ -83,7 +116,7 @@ export type AdminUserPlantRow = {
   };
 };
 
-// ✅ EDITOR payload (retourné par /admin/users/:id/full)
+// ✅ EDITOR payload retourné par /admin/users/:id/full
 export type EditorArticleLite = {
   id: number;
   title: string;
@@ -119,7 +152,6 @@ export type AdminUserFull = {
   plants: AdminUserPlantRow[];
   tasks: AdminUserTask[];
 
-  // ✅ AJOUT IMPORTANT : sinon ton onglet Publications ne peut pas marcher proprement
   editor?: AdminUserEditorPayload;
 };
 
@@ -131,7 +163,10 @@ export class AdminUsersApi {
 
   list(search?: string): Observable<AdminUser[]> {
     let params = new HttpParams();
-    if (search?.trim()) params = params.set('search', search.trim());
+
+    if (search?.trim()) {
+      params = params.set('search', search.trim());
+    }
 
     return this.http.get<AdminUser[]>(`${this.baseUrl}/admin/users`, {
       params,
@@ -143,6 +178,26 @@ export class AdminUsersApi {
     return this.http.patch<AdminUser>(`${this.baseUrl}/admin/users/${id}`, dto, {
       withCredentials: true,
     });
+  }
+
+  grantSubscription(id: number, dto: GrantSubscriptionDto): Observable<AdminUser> {
+    return this.http.patch<AdminUser>(
+      `${this.baseUrl}/admin/users/${id}/grant-subscription`,
+      dto,
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  revokeSubscription(id: number): Observable<AdminUser> {
+    return this.http.patch<AdminUser>(
+      `${this.baseUrl}/admin/users/${id}/revoke-subscription`,
+      {},
+      {
+        withCredentials: true,
+      },
+    );
   }
 
   remove(id: number): Observable<{ ok: true }> {

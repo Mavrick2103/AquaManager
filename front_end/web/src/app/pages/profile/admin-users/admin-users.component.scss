@@ -40,7 +40,6 @@
   overflow: hidden;
 }
 
-
 .brand {
   display: flex;
   align-items: center;
@@ -65,7 +64,9 @@
   opacity: 0.65;
 }
 
-.nav { padding: 4px 0 0; }
+.nav {
+  padding: 4px 0 0;
+}
 
 :host ::ng-deep .nav .mat-mdc-list-item {
   border-radius: 14px;
@@ -77,7 +78,7 @@
 }
 
 :host ::ng-deep .nav .mat-mdc-list-item.active {
-  background: rgba(63, 81, 181, 0.10);
+  background: rgba(63, 81, 181, 0.1);
   border: 1px solid rgba(63, 81, 181, 0.18);
 }
 
@@ -106,7 +107,7 @@
 }
 
 .admin-card {
-  max-width: 1180px;
+  max-width: 1320px;
   margin: 0 auto;
   border-radius: 18px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
@@ -137,7 +138,9 @@
   padding: 6px 0 2px;
 }
 
-.titles { min-width: 0; }
+.titles {
+  min-width: 0;
+}
 
 h2 {
   font-size: 20px;
@@ -152,7 +155,9 @@ h2 {
   font-size: 13px;
 }
 
-.search { width: min(520px, 100%); }
+.search {
+  width: min(520px, 100%);
+}
 
 mat-divider.divider {
   margin: 14px 0 12px;
@@ -162,6 +167,7 @@ mat-divider.divider {
 :host ::ng-deep .mat-mdc-form-field .mdc-text-field {
   border-radius: 14px !important;
 }
+
 :host ::ng-deep .mat-mdc-form-field .mdc-text-field--filled {
   background: rgba(255, 255, 255, 0.92) !important;
 }
@@ -188,8 +194,16 @@ mat-divider.divider {
   }
 }
 
-.empty-title { margin: 0; font-weight: 900; }
-.empty-sub { margin: 2px 0 0; font-size: 13px; opacity: 0.75; }
+.empty-title {
+  margin: 0;
+  font-weight: 900;
+}
+
+.empty-sub {
+  margin: 2px 0 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
 
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -198,7 +212,7 @@ mat-divider.divider {
 }
 
 /* =========================
-   TABLE (desktop/tablette)
+   TABLE
    ========================= */
 .table-wrap {
   max-width: 100%;
@@ -213,17 +227,41 @@ mat-divider.divider {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(6px);
-  min-width: 980px;
+  min-width: 1210px;
 }
 
 /* ✅ largeur des colonnes */
-:host ::ng-deep .users-table .mat-column-id { width: 70px; }
-:host ::ng-deep .users-table .mat-column-createdAt { width: 140px; }
-:host ::ng-deep .users-table .mat-column-fullName { width: 220px; }
-:host ::ng-deep .users-table .mat-column-email { width: 220px; }
-:host ::ng-deep .users-table .mat-column-role { width: 240px; }
-:host ::ng-deep .users-table .mat-column-status { width: 150px; }
-:host ::ng-deep .users-table .mat-column-actions { width: 170px; }
+:host ::ng-deep .users-table .mat-column-id {
+  width: 70px;
+}
+
+:host ::ng-deep .users-table .mat-column-createdAt {
+  width: 130px;
+}
+
+:host ::ng-deep .users-table .mat-column-fullName {
+  width: 190px;
+}
+
+:host ::ng-deep .users-table .mat-column-email {
+  width: 230px;
+}
+
+:host ::ng-deep .users-table .mat-column-role {
+  width: 170px;
+}
+
+:host ::ng-deep .users-table .mat-column-subscription {
+  width: 260px;
+}
+
+:host ::ng-deep .users-table .mat-column-status {
+  width: 140px;
+}
+
+:host ::ng-deep .users-table .mat-column-actions {
+  width: 160px;
+}
 
 th.mat-mdc-header-cell {
   font-weight: 900;
@@ -243,12 +281,20 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
   background: rgba(63, 81, 181, 0.06);
 }
 
-/* colonne id + email lisible */
-.id-cell { width: 70px; }
-.email-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.id-cell {
+  width: 70px;
+}
 
-/* ligne cliquable */
-.clickable-row { cursor: pointer; }
+.email-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
 .clickable-row:hover td.mat-mdc-cell {
   background: rgba(0, 150, 136, 0.06) !important;
 }
@@ -258,11 +304,18 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
   align-items: center;
   gap: 10px;
 
-  .avatar { opacity: 0.7; }
-  .name { font-weight: 800; }
+  .avatar {
+    opacity: 0.7;
+  }
+
+  .name {
+    font-weight: 800;
+  }
 }
 
-/* ✅ status pill */
+/* =========================
+   STATUS
+   ========================= */
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -272,7 +325,7 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
   font-weight: 900;
   font-size: 12px;
   letter-spacing: 0.3px;
-  border: 1px solid rgba(0, 0, 0, 0.10);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   background: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
 
@@ -289,7 +342,7 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
 }
 
 .status-pill.inactive {
-  background: rgba(244, 67, 54, 0.10);
+  background: rgba(244, 67, 54, 0.1);
   border-color: rgba(244, 67, 54, 0.24);
 }
 
@@ -301,7 +354,7 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
 }
 
 /* ================================
-   ROLE UI (badge -> menu)
+   ROLE UI
    ================================ */
 .role-cell {
   display: inline-flex;
@@ -325,17 +378,28 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
   font-weight: 950;
   font-size: 12px;
   letter-spacing: 0.3px;
+
   display: inline-flex;
   align-items: center;
   gap: 8px;
+
   white-space: nowrap;
   cursor: pointer;
   transition: transform 0.04s ease, background 0.15s ease, border-color 0.15s ease;
   color: rgba(0, 0, 0, 0.82);
 
-  &:hover { background: rgba(15, 23, 42, 0.08); }
-  &:active { transform: translateY(1px); }
-  &:disabled { cursor: not-allowed; opacity: 0.65; }
+  &:hover {
+    background: rgba(15, 23, 42, 0.08);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
 
   .role-badge-ic {
     font-size: 16px;
@@ -356,46 +420,129 @@ tr.mat-mdc-row:hover td.mat-mdc-cell {
 .role-badge.admin {
   background: var(--role-admin-bg);
   border-color: var(--role-admin-bd);
-  &:hover { background: rgba(30, 167, 255, 0.24); }
+
+  &:hover {
+    background: rgba(30, 167, 255, 0.24);
+  }
 }
 
 .role-badge.editor {
   background: var(--role-editor-bg);
   border-color: var(--role-editor-bd);
-  &:hover { background: rgba(234, 179, 8, 0.28); }
+
+  &:hover {
+    background: rgba(234, 179, 8, 0.28);
+  }
 }
 
+/* ================================
+   SUBSCRIPTION UI
+   ================================ */
+.subscription-cell {
+  display: grid;
+  gap: 5px;
+  max-width: 100%;
+}
+
+.subscription-cell.saving {
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.subscription-badge {
+  appearance: none;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.06);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 950;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  white-space: nowrap;
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.82);
+
+  transition:
+    transform 0.04s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    background: rgba(15, 23, 42, 0.09);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .chev {
+    margin-left: 2px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    opacity: 0.65;
+  }
+}
+
+.subscription-badge.classic {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
+.subscription-badge.premium {
+  background: rgba(0, 159, 227, 0.14);
+  border-color: rgba(0, 159, 227, 0.34);
+  color: #007eb6;
+
+  &:hover {
+    background: rgba(0, 159, 227, 0.2);
+  }
+}
+
+.subscription-badge.pro {
+  background: rgba(57, 181, 74, 0.16);
+  border-color: rgba(57, 181, 74, 0.36);
+  color: #1f7c2d;
+
+  &:hover {
+    background: rgba(57, 181, 74, 0.22);
+  }
+}
+
+.subscription-meta {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(0, 0, 0, 0.56);
+  line-height: 1.25;
+}
+
+/* ================================
+   SPINNER / ACTIONS
+   ================================ */
 .saving-indicator {
   display: inline-flex;
   margin-left: 2px;
   vertical-align: middle;
 }
 
-/* ✅ menu dropdown clean */
-:host ::ng-deep .role-menu {
-  border-radius: 16px !important;
-  overflow: hidden;
-}
-
-:host ::ng-deep .role-menu .mat-mdc-menu-content {
-  padding: 6px !important;
-}
-
-:host ::ng-deep .role-menu .mat-mdc-menu-item {
-  border-radius: 12px !important;
-  font-weight: 850;
-}
-
-:host ::ng-deep .role-menu .mat-mdc-menu-item:hover {
-  background: rgba(63, 81, 181, 0.08);
-}
-
-:host ::ng-deep .role-menu .mat-mdc-menu-item .mat-icon {
-  margin-right: 10px;
-  opacity: 0.85;
-}
-
-/* actions */
 .actions {
   display: flex;
   gap: 10px;
@@ -409,7 +556,9 @@ button[mat-stroked-button] {
   letter-spacing: 0.2px;
   padding: 6px 10px !important;
 
-  mat-icon { margin-right: 6px; }
+  mat-icon {
+    margin-right: 6px;
+  }
 }
 
 button[mat-stroked-button][color="warn"] {
@@ -417,15 +566,66 @@ button[mat-stroked-button][color="warn"] {
 }
 
 /* ================================
+   MENUS
+   ================================ */
+:host ::ng-deep .role-menu,
+:host ::ng-deep .subscription-menu {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+:host ::ng-deep .role-menu .mat-mdc-menu-content,
+:host ::ng-deep .subscription-menu .mat-mdc-menu-content {
+  padding: 6px !important;
+}
+
+:host ::ng-deep .role-menu .mat-mdc-menu-item,
+:host ::ng-deep .subscription-menu .mat-mdc-menu-item {
+  border-radius: 12px !important;
+  font-weight: 850;
+}
+
+:host ::ng-deep .role-menu .mat-mdc-menu-item:hover {
+  background: rgba(63, 81, 181, 0.08);
+}
+
+:host ::ng-deep .subscription-menu .mat-mdc-menu-item:hover {
+  background: rgba(0, 159, 227, 0.08);
+}
+
+:host ::ng-deep .role-menu .mat-mdc-menu-item .mat-icon,
+:host ::ng-deep .subscription-menu .mat-mdc-menu-item .mat-icon {
+  margin-right: 10px;
+  opacity: 0.85;
+}
+
+:host ::ng-deep .subscription-menu .danger-menu-item {
+  color: #d32f2f !important;
+}
+
+:host ::ng-deep .subscription-menu .danger-menu-item:hover {
+  background: rgba(244, 67, 54, 0.08) !important;
+}
+
+/* ================================
    RESPONSIVE
    ================================ */
-.table-desktop { display: block; }
-.users-cards { display: none; }
+.table-desktop {
+  display: block;
+}
 
-/* <= 900px */
+.users-cards {
+  display: none;
+}
+
 @media (max-width: 900px) {
-  .content { padding: 14px; }
-  .sidebar { width: 240px; }
+  .content {
+    padding: 14px;
+  }
+
+  .sidebar {
+    width: 240px;
+  }
 
   .admin-header {
     flex-direction: column;
@@ -433,13 +633,19 @@ button[mat-stroked-button][color="warn"] {
     gap: 10px;
   }
 
-  .search { width: 100%; }
-  .filters { justify-content: flex-start; }
+  .search {
+    width: 100%;
+  }
+
+  .filters {
+    justify-content: flex-start;
+  }
 }
 
-/* <= 760px : sidebar en haut + cards */
 @media (max-width: 760px) {
-  .admin-layout { flex-direction: column; }
+  .admin-layout {
+    flex-direction: column;
+  }
 
   .sidebar {
     width: 100%;
@@ -447,16 +653,21 @@ button[mat-stroked-button][color="warn"] {
     position: static;
     top: auto;
     border-right: 0;
-    border-bottom: 1px solid rgba(0,0,0,0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     padding: 12px 12px 10px;
   }
 
   .brand {
     justify-content: flex-start;
-    .logo { height: 58px; }
+
+    .logo {
+      height: 58px;
+    }
   }
 
-  .sidebar-title { margin: 6px 8px 6px; }
+  .sidebar-title {
+    margin: 6px 8px 6px;
+  }
 
   :host ::ng-deep .nav {
     display: grid;
@@ -475,19 +686,28 @@ button[mat-stroked-button][color="warn"] {
     border-top: 0;
   }
 
-  .back-btn { padding: 10px 12px !important; }
-  .content { padding: 12px; }
+  .back-btn {
+    padding: 10px 12px !important;
+  }
 
-  /* ✅ switch table -> cards */
-  .table-desktop { display: none; }
-  .users-cards { display: grid; gap: 12px; }
+  .content {
+    padding: 12px;
+  }
 
-  /* Cards mobile */
+  .table-desktop {
+    display: none;
+  }
+
+  .users-cards {
+    display: grid;
+    gap: 12px;
+  }
+
   .user-card {
     border-radius: 18px;
-    border: 1px solid rgba(0,0,0,0.08);
-    background: rgba(255,255,255,0.86);
-    box-shadow: 0 10px 22px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
     padding: 14px;
     cursor: pointer;
   }
@@ -539,11 +759,15 @@ button[mat-stroked-button][color="warn"] {
     align-items: center;
     padding: 6px 10px;
     border-radius: 999px;
-    border: 1px solid rgba(0,0,0,0.10);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     background: rgba(15, 23, 42, 0.04);
     font-size: 12px;
     font-weight: 800;
     opacity: 0.9;
+  }
+
+  .uc-subscription {
+    margin-top: 12px;
   }
 
   .uc-bottom {
@@ -553,9 +777,18 @@ button[mat-stroked-button][color="warn"] {
     gap: 10px;
   }
 
-  .role-badge {
+  .role-badge,
+  .subscription-badge {
     width: 100%;
     justify-content: center;
+  }
+
+  .subscription-cell {
+    width: 100%;
+  }
+
+  .subscription-meta {
+    text-align: center;
   }
 
   .uc-delete {
@@ -567,7 +800,8 @@ button[mat-stroked-button][color="warn"] {
   }
 }
 
-/* <= 420px : nav en 1 colonne */
 @media (max-width: 420px) {
-  :host ::ng-deep .nav { grid-template-columns: 1fr; }
+  :host ::ng-deep .nav {
+    grid-template-columns: 1fr;
+  }
 }

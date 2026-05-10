@@ -313,6 +313,7 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
       'u.email',
       'u.role',
       'u.subscriptionPlan',
+      'u.subscriptionStatus',
       'u.subscriptionEndsAt',
       'u.createdAt',
       'u.emailVerifiedAt',
@@ -340,6 +341,7 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
         'u.email',
         'u.role',
         'u.subscriptionPlan',
+        'u.subscriptionStatus',
         'u.subscriptionEndsAt',
         'u.createdAt',
         'u.emailVerifiedAt',
@@ -364,6 +366,7 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
         'u.email',
         'u.role',
         'u.subscriptionPlan',
+        'u.subscriptionStatus',
         'u.subscriptionEndsAt',
         'u.createdAt',
         'u.emailVerifiedAt',
@@ -474,6 +477,111 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
     await this.repo.update({ id }, patch);
     return this.adminGetOne(id);
   }
+
+  async adminGrantSubscription(
+  id: number,
+  data: {
+    plan: Exclude<SubscriptionPlan, 'CLASSIC'>;
+    duration: '7d' | '14d' | '1m' | '3m' | '6m' | '1y' | 'lifetime';
+  },
+) {
+  if (!Number.isFinite(id)) {
+    throw new BadRequestException('Id invalide');
+  }
+
+  const user = await this.repo.findOne({ where: { id } });
+
+  if (!user) {
+    throw new NotFoundException('Utilisateur introuvable');
+  }
+
+  const plan = this.normalizePlan(data.plan);
+
+  if (plan === 'CLASSIC') {
+    throw new BadRequestException('Le plan offert doit être PREMIUM ou PRO');
+  }
+
+  let subscriptionEndsAt: Date | null = null;
+
+  if (data.duration !== 'lifetime') {
+    const now = new Date();
+
+    // Si l’utilisateur a déjà une période active, on prolonge depuis sa date actuelle.
+    const baseDate =
+      user.subscriptionEndsAt &&
+      user.subscriptionEndsAt.getTime() > now.getTime() &&
+      user.subscriptionStatus === 'active'
+        ? new Date(user.subscriptionEndsAt)
+        : now;
+
+    subscriptionEndsAt = new Date(baseDate);
+
+    switch (data.duration) {
+      case '7d':
+        subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 7);
+        break;
+
+      case '14d':
+        subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 14);
+        break;
+
+      case '1m':
+        subscriptionEndsAt.setMonth(subscriptionEndsAt.getMonth() + 1);
+        break;
+
+      case '3m':
+        subscriptionEndsAt.setMonth(subscriptionEndsAt.getMonth() + 3);
+        break;
+
+      case '6m':
+        subscriptionEndsAt.setMonth(subscriptionEndsAt.getMonth() + 6);
+        break;
+
+      case '1y':
+        subscriptionEndsAt.setFullYear(subscriptionEndsAt.getFullYear() + 1);
+        break;
+
+      default:
+        throw new BadRequestException('Durée invalide');
+    }
+  }
+
+  await this.repo.update(
+    { id },
+    {
+      subscriptionPlan: plan,
+      subscriptionStatus: 'active',
+      subscriptionEndsAt,
+    } as Partial<User>,
+  );
+
+  return this.adminGetOne(id);
+}
+
+
+async adminRevokeSubscription(id: number) {
+  if (!Number.isFinite(id)) {
+    throw new BadRequestException('Id invalide');
+  }
+
+  const user = await this.repo.findOne({ where: { id } });
+
+  if (!user) {
+    throw new NotFoundException('Utilisateur introuvable');
+  }
+
+  await this.repo.update(
+    { id },
+    {
+      subscriptionPlan: 'CLASSIC',
+      subscriptionStatus: 'none',
+      subscriptionEndsAt: null,
+      stripeSubscriptionId: null,
+    } as Partial<User>,
+  );
+
+  return this.adminGetOne(id);
+}
 
   async adminDelete(id: number) {
     if (!Number.isFinite(id)) throw new BadRequestException('Id invalide');

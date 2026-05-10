@@ -11,12 +11,11 @@ import {
 
 import { UsersService } from './users.service';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
+import { AdminGrantSubscriptionDto } from './dto/admin-grant-subscription.dto';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-
-type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -43,6 +42,24 @@ export class AdminUsersController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
     return this.users.adminUpdate(Number(id), dto);
+  }
+
+  // ✅ Offrir Premium / Pro pendant une durée
+  @Patch(':id/grant-subscription')
+  grantSubscription(
+    @Param('id') id: string,
+    @Body() dto: AdminGrantSubscriptionDto,
+  ) {
+    return this.users.adminGrantSubscription(Number(id), {
+      plan: dto.plan,
+      duration: dto.duration,
+    });
+  }
+
+  // ✅ Retirer l'abonnement offert
+  @Patch(':id/revoke-subscription')
+  revokeSubscription(@Param('id') id: string) {
+    return this.users.adminRevokeSubscription(Number(id));
   }
 
   @Delete(':id')

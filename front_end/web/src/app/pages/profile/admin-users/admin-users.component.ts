@@ -15,9 +15,15 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatListModule } from '@angular/material/list';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatMenuModule } from '@angular/material/menu'; // ✅ menu pour le badge cliquable
+import { MatMenuModule } from '@angular/material/menu';
 
-import { AdminUsersApi, AdminUser, UserRole } from '../../../core/admin-users.service';
+import {
+  AdminUsersApi,
+  AdminUser,
+  GrantSubscriptionDuration,
+  SubscriptionPlan,
+  UserRole,
+} from '../../../core/admin-users.service';
 
 @Component({
   standalone: true,
@@ -40,7 +46,7 @@ import { AdminUsersApi, AdminUser, UserRole } from '../../../core/admin-users.se
     MatTooltipModule,
     MatListModule,
     MatSlideToggleModule,
-    MatMenuModule, // ✅
+    MatMenuModule,
   ],
 })
 export class AdminUsersComponent implements OnInit, OnDestroy {
@@ -52,24 +58,48 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   filteredUsers: AdminUser[] = [];
 
   searchCtrl = new FormControl<string>('', { nonNullable: true });
-
   activeOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
   adminOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
 
-  displayedColumns = ['id', 'createdAt', 'fullName', 'email', 'role', 'status', 'actions'];
+  displayedColumns = [
+    'id',
+    'createdAt',
+    'fullName',
+    'email',
+    'role',
+    'subscription',
+    'status',
+    'actions',
+  ];
 
-  // actif si activité < 30 jours (à toi d’ajuster)
   private readonly ACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
 
-  // ✅ options de rôle affichées (menu)
   readonly roleOptions: Array<{ value: UserRole; label: string; icon: string }> = [
     { value: 'USER', label: 'Utilisateur', icon: 'person' },
     { value: 'EDITOR', label: 'Éditeur', icon: 'edit' },
     { value: 'ADMIN', label: 'Admin', icon: 'admin_panel_settings' },
   ];
 
-  // ✅ état “saving” par user id
+  readonly grantOptions: Array<{
+    label: string;
+    plan: Exclude<SubscriptionPlan, 'CLASSIC'>;
+    duration: GrantSubscriptionDuration;
+    icon: string;
+  }> = [
+    { label: 'Premium 14 jours', plan: 'PREMIUM', duration: '14d', icon: 'star' },
+    { label: 'Premium 1 mois', plan: 'PREMIUM', duration: '1m', icon: 'star' },
+    { label: 'Premium 3 mois', plan: 'PREMIUM', duration: '3m', icon: 'star' },
+    { label: 'Premium 6 mois', plan: 'PREMIUM', duration: '6m', icon: 'star' },
+    { label: 'Premium 1 an', plan: 'PREMIUM', duration: '1y', icon: 'star' },
+    { label: 'Premium à vie', plan: 'PREMIUM', duration: 'lifetime', icon: 'all_inclusive' },
+
+    { label: 'Pro 1 mois', plan: 'PRO', duration: '1m', icon: 'workspace_premium' },
+    { label: 'Pro 1 an', plan: 'PRO', duration: '1y', icon: 'workspace_premium' },
+    { label: 'Pro à vie', plan: 'PRO', duration: 'lifetime', icon: 'all_inclusive' },
+  ];
+
   private readonly saving = new Set<number>();
+  private readonly savingSubscription = new Set<number>();
 
   constructor(
     private readonly api: AdminUsersApi,
@@ -80,14 +110,17 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.reload();
 
-    // recharge côté API uniquement quand le search change
     this.searchCtrl.valueChanges
       .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => this.reload());
 
-    // filtres 100% front : ne rappelle pas l'API
-    this.activeOnlyCtrl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.applyFilters());
-    this.adminOnlyCtrl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.applyFilters());
+    this.activeOnlyCtrl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.applyFilters());
+
+    this.adminOnlyCtrl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.applyFilters());
   }
 
   ngOnDestroy(): void {
@@ -108,27 +141,70 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   openUser(u: AdminUser): void {
+    if (this.isSaving(u) || this.isSavingSubscription(u)) return;
     this.router.navigate(['/admin/users', u.id]);
   }
 
-  formatDate(value: string | Date): string {
+  reload(): void {
+    const search = this.searchCtrl.value.trim() || undefined;
+
+    this.loading = true;
+
+    this.api.list(search).subscribe({
+      next: (rows) => {
+        this.users = [...(rows ?? [])].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Erreur chargement utilisateurs admin', error);
+        this.users = [];
+        this.filteredUsers = [];
+        this.loading = false;
+      },
+    });
+  }
+
+  applyFilters(): void {
+    const activeOnly = this.activeOnlyCtrl.value;
+    const adminOnly = this.adminOnlyCtrl.value;
+
+    this.filteredUsers = this.users.filter((u) => {
+      if (activeOnly && !this.isActive(u)) return false;
+      if (adminOnly && u.role !== 'ADMIN') return false;
+
+      return true;
+    });
+  }
+
+  formatDate(value: string | Date | null | undefined): string {
+    if (!value) return '—';
+
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return '—';
+
     const dd = String(d.getDate()).padStart(2, '0');
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yyyy = d.getFullYear();
+
     return `${dd}/${mm}/${yyyy}`;
   }
 
   isActive(u: AdminUser): boolean {
     if (!u?.lastActivityAt) return false;
+
     const last = new Date(u.lastActivityAt).getTime();
     if (!Number.isFinite(last)) return false;
+
     return Date.now() - last <= this.ACTIVE_MS;
   }
 
   lastSeenLabel(u: AdminUser): string {
     if (!u?.lastActivityAt) return 'Jamais';
+
     const last = new Date(u.lastActivityAt).getTime();
     if (!Number.isFinite(last)) return 'Jamais';
 
@@ -145,66 +221,140 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     return `Il y a ${diffD} j`;
   }
 
-  reload(): void {
-    const search = this.searchCtrl.value?.trim() || undefined;
-
-    this.loading = true;
-    this.api.list(search).subscribe({
-      next: (rows) => {
-        this.users = [...(rows ?? [])].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
-        this.applyFilters();
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      },
-    });
-  }
-
-  applyFilters(): void {
-    const activeOnly = this.activeOnlyCtrl.value;
-    const adminOnly = this.adminOnlyCtrl.value;
-
-    this.filteredUsers = this.users.filter((u) => {
-      if (activeOnly && !this.isActive(u)) return false;
-      if (adminOnly && u.role !== 'ADMIN') return false;
-      return true;
-    });
-  }
-
   isSaving(u: AdminUser): boolean {
     return this.saving.has(u.id);
   }
 
+  isSavingSubscription(u: AdminUser): boolean {
+    return this.savingSubscription.has(u.id);
+  }
+
   setRole(u: AdminUser, nextRole: UserRole): void {
     const prevRole = u.role;
-    if (prevRole === nextRole) return;
 
-    // optimiste : update UI direct
-    this.users = this.users.map((x) => (x.id === u.id ? { ...x, role: nextRole } : x));
-    this.applyFilters();
+    if (prevRole === nextRole) return;
+    if (this.isSaving(u) || this.isSavingSubscription(u)) return;
 
     this.saving.add(u.id);
 
+    this.users = this.users.map((x) =>
+      x.id === u.id ? { ...x, role: nextRole } : x,
+    );
+    this.applyFilters();
+
     this.api.update(u.id, { role: nextRole }).subscribe({
       next: (updated) => {
-        this.users = this.users.map((x) => (x.id === u.id ? { ...x, role: updated.role } : x));
+        this.users = this.users.map((x) =>
+          x.id === u.id ? { ...x, ...updated } : x,
+        );
+
         this.applyFilters();
         this.saving.delete(u.id);
       },
-      error: () => {
-        // revert si erreur
-        this.users = this.users.map((x) => (x.id === u.id ? { ...x, role: prevRole } : x));
+      error: (error) => {
+        console.error('Erreur modification rôle utilisateur', error);
+
+        this.users = this.users.map((x) =>
+          x.id === u.id ? { ...x, role: prevRole } : x,
+        );
+
         this.applyFilters();
         this.saving.delete(u.id);
       },
     });
   }
 
+  grantSubscription(
+    u: AdminUser,
+    plan: Exclude<SubscriptionPlan, 'CLASSIC'>,
+    duration: GrantSubscriptionDuration,
+  ): void {
+    if (this.isSaving(u) || this.isSavingSubscription(u)) return;
+
+    this.savingSubscription.add(u.id);
+
+    this.api.grantSubscription(u.id, { plan, duration }).subscribe({
+      next: (updated) => {
+        this.users = this.users.map((x) =>
+          x.id === u.id ? { ...x, ...updated } : x,
+        );
+
+        this.applyFilters();
+        this.savingSubscription.delete(u.id);
+      },
+      error: (error) => {
+        console.error('Erreur attribution abonnement', error);
+        this.savingSubscription.delete(u.id);
+      },
+    });
+  }
+
+  revokeSubscription(u: AdminUser): void {
+    if (this.isSaving(u) || this.isSavingSubscription(u)) return;
+
+    const ok = confirm(`Retirer l'accès Premium/Pro de "${u.fullName || u.email}" ?`);
+    if (!ok) return;
+
+    this.savingSubscription.add(u.id);
+
+    this.api.revokeSubscription(u.id).subscribe({
+      next: (updated) => {
+        this.users = this.users.map((x) =>
+          x.id === u.id ? { ...x, ...updated } : x,
+        );
+
+        this.applyFilters();
+        this.savingSubscription.delete(u.id);
+      },
+      error: (error) => {
+        console.error('Erreur retrait abonnement', error);
+        this.savingSubscription.delete(u.id);
+      },
+    });
+  }
+
+  subscriptionLabel(u: AdminUser): string {
+    const plan = u.subscriptionPlan ?? 'CLASSIC';
+
+    if (plan === 'PRO') return 'PRO';
+    if (plan === 'PREMIUM') return 'PREMIUM';
+
+    return 'CLASSIC';
+  }
+
+  subscriptionClass(u: AdminUser): string {
+    const plan = u.subscriptionPlan ?? 'CLASSIC';
+
+    if (plan === 'PRO') return 'pro';
+    if (plan === 'PREMIUM') return 'premium';
+
+    return 'classic';
+  }
+
+  subscriptionEndLabel(u: AdminUser): string {
+    const plan = u.subscriptionPlan ?? 'CLASSIC';
+
+    if (plan === 'CLASSIC') return 'Aucun accès payant';
+    if (!u.subscriptionEndsAt) return 'Sans expiration';
+
+    const end = new Date(u.subscriptionEndsAt);
+    if (Number.isNaN(end.getTime())) return 'Expiration inconnue';
+
+    if (end.getTime() < Date.now()) {
+      return `Expiré le ${this.formatDate(end)}`;
+    }
+
+    return `Expire le ${this.formatDate(end)}`;
+  }
+
+  hasPaidPlan(u: AdminUser): boolean {
+    return u.subscriptionPlan === 'PREMIUM' || u.subscriptionPlan === 'PRO';
+  }
+
   deleteUser(u: AdminUser): void {
-    const ok = confirm(`Supprimer l’utilisateur "${u.fullName}" (${u.email}) ?`);
+    if (this.isSaving(u) || this.isSavingSubscription(u)) return;
+
+    const ok = confirm(`Supprimer l’utilisateur "${u.fullName || '—'}" (${u.email}) ?`);
     if (!ok) return;
 
     this.saving.add(u.id);
@@ -215,13 +365,14 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
         this.applyFilters();
         this.saving.delete(u.id);
       },
-      error: () => {
+      error: (error) => {
+        console.error('Erreur suppression utilisateur', error);
         this.saving.delete(u.id);
       },
     });
   }
 
-  trackById(_: number, u: AdminUser) {
+  trackById(_: number, u: AdminUser): number {
     return u.id;
   }
 }

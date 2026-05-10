@@ -36,7 +36,9 @@
 
 <section class="hero" *ngIf="!loading; else loader">
   <div class="left">
-    <div class="avatar" aria-hidden="true"><mat-icon>water_drop</mat-icon></div>
+    <div class="avatar" aria-hidden="true">
+      <mat-icon>water_drop</mat-icon>
+    </div>
 
     <div class="headings">
       <div class="title">{{ form.value.name || '—' }}</div>
@@ -93,12 +95,15 @@
         <div class="mini-card">
           <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="ph" />
         </div>
+
         <div class="mini-card">
           <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="temp" />
         </div>
+
         <div class="mini-card">
           <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no2" />
         </div>
+
         <div class="mini-card">
           <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no3" />
         </div>
@@ -107,24 +112,31 @@
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="kh" />
           </div>
+
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="gh" />
           </div>
+
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="co2" />
           </div>
+
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="po4" />
           </div>
+
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="fe" />
           </div>
+
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="k" />
           </div>
+
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="sio2" />
           </div>
+
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="nh3" />
           </div>
@@ -134,12 +146,15 @@
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="dkh" />
           </div>
+
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="sal" />
           </div>
+
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="ca" />
           </div>
+
           <div class="mini-card">
             <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="mg" />
           </div>
@@ -252,237 +267,332 @@
   <mat-tab label="Solutions">
     <div class="tab-section sol-wrap">
       <ng-container *ngIf="isPremium; else classicPaywall">
-        <div class="sol-head">
-          <div class="sol-head__left">
-            <h2 class="sol-head__title">
-              Solutions intelligentes
-              <span class="sol-head__badge">Premium</span>
+        <section class="sol-hero">
+          <div class="sol-hero__left">
+            <div class="sol-hero__eyebrow">
+              <mat-icon>auto_awesome</mat-icon>
+              Assistant intelligent
+            </div>
+
+            <h2 class="sol-hero__title">
+              Solutions pour ton aquarium
+              <span class="sol-hero__badge">Premium</span>
             </h2>
-            <p class="sol-head__subtitle">
-              Basé sur ta dernière mesure et tes objectifs. Tu acceptes → ça s’ajoute au planning.
+
+            <p class="sol-hero__subtitle">
+              AquaManager analyse ta dernière mesure, compare avec tes objectifs et te propose des actions concrètes.
             </p>
           </div>
 
-          <div class="sol-head__actions">
-            <button mat-stroked-button (click)="refreshSolutions()">
+          <div class="sol-hero__right">
+            <button mat-flat-button color="primary" type="button" (click)="refreshSolutions()">
               <mat-icon>refresh</mat-icon>
-              <span>Rafraîchir</span>
+              Rafraîchir l’analyse
             </button>
           </div>
-        </div>
+        </section>
 
-        <!-- Targets -->
-         <!-- ✅ Bac en bonne santé -->
-<mat-card class="sol-card ok-banner" *ngIf="isTankHealthy">
-  <mat-card-content class="ok-banner__content">
-    <div class="ok-banner__left">
-      <div class="ok-banner__icon">
-        <mat-icon aria-hidden="true">favorite</mat-icon>
-      </div>
+        <mat-card class="health-card" [class.health-card--ok]="isTankHealthy">
+          <mat-card-content class="health-card__content">
+            <div class="health-card__icon">
+              <mat-icon>{{ isTankHealthy ? 'favorite' : 'monitor_heart' }}</mat-icon>
+            </div>
 
-      <div class="ok-banner__text">
-        <div class="ok-banner__title">Bac en bonne santé ✅</div>
-        <div class="ok-banner__sub">
-          Ta dernière mesure respecte les plages de référence du profil <b>{{ getProfileLabel() }}</b>.
-        </div>
-      </div>
-    </div>
+            <div class="health-card__body">
+              <div class="health-card__title">
+                {{ isTankHealthy ? 'Bac en bonne santé ✅' : 'Analyse des paramètres' }}
+              </div>
 
-    <div class="ok-banner__right">
-      <mat-icon aria-hidden="true">check_circle</mat-icon>
-      <span>Rien à faire pour le moment</span>
-    </div>
-  </mat-card-content>
-</mat-card>
+              <div class="health-card__text" *ngIf="isTankHealthy; else notHealthyText">
+                Ta dernière mesure respecte les plages de référence du profil
+                <b>{{ getProfileLabel() }}</b>.
+              </div>
 
-        <section class="sol-block">
-          <div class="sol-block__title">
-            <mat-icon>tune</mat-icon>
-            <span>Objectifs (référence)</span>
-          </div>
+              <ng-template #notHealthyText>
+                Des écarts peuvent être détectés selon ta dernière mesure et ton profil de référence.
+              </ng-template>
+            </div>
 
-          <mat-card class="sol-card" *ngIf="targetsLoading; else targetsOk">
-            <mat-card-content class="sol-loading">
-              <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
-              <span>Chargement des objectifs…</span>
-            </mat-card-content>
-          </mat-card>
+            <div class="health-card__status">
+              <mat-icon>{{ isTankHealthy ? 'check_circle' : 'tips_and_updates' }}</mat-icon>
+              <span>{{ isTankHealthy ? 'Rien à faire' : 'Conseils disponibles' }}</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
 
-          <ng-template #targetsOk>
-            <mat-card class="sol-card" *ngIf="targets && targetsForm; else noTargets">
-              <mat-card-content>
-                <mat-accordion class="targets-accordion">
-                  <mat-expansion-panel class="targets-panel" [expanded]="false">
-                    <mat-expansion-panel-header>
-                      <mat-panel-title>
-                        <mat-icon aria-hidden="true">analytics</mat-icon>
-                        <span>Paramètres de référence</span>
-                      </mat-panel-title>
+        <div class="sol-layout">
+          <!-- TARGETS -->
+          <section class="sol-panel">
+            <div class="sol-panel__head">
+              <div>
+                <h3>
+                  <mat-icon>tune</mat-icon>
+                  Objectifs de référence
+                </h3>
 
-                      <mat-panel-description class="targets-summary">
-                        <span class="sum-pill">
-                          Profil : <b>{{ getProfileLabel() }}</b>
-                        </span>
+                <p>Les valeurs utilisées pour comparer tes mesures.</p>
 
-                        <!-- mini résumé -->
-                        <span class="sum-pill" *ngIf="waterType === 'EAU_DOUCE'">
-                          pH <b>{{ getTargetMin('ph') }}–{{ getTargetMax('ph') }}</b>
-                        </span>
-                        <span class="sum-pill" *ngIf="waterType === 'EAU_DOUCE'">
-                          NO₂ <b>{{ getTargetMin('no2') }}–{{ getTargetMax('no2') }}</b>
-                        </span>
-                        <span class="sum-pill" *ngIf="waterType === 'EAU_DOUCE'">
-                          NO₃ <b>{{ getTargetMin('no3') }}–{{ getTargetMax('no3') }}</b>
-                        </span>
-                        <span class="sum-pill" *ngIf="waterType === 'EAU_DOUCE'">
-                          KH <b>{{ getTargetMin('kh') }}–{{ getTargetMax('kh') }}</b>
-                        </span>
-
-                        <span class="sum-pill" *ngIf="waterType === 'EAU_DE_MER'">
-                          dKH <b>{{ getTargetMin('dkh') }}–{{ getTargetMax('dkh') }}</b>
-                        </span>
-                        <span class="sum-pill" *ngIf="waterType === 'EAU_DE_MER'">
-                          Sal <b>{{ getTargetMin('salinity') }}–{{ getTargetMax('salinity') }}</b>
-                        </span>
-                      </mat-panel-description>
-                    </mat-expansion-panel-header>
-
-                    <!-- contenu déroulé : édition -->
-                    <div class="targets-top">
-                      <div class="targets-profile">
-                        <span class="label">Profil</span>
-
-                        <mat-form-field appearance="outline" class="profile-select">
-                          <mat-select
-                            [value]="targetsForm.value.profileKey"
-                            [disabled]="targetsLoading"
-                            (selectionChange)="applyTargetProfile($event.value)"
-                          >
-                            <mat-option *ngFor="let pk of profileOptions" [value]="pk">
-                              {{ getProfileLabel(pk) }}
-                            </mat-option>
-                          </mat-select>
-                        </mat-form-field>
-                      </div>
-
-                      <div class="targets-note">
-                        <mat-icon>info</mat-icon>
-                        <span>Modifie et sauvegarde → ça passe en CUSTOM.</span>
-                      </div>
+                <div class="species-target-box" *ngIf="hasSpeciesAverageTargets">
+                  <div class="species-target-box__text">
+                    <div class="species-target-box__title">
+                      Moyenne calculée depuis les espèces du bac
                     </div>
 
-                    <div class="targets-grid-table" *ngIf="targetsGroup as tg" [formGroup]="tg">
-                      <div class="target-row head">
-                        <div>Mesure</div>
-                        <div>Min</div>
-                        <div>Max</div>
-                      </div>
+                    <div class="species-target-box__preview">
+                      <span *ngIf="speciesAveragePreview['temp']">
+                        Temp :
+                        <b>{{ speciesAveragePreview['temp'].min }}–{{ speciesAveragePreview['temp'].max }}°C</b>
+                      </span>
 
-                      <div class="target-row" *ngFor="let k of allParams" [formGroupName]="k">
-                        <div class="k">{{ paramLabels[k] }}</div>
+                      <span *ngIf="speciesAveragePreview['ph']">
+                        pH :
+                        <b>{{ speciesAveragePreview['ph'].min }}–{{ speciesAveragePreview['ph'].max }}</b>
+                      </span>
 
-                        <mat-form-field appearance="outline" class="mini">
-                          <input matInput type="number" formControlName="min" placeholder="—" />
-                        </mat-form-field>
+                      <span *ngIf="speciesAveragePreview['gh']">
+                        GH :
+                        <b>{{ speciesAveragePreview['gh'].min }}–{{ speciesAveragePreview['gh'].max }}</b>
+                      </span>
 
-                        <mat-form-field appearance="outline" class="mini">
-                          <input matInput type="number" formControlName="max" placeholder="—" />
-                        </mat-form-field>
-                      </div>
-
-                      <div class="targets-actions">
-                        <button
-                          mat-stroked-button
-                          type="button"
-                          [disabled]="targetsLoading"
-                          (click)="saveCustomTargets()"
-                        >
-                          <mat-icon>save</mat-icon>
-                          Sauvegarder (CUSTOM)
-                        </button>
-                      </div>
+                      <span *ngIf="speciesAveragePreview['kh']">
+                        KH :
+                        <b>{{ speciesAveragePreview['kh'].min }}–{{ speciesAveragePreview['kh'].max }}</b>
+                      </span>
                     </div>
-                  </mat-expansion-panel>
-                </mat-accordion>
+                  </div>
+
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [disabled]="targetsLoading"
+                    (click)="applySpeciesAverageTargets()"
+                  >
+                    <mat-icon>auto_fix_high</mat-icon>
+                    Appliquer
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <mat-card class="sol-card" *ngIf="targetsLoading; else targetsOk">
+              <mat-card-content class="sol-loading">
+                <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
+                <span>Chargement des objectifs…</span>
               </mat-card-content>
             </mat-card>
 
-            <ng-template #noTargets>
-              <mat-card class="sol-card">
+            <ng-template #targetsOk>
+              <mat-card class="sol-card targets-card" *ngIf="targets && targetsForm; else noTargets">
                 <mat-card-content>
-                  <p class="hint">
-                    Aucun objectif trouvé. Clique “Rafraîchir” : l’app crée un profil par défaut.
-                  </p>
+                  <mat-accordion class="targets-accordion">
+                    <mat-expansion-panel class="targets-panel" [expanded]="false">
+                      <mat-expansion-panel-header>
+                        <mat-panel-title>
+                          <div class="targets-title">
+                            <mat-icon>analytics</mat-icon>
+                            <span>Paramètres</span>
+                          </div>
+                        </mat-panel-title>
+
+                        <mat-panel-description class="targets-summary">
+                          <span class="sum-pill">
+                            Profil <b>{{ getProfileLabel() }}</b>
+                          </span>
+
+                          <span class="sum-pill" *ngIf="waterType === 'EAU_DOUCE'">
+                            pH <b>{{ getTargetMin('ph') }}–{{ getTargetMax('ph') }}</b>
+                          </span>
+
+                          <span class="sum-pill" *ngIf="waterType === 'EAU_DOUCE'">
+                            NO₂ <b>{{ getTargetMin('no2') }}–{{ getTargetMax('no2') }}</b>
+                          </span>
+
+                          <span class="sum-pill" *ngIf="waterType === 'EAU_DOUCE'">
+                            NO₃ <b>{{ getTargetMin('no3') }}–{{ getTargetMax('no3') }}</b>
+                          </span>
+
+                          <span class="sum-pill" *ngIf="waterType === 'EAU_DOUCE'">
+                            KH <b>{{ getTargetMin('kh') }}–{{ getTargetMax('kh') }}</b>
+                          </span>
+
+                          <span class="sum-pill" *ngIf="waterType === 'EAU_DE_MER'">
+                            dKH <b>{{ getTargetMin('dkh') }}–{{ getTargetMax('dkh') }}</b>
+                          </span>
+
+                          <span class="sum-pill" *ngIf="waterType === 'EAU_DE_MER'">
+                            Salinité <b>{{ getTargetMin('salinity') }}–{{ getTargetMax('salinity') }}</b>
+                          </span>
+                        </mat-panel-description>
+                      </mat-expansion-panel-header>
+
+                      <div class="targets-editor">
+                        <div class="targets-editor__top">
+                          <mat-form-field appearance="outline" class="profile-select">
+                            <mat-label>Profil</mat-label>
+                            <mat-select
+                              [value]="targetsForm.value.profileKey"
+                              [disabled]="targetsLoading"
+                              (selectionChange)="applyTargetProfile($event.value)"
+                            >
+                              <mat-option *ngFor="let pk of profileOptions" [value]="pk">
+                                {{ getProfileLabel(pk) }}
+                              </mat-option>
+                            </mat-select>
+                          </mat-form-field>
+
+                          <div class="targets-help">
+                            <mat-icon>info</mat-icon>
+                            <span>Une modification manuelle passe le profil en CUSTOM.</span>
+                          </div>
+                        </div>
+
+                        <div class="targets-grid-table" *ngIf="targetsGroup as tg" [formGroup]="tg">
+                          <div class="target-row target-row--head">
+                            <div>Mesure</div>
+                            <div>Min</div>
+                            <div>Max</div>
+                          </div>
+
+                          <div class="target-row" *ngFor="let k of allParams" [formGroupName]="k">
+                            <div class="target-name">{{ paramLabels[k] }}</div>
+
+                            <mat-form-field appearance="outline" class="target-input">
+                              <input matInput type="number" formControlName="min" placeholder="—" />
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" class="target-input">
+                              <input matInput type="number" formControlName="max" placeholder="—" />
+                            </mat-form-field>
+                          </div>
+
+                          <div class="targets-actions">
+                            <button
+                              mat-flat-button
+                              color="primary"
+                              type="button"
+                              [disabled]="targetsLoading"
+                              (click)="saveCustomTargets()"
+                            >
+                              <mat-icon>save</mat-icon>
+                              Sauvegarder
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </mat-expansion-panel>
+                  </mat-accordion>
                 </mat-card-content>
               </mat-card>
+
+              <ng-template #noTargets>
+                <mat-card class="sol-card empty-card">
+                  <mat-card-content>
+                    <mat-icon>flag</mat-icon>
+                    <h3>Aucun objectif trouvé</h3>
+                    <p>Clique sur “Rafraîchir l’analyse” pour créer un profil par défaut.</p>
+                  </mat-card-content>
+                </mat-card>
+              </ng-template>
             </ng-template>
-          </ng-template>
-        </section>
+          </section>
 
-        <!-- Recommendations -->
-        <section class="sol-block">
-          <div class="sol-block__title">
-            <mat-icon>lightbulb</mat-icon>
-            <span>Propositions</span>
-          </div>
+          <!-- RECOMMENDATIONS -->
+          <section class="sol-panel">
+            <div class="sol-panel__head">
+              <div>
+                <h3>
+                  <mat-icon>lightbulb</mat-icon>
+                  Propositions
+                </h3>
 
-          <mat-card class="sol-card" *ngIf="recosLoading">
-            <mat-card-content class="sol-loading">
-              <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
-              <span>Analyse en cours…</span>
-            </mat-card-content>
-          </mat-card>
-
-          <ng-container *ngIf="!recosLoading">
-            <div class="sol-grid" *ngIf="recos.length; else emptyRecos">
-              <mat-card
-                class="sol-card sol-reco"
-                *ngFor="let r of recos"
-                [ngClass]="'sev-' + (r.severity || 'INFO')"
-              >
-                <div class="sol-reco__bar"></div>
-
-                <mat-card-content class="sol-reco__content">
-                  <div class="sol-reco__top">
-                    <div class="sol-reco__title">{{ r.title }}</div>
-
-                    <mat-chip class="sev-chip" [ngClass]="'sev-chip--' + (r.severity || 'INFO')">
-                      {{ severityLabel(r.severity) }}
-                    </mat-chip>
-                  </div>
-
-                  <p class="sol-reco__msg">{{ r.message }}</p>
-
-                  <!--<div class="sol-reco__meta">
-                    <span class="pill">Règle : {{ r.ruleKey }}</span>
-                    <span class="pill">{{ r.createdAt | date: 'short' }}</span>
-                  </div>-->
-
-                  <div class="sol-reco__actions">
-                    <button mat-stroked-button color="warn" (click)="rejectReco(r.id)">
-                      Refuser
-                    </button>
-                    <button mat-raised-button color="primary" (click)="acceptReco(r)">
-                      Accepter & ajouter au planning
-                    </button>
-                  </div>
-                </mat-card-content>
-              </mat-card>
+                <p>Actions recommandées selon les écarts détectés.</p>
+              </div>
             </div>
 
-            <ng-template #emptyRecos>
-              <mat-card class="sol-card">
-                <mat-card-content>
-                  <p class="hint">Aucune solution en attente pour cet aquarium.</p>
-                  <p class="hint small">Ajoute une mesure hors objectif (ex: NO2 élevé) puis reviens ici.</p>
-                </mat-card-content>
-              </mat-card>
-            </ng-template>
-          </ng-container>
-        </section>
+            <mat-card class="sol-card" *ngIf="recosLoading">
+              <mat-card-content class="sol-loading">
+                <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
+                <span>Analyse en cours…</span>
+              </mat-card-content>
+            </mat-card>
+
+            <ng-container *ngIf="!recosLoading">
+              <div class="reco-list" *ngIf="recos.length; else emptyRecos">
+                <mat-card
+                  class="reco-card"
+                  *ngFor="let r of recos"
+                  [ngClass]="'reco-card--' + (r.severity || 'INFO')"
+                >
+                  <mat-card-content>
+                    <div class="reco-card__top">
+                      <div class="reco-card__icon">
+                        <mat-icon>
+                          {{
+                            r.severity === 'URGENT'
+                              ? 'warning'
+                              : r.severity === 'WARN'
+                                ? 'error_outline'
+                                : 'info'
+                          }}
+                        </mat-icon>
+                      </div>
+
+                      <div class="reco-card__main">
+                        <div class="reco-card__header">
+                          <h4>{{ r.title }}</h4>
+
+                          <mat-chip
+                            class="sev-chip"
+                            [ngClass]="'sev-chip--' + (r.severity || 'INFO')"
+                          >
+                            {{ severityLabel(r.severity) }}
+                          </mat-chip>
+                        </div>
+
+                        <p>{{ r.message }}</p>
+                      </div>
+                    </div>
+
+                    <div class="reco-card__actions">
+                      <button
+                        mat-stroked-button
+                        color="warn"
+                        type="button"
+                        (click)="rejectReco(r.id)"
+                      >
+                        Refuser
+                      </button>
+
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        type="button"
+                        (click)="acceptReco(r)"
+                      >
+                        <mat-icon>event</mat-icon>
+                        Ajouter au planning
+                      </button>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+
+              <ng-template #emptyRecos>
+                <mat-card class="sol-card empty-card">
+                  <mat-card-content>
+                    <mat-icon>task_alt</mat-icon>
+                    <h3>Aucune solution en attente</h3>
+                    <p>
+                      Ajoute une mesure hors objectif, par exemple NO₂ élevé, puis reviens ici pour générer des conseils.
+                    </p>
+                  </mat-card-content>
+                </mat-card>
+              </ng-template>
+            </ng-container>
+          </section>
+        </div>
       </ng-container>
 
-      <!-- ========== CLASSIC PAYWALL ========== -->
       <ng-template #classicPaywall>
         <section class="premium-hero">
           <div class="premium-hero__left">
@@ -494,7 +604,7 @@
             <h2 class="premium-hero__title">Solutions intelligentes</h2>
 
             <p class="premium-hero__sub">
-              L’app analyse tes mesures et te propose des actions concrètes (acceptation en 1 clic → planning).
+              L’app analyse tes mesures et te propose des actions concrètes.
             </p>
 
             <div class="premium-hero__bullets">
@@ -518,7 +628,7 @@
                 <mat-icon>event_available</mat-icon>
                 <div>
                   <div class="bullet__t">Ajout au planning</div>
-                  <div class="bullet__d">Tu valides → c’est planifié (rappels).</div>
+                  <div class="bullet__d">Tu valides → c’est planifié.</div>
                 </div>
               </div>
             </div>
@@ -529,16 +639,10 @@
             </div>
 
             <div class="premium-hero__cta">
-              <button
-                  mat-raised-button
-                  color="primary"
-      
-                  [disabled]="checkoutLoading"
-                  > <!--(click)="startPremiumCheckout()"-->
+              <button mat-raised-button color="primary" type="button" [disabled]="checkoutLoading">
                 <mat-icon>lock_open</mat-icon>
-                  {{ checkoutLoading ? 'Redirection…' : 'Passer Premium (bientôt)' }}
+                {{ checkoutLoading ? 'Redirection…' : 'Passer Premium (bientôt)' }}
               </button>
-                <!--<button mat-stroked-button (click)="goToPricing()">Voir les offres</button> -->
             </div>
           </div>
 
@@ -556,7 +660,9 @@
                     <div class="mock-card__title">NO₂ trop haut</div>
                     <div class="mock-card__text">Changement d’eau + réduction nourrissage</div>
                     <div class="mock-card__meta">
-                      <span>Urgent</span><span>•</span><span>Ajout planning</span>
+                      <span>Urgent</span>
+                      <span>•</span>
+                      <span>Ajout planning</span>
                     </div>
                   </div>
                 </div>
@@ -567,7 +673,9 @@
                     <div class="mock-card__title">CO₂ insuffisant</div>
                     <div class="mock-card__text">Ajuster injection + vérifier drop-checker</div>
                     <div class="mock-card__meta">
-                      <span>Attention</span><span>•</span><span>15 sec à valider</span>
+                      <span>Attention</span>
+                      <span>•</span>
+                      <span>15 sec à valider</span>
                     </div>
                   </div>
                 </div>
@@ -578,7 +686,9 @@
                     <div class="mock-card__title">KH instable</div>
                     <div class="mock-card__text">Stabiliser l’eau + contrôler reminéralisation</div>
                     <div class="mock-card__meta">
-                      <span>Info</span><span>•</span><span>Conseil</span>
+                      <span>Info</span>
+                      <span>•</span>
+                      <span>Conseil</span>
                     </div>
                   </div>
                 </div>
@@ -596,137 +706,258 @@
   </mat-tab>
 
   <!-- ===================== Dans mon Aquarium ===================== -->
-  <mat-tab label="Dans mon Aquarium">
-    <div class="tab-section">
-      <div class="tab-actions">
-        <button mat-raised-button (click)="openAddDialog()">
-          <mat-icon>add</mat-icon>
-          <span>Ajouter</span>
-        </button>
+<mat-tab label="Dans mon Aquarium">
+  <div class="tab-section tank-wrap">
+    <!-- Header -->
+    <section class="tank-hero">
+      <div class="tank-hero__left">
+        <div class="tank-hero__eyebrow">
+          <mat-icon>water</mat-icon>
+          Population du bac
+        </div>
+
+        <h2 class="tank-hero__title">Dans mon aquarium</h2>
+
+        <p class="tank-hero__subtitle">
+          Retrouve les poissons, invertébrés et plantes ajoutés à ce bac. Ces espèces servent aussi à calculer des paramètres de référence dans l’onglet Solutions.
+        </p>
       </div>
 
-      <h3 class="section-title">Poissons / Vivants</h3>
+      <div class="tank-hero__right">
+        <button mat-flat-button color="primary" type="button" (click)="openAddDialog()">
+          <mat-icon>add</mat-icon>
+          Ajouter une espèce
+        </button>
+      </div>
+    </section>
 
-      <div class="items-grid" *ngIf="fishInTank.length; else emptyFish">
-        <a
-          class="item-card item-card--link"
-          *ngFor="let r of fishInTank"
-          [routerLink]="fishDetailsLink(r.fishCard.id)"
-        >
-          <div class="thumb" *ngIf="fishImageUrl(r); else fishPh">
-            <img [src]="fishImageUrl(r)!" [alt]="r.fishCard.commonName" loading="lazy" />
+    <!-- Stats -->
+    <section class="tank-stats">
+      <div class="tank-stat">
+        <div class="tank-stat__icon fish">
+          <mat-icon>set_meal</mat-icon>
+        </div>
+        <div>
+          <div class="tank-stat__value">{{ fishInTank.length }}</div>
+          <div class="tank-stat__label">Fiche{{ fishInTank.length > 1 ? 's' : '' }} poisson / vivant</div>
+        </div>
+      </div>
+
+      <div class="tank-stat">
+        <div class="tank-stat__icon plant">
+          <mat-icon>eco</mat-icon>
+        </div>
+        <div>
+          <div class="tank-stat__value">{{ plantsInTank.length }}</div>
+          <div class="tank-stat__label">Fiche{{ plantsInTank.length > 1 ? 's' : '' }} plante</div>
+        </div>
+      </div>
+
+      <div class="tank-stat">
+        <div class="tank-stat__icon total">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <div>
+          <div class="tank-stat__value">
+            {{ fishInTank.length + plantsInTank.length }}
           </div>
-          <ng-template #fishPh>
-            <div class="thumb placeholder"><mat-icon>pets</mat-icon></div>
-          </ng-template>
+          <div class="tank-stat__label">Élément{{ fishInTank.length + plantsInTank.length > 1 ? 's' : '' }} au total</div>
+        </div>
+      </div>
+    </section>
 
-          <div class="body">
-            <div class="top">
-              <div class="name">{{ r.fishCard.commonName }}</div>
+    <!-- Fish -->
+    <section class="tank-section">
+      <div class="tank-section__head">
+        <div>
+          <h3>
+            <mat-icon>set_meal</mat-icon>
+            Poissons / Vivants
+          </h3>
+          <p>Les espèces animales présentes dans ton aquarium.</p>
+        </div>
+      </div>
 
-              <div class="right">
-                <div class="qty">x{{ r.count }}</div>
-                <mat-icon class="chev" aria-hidden="true">chevron_right</mat-icon>
+      <div class="tank-grid" *ngIf="fishInTank.length; else emptyFish">
+        <article class="tank-card tank-card--fish" *ngFor="let r of fishInTank">
+          <a class="tank-card__link" [routerLink]="fishDetailsLink(r.fishCard)">
+            <div class="tank-card__thumb" *ngIf="fishImageUrl(r); else fishPh">
+              <img [src]="fishImageUrl(r)!" [alt]="r.fishCard.commonName" loading="lazy" />
+            </div>
+
+            <ng-template #fishPh>
+              <div class="tank-card__thumb tank-card__thumb--placeholder">
+                <mat-icon>set_meal</mat-icon>
+              </div>
+            </ng-template>
+
+            <div class="tank-card__body">
+              <div class="tank-card__top">
+                <div class="tank-card__identity">
+                  <h4>{{ r.fishCard.commonName }}</h4>
+                  <p *ngIf="r.fishCard.scientificName">
+                    {{ r.fishCard.scientificName }}
+                  </p>
+                </div>
+
+                <div class="tank-card__qty">x{{ r.count }}</div>
+              </div>
+
+              <div
+                class="tank-card__params"
+                *ngIf="
+                  r.fishCard.tempMin != null ||
+                  r.fishCard.tempMax != null ||
+                  r.fishCard.phMin != null ||
+                  r.fishCard.phMax != null ||
+                  r.fishCard.khMin != null ||
+                  r.fishCard.khMax != null
+                "
+              >
+                <span *ngIf="r.fishCard.tempMin != null || r.fishCard.tempMax != null">
+                  <mat-icon>device_thermostat</mat-icon>
+                  {{ r.fishCard.tempMin ?? '—' }}–{{ r.fishCard.tempMax ?? '—' }}°C
+                </span>
+
+                <span *ngIf="r.fishCard.phMin != null || r.fishCard.phMax != null">
+                  <mat-icon>science</mat-icon>
+                  pH {{ r.fishCard.phMin ?? '—' }}–{{ r.fishCard.phMax ?? '—' }}
+                </span>
+
+                <span *ngIf="r.fishCard.khMin != null || r.fishCard.khMax != null">
+                  <mat-icon>opacity</mat-icon>
+                  KH {{ r.fishCard.khMin ?? '—' }}–{{ r.fishCard.khMax ?? '—' }}
+                </span>
+              </div>
+
+              <div class="tank-card__footer">
+                <span>
+                  Voir la fiche
+                  <mat-icon>arrow_forward</mat-icon>
+                </span>
               </div>
             </div>
-
-            <div class="sub" *ngIf="r.fishCard.scientificName">
-              {{ r.fishCard.scientificName }}
-            </div>
-
-            <div
-              class="params"
-              *ngIf="
-                r.fishCard.tempMin != null || r.fishCard.tempMax != null ||
-                r.fishCard.phMin != null || r.fishCard.phMax != null ||
-                r.fishCard.khMin != null || r.fishCard.khMax != null
-              "
-            >
-              <span class="chip" *ngIf="r.fishCard.tempMin != null || r.fishCard.tempMax != null">
-                Temp <b>{{ r.fishCard.tempMin ?? '—' }}–{{ r.fishCard.tempMax ?? '—' }}°C</b>
-              </span>
-
-              <span class="chip" *ngIf="r.fishCard.phMin != null || r.fishCard.phMax != null">
-                pH <b>{{ r.fishCard.phMin ?? '—' }}–{{ r.fishCard.phMax ?? '—' }}</b>
-              </span>
-
-              <span class="chip" *ngIf="r.fishCard.khMin != null || r.fishCard.khMax != null">
-                KH <b>{{ r.fishCard.khMin ?? '—' }}–{{ r.fishCard.khMax ?? '—' }}</b>
-              </span>
-            </div>
-
-            <div class="cta">
-              <span>Voir la fiche</span>
-              <mat-icon aria-hidden="true">open_in_new</mat-icon>
-            </div>
-          </div>
+          </a>
 
           <button
             mat-icon-button
             color="warn"
-            class="trash"
+            class="tank-card__delete"
+            type="button"
             (click)="onRemoveFishClick($event, r.id)"
-            aria-label="Supprimer"
+            aria-label="Supprimer ce poisson"
           >
             <mat-icon>delete</mat-icon>
           </button>
-        </a>
+        </article>
       </div>
 
       <ng-template #emptyFish>
-        <p class="empty-species">Aucun poisson/vivant enregistré.</p>
+        <div class="tank-empty">
+          <mat-icon>set_meal</mat-icon>
+          <h4>Aucun poisson ou vivant ajouté</h4>
+          <p>Ajoute les habitants de ton aquarium pour mieux suivre la compatibilité et les paramètres idéaux.</p>
+          <button mat-stroked-button type="button" (click)="openAddDialog()">
+            <mat-icon>add</mat-icon>
+            Ajouter
+          </button>
+        </div>
       </ng-template>
+    </section>
 
-      <h3 class="section-title section-title--spaced">Plantes</h3>
+    <!-- Plants -->
+    <section class="tank-section">
+      <div class="tank-section__head">
+        <div>
+          <h3>
+            <mat-icon>eco</mat-icon>
+            Plantes
+          </h3>
+          <p>Les plantes présentes dans ton aquarium.</p>
+        </div>
+      </div>
 
-      <div class="items-grid" *ngIf="plantsInTank.length; else emptyPlants">
-        <a
-          class="item-card item-card--link"
-          *ngFor="let r of plantsInTank"
-          [routerLink]="plantDetailsLink(r.plantCard.id)"
-        >
-          <div class="thumb" *ngIf="r.plantCard.imageUrl; else plantPh">
-            <img [src]="r.plantCard.imageUrl!" [alt]="r.plantCard.commonName" loading="lazy" />
-          </div>
-          <ng-template #plantPh>
-            <div class="thumb placeholder"><mat-icon>eco</mat-icon></div>
-          </ng-template>
+      <div class="tank-grid" *ngIf="plantsInTank.length; else emptyPlants">
+        <article class="tank-card tank-card--plant" *ngFor="let r of plantsInTank">
+          <a class="tank-card__link" [routerLink]="plantDetailsLink(r.plantCard)">
+            <div class="tank-card__thumb" *ngIf="plantImageUrl(r); else plantPh">
+              <img [src]="plantImageUrl(r)!" [alt]="r.plantCard.commonName" loading="lazy" />
+            </div>
 
-          <div class="body">
-            <div class="top">
-              <div class="name">{{ r.plantCard.commonName }}</div>
-              <div class="right">
-                <div class="qty">x{{ r.count }}</div>
-                <mat-icon class="chev" aria-hidden="true">chevron_right</mat-icon>
+            <ng-template #plantPh>
+              <div class="tank-card__thumb tank-card__thumb--placeholder">
+                <mat-icon>eco</mat-icon>
+              </div>
+            </ng-template>
+
+            <div class="tank-card__body">
+              <div class="tank-card__top">
+                <div class="tank-card__identity">
+                  <h4>{{ r.plantCard.commonName }}</h4>
+                  <p *ngIf="r.plantCard.scientificName">
+                    {{ r.plantCard.scientificName }}
+                  </p>
+                </div>
+
+                <div class="tank-card__qty">x{{ r.count }}</div>
+              </div>
+
+              <div
+                class="tank-card__params"
+                *ngIf="
+                  r.plantCard.tempMin != null ||
+                  r.plantCard.tempMax != null ||
+                  r.plantCard.phMin != null ||
+                  r.plantCard.phMax != null
+                "
+              >
+                <span *ngIf="r.plantCard.tempMin != null || r.plantCard.tempMax != null">
+                  <mat-icon>device_thermostat</mat-icon>
+                  {{ r.plantCard.tempMin ?? '—' }}–{{ r.plantCard.tempMax ?? '—' }}°C
+                </span>
+
+                <span *ngIf="r.plantCard.phMin != null || r.plantCard.phMax != null">
+                  <mat-icon>science</mat-icon>
+                  pH {{ r.plantCard.phMin ?? '—' }}–{{ r.plantCard.phMax ?? '—' }}
+                </span>
+              </div>
+
+              <div class="tank-card__footer">
+                <span>
+                  Voir la fiche
+                  <mat-icon>arrow_forward</mat-icon>
+                </span>
               </div>
             </div>
-            <div class="sub" *ngIf="r.plantCard.scientificName">
-              {{ r.plantCard.scientificName }}
-            </div>
-            <div class="cta">
-              <span>Voir la fiche</span>
-              <mat-icon aria-hidden="true">open_in_new</mat-icon>
-            </div>
-          </div>
+          </a>
 
           <button
             mat-icon-button
             color="warn"
-            class="trash"
+            class="tank-card__delete"
+            type="button"
             (click)="onRemovePlantClick($event, r.id)"
-            aria-label="Supprimer"
+            aria-label="Supprimer cette plante"
           >
             <mat-icon>delete</mat-icon>
           </button>
-        </a>
+        </article>
       </div>
 
       <ng-template #emptyPlants>
-        <p class="empty-species">Aucune plante enregistrée.</p>
+        <div class="tank-empty">
+          <mat-icon>eco</mat-icon>
+          <h4>Aucune plante ajoutée</h4>
+          <p>Ajoute les plantes de ton bac pour affiner les besoins et les paramètres recommandés.</p>
+          <button mat-stroked-button type="button" (click)="openAddDialog()">
+            <mat-icon>add</mat-icon>
+            Ajouter
+          </button>
+        </div>
       </ng-template>
-    </div>
-  </mat-tab>
-</mat-tab-group>
+    </section>
+  </div>
+</mat-tab>
 
 <ng-template #loader>
   <div class="loading">
