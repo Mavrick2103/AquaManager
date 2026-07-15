@@ -13,6 +13,7 @@ import { WaterMeasurement } from '../../src/water-measurement/water-measurement.
 import { Task } from '../../src/tasks/task.entity';
 import { AquariumFishCard } from '../../src/catalog/aquarium-card-pivot/aquarium-fish-card.entity';
 import { AquariumPlantCard } from '../../src/catalog/aquarium-card-pivot/aquarium-plant-card.entity';
+import { GamificationProfile } from '../../src/gamification/entities/gamification-profile.entity';
 
 jest.mock('argon2', () => ({
   hash: jest.fn(async (s: string) => 'hashed:' + s),
@@ -47,6 +48,10 @@ describe('UsersService (unit)', () => {
       find: jest.fn(),
     };
 
+    const gamificationProfileRepoMock: Partial<jest.Mocked<Repository<GamificationProfile>>> = {
+  findOne: jest.fn(),
+};
+
     const wmRepoMock: Partial<jest.Mocked<Repository<WaterMeasurement>>> = {
       find: jest.fn(),
     };
@@ -73,6 +78,7 @@ describe('UsersService (unit)', () => {
         { provide: getRepositoryToken(Task), useValue: taskRepoMock },
         { provide: getRepositoryToken(AquariumFishCard), useValue: aqFishRepoMock },
         { provide: getRepositoryToken(AquariumPlantCard), useValue: aqPlantRepoMock },
+        {provide: getRepositoryToken(GamificationProfile), useValue: gamificationProfileRepoMock},
       ],
     }).compile();
 
