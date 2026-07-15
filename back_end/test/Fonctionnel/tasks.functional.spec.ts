@@ -7,6 +7,7 @@ import { TaskService } from '../../src/tasks/task.service';
 import { Task, TaskStatus, TaskType } from '../../src/tasks/task.entity';
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
 import { UsersService } from '../../src/users/users.service';
+import { GamificationService } from '../../src/gamification/gamification.service';
 
 // ✅ adapte si besoin
 import { TaskFertilizer } from '../../src/tasks/task-fertilizer.entity';
@@ -102,6 +103,12 @@ describe('Tasks (tests fonctionnels)', () => {
         { provide: getRepositoryToken(TaskFertilizer), useValue: taskFertilizerRepoMock },
         { provide: UsersService, useValue: usersServiceMock },
         { provide: MailService, useValue: mailServiceMock },
+        {
+  provide: GamificationService,
+  useValue: {
+    onTaskCreated: jest.fn().mockResolvedValue({ completed: [] }),
+  },
+},
       ],
     }).compile();
 

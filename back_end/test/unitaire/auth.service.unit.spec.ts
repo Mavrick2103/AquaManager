@@ -7,6 +7,7 @@ import { AuthService } from '../../src/auth/auth.service';
 import { UsersService } from '../../src/users/users.service';
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
+import { GamificationService } from '../../src/gamification/gamification.service';
 
 // Mock argon2.verify
 jest.mock('argon2', () => ({
@@ -53,6 +54,12 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: jwtMock },
         { provide: ConfigService, useValue: configMock },
         { provide: MailService, useValue: mailServiceMock },
+        {
+  provide: GamificationService,
+  useValue: {
+    onTaskCreated: jest.fn().mockResolvedValue({ completed: [] }),
+  },
+},
       ],
     }).compile();
 
