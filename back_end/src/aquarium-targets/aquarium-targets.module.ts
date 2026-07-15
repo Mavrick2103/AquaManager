@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Aquarium } from '../aquariums/aquariums.entity';
@@ -8,7 +8,10 @@ import { AquariumTargetsService } from './aquarium-targets.service';
 import { GamificationModule } from '../gamification/gamification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AquariumTargets, Aquarium, GamificationModule])],
+  imports: [
+    TypeOrmModule.forFeature([AquariumTargets, Aquarium]),
+    forwardRef(() => GamificationModule),
+  ],
   controllers: [AquariumTargetsController],
   providers: [AquariumTargetsService],
   exports: [AquariumTargetsService],

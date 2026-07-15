@@ -8,6 +8,7 @@ import { GamificationProfile } from './entities/gamification-profile.entity';
 import { AquariumScoreService } from './score/aquarium-score.service';
 import { WeeklyMissionService } from './missions/weekly-mission.service';
 import { AchievementService } from './achievements/achievement.service';
+import { WeeklyMission } from './entities/weekly-mission.entity';
 
 @Injectable()
 export class GamificationService {
@@ -105,42 +106,60 @@ export class GamificationService {
   }
 
   async onMeasurementCreated(userId: number, aquariumId: number) {
-    await this.addXp(userId, 10);
-    await this.updateActivityStreak(userId);
+  await this.addXp(userId, 10);
+  await this.updateActivityStreak(userId);
 
-    const { completed } = await this.missionService.incrementMission(
-      userId,
-      'ADD_2_MEASUREMENTS',
-      1,
-    );
+  const add2Measurements = await this.missionService.incrementMission(
+    userId,
+    'ADD_2_MEASUREMENTS',
+    1,
+  );
 
-    for (const mission of completed) {
+  for (const mission of add2Measurements.completed) {
+    await this.addXp(userId, mission.xpReward);
+  }
+
+  const add5Measurements = await this.missionService.incrementMission(
+    userId,
+    'ADD_5_MEASUREMENTS',
+    1,
+  );
+
+  for (const mission of add5Measurements.completed) {
+    await this.addXp(userId, mission.xpReward);
+  }
+
+  // Badge première mesure
+  await this.unlockBadge(userId, 'FIRST_MEASUREMENT');
+
+  const score = await this.scoreService.recomputeForAquarium(userId, aquariumId);
+
+  if (score.score >= 85) {
+    await this.unlockBadge(userId, 'BAC_STABLE');
+
+    const missionResult = await this.missionService.updateStableScoreMission(userId, true);
+
+    for (const mission of missionResult.completed) {
       await this.addXp(userId, mission.xpReward);
     }
-
-    // Badge première mesure
-    await this.unlockBadge(userId, 'FIRST_MEASUREMENT');
-
-    const score = await this.scoreService.recomputeForAquarium(userId, aquariumId);
-
-    if (score.score >= 85) {
-      await this.unlockBadge(userId, 'BAC_STABLE');
-
-      const missionResult = await this.missionService.updateStableScoreMission(userId, true);
-
-      for (const mission of missionResult.completed) {
-        await this.addXp(userId, mission.xpReward);
-      }
-    }
-
-    const profile = await this.ensureProfile(userId);
-
-    if (profile.xp >= 1000) {
-      await this.unlockBadge(userId, 'XP_1000');
-    }
-
-    return { score };
   }
+
+  if (score.score >= 90) {
+    const missionResult = await this.missionService.updateExcellentScoreMission(userId, true);
+
+    for (const mission of missionResult.completed) {
+      await this.addXp(userId, mission.xpReward);
+    }
+  }
+
+  const profile = await this.ensureProfile(userId);
+
+  if (profile.xp >= 1000) {
+    await this.unlockBadge(userId, 'XP_1000');
+  }
+
+  return { score };
+}
 
   async onTaskCompleted(userId: number, aquariumId?: number | null) {
     await this.addXp(userId, 15);
@@ -151,19 +170,103 @@ export class GamificationService {
     }
   }
 
-  async onAppOpened(userId: number) {
-    await this.updateActivityStreak(userId);
+  async onTaskCreated(userId: number, taskType?: string | null) {
+  await this.updateActivityStreak(userId);
 
-    const { completed } = await this.missionService.incrementMission(
+  const completedMissions: WeeklyMission[] = [];
+
+  const create2Tasks = await this.missionService.incrementMission(
+    userId,
+    'CREATE_2_TASKS',
+    1,
+  );
+
+  completedMissions.push(...create2Tasks.completed);
+
+  const create5Tasks = await this.missionService.incrementMission(
+    userId,
+    'CREATE_5_TASKS',
+    1,
+  );
+
+  completedMissions.push(...create5Tasks.completed);
+
+  if (taskType === 'WATER_CHANGE') {
+    const waterChange = await this.missionService.incrementMission(
       userId,
-      'OPEN_APP_3_DAYS',
+      'ADD_WATER_CHANGE_TASK',
       1,
     );
 
-    for (const mission of completed) {
-      await this.addXp(userId, mission.xpReward);
-    }
+    completedMissions.push(...waterChange.completed);
   }
+
+  if (taskType === 'FERTILIZATION') {
+    const fertilization = await this.missionService.incrementMission(
+      userId,
+      'ADD_FERTILIZATION_TASK',
+      1,
+    );
+
+    completedMissions.push(...fertilization.completed);
+  }
+
+  if (taskType === 'TRIM') {
+    const trim = await this.missionService.incrementMission(
+      userId,
+      'ADD_TRIM_TASK',
+      1,
+    );
+
+    completedMissions.push(...trim.completed);
+  }
+
+  if (taskType === 'WATER_TEST') {
+    const waterTest = await this.missionService.incrementMission(
+      userId,
+      'ADD_WATER_TEST_TASK',
+      1,
+    );
+
+    completedMissions.push(...waterTest.completed);
+  }
+
+  for (const mission of completedMissions) {
+    await this.addXp(userId, mission.xpReward);
+  }
+
+  return { completed: completedMissions };
+}
+
+  async onAppOpened(userId: number) {
+  const shouldCountToday = true;
+
+  await this.updateActivityStreak(userId);
+
+  if (!shouldCountToday) {
+    return;
+  }
+
+  const open3Days = await this.missionService.incrementMission(
+    userId,
+    'OPEN_APP_3_DAYS',
+    1,
+  );
+
+  for (const mission of open3Days.completed) {
+    await this.addXp(userId, mission.xpReward);
+  }
+
+  const open7Days = await this.missionService.incrementMission(
+    userId,
+    'OPEN_APP_7_DAYS',
+    1,
+  );
+
+  for (const mission of open7Days.completed) {
+    await this.addXp(userId, mission.xpReward);
+  }
+}
 
   /**
    * Débloque un badge + le met en badge récent pour l'affichage Home.

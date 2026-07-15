@@ -1,5 +1,11 @@
 // src/tasks/task.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -9,6 +15,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task, TaskStatus, TaskType, RepeatMode, WeekDayKey } from './task.entity';
 import { TaskFertilizer, FertilizerUnit } from './task-fertilizer.entity';
 import { UsersService } from '../users/users.service';
+import { GamificationService } from '../gamification/gamification.service';
 
 type RepeatPayload =
   | null
@@ -32,7 +39,8 @@ export class TaskService {
     @InjectRepository(Aquarium) private readonly aqRepo: Repository<Aquarium>,
     @InjectRepository(TaskFertilizer) private readonly fertRepo: Repository<TaskFertilizer>,
     private readonly usersService: UsersService,
-  ) {}
+@Inject(forwardRef(() => GamificationService))
+private readonly gamificationService: GamificationService,  ) {}
 
   // =========================
   // Helpers: id parsing
@@ -341,6 +349,8 @@ export class TaskService {
 
     const saved = await this.repo.save(task);
     await this.usersService.touchActivity(userId);
+    await this.gamificationService.onTaskCreated(userId, saved.type);
+
 
     if (dto.type === TaskType.FERTILIZATION) {
       const lines = this.normalizeFertilization(dto.fertilization);

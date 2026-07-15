@@ -13,6 +13,7 @@ type MissionSeed = {
 };
 
 const MISSIONS_PER_PERIOD = 4;
+const TEST_REGENERATE_MISSIONS = false;
 
 const DEFAULT_MISSIONS: MissionSeed[] = [
   {
@@ -25,7 +26,7 @@ const DEFAULT_MISSIONS: MissionSeed[] = [
   {
     missionKey: 'ADD_5_MEASUREMENTS',
     title: 'Suivi sérieux',
-    description: 'Ajoute cinq mesures sur la période.',
+    description: 'Ajoute cinq mesures sur le mois.',
     target: 5,
     xpReward: 150,
   },
@@ -39,7 +40,7 @@ const DEFAULT_MISSIONS: MissionSeed[] = [
   {
     missionKey: 'OPEN_APP_7_DAYS',
     title: 'Aquariophile régulier',
-    description: 'Connecte-toi 7 jours différents sur la période.',
+    description: 'Connecte-toi 7 jours différents sur sur le mois.',
     target: 7,
     xpReward: 140,
   },
@@ -88,7 +89,7 @@ const DEFAULT_MISSIONS: MissionSeed[] = [
   {
     missionKey: 'ADD_WATER_CHANGE_TASK',
     title: 'Prévoir un changement d’eau',
-    description: 'Planifie au moins un changement d’eau.',
+    description: 'Planifie au moins un changement d’eau sur le mois',
     target: 1,
     xpReward: 60,
   },
@@ -140,20 +141,6 @@ const DEFAULT_MISSIONS: MissionSeed[] = [
     description: 'Termine une tâche de test d’eau.',
     target: 1,
     xpReward: 80,
-  },
-  {
-    missionKey: 'ADD_1_AQUARIUM',
-    title: 'Créer un aquarium',
-    description: 'Ajoute un nouvel aquarium à ton espace.',
-    target: 1,
-    xpReward: 120,
-  },
-  {
-    missionKey: 'UPDATE_AQUARIUM_SETTINGS',
-    title: 'Mettre à jour un bac',
-    description: 'Modifie les informations d’un aquarium.',
-    target: 1,
-    xpReward: 60,
   },
   {
     missionKey: 'ADD_1_FISH_TO_TANK',
@@ -226,6 +213,22 @@ const DEFAULT_MISSIONS: MissionSeed[] = [
     xpReward: 100,
   },
 ];
+const ENABLED_MISSION_KEYS = new Set([
+  'ADD_2_MEASUREMENTS',//ok
+  'ADD_5_MEASUREMENTS',//ok
+
+  'OPEN_APP_3_DAYS',//ok
+  'OPEN_APP_7_DAYS',//ok
+
+  'CREATE_2_TASKS',//ok
+  'CREATE_5_TASKS',//ok
+
+  'ADD_WATER_CHANGE_TASK',//ok
+  'ADD_FERTILIZATION_TASK',//ok
+  'ADD_TRIM_TASK',//ok
+  'ADD_WATER_TEST_TASK',//ok
+
+]);
 
 @Injectable()
 export class WeeklyMissionService {
@@ -235,18 +238,34 @@ export class WeeklyMissionService {
   ) {}
 
   async ensureCurrentWeekMissions(userId: number): Promise<WeeklyMission[]> {
-    const { weekStart, weekEnd } = this.getCurrentBiWeeklyRange();
+    const { weekStart, weekEnd } = this.getCurrentMonthlyRange();
 
     const existing = await this.missionRepo.find({
       where: { userId, weekStart },
       order: { id: 'ASC' },
     });
 
-    if (existing.length) {
+    /*if (existing.length) {
       return existing;
-    }
+    }*/
+    if (existing.length && !TEST_REGENERATE_MISSIONS) {
+  return existing;
+}
 
-    const selectedMissions = this.pickRandomMissions(DEFAULT_MISSIONS, MISSIONS_PER_PERIOD);
+if (existing.length && TEST_REGENERATE_MISSIONS) {
+  await this.missionRepo.delete({
+    userId,
+    weekStart,
+  });
+}
+
+    const availableMissions = DEFAULT_MISSIONS.filter((mission) =>
+  ENABLED_MISSION_KEYS.has(mission.missionKey),
+);
+
+const selectedMissions = this.pickRandomMissions(availableMissions, MISSIONS_PER_PERIOD);
+
+    //const selectedMissions = this.pickRandomMissions(DEFAULT_MISSIONS, MISSIONS_PER_PERIOD);
 
     const rows = selectedMissions.map((seed) =>
       this.missionRepo.create({
@@ -328,49 +347,20 @@ export class WeeklyMissionService {
       .slice(0, count);
   }
 
-  private getCurrentBiWeeklyRange() {
-    const now = new Date();
+  private getCurrentMonthlyRange() {
+  const now = new Date();
 
-    const currentMonday = this.getMonday(now);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  monthStart.setHours(0, 0, 0, 0);
 
-    const yearStart = new Date(currentMonday.getFullYear(), 0, 1);
-    yearStart.setHours(0, 0, 0, 0);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  monthEnd.setHours(23, 59, 59, 999);
 
-    const diffDays = Math.floor(
-      (currentMonday.getTime() - yearStart.getTime()) / 86_400_000,
-    );
-
-    const weekNumber = Math.floor(diffDays / 7) + 1;
-
-    const isOddWeek = weekNumber % 2 === 1;
-
-    const periodStart = new Date(currentMonday);
-    if (!isOddWeek) {
-      periodStart.setDate(periodStart.getDate() - 7);
-    }
-
-    periodStart.setHours(0, 0, 0, 0);
-
-    const periodEnd = new Date(periodStart);
-    periodEnd.setDate(periodStart.getDate() + 13);
-    periodEnd.setHours(23, 59, 59, 999);
-
-    return {
-      weekStart: this.toDateOnly(periodStart),
-      weekEnd: this.toDateOnly(periodEnd),
-    };
-  }
-
-  private getMonday(date: Date): Date {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diffToMonday = day === 0 ? -6 : 1 - day;
-
-    d.setDate(d.getDate() + diffToMonday);
-    d.setHours(0, 0, 0, 0);
-
-    return d;
-  }
+  return {
+    weekStart: this.toDateOnly(monthStart),
+    weekEnd: this.toDateOnly(monthEnd),
+  };
+}
 
   private toDateOnly(date: Date): string {
     const year = date.getFullYear();
