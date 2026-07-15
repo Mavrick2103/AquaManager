@@ -152,6 +152,13 @@ export type AdminUserFull = {
   plants: AdminUserPlantRow[];
   tasks: AdminUserTask[];
 
+  gamification?: {
+    level: number;
+    xp: number;
+    currentStreak?: number;
+    bestStreak?: number;
+  };
+
   editor?: AdminUserEditorPayload;
 };
 

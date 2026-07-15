@@ -317,35 +317,41 @@ export class GamificationService {
   }
 
   private async updateActivityStreak(userId: number): Promise<GamificationProfile> {
-    const profile = await this.ensureProfile(userId);
+  const profile = await this.ensureProfile(userId);
 
-    const today = this.toDateOnly(new Date());
+  const today = this.toDateOnly(new Date());
 
-    if (profile.lastActivityDate === today) {
-      return profile;
-    }
-
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = this.toDateOnly(yesterday);
-
-    if (profile.lastActivityDate === yesterdayStr) {
-      profile.currentStreak += 1;
-    } else {
-      profile.currentStreak = 1;
-    }
-
-    profile.bestStreak = Math.max(profile.bestStreak, profile.currentStreak);
-    profile.lastActivityDate = today;
-
-    const saved = await this.profileRepo.save(profile);
-
-    if (saved.currentStreak >= 7) {
-      await this.unlockBadge(userId, 'SEVEN_DAY_STREAK');
-    }
-
-    return saved;
+  // Déjà compté aujourd’hui, on ne rajoute pas +1
+  if (profile.lastActivityDate === today) {
+    return profile;
   }
+
+  const lastActivityDate = profile.lastActivityDate;
+
+  // Si dernière activité dans le même mois, on ajoute un jour de suivi
+  if (lastActivityDate && this.isSameMonth(lastActivityDate, today)) {
+    profile.currentStreak += 1;
+  } else {
+    // Nouveau mois ou première activité
+    profile.currentStreak = 1;
+  }
+
+  profile.bestStreak = Math.max(profile.bestStreak, profile.currentStreak);
+  profile.lastActivityDate = today;
+
+  const saved = await this.profileRepo.save(profile);
+
+  // Badge si 7 jours de suivi dans le mois
+  if (saved.currentStreak >= 7) {
+    await this.unlockBadge(userId, 'SEVEN_DAY_STREAK');
+  }
+
+  return saved;
+}
+
+private isSameMonth(dateA: string, dateB: string): boolean {
+  return dateA.slice(0, 7) === dateB.slice(0, 7);
+}
 
   /**
    * Courbe d'XP progressive :

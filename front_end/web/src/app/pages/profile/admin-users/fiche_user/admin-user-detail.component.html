@@ -43,6 +43,19 @@
         </div>
       </div>
 
+      <div class="pill level">
+        <mat-icon>military_tech</mat-icon>
+        <div class="pill-text">
+          <div class="pill-title">Niveau</div>
+          <div class="pill-value">
+            {{ data.gamification?.level ?? '—' }}
+            <span class="xp" *ngIf="data.gamification?.xp !== undefined">
+              — {{ data.gamification?.xp }} XP
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div class="pill">
         <mat-icon>mail</mat-icon>
         <div class="pill-text">
@@ -97,9 +110,11 @@
                 <ng-container matColumnDef="waterType">
                   <th mat-header-cell *matHeaderCellDef>Type</th>
                   <td mat-cell *matCellDef="let a">
-                    <span class="chip"
+                    <span
+                      class="chip"
                       [class.douce]="a.waterType === 'EAU_DOUCE'"
-                      [class.mer]="a.waterType === 'EAU_DE_MER'">
+                      [class.mer]="a.waterType === 'EAU_DE_MER'"
+                    >
                       {{ a.waterType === 'EAU_DE_MER' ? 'Eau de mer' : 'Eau douce' }}
                     </span>
                   </td>
@@ -110,7 +125,7 @@
               </table>
             </div>
 
-            <!-- ✅ MOBILE CARDS -->
+            <!-- MOBILE CARDS -->
             <div class="cards mobile-only">
               <div class="card" *ngFor="let a of data.aquariums">
                 <div class="card-top">
@@ -119,9 +134,11 @@
                     <div class="line2 mono">Aquarium #{{ a.id }}</div>
                   </div>
 
-                  <span class="chip"
+                  <span
+                    class="chip"
                     [class.douce]="a.waterType === 'EAU_DOUCE'"
-                    [class.mer]="a.waterType === 'EAU_DE_MER'">
+                    [class.mer]="a.waterType === 'EAU_DE_MER'"
+                  >
                     {{ a.waterType === 'EAU_DE_MER' ? 'Mer' : 'Douce' }}
                   </span>
                 </div>
@@ -199,7 +216,7 @@
               </table>
             </div>
 
-            <!-- ✅ MOBILE CARDS -->
+            <!-- MOBILE CARDS -->
             <div class="cards mobile-only">
               <div class="card" *ngFor="let m of data.measurements">
                 <div class="card-top">
@@ -346,15 +363,19 @@
               </table>
             </div>
 
-            <!-- ✅ MOBILE CARDS -->
+            <!-- MOBILE CARDS -->
             <div class="cards mobile-only">
               <div class="card" *ngFor="let t of data.tasks">
                 <div class="card-top">
                   <div class="card-left">
                     <div class="line1">{{ t.title || '—' }}</div>
-                    <div class="line2 mono">#{{ t.id }} • Aquarium {{ t.aquariumId ?? t.aquarium?.id ?? '—' }}</div>
+                    <div class="line2 mono">
+                      #{{ t.id }} • Aquarium {{ t.aquariumId ?? t.aquarium?.id ?? '—' }}
+                    </div>
                   </div>
-                  <span class="status" [class.done]="t.status === 'DONE'">{{ t.status || '—' }}</span>
+                  <span class="status" [class.done]="t.status === 'DONE'">
+                    {{ t.status || '—' }}
+                  </span>
                 </div>
 
                 <div class="kv">

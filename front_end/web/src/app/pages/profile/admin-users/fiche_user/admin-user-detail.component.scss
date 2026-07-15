@@ -418,3 +418,19 @@
   .wrap { padding: 12px; }
   .tab { padding: 12px 2px 6px; }
 }
+
+//niveau
+.pill.level {
+  border-color: rgba(0, 159, 227, 0.25);
+  background: linear-gradient(135deg, rgba(0, 159, 227, 0.08), rgba(57, 181, 74, 0.08));
+}
+
+.pill.level mat-icon {
+  color: #009fe3;
+}
+
+.xp {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+}

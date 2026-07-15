@@ -12,6 +12,7 @@ import { WaterMeasurement } from '../water-measurement/water-measurement.entity'
 import { Task } from '../tasks/task.entity';
 import { AquariumFishCard } from '../catalog/aquarium-card-pivot/aquarium-fish-card.entity';
 import { AquariumPlantCard } from '../catalog/aquarium-card-pivot/aquarium-plant-card.entity';
+import { GamificationProfile } from '../gamification/entities/gamification-profile.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AquariumPlantCard } from '../catalog/aquarium-card-pivot/aquarium-plant
       Task,
       AquariumFishCard,
       AquariumPlantCard,
+      GamificationProfile,
     ]),
   ],
   providers: [UsersService],

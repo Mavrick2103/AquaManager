@@ -19,6 +19,7 @@ import { WaterMeasurement } from '../water-measurement/water-measurement.entity'
 import { Task } from '../tasks/task.entity';
 import { AquariumFishCard } from '../catalog/aquarium-card-pivot/aquarium-fish-card.entity';
 import { AquariumPlantCard } from '../catalog/aquarium-card-pivot/aquarium-plant-card.entity';
+import { GamificationProfile } from '../gamification/entities/gamification-profile.entity';
 
 type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 type NewUsersPoint = { label: string; count: number };
@@ -32,6 +33,8 @@ export class UsersService {
     @InjectRepository(Task) private readonly taskRepo: Repository<Task>,
     @InjectRepository(AquariumFishCard) private readonly aqFishRepo: Repository<AquariumFishCard>,
     @InjectRepository(AquariumPlantCard) private readonly aqPlantRepo: Repository<AquariumPlantCard>,
+    @InjectRepository(GamificationProfile)
+    private readonly gamificationProfileRepo: Repository<GamificationProfile>,
   ) {}
 
   findById(id: number) {
@@ -427,9 +430,17 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
           take: 500,
         })
       : [];
-
-    return { user, aquariums, measurements, fish, plants, tasks };
-  }
+        const gamificationProfile = await this.gamificationProfileRepo.findOne({
+  where: { userId: id },
+});
+return { user, aquariums, measurements, fish, plants, tasks, gamification: {
+    level: gamificationProfile?.level ?? 1,
+    xp: gamificationProfile?.xp ?? 0,
+    currentStreak: gamificationProfile?.currentStreak ?? 0,
+    bestStreak: gamificationProfile?.bestStreak ?? 0,
+  },
+};  
+}
 
   async adminUpdate(id: number, dto: AdminUpdateUserDto) {
     if (!Number.isFinite(id)) throw new BadRequestException('Id invalide');
