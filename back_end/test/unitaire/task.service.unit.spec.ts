@@ -9,6 +9,7 @@ import { Aquarium } from '../../src/aquariums/aquariums.entity';
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
 import { UsersService } from '../../src/users/users.service';
+import { GamificationService } from '../../src/gamification/gamification.service';
 
 // ✅ ADAPTE CE CHEMIN SI BESOIN
 import { TaskFertilizer } from '../../src/tasks/task-fertilizer.entity';
@@ -54,6 +55,12 @@ describe('TaskService (unit)', () => {
         { provide: getRepositoryToken(TaskFertilizer), useValue: taskFertilizerRepoMock },
         { provide: UsersService, useValue: usersService },
         { provide: MailService, useValue: mailServiceMock },
+        {
+  provide: GamificationService,
+  useValue: {
+    onTaskCreated: jest.fn().mockResolvedValue({ completed: [] }),
+  },
+},
       ],
     }).compile();
 
