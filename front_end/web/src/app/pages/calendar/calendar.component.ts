@@ -22,6 +22,7 @@ import { fr } from 'date-fns/locale';
 import { TasksService, Task, CreateTaskPayload } from '../../core/tasks.service';
 import { TaskDialogComponent } from './task-dialog/task-dialog.component';
 import { DayTasksDialogComponent } from './day-tasks-dialog/day-tasks-dialog.component';
+import { APP_VERSION } from '../../core/app-version';
 
 @Component({
   selector: 'app-calendar',
@@ -47,6 +48,8 @@ export class CalendarComponent {
   today = new Date();
   currentMonth = signal(new Date(this.today.getFullYear(), this.today.getMonth(), 1));
   tasks = signal<Task[]>([]);
+  appVersion = APP_VERSION;
+
 
   weeks = computed(() => {
     const monthStart = startOfMonth(this.currentMonth());

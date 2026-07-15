@@ -41,13 +41,29 @@
 <div class="announce" role="status" aria-live="polite">
   <div class="announce__track">
     <span class="announce__item">
-      🚧 AquaManager est en cours de développement — certaines fonctionnalités peuvent changer.
-      Merci pour votre patience !
+      <span class="announce__icon"> 🚧 </span>
+      <span class="announce__message">
+        AquaManager est en cours de développement. Certaines fonctionnalités peuvent évoluer.
+      </span>
+      <span class="announce__version">
+        Version {{ appVersion.number }}
+      </span>
+      <span class="announce__date">
+        Mise à jour : {{ appVersion.date }}
+      </span>
     </span>
 
     <span class="announce__item" aria-hidden="true">
-      🚧 AquaManager est en cours de développement — certaines fonctionnalités peuvent changer.
-      Merci pour votre patience !
+      <span class="announce__icon"> 🚧 </span>
+      <span class="announce__message">
+        AquaManager est en cours de développement. Certaines fonctionnalités peuvent évoluer.
+      </span>
+      <span class="announce__version">
+        Version {{ appVersion.number }}
+      </span>
+      <span class="announce__date">
+        Mise à jour : {{ appVersion.date }}
+      </span>
     </span>
   </div>
 </div>
@@ -414,6 +430,9 @@
 
   <div class="footer-bottom">
     <p>© {{ today.getFullYear() }} AquaManager — Tous droits réservés</p>
+<span class="footer-version">
+  v{{ appVersion.number }} — {{ appVersion.date }}
+</span>
 
     <div class="footer-legal">
       <a routerLink="/legal" class="footer-policy">Mentions légales</a>

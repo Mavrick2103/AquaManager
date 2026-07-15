@@ -126,46 +126,81 @@
    ========================================================== */
 
 .announce {
-  position: sticky;
-  top: var(--topbar-h);
-  z-index: 1000;
-
+  width: 100%;
   overflow: hidden;
-  background: rgba(251, 235, 60, 0.9);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(8px);
+  background:rgba(251, 235, 60, 0.9);
+  border-top: 1px solid rgba(251, 146, 60, 0.25);
+  border-bottom: 1px solid rgba(251, 146, 60, 0.35);
+  color: #7c2d12;
 }
 
 .announce__track {
   display: flex;
   width: max-content;
-  gap: 48px;
-  padding: 8px 16px;
-  animation: announce-marquee 18s linear infinite;
+  animation: announce-scroll 26s linear infinite;
 }
 
 .announce__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 36px;
   white-space: nowrap;
-  font-weight: 800;
-  color: #1F3522;
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
-@keyframes announce-marquee {
-  0% {
+.announce__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(255, 0, 0, 0.642);
+  font-size: 0.9rem;
+  flex: 0 0 auto;
+}
+
+.announce__message {
+  color: #000000;
+}
+
+.announce__version {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #d6310c;
+  font-size: 0.78rem;
+  font-weight: 900;
+  border: 1px solid rgba(251, 146, 60, 0.35);
+  box-shadow: 0 6px 16px rgba(124, 45, 18, 0.08);
+  white-space: nowrap;
+}
+
+.announce__date {
+  color: #000000;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@keyframes announce-scroll {
+  from {
     transform: translateX(0);
   }
 
-  100% {
+  to {
     transform: translateX(-50%);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .announce__track {
-    animation: none;
-  }
+.announce:hover .announce__track {
+  animation-play-state: paused;
 }
-
 /* ==========================================================
    HERO
    ========================================================== */

@@ -20,6 +20,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { TasksService, Task } from '../../core/tasks.service';
 import { AquariumsService, Aquarium } from '../../core/aquariums.service';
 import { MeasurementsService, Measurement } from '../../core/water.service';
+import { APP_VERSION } from '../../core/app-version';
 
 import {
   GamificationService,
@@ -63,6 +64,7 @@ export class HomeComponent implements OnInit {
 
   me: Me | null = null;
   userFullName = '';
+  appVersion = APP_VERSION;
 
   private openTimer: ReturnType<typeof setTimeout> | null = null;
   private closeTimer: ReturnType<typeof setTimeout> | null = null;
