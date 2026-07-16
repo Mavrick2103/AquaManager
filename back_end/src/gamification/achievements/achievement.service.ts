@@ -10,10 +10,6 @@ const ACHIEVEMENTS: Record<string, { title: string; description: string }> = {
     title: 'Première mesure',
     description: 'Première mesure enregistrée dans AquaManager.',
   },
-  SEVEN_DAY_STREAK: {
-    title: '7 jours de suivi',
-    description: 'Activité régulière pendant 7 jours.',
-  },
   //BAC_STABLE: {
   //  title: 'Bac stable',
   //  description: 'Un aquarium atteint un score supérieur ou égal à 85.',

@@ -20,6 +20,7 @@ import { RecommendationModule } from './recommendation/recommendation.module';
 import { AquariumTargetsModule } from './aquarium-targets/aquarium-targets.module';
 import { BillingModule } from './billing/billing.module';
 import { GamificationModule } from './gamification/gamification.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { GamificationModule } from './gamification/gamification.module';
     AquariumTargetsModule,
     BillingModule,
     GamificationModule,
+    AiModule,
   ],
 })
 export class AppModule {}

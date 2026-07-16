@@ -292,6 +292,311 @@
           </div>
         </section>
 
+      <section class="ai-hub">
+  <div class="ai-hub__head">
+    <div>
+      <div class="ai-hub__eyebrow">
+        <mat-icon>auto_awesome</mat-icon>
+        Centre IA AquaManager
+      </div>
+
+      <h3>Analyse, questions et diagnostic photo</h3>
+
+      <p>
+        Utilise l’IA pour comprendre ton bac, poser une question ou analyser une photo avec le contexte de l’aquarium.
+      </p>
+    </div>
+
+    <div class="ai-hub__quota" *ngIf="aiAnalysis && !aiLoading">
+      <mat-icon>bolt</mat-icon>
+      <span>{{ aiAnalysis.remaining }} analyse{{ aiAnalysis.remaining > 1 ? 's' : '' }} restante{{ aiAnalysis.remaining > 1 ? 's' : '' }}</span>
+    </div>
+  </div>
+
+  <div class="ai-hub__grid">
+    <!-- Assistant IA principal -->
+    <mat-card class="ai-main-card">
+      <mat-card-content>
+        <div class="ai-main-card__top">
+          <div class="ai-main-card__icon">
+            <mat-icon>smart_toy</mat-icon>
+          </div>
+
+          <div class="ai-main-card__title">
+            <span>Assistant de ce bac</span>
+            <h4>Pose une question ou lance une analyse complète</h4>
+          </div>
+
+          <button
+            mat-stroked-button
+            type="button"
+            class="ai-clear-btn"
+            [disabled]="aiLoading || aiChatMessages.length === 0"
+            (click)="clearAiChat()"
+          >
+            <mat-icon>delete_sweep</mat-icon>
+            Effacer
+          </button>
+        </div>
+
+        <div class="ai-quick-actions">
+          <button
+            type="button"
+            mat-flat-button
+            color="primary"
+            [disabled]="aiLoading"
+            (click)="analyzeWithAi('Analyse mon aquarium avec ses dernières mesures et donne-moi des conseils concrets.')"
+          >
+            <mat-icon>auto_awesome</mat-icon>
+            Analyser mon aquarium
+          </button>
+
+          <button
+            type="button"
+            mat-stroked-button
+            [disabled]="aiLoading"
+            (click)="analyzeWithAi('Quelles espèces me conseilles-tu pour cet aquarium ?')"
+          >
+            Espèces conseillées
+          </button>
+
+          <button
+            type="button"
+            mat-stroked-button
+            [disabled]="aiLoading"
+            (click)="analyzeWithAi('Mes paramètres sont-ils bons pour mes poissons ?')"
+          >
+            Paramètres
+          </button>
+
+          <button
+            type="button"
+            mat-stroked-button
+            [disabled]="aiLoading"
+            (click)="analyzeWithAi('Pourquoi ai-je des algues et que faire ?')"
+          >
+            Algues
+          </button>
+        </div>
+
+        <div class="ai-chat-window">
+          <div class="ai-chat-empty" *ngIf="aiChatMessages.length === 0 && !aiLoading">
+            <div class="ai-chat-empty__icon">
+              <mat-icon>forum</mat-icon>
+            </div>
+
+            <h4>Commence une discussion</h4>
+            <p>
+              Exemple : “Quelles espèces me conseilles-tu pour ce bac ?”
+            </p>
+          </div>
+
+          <div
+            class="ai-chat-message"
+            *ngFor="let message of aiChatMessages"
+            [class.ai-chat-message--user]="message.role === 'user'"
+            [class.ai-chat-message--assistant]="message.role === 'assistant'"
+          >
+            <div class="ai-chat-avatar">
+              <mat-icon>{{ message.role === 'user' ? 'person' : 'auto_awesome' }}</mat-icon>
+            </div>
+
+            <div class="ai-chat-bubble" [innerText]="message.content"></div>
+          </div>
+
+          <div class="ai-chat-message ai-chat-message--assistant" *ngIf="aiLoading">
+            <div class="ai-chat-avatar">
+              <mat-icon>auto_awesome</mat-icon>
+            </div>
+
+            <div class="ai-chat-bubble ai-chat-bubble--loading">
+              <mat-progress-spinner mode="indeterminate" diameter="22"></mat-progress-spinner>
+              <span>L’IA analyse les données de ton aquarium…</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-error" *ngIf="aiError && !aiLoading">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ aiError }}</span>
+        </div>
+
+        <div class="ai-chat-input">
+          <mat-form-field appearance="outline">
+            <mat-label>Ta question</mat-label>
+            <textarea
+              matInput
+              rows="2"
+              maxlength="1000"
+              [(ngModel)]="aiChatQuestion"
+              placeholder="Exemple : est-ce que je peux ajouter des crevettes ?"
+              (keydown.enter)="onAiChatEnter($event)"
+            ></textarea>
+          </mat-form-field>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="aiLoading || !aiChatQuestion.trim()"
+            (click)="analyzeWithAi()"
+          >
+            <mat-icon>{{ aiLoading ? 'hourglass_top' : 'send' }}</mat-icon>
+            Envoyer
+          </button>
+        </div>
+
+        <div class="ai-meta" *ngIf="aiAnalysis && !aiLoading">
+          <span>
+            <mat-icon>workspace_premium</mat-icon>
+            Plan : <b>{{ aiAnalysis.plan }}</b>
+          </span>
+
+          <span>
+            <mat-icon>data_usage</mat-icon>
+            Utilisation : <b>{{ aiAnalysis.used }}/{{ aiAnalysis.quota }}</b>
+          </span>
+
+          <span>
+            <mat-icon>bolt</mat-icon>
+            Restant : <b>{{ aiAnalysis.remaining }}</b>
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Colonne droite -->
+    <aside class="ai-side">
+      <mat-card class="ai-side-card ai-side-card--quick">
+        <mat-card-content>
+          <div class="ai-side-card__icon">
+            <mat-icon>tips_and_updates</mat-icon>
+          </div>
+
+          <div>
+            <h4>Analyse rapide</h4>
+            <p>
+              Lance une lecture globale des dernières mesures sans écrire de question.
+            </p>
+          </div>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="aiLoading"
+            (click)="analyzeWithAi('Analyse mon aquarium avec ses dernières mesures et donne-moi les priorités à corriger.')"
+          >
+            <mat-icon>auto_awesome</mat-icon>
+            Lancer
+          </button>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="ai-side-card ai-side-card--photo">
+        <mat-card-content>
+          <div class="ai-side-card__top">
+            <div class="ai-side-card__icon green">
+              <mat-icon>photo_camera</mat-icon>
+            </div>
+
+            <div>
+              <h4>Analyse photo IA</h4>
+              <p>
+                Ajoute une photo d’algue, plante, poisson ou eau trouble.
+              </p>
+            </div>
+          </div>
+
+          <div class="ai-photo-layout">
+            <label class="ai-photo-upload" [class.ai-photo-upload--has-image]="aiPhotoPreview">
+              <input
+                type="file"
+                accept="image/*"
+                (change)="onAiPhotoSelected($event)"
+              />
+
+              <ng-container *ngIf="!aiPhotoPreview">
+                <mat-icon>add_photo_alternate</mat-icon>
+                <strong>Choisir une photo</strong>
+                <small>JPG, PNG, WebP · max 2 Mo</small>
+              </ng-container>
+
+              <img
+                *ngIf="aiPhotoPreview"
+                [src]="aiPhotoPreview"
+                alt="Photo à analyser"
+              />
+            </label>
+
+            <div class="ai-photo-fields">
+              <mat-form-field appearance="outline">
+                <mat-label>Type</mat-label>
+                <mat-select [(ngModel)]="aiPhotoProblemType">
+                  <mat-option value="ALGAE">Algue</mat-option>
+                  <mat-option value="FISH_DISEASE">Maladie poisson</mat-option>
+                  <mat-option value="PLANT_PROBLEM">Problème plante</mat-option>
+                  <mat-option value="WATER_TROUBLE">Eau trouble</mat-option>
+                  <mat-option value="OTHER">Autre</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Question optionnelle</mat-label>
+                <textarea
+                  matInput
+                  rows="3"
+                  maxlength="1000"
+                  [(ngModel)]="aiPhotoQuestion"
+                  placeholder="C’est quoi cette algue ?"
+                ></textarea>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            class="ai-photo-submit"
+            [disabled]="aiPhotoLoading"
+            (click)="analyzePhotoWithAi()"
+          >
+            <mat-icon>{{ aiPhotoLoading ? 'hourglass_top' : 'image_search' }}</mat-icon>
+            {{ aiPhotoLoading ? 'Analyse en cours…' : 'Analyser la photo' }}
+          </button>
+
+          <div class="ai-loading" *ngIf="aiPhotoLoading">
+            <mat-progress-spinner mode="indeterminate" diameter="24"></mat-progress-spinner>
+            <span>Analyse de la photo…</span>
+          </div>
+
+          <div class="ai-error" *ngIf="aiPhotoError && !aiPhotoLoading">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ aiPhotoError }}</span>
+          </div>
+
+          <div class="ai-result" *ngIf="aiPhotoAnalysis && !aiPhotoLoading">
+            <div class="ai-meta">
+              <span>
+                <mat-icon>data_usage</mat-icon>
+                Photos : <b>{{ aiPhotoAnalysis.used }}/{{ aiPhotoAnalysis.quota }}</b>
+              </span>
+
+              <span>
+                <mat-icon>bolt</mat-icon>
+                Restant : <b>{{ aiPhotoAnalysis.remaining }}</b>
+              </span>
+            </div>
+
+            <div class="ai-result__text" [innerText]="aiPhotoAnalysis.analysis"></div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </aside>
+  </div>
+</section>
+
         <mat-card class="health-card" [class.health-card--ok]="isTankHealthy">
           <mat-card-content class="health-card__content">
             <div class="health-card__icon">

@@ -31,6 +31,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatBadgeModule } from '@angular/material/badge';
+import { FormsModule } from '@angular/forms';
 
 import { AquariumsService, Aquarium } from '../../../core/aquariums.service';
 import { WaterMeasurementsChartComponent } from './chart/chart.component';
@@ -42,6 +43,11 @@ import {
   RecommendationsService,
   Recommendation,
 } from '../../../core/recommendations.service';
+
+import {
+  AiApi,
+  AiAquariumAnalysisResponse,
+} from '../../../core/ai.service';
 
 import {
   AquariumTargetsService,
@@ -148,6 +154,7 @@ type AquariumPlantRow = {
     MatTableModule,
     MatExpansionModule,
     MatBadgeModule,
+    FormsModule,
 
     WaterMeasurementsChartComponent,
   ],
@@ -165,6 +172,7 @@ export class AquariumDetailComponent implements OnInit {
   private recosApi = inject(RecommendationsService);
   private targetsApi = inject(AquariumTargetsService);
   private billing = inject(BillingService);
+  private aiApi = inject(AiApi);
 
   private readonly apiOrigin = (environment.apiUrl || '')
     .replace(/\/$/, '')
@@ -193,6 +201,23 @@ export class AquariumDetailComponent implements OnInit {
 
   recosLoading = false;
   recos: Recommendation[] = [];
+
+  aiLoading = false;
+aiError = '';
+aiAnalysis: AiAquariumAnalysisResponse | null = null;
+aiPhotoFile: File | null = null;
+aiPhotoPreview = '';
+aiPhotoProblemType = 'ALGAE';
+aiPhotoQuestion = '';
+aiPhotoLoading = false;
+aiPhotoError = '';
+aiPhotoAnalysis: AiAquariumAnalysisResponse | null = null;
+aiChatMessages: {
+  role: 'user' | 'assistant';
+  content: string;
+}[] = [];
+
+aiChatQuestion = '';
 
   targetsLoading = false;
   targets: AquariumTargetsDto | null = null;
@@ -464,6 +489,155 @@ export class AquariumDetailComponent implements OnInit {
     await this.loadTargets();
     await this.loadPendingRecos();
   }
+
+  async analyzeWithAi(question?: string): Promise<void> {
+  if (!this.id || this.aiLoading) return;
+
+  const finalQuestion =
+    question?.trim() ||
+    this.aiChatQuestion?.trim() ||
+    'Analyse mes paramètres et donne-moi des conseils concrets pour cet aquarium.';
+
+  if (!finalQuestion) {
+    this.aiError = 'Écris une question avant de demander à l’IA.';
+    return;
+  }
+
+  this.aiLoading = true;
+  this.aiError = '';
+
+  this.aiChatMessages.push({
+    role: 'user',
+    content: finalQuestion,
+  });
+
+  this.aiChatQuestion = '';
+
+  try {
+    const response = await firstValueFrom(
+      this.aiApi.analyzeAquarium(this.id, finalQuestion),
+    );
+
+    this.aiAnalysis = response;
+
+    this.aiChatMessages.push({
+      role: 'assistant',
+      content: response.analysis,
+    });
+
+    this.snack.open('Réponse IA générée ✅', 'OK', {
+      duration: 2200,
+    });
+  } catch (e: any) {
+    console.error(e);
+
+    this.aiError =
+      e?.error?.message ||
+      e?.error?.error ||
+      "Impossible d'interroger l'IA pour le moment.";
+
+    this.aiChatMessages.push({
+      role: 'assistant',
+      content: this.aiError,
+    });
+
+    this.snack.open(this.aiError, 'Fermer', {
+      duration: 3500,
+    });
+  } finally {
+    this.aiLoading = false;
+  }
+}
+
+onAiChatEnter(event: Event): void {
+  const keyboardEvent = event as KeyboardEvent;
+
+  if (keyboardEvent.shiftKey) {
+    return;
+  }
+
+  keyboardEvent.preventDefault();
+
+  if (!this.aiLoading && this.aiChatQuestion.trim()) {
+    void this.analyzeWithAi();
+  }
+}
+
+clearAiChat(): void {
+  this.aiChatMessages = [];
+  this.aiError = '';
+  this.aiAnalysis = null;
+}
+
+onAiPhotoSelected(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    this.aiPhotoError = 'Le fichier doit être une image.';
+    return;
+  }
+
+  if (file.size > 2 * 1024 * 1024) {
+    this.aiPhotoError = 'Image trop lourde. Maximum 2 Mo.';
+    return;
+  }
+
+  this.aiPhotoFile = file;
+  this.aiPhotoError = '';
+  this.aiPhotoAnalysis = null;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    this.aiPhotoPreview = String(reader.result || '');
+  };
+
+  reader.readAsDataURL(file);
+}
+
+async analyzePhotoWithAi(): Promise<void> {
+  if (!this.id || this.aiPhotoLoading) return;
+
+  if (!this.aiPhotoFile) {
+    this.aiPhotoError = 'Ajoute une photo avant de lancer l’analyse.';
+    return;
+  }
+
+  this.aiPhotoLoading = true;
+  this.aiPhotoError = '';
+  this.aiPhotoAnalysis = null;
+
+  try {
+    this.aiPhotoAnalysis = await firstValueFrom(
+      this.aiApi.analyzeAquariumPhoto(
+        this.id,
+        this.aiPhotoFile,
+        this.aiPhotoProblemType,
+        this.aiPhotoQuestion,
+      ),
+    );
+
+    this.snack.open('Analyse photo IA terminée ✅', 'OK', {
+      duration: 2200,
+    });
+  } catch (e: any) {
+    console.error(e);
+
+    this.aiPhotoError =
+      e?.error?.message ||
+      e?.error?.error ||
+      "Impossible de lancer l'analyse photo IA pour le moment.";
+
+    this.snack.open(this.aiPhotoError, 'Fermer', {
+      duration: 3500,
+    });
+  } finally {
+    this.aiPhotoLoading = false;
+  }
+}
 
   async acceptReco(r: Recommendation): Promise<void> {
     if (!this.isPremium) return;
