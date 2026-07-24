@@ -1,5 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { AdminMetricsService, MetricsRange } from './admin-metrics.service';
+import { AdminMetricsService } from './admin-metrics.service';
+import type { MetricsRange } from './admin-metrics.service';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -10,35 +12,31 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class AdminMetricsController {
   constructor(private readonly service: AdminMetricsService) {}
 
+  private parseRange(range?: string): MetricsRange {
+    const allowed: MetricsRange[] = ['1d', '7d', '30d', '365d', 'all'];
+
+    return allowed.includes(range as MetricsRange)
+      ? (range as MetricsRange)
+      : '1d';
+  }
+
   @Get('metrics')
   async metrics(@Query('range') range?: string) {
-    const allowed: MetricsRange[] = ['1d', '7d', '30d', '365d', 'all'];
-    const r: MetricsRange = allowed.includes(range as MetricsRange)
-      ? (range as MetricsRange)
-      : '1d';
-
-    return this.service.getMetrics(r);
+    return this.service.getMetrics(this.parseRange(range));
   }
 
-  // ✅ Courbe : nouveaux utilisateurs
   @Get('metrics/series/new-users')
   async newUsersSeries(@Query('range') range?: string) {
-    const allowed: MetricsRange[] = ['1d', '7d', '30d', '365d', 'all'];
-    const r: MetricsRange = allowed.includes(range as MetricsRange)
-      ? (range as MetricsRange)
-      : '1d';
-
-    return this.service.getNewUsersSeries(r);
+    return this.service.getNewUsersSeries(this.parseRange(range));
   }
 
-  // ✅ Courbe : utilisateurs actifs (basé sur lastActivityAt)
   @Get('metrics/series/active-users')
   async activeUsersSeries(@Query('range') range?: string) {
-    const allowed: MetricsRange[] = ['1d', '7d', '30d', '365d', 'all'];
-    const r: MetricsRange = allowed.includes(range as MetricsRange)
-      ? (range as MetricsRange)
-      : '1d';
+    return this.service.getActiveUsersSeries(this.parseRange(range));
+  }
 
-    return this.service.getActiveUsersSeries(r);
+  @Get('metrics/series/subscriptions')
+  async subscriptionsSeries(@Query('range') range?: string) {
+    return this.service.getSubscriptionsSeries(this.parseRange(range));
   }
 }

@@ -24,6 +24,7 @@ type Role = 'USER' | 'ADMIN' | 'EDITOR';
 
 type NewUsersPoint = { label: string; count: number };
 type ActiveUsersPoint = { label: string; count: number };
+type SubscriptionPoint = { label: string; premium: number; pro: number; total: number };
 
 interface AdminMetricsDto {
   generatedAt: string;
@@ -35,6 +36,11 @@ interface AdminMetricsDto {
     activeInRange: number;
     latest: Array<{ id: number; fullName: string; email: string; role: Role; createdAt?: string }>;
     note?: string;
+  };
+  subscriptions: {
+    premiumActive: number;
+    proActive: number;
+    totalActive: number;
   };
   aquariums: { total: number; createdInRange: number };
   tasks: { total: number; createdInRange: number; doneTotal: number; doneInRange: number };
@@ -75,6 +81,7 @@ export class AdminMetricsComponent {
 
   private _newUsersSeries: NewUsersPoint[] = [];
   private _activeUsersSeries: ActiveUsersPoint[] = [];
+  private _subscriptionsSeries: SubscriptionPoint[] = [];
 
   // hover new users
   hoverIndex: number | null = null;
@@ -136,8 +143,22 @@ export class AdminMetricsComponent {
       }),
     );
 
-  forkJoin({ metrics: metrics$, newUsers: newUsers$, activeUsers: activeUsers$ }).subscribe({
-    next: ({ metrics, newUsers, activeUsers }) => {
+  const subscriptions$ = this.http
+    .get<SubscriptionPoint[]>(this.api(`/admin/metrics/series/subscriptions?range=${this.range}`))
+    .pipe(
+      catchError((err) => {
+        console.error('subscriptions series error', err);
+        return of([] as SubscriptionPoint[]);
+      }),
+    );
+
+  forkJoin({
+    metrics: metrics$,
+    newUsers: newUsers$,
+    activeUsers: activeUsers$,
+    subscriptions: subscriptions$,
+  }).subscribe({
+    next: ({ metrics, newUsers, activeUsers, subscriptions }) => {
       this.metrics = metrics;
 
       this._newUsersSeries = (Array.isArray(newUsers) ? newUsers : [])
@@ -151,6 +172,15 @@ export class AdminMetricsComponent {
         .map((p) => ({
           label: String((p as any)?.label ?? ''),
           count: Number((p as any)?.count ?? 0),
+        }))
+        .filter((p) => p.label.length > 0);
+
+      this._subscriptionsSeries = (Array.isArray(subscriptions) ? subscriptions : [])
+        .map((p) => ({
+          label: String((p as any)?.label ?? ''),
+          premium: Number((p as any)?.premium ?? 0),
+          pro: Number((p as any)?.pro ?? 0),
+          total: Number((p as any)?.total ?? 0),
         }))
         .filter((p) => p.label.length > 0);
 
@@ -414,4 +444,26 @@ export class AdminMetricsComponent {
     this.activeTipLeft = px;
     this.activeTipTop = Math.max(6, py - 48);
   }
+  subscriptionsSeries(): SubscriptionPoint[] {
+  return this._subscriptionsSeries;
+}
+
+hasSubscriptionsSeries(): boolean {
+  return this._subscriptionsSeries.length > 0;
+}
+
+maxSubscriptionsTotal(): number {
+  let max = 0;
+
+  for (const p of this._subscriptionsSeries) {
+    max = Math.max(max, Number(p.total ?? 0));
+  }
+
+  return max <= 0 ? 1 : max;
+}
+
+subscriptionBarHeight(value: number): number {
+  const max = this.maxSubscriptionsTotal();
+  return Math.max(4, Math.round((Number(value ?? 0) / max) * 100));
+}
 }

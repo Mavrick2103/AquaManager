@@ -91,111 +91,156 @@
 
       <ng-container *ngIf="metrics && !loading">
         <section class="grid">
-          <!-- USERS -->
-          <mat-card class="kpi kpi-users">
-            <div class="kpi-top">
-              <div class="kpi-icon" aria-hidden="true"><mat-icon>group</mat-icon></div>
-              <div class="kpi-meta">
-                <div class="kpi-label">Utilisateurs</div>
-                <div class="kpi-value">{{ metrics.users.total }}</div>
-              </div>
-            </div>
+  <!-- USERS -->
+  <mat-card class="kpi kpi-users">
+    <div class="kpi-top">
+      <div class="kpi-icon" aria-hidden="true">
+        <mat-icon>group</mat-icon>
+      </div>
 
-            <mat-divider></mat-divider>
+      <div class="kpi-meta">
+        <div class="kpi-label">Utilisateurs</div>
+        <div class="kpi-value">{{ metrics.users.total }}</div>
+      </div>
+    </div>
 
-            <div class="kpi-rows">
-              <div class="row">
-                <span>Nouveaux sur la période</span>
-                <b>{{ kpi(metrics.users.newInRange) }}</b>
-              </div>
+    <mat-divider></mat-divider>
 
-              <div class="row">
-                <span>Actifs sur la période</span>
-                <b>{{ metrics.users.activeInRange }}</b>
-              </div>
+    <div class="kpi-rows">
+      <div class="row">
+        <span>Nouveaux sur la période</span>
+        <b>{{ kpi(metrics.users.newInRange) }}</b>
+      </div>
 
-              <div class="row">
-                <span>Taux d’activité</span>
-                <b>{{ pct(metrics.users.activeInRange, metrics.users.total) }}</b>
-              </div>
+      <div class="row">
+        <span>Actifs sur la période</span>
+        <b>{{ metrics.users.activeInRange }}</b>
+      </div>
 
-              <div class="row">
-                <span>Admins (total)</span>
-                <b>{{ metrics.users.admins }}</b>
-              </div>
-            </div>
+      <div class="row">
+        <span>Taux d’activité</span>
+        <b>{{ pct(metrics.users.activeInRange, metrics.users.total) }}</b>
+      </div>
 
-            <div class="note" *ngIf="metrics.users.note">
-              <mat-icon aria-hidden="true">info</mat-icon>
-              <span>{{ metrics.users.note }}</span>
-            </div>
-          </mat-card>
+      <div class="row">
+        <span>Admins (total)</span>
+        <b>{{ metrics.users.admins }}</b>
+      </div>
+    </div>
 
-          <!-- AQUARIUMS -->
-          <mat-card class="kpi kpi-aqua">
-            <div class="kpi-top">
-              <div class="kpi-icon" aria-hidden="true"><mat-icon>waves</mat-icon></div>
-              <div class="kpi-meta">
-                <div class="kpi-label">Aquariums</div>
-                <div class="kpi-value">{{ metrics.aquariums.total }}</div>
-              </div>
-            </div>
+    <div class="note" *ngIf="metrics.users.note">
+      <mat-icon aria-hidden="true">info</mat-icon>
+      <span>{{ metrics.users.note }}</span>
+    </div>
+  </mat-card>
 
-            <mat-divider></mat-divider>
+  <!-- SUBSCRIPTIONS -->
+  <mat-card class="kpi kpi-subscriptions">
+    <div class="kpi-top">
+      <div class="kpi-icon" aria-hidden="true">
+        <mat-icon>workspace_premium</mat-icon>
+      </div>
 
-            <div class="kpi-rows">
-              <div class="row">
-                <span>Créés sur la période</span>
-                <b>{{ metrics.aquariums.createdInRange }}</b>
-              </div>
-            </div>
-          </mat-card>
+      <div class="kpi-meta">
+        <div class="kpi-label">Abonnements actifs</div>
+        <div class="kpi-value">{{ metrics.subscriptions.totalActive }}</div>
+      </div>
+    </div>
 
-          <!-- MEASUREMENTS -->
-          <mat-card class="kpi kpi-measures">
-            <div class="kpi-top">
-              <div class="kpi-icon" aria-hidden="true"><mat-icon>science</mat-icon></div>
-              <div class="kpi-meta">
-                <div class="kpi-label">Mesures</div>
-                <div class="kpi-value">{{ metrics.measurements.total }}</div>
-              </div>
-            </div>
+    <mat-divider></mat-divider>
 
-            <mat-divider></mat-divider>
+    <div class="kpi-rows">
+      <div class="row">
+        <span>Premium actifs</span>
+        <b>{{ metrics.subscriptions.premiumActive }}</b>
+      </div>
 
-            <div class="kpi-rows">
-              <div class="row">
-                <span>Ajoutées sur la période</span>
-                <b>{{ metrics.measurements.createdInRange }}</b>
-              </div>
+      <div class="row">
+        <span>Pro actifs</span>
+        <b>{{ metrics.subscriptions.proActive }}</b>
+      </div>
 
-              <div class="row">
-                <span>Moyenne / aquarium</span>
-                <b>{{ avg(metrics.measurements.total, metrics.aquariums.total, 1) }}</b>
-              </div>
-            </div>
-          </mat-card>
+      <div class="row">
+        <span>Taux d’abonnement</span>
+        <b>{{ pct(metrics.subscriptions.totalActive, metrics.users.total) }}</b>
+      </div>
+    </div>
+  </mat-card>
 
-          <!-- TASKS -->
-          <mat-card class="kpi kpi-tasks">
-            <div class="kpi-top">
-              <div class="kpi-icon" aria-hidden="true"><mat-icon>checklist</mat-icon></div>
-              <div class="kpi-meta">
-                <div class="kpi-label">Tâches</div>
-                <div class="kpi-value">{{ metrics.tasks.total }}</div>
-              </div>
-            </div>
+  <!-- AQUARIUMS -->
+  <mat-card class="kpi kpi-aqua">
+    <div class="kpi-top">
+      <div class="kpi-icon" aria-hidden="true">
+        <mat-icon>waves</mat-icon>
+      </div>
 
-            <mat-divider></mat-divider>
+      <div class="kpi-meta">
+        <div class="kpi-label">Aquariums</div>
+        <div class="kpi-value">{{ metrics.aquariums.total }}</div>
+      </div>
+    </div>
 
-            <div class="kpi-rows">
-              <div class="row">
-                <span>Créées sur la période</span>
-                <b>{{ metrics.tasks.createdInRange }}</b>
-              </div>
-            </div>
-          </mat-card>
-        </section>
+    <mat-divider></mat-divider>
+
+    <div class="kpi-rows">
+      <div class="row">
+        <span>Créés sur la période</span>
+        <b>{{ metrics.aquariums.createdInRange }}</b>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- MEASUREMENTS -->
+  <mat-card class="kpi kpi-measures">
+    <div class="kpi-top">
+      <div class="kpi-icon" aria-hidden="true">
+        <mat-icon>science</mat-icon>
+      </div>
+
+      <div class="kpi-meta">
+        <div class="kpi-label">Mesures</div>
+        <div class="kpi-value">{{ metrics.measurements.total }}</div>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <div class="kpi-rows">
+      <div class="row">
+        <span>Ajoutées sur la période</span>
+        <b>{{ metrics.measurements.createdInRange }}</b>
+      </div>
+
+      <div class="row">
+        <span>Moyenne / aquarium</span>
+        <b>{{ avg(metrics.measurements.total, metrics.aquariums.total, 1) }}</b>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- TASKS -->
+  <mat-card class="kpi kpi-tasks">
+    <div class="kpi-top">
+      <div class="kpi-icon" aria-hidden="true">
+        <mat-icon>checklist</mat-icon>
+      </div>
+
+      <div class="kpi-meta">
+        <div class="kpi-label">Tâches</div>
+        <div class="kpi-value">{{ metrics.tasks.total }}</div>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <div class="kpi-rows">
+      <div class="row">
+        <span>Créées sur la période</span>
+        <b>{{ metrics.tasks.createdInRange }}</b>
+      </div>
+    </div>
+  </mat-card>
+</section>
 
         <!-- ✅ GRAPH : nouveaux utilisateurs -->
         <mat-card class="chart-card">

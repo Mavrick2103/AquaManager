@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual } from 'typeorm';
+import { Repository, MoreThanOrEqual, In, Brackets } from 'typeorm';
 
 import { User } from '../users/user.entity';
 import { Aquarium } from '../aquariums/aquariums.entity';
@@ -10,6 +10,12 @@ import { WaterMeasurement } from '../water-measurement/water-measurement.entity'
 export type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 
 type SeriesPoint = { label: string; count: number };
+type SubscriptionSeriesPoint = {
+  label: string;
+  premium: number;
+  pro: number;
+  total: number;
+};
 
 function getFrom(range: MetricsRange): Date | null {
   const now = new Date();
@@ -66,6 +72,35 @@ export class AdminMetricsService {
       this.usersRepo.count(),
       this.usersRepo.count({ where: { role: 'ADMIN' } as any }),
     ]);
+    const activeSubscriptionQb = this.usersRepo
+  .createQueryBuilder('u')
+  .where('u.subscriptionStatus IN (:...statuses)', {
+    statuses: ['active', 'trialing'],
+  })
+  .andWhere('u.subscriptionPlan IN (:...plans)', {
+    plans: ['PREMIUM', 'PRO'],
+  })
+  .andWhere(
+    new Brackets((qb) => {
+      qb.where('u.subscriptionEndsAt IS NULL').orWhere('u.subscriptionEndsAt >= :now', {
+        now: new Date(),
+      });
+    }),
+  );
+
+const [premiumActive, proActive] = await Promise.all([
+  activeSubscriptionQb
+    .clone()
+    .andWhere('u.subscriptionPlan = :premiumPlan', { premiumPlan: 'PREMIUM' })
+    .getCount(),
+
+  activeSubscriptionQb
+    .clone()
+    .andWhere('u.subscriptionPlan = :proPlan', { proPlan: 'PRO' })
+    .getCount(),
+]);
+
+const subscriptionsTotalActive = premiumActive + proActive;
 
     // -----------------------
     // Nouveaux users sur période
@@ -159,6 +194,11 @@ export class AdminMetricsService {
           .filter(Boolean)
           .join(' ') || undefined,
       },
+      subscriptions: {
+  premiumActive,
+  proActive,
+  totalActive: subscriptionsTotalActive,
+},
       aquariums: {
         total: aquariumsTotal,
         createdInRange: aquariumsCreatedInRange,
@@ -366,4 +406,113 @@ export class AdminMetricsService {
 
     return series;
   }
+  // ============================================================
+// ✅ SERIES : SUBSCRIPTIONS PREMIUM / PRO
+// ============================================================
+async getSubscriptionsSeries(range: MetricsRange): Promise<SubscriptionSeriesPoint[]> {
+  const now = new Date();
+  const cfg = this.buildSeriesConfig(range, now);
+
+  // Pour "all", on prend depuis le premier utilisateur créé
+  if (range === 'all') {
+    const row = await this.usersRepo
+      .createQueryBuilder('u')
+      .select('MIN(u.createdAt)', 'min')
+      .getRawOne<{ min: string | null }>();
+
+    if (row?.min) {
+      const min = new Date(row.min);
+
+      if (!Number.isNaN(min.getTime())) {
+        const start = new Date(min);
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+
+        const months =
+          (now.getFullYear() - start.getFullYear()) * 12 +
+          (now.getMonth() - start.getMonth()) +
+          1;
+
+        cfg.buckets = Math.max(1, months);
+        cfg.unit = 'month';
+        cfg.start = start;
+      }
+    }
+  }
+
+  const groupExpr = this.groupExprOf(cfg.unit, 'u.createdAt');
+
+  const rows: Array<{
+    g: string;
+    premium: string;
+    pro: string;
+  }> = await this.usersRepo
+    .createQueryBuilder('u')
+    .select(groupExpr, 'g')
+    .addSelect(
+      `SUM(CASE WHEN u.subscriptionPlan = 'PREMIUM' THEN 1 ELSE 0 END)`,
+      'premium',
+    )
+    .addSelect(
+      `SUM(CASE WHEN u.subscriptionPlan = 'PRO' THEN 1 ELSE 0 END)`,
+      'pro',
+    )
+    .where('u.createdAt >= :start', { start: cfg.start })
+    .andWhere('u.subscriptionStatus IN (:...statuses)', {
+      statuses: ['active', 'trialing'],
+    })
+    .andWhere('u.subscriptionPlan IN (:...plans)', {
+      plans: ['PREMIUM', 'PRO'],
+    })
+    .andWhere(
+      new Brackets((qb) => {
+        qb.where('u.subscriptionEndsAt IS NULL').orWhere('u.subscriptionEndsAt >= :now', {
+          now,
+        });
+      }),
+    )
+    .groupBy('g')
+    .orderBy('g', 'ASC')
+    .getRawMany();
+
+  const map = new Map<string, { premium: number; pro: number }>();
+
+  rows.forEach((r) => {
+    map.set(String(r.g), {
+      premium: Number(r.premium ?? 0),
+      pro: Number(r.pro ?? 0),
+    });
+  });
+
+  const series: SubscriptionSeriesPoint[] = [];
+  const base = new Date(now);
+
+  for (let i = cfg.buckets - 1; i >= 0; i--) {
+    const x = new Date(base);
+
+    if (cfg.unit === 'hour') x.setHours(base.getHours() - i, 0, 0, 0);
+
+    if (cfg.unit === 'day') {
+      x.setDate(base.getDate() - i);
+      x.setHours(0, 0, 0, 0);
+    }
+
+    if (cfg.unit === 'month') {
+      x.setMonth(base.getMonth() - i, 1);
+      x.setHours(0, 0, 0, 0);
+    }
+
+    const key = this.keyOf(x, cfg.unit);
+    const value = map.get(key) ?? { premium: 0, pro: 0 };
+
+    series.push({
+      label: this.labelOf(x, cfg.unit),
+      premium: value.premium,
+      pro: value.pro,
+      total: value.premium + value.pro,
+    });
+  }
+
+  return series;
+}
 }
