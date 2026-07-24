@@ -125,6 +125,16 @@ private dayKey(date: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+get userCurrentStreak(): number {
+  const gamification = this.data?.gamification as any;
+
+  return Number(
+    gamification?.currentStreak ??
+    gamification?.profile?.currentStreak ??
+    0
+  );
+}
+
   async load(): Promise<void> {
     this.loading = true;
     this.cdr.markForCheck();
