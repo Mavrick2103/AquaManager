@@ -75,6 +75,56 @@ export class AdminUserDetailComponent implements OnInit {
     return `${dd}/${mm}/${yyyy}`;
   }
 
+  get monthlyActivityDays(): number {
+  const data = this.data;
+  if (!data) return 0;
+
+  const days = new Set<string>();
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  for (const measurement of data.measurements ?? []) {
+    const value = measurement.measuredAt;
+    if (!value) continue;
+
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) continue;
+
+    if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+      days.add(this.dayKey(d));
+    }
+  }
+
+  for (const task of data.tasks ?? []) {
+  const value = task.dueAt;
+  if (!value) continue;
+
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) continue;
+
+  if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+    days.add(this.dayKey(d));
+  }
+}
+
+  return days.size;
+}
+
+get daysInCurrentMonth(): number {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+}
+
+private dayKey(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+
+  return `${yyyy}-${mm}-${dd}`;
+}
+
   async load(): Promise<void> {
     this.loading = true;
     this.cdr.markForCheck();

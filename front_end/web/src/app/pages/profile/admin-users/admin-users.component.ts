@@ -16,6 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatListModule } from '@angular/material/list';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatSelectModule } from '@angular/material/select';
 
 import {
   AdminUsersApi,
@@ -24,6 +25,8 @@ import {
   SubscriptionPlan,
   UserRole,
 } from '../../../core/admin-users.service';
+
+type UserSortMode = 'createdAt_desc' | 'level_desc' | 'activityDays_desc' | 'lastActivity_desc';
 
 @Component({
   standalone: true,
@@ -34,7 +37,6 @@ import {
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
-
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
@@ -46,6 +48,7 @@ import {
     MatTooltipModule,
     MatListModule,
     MatSlideToggleModule,
+    MatSelectModule,
     MatMenuModule,
   ],
 })
@@ -60,6 +63,8 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   searchCtrl = new FormControl<string>('', { nonNullable: true });
   activeOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
   adminOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
+  editorOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
+  sortCtrl = new FormControl<UserSortMode>('createdAt_desc', { nonNullable: true });
 
   displayedColumns = [
     'id',
@@ -92,7 +97,6 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     { label: 'Premium 6 mois', plan: 'PREMIUM', duration: '6m', icon: 'star' },
     { label: 'Premium 1 an', plan: 'PREMIUM', duration: '1y', icon: 'star' },
     { label: 'Premium à vie', plan: 'PREMIUM', duration: 'lifetime', icon: 'all_inclusive' },
-
     { label: 'Pro 1 mois', plan: 'PRO', duration: '1m', icon: 'workspace_premium' },
     { label: 'Pro 1 an', plan: 'PRO', duration: '1y', icon: 'workspace_premium' },
     { label: 'Pro à vie', plan: 'PRO', duration: 'lifetime', icon: 'all_inclusive' },
@@ -119,8 +123,28 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
       .subscribe(() => this.applyFilters());
 
     this.adminOnlyCtrl.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.applyFilters());
+  .pipe(takeUntil(this.destroy$))
+  .subscribe((enabled) => {
+    if (enabled) {
+      this.editorOnlyCtrl.setValue(false, { emitEvent: false });
+    }
+
+    this.sortCtrl.valueChanges
+  .pipe(takeUntil(this.destroy$))
+  .subscribe(() => this.applyFilters());
+
+    this.applyFilters();
+  });
+
+    this.editorOnlyCtrl.valueChanges
+  .pipe(takeUntil(this.destroy$))
+  .subscribe((enabled) => {
+    if (enabled) {
+      this.adminOnlyCtrl.setValue(false, { emitEvent: false });
+    }
+
+    this.applyFilters();
+  });
   }
 
   ngOnDestroy(): void {
@@ -139,6 +163,16 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   clearSearch(): void {
     this.searchCtrl.setValue('');
   }
+
+  resetFilters(): void {
+  this.searchCtrl.setValue('', { emitEvent: false });
+  this.activeOnlyCtrl.setValue(false, { emitEvent: false });
+  this.adminOnlyCtrl.setValue(false, { emitEvent: false });
+  this.editorOnlyCtrl.setValue(false, { emitEvent: false });
+  this.sortCtrl.setValue('createdAt_desc', { emitEvent: false });
+
+  this.reload();
+}
 
   openUser(u: AdminUser): void {
     if (this.isSaving(u) || this.isSavingSubscription(u)) return;
@@ -169,16 +203,64 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
-    const activeOnly = this.activeOnlyCtrl.value;
-    const adminOnly = this.adminOnlyCtrl.value;
+  const activeOnly = this.activeOnlyCtrl.value;
+  const adminOnly = this.adminOnlyCtrl.value;
+  const editorOnly = this.editorOnlyCtrl.value;
+  const sortMode = this.sortCtrl.value;
 
-    this.filteredUsers = this.users.filter((u) => {
-      if (activeOnly && !this.isActive(u)) return false;
-      if (adminOnly && u.role !== 'ADMIN') return false;
+  let rows = this.users.filter((u) => {
+    if (activeOnly && !this.isActive(u)) return false;
+    if (adminOnly && u.role !== 'ADMIN') return false;
+    if (editorOnly && u.role !== 'EDITOR') return false;
 
-      return true;
-    });
-  }
+    return true;
+  });
+
+  rows = [...rows].sort((a, b) => {
+    if (sortMode === 'level_desc') {
+      return this.userLevel(b) - this.userLevel(a);
+    }
+
+    if (sortMode === 'activityDays_desc') {
+      return this.userActivityDaysMonth(b) - this.userActivityDaysMonth(a);
+    }
+
+    if (sortMode === 'lastActivity_desc') {
+      return this.userLastActivityTime(b) - this.userLastActivityTime(a);
+    }
+
+    return this.userCreatedTime(b) - this.userCreatedTime(a);
+  });
+
+  this.filteredUsers = rows;
+}
+
+userLevel(u: AdminUser): number {
+  return Number((u as any).level ?? (u as any).gamificationLevel ?? 0);
+}
+
+userActivityDaysMonth(u: AdminUser): number {
+  return Number(
+    (u as any).activityDaysMonth ??
+    (u as any).monthlyActivityDays ??
+    (u as any).activeDaysInMonth ??
+    0
+  );
+}
+
+userLastActivityTime(u: AdminUser): number {
+  if (!u.lastActivityAt) return 0;
+
+  const d = new Date(u.lastActivityAt).getTime();
+  return Number.isFinite(d) ? d : 0;
+}
+
+userCreatedTime(u: AdminUser): number {
+  if (!u.createdAt) return 0;
+
+  const d = new Date(u.createdAt).getTime();
+  return Number.isFinite(d) ? d : 0;
+}
 
   formatDate(value: string | Date | null | undefined): string {
     if (!value) return '—';

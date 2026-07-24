@@ -1,81 +1,138 @@
-<div class="page">
-  <div class="head">
-    <div class="title">
+<div class="legal-page">
+  <a class="back-home" routerLink="/">
+    <mat-icon>arrow_back</mat-icon>
+    Retour à l’accueil
+  </a>
+
+  <section class="legal-hero">
+    <div class="legal-hero__icon">
       <mat-icon>description</mat-icon>
-      <div>
-        <h1>Conditions Générales d’Utilisation (CGU)</h1>
-        <p>Les règles d’utilisation du service AquaManager.</p>
-      </div>
     </div>
 
-    <button mat-stroked-button routerLink="/">
-      <mat-icon>home</mat-icon>
-      Accueil
-    </button>
-  </div>
+    <div class="legal-hero__content">
+      <div class="legal-eyebrow">
+        AquaManager
+      </div>
 
-  <mat-card class="card">
+      <h1>Conditions Générales d’Utilisation</h1>
+
+      <p>
+        Les règles d’utilisation du service AquaManager pour gérer tes aquariums,
+        tes mesures d’eau, tes tâches et tes tableaux de bord.
+      </p>
+    </div>
+  </section>
+
+  <mat-card class="legal-card">
     <mat-card-content>
-      <h2>1. Objet</h2>
-      <p>
-        AquaManager est un service permettant de gérer des aquariums, enregistrer des mesures d’eau,
-        créer des tâches d’entretien et consulter des tableaux de bord.
-      </p>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">1</span>
+          <h2>Objet</h2>
+        </div>
 
-      <mat-divider></mat-divider>
+        <p>
+          AquaManager est un service permettant de gérer des aquariums, enregistrer
+          des mesures d’eau, créer des tâches d’entretien et consulter des tableaux
+          de bord liés au suivi aquariophile.
+        </p>
+      </section>
 
-      <h2>2. Compte</h2>
-      <ul>
-        <li>Tu dois fournir des informations exactes (nom, email).</li>
-        <li>Tu es responsable de la confidentialité de tes identifiants.</li>
-        <li>Tout usage depuis ton compte est présumé être le tien (sauf fraude prouvée).</li>
-      </ul>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">2</span>
+          <h2>Compte utilisateur</h2>
+        </div>
 
-      <mat-divider></mat-divider>
+        <ul>
+          <li>Tu dois fournir des informations exactes, notamment ton nom et ton adresse email.</li>
+          <li>Tu es responsable de la confidentialité de tes identifiants.</li>
+          <li>Tout usage effectué depuis ton compte est présumé être le tien, sauf fraude prouvée.</li>
+        </ul>
+      </section>
 
-      <h2>3. Règles d’usage</h2>
-      <ul>
-        <li>Ne pas tenter d’accéder aux données d’autrui.</li>
-        <li>Ne pas perturber le service (spam, surcharge, automation abusive, etc.).</li>
-        <li>Ne pas injecter de contenu malveillant.</li>
-      </ul>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">3</span>
+          <h2>Règles d’usage</h2>
+        </div>
 
-      <mat-divider></mat-divider>
+        <ul>
+          <li>Ne pas tenter d’accéder aux données d’un autre utilisateur.</li>
+          <li>Ne pas perturber le service par du spam, une surcharge ou une automatisation abusive.</li>
+          <li>Ne pas injecter de contenu malveillant ou tenter de contourner la sécurité.</li>
+        </ul>
+      </section>
 
-      <h2>4. Données utilisateur</h2>
-      <p>
-        Les données saisies (aquariums, mesures, tâches, commentaires) servent uniquement au fonctionnement
-        du service. Certaines pages (ex. dashboard admin) sont réservées aux comptes ADMIN.
-      </p>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">4</span>
+          <h2>Données utilisateur</h2>
+        </div>
 
-      <mat-divider></mat-divider>
+        <p>
+          Les données saisies dans AquaManager, comme les aquariums, mesures,
+          tâches ou commentaires, servent uniquement au fonctionnement du service.
+          Certaines pages, comme le dashboard administrateur, sont réservées aux
+          comptes disposant du rôle ADMIN.
+        </p>
+      </section>
 
-      <h2>5. Disponibilité</h2>
-      <p>
-        AquaManager peut être temporairement indisponible (maintenance, mise à jour, incident).
-        L’éditeur peut faire évoluer le service (fonctionnalités, interface, etc.).
-      </p>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">5</span>
+          <h2>Disponibilité du service</h2>
+        </div>
 
-      <mat-divider></mat-divider>
+        <p>
+          AquaManager peut être temporairement indisponible en cas de maintenance,
+          mise à jour ou incident technique. Le service peut évoluer au fil du temps,
+          notamment au niveau des fonctionnalités, de l’interface ou des abonnements.
+        </p>
+      </section>
 
-      <h2>6. Responsabilité</h2>
-      <p>
-        AquaManager fournit une aide au suivi. L’utilisateur reste responsable de ses décisions
-        (entretien, réglages, traitements, etc.). Le service ne constitue pas un avis professionnel.
-      </p>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">6</span>
+          <h2>Responsabilité</h2>
+        </div>
 
-      <mat-divider></mat-divider>
+        <p>
+          AquaManager fournit une aide au suivi aquariophile. L’utilisateur reste
+          responsable de ses décisions concernant l’entretien, les réglages, les
+          traitements ou la gestion de son aquarium. Le service ne constitue pas
+          un avis professionnel vétérinaire ou spécialisé.
+        </p>
+      </section>
 
-      <h2>7. Loi applicable</h2>
-      <p>Droit français. En cas de litige, recherche d’une solution amiable en priorité.</p>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">7</span>
+          <h2>Loi applicable</h2>
+        </div>
 
-      <p class="muted">Dernière mise à jour : <b>[date]</b></p>
+        <p>
+          Les présentes conditions sont soumises au droit français. En cas de litige,
+          une solution amiable sera recherchée en priorité.
+        </p>
+      </section>
+
+      <div class="legal-update">
+        <mat-icon>update</mat-icon>
+        <span>Dernière mise à jour : <b>24/07/2026</b></span>
+      </div>
     </mat-card-content>
   </mat-card>
 
-  <div class="links">
-    <a routerLink="/legal">Mentions légales</a>
-    <span>•</span>
-    <a routerLink="/privacy">Politique de confidentialité</a>
-  </div>
+  <nav class="legal-links" aria-label="Liens légaux">
+    <a routerLink="/legal">
+      <mat-icon>gavel</mat-icon>
+      Mentions légales
+    </a>
+
+    <a routerLink="/privacy">
+      <mat-icon>shield</mat-icon>
+      Politique de confidentialité
+    </a>
+  </nav>
 </div>

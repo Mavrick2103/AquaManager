@@ -69,10 +69,23 @@ export class AuthController {
   }
 
   @Public()
-  @Post('verify-email')
-  verifyEmail(@Body() dto: VerifyEmailDto) {
-    return this.auth.verifyEmail(dto.token);
+@Post('verify-email')
+async verifyEmail(
+  @Body() dto: VerifyEmailDto,
+  @Res({ passthrough: true }) res: Response,
+) {
+  const result = await this.auth.verifyEmail(dto.token);
+
+  if (result.ok && result.refresh) {
+    res.cookie('refresh_token', result.refresh, REFRESH_COOKIE_OPTIONS);
   }
+
+  return {
+    ok: result.ok,
+    message: result.message,
+    access_token: result.access,
+  };
+}
 
   @Public()
   @Post('forgot-password')

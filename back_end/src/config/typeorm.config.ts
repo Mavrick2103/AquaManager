@@ -17,7 +17,8 @@ export function typeOrmConfig(): TypeOrmModuleOptions {
     autoLoadEntities: true,
 
     // ✅ jamais en prod
-    synchronize: syncEnabled && !isProd,
+    //synchronize: syncEnabled && !isProd,
+    synchronize: true,
 
     // ✅ dev: true, prod: via env
     logging: isProd ? loggingEnabled : false,

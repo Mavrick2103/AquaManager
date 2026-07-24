@@ -215,6 +215,13 @@ export const routes: Routes = [
   loadComponent: () =>
     import('./pages/fiches/details/plant-card-detail-page.component').then(m => m.PlantCardDetailPageComponent),
 },
+{
+  path: 'new-version',
+  loadComponent: () =>
+    import('./pages/new-version/new-version.component').then(
+      (m) => m.NewVersionComponent
+    ),
+},
 
 
 

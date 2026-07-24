@@ -1,19 +1,54 @@
-<div class="wrap">
-  <mat-card class="card">
-    <h1>Vérification email</h1>
-
-    <div class="center" *ngIf="loading()">
-      <mat-spinner diameter="36"></mat-spinner>
-      <p>Validation en cours…</p>
+<div class="verify-page">
+  <mat-card class="verify-card">
+    <div class="verify-logo">
+      <img src="/AquaL.ico" alt="AquaManager" />
     </div>
 
-    <div *ngIf="!loading()">
-      <p class="msg" [class.ok]="ok()" [class.ko]="ok() === false">{{ message() }}</p>
+    <ng-container *ngIf="loading(); else resultTpl">
+      <div class="verify-state">
+        <mat-spinner diameter="38"></mat-spinner>
 
-      <div class="actions">
-        <a mat-flat-button color="primary" routerLink="/login">Aller à la connexion</a>
-        <a mat-button routerLink="/">Retour accueil</a>
+        <h1>Vérification de ton e-mail</h1>
+        <p>
+          Nous activons ton compte AquaManager. Cette étape ne prend que quelques secondes.
+        </p>
       </div>
-    </div>
+    </ng-container>
+
+    <ng-template #resultTpl>
+      <div class="verify-state" [class.success]="ok()" [class.error]="ok() === false">
+        <div class="status-pill">
+          <span class="dot"></span>
+          <span *ngIf="ok()">Compte vérifié</span>
+          <span *ngIf="ok() === false">Lien non valide</span>
+        </div>
+
+        <h1 *ngIf="ok()">Bienvenue sur AquaManager</h1>
+        <h1 *ngIf="ok() === false">Ce lien n’est plus actif</h1>
+
+        <p *ngIf="ok()">
+          Ton adresse e-mail est confirmée. Tu peux maintenant te connecter et créer ton premier aquarium.
+        </p>
+
+        <p *ngIf="ok() === false">
+          Ce lien a peut-être déjà été utilisé, a expiré, ou ne correspond à aucun compte.
+        </p>
+
+        <div class="actions">
+          <a
+  *ngIf="ok()"
+  mat-flat-button
+  color="primary"
+  (click)="connectAfterVerification()"
+>
+  Se connecter
+</a>
+
+          <a mat-button routerLink="/">
+            Retour à l’accueil
+          </a>
+        </div>
+      </div>
+    </ng-template>
   </mat-card>
 </div>

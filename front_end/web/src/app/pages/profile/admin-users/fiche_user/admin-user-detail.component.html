@@ -56,6 +56,19 @@
         </div>
       </div>
 
+      <div class="pill activity">
+  <mat-icon>calendar_month</mat-icon>
+  <div class="pill-text">
+    <div class="pill-title">Activité ce mois</div>
+    <div class="pill-value">
+      {{ monthlyActivityDays }} jour{{ monthlyActivityDays > 1 ? 's' : '' }}
+      <span class="xp">
+        / {{ daysInCurrentMonth }} jours
+      </span>
+    </div>
+  </div>
+</div>
+
       <div class="pill">
         <mat-icon>mail</mat-icon>
         <div class="pill-text">

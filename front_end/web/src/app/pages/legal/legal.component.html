@@ -1,73 +1,158 @@
-<div class="page">
-  <div class="head">
-    <div class="title">
+<div class="legal-page">
+  <a class="back-home" routerLink="/">
+    <mat-icon>arrow_back</mat-icon>
+    Retour à l’accueil
+  </a>
+
+  <section class="legal-hero">
+    <div class="legal-hero__icon">
       <mat-icon>gavel</mat-icon>
-      <div>
-        <h1>Mentions légales</h1>
-        <p>Informations légales relatives au service AquaManager.</p>
-      </div>
     </div>
 
-    <button mat-stroked-button routerLink="/">
-      <mat-icon>home</mat-icon>
-      Accueil
-    </button>
-  </div>
+    <div class="legal-hero__content">
+      <div class="legal-eyebrow">
+        Informations légales
+      </div>
 
-  <mat-card class="card">
+      <h1>Mentions légales</h1>
+
+      <p>
+        Retrouve ici les informations légales relatives à AquaManager, son éditeur,
+        son hébergement, sa propriété intellectuelle et les moyens de contact.
+      </p>
+    </div>
+  </section>
+
+  <mat-card class="legal-card">
     <mat-card-content>
-      <h2>Éditeur</h2>
-      <p><b>AquaManager</b></p>
-      <ul>
-        <li>Éditeur : <b>[Prénom NOM / Raison sociale]</b></li>
-        <li>Statut : <b>[Particulier / Micro-entreprise / Société]</b></li>
-        <li>Adresse : <b>[Adresse postale complète]</b></li>
-        <li>E-mail : <b>aquamanager.contact@gmail.com</b></li>
-        <li>SIREN / SIRET : <b>[si applicable]</b></li>
-        <li>TVA intracommunautaire : <b>[si applicable]</b></li>
-      </ul>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">1</span>
+          <h2>Éditeur du service</h2>
+        </div>
 
-      <mat-divider></mat-divider>
+        <div class="info-box">
+          <p><b>AquaManager</b></p>
 
-      <h2>Directeur de publication</h2>
-      <p><b>[Prénom NOM]</b></p>
+          <ul>
+            <li>Éditeur : <b>[Prénom NOM / Raison sociale]</b></li>
+            <li>Statut : <b>[Particulier / Micro-entreprise / Société]</b></li>
+            <li>Adresse : <b>[Adresse postale complète]</b></li>
+            <li>E-mail : <b>aquamanager.contact@gmail.com</b></li>
+            <li>SIREN / SIRET : <b>[si applicable]</b></li>
+            <li>TVA intracommunautaire : <b>[si applicable]</b></li>
+          </ul>
+        </div>
+      </section>
 
-      <mat-divider></mat-divider>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">2</span>
+          <h2>Directeur de publication</h2>
+        </div>
 
-      <h2>Hébergement</h2>
-      <p>
-        OVHcloud — 2 rue Kellermann, 59100 Roubaix, France (VPS).<br />
-        Support : site OVHcloud.
-      </p>
+        <p>
+          Le directeur de publication du service AquaManager est :
+          <b>[Prénom NOM]</b>.
+        </p>
+      </section>
 
-      <mat-divider></mat-divider>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">3</span>
+          <h2>Hébergement</h2>
+        </div>
 
-      <h2>Propriété intellectuelle</h2>
-      <p>
-        L’ensemble du site, de l’application, du code, des contenus et éléments graphiques d’AquaManager
-        est protégé par le droit d’auteur. Toute reproduction ou exploitation non autorisée est interdite.
-      </p>
+        <div class="hosting-box">
+          <mat-icon>dns</mat-icon>
 
-      <mat-divider></mat-divider>
+          <div>
+            <p>
+              Le service AquaManager est hébergé par :
+            </p>
 
-      <h2>Responsabilité</h2>
-      <p>
-        AquaManager fournit des fonctionnalités de suivi (aquariums, paramètres d’eau, tâches).
-        Les informations et statistiques affichées sont fournies à titre d’assistance et ne constituent pas un avis professionnel.
-      </p>
+            <p>
+              <b>OVHcloud</b><br />
+              2 rue Kellermann<br />
+              59100 Roubaix<br />
+              France
+            </p>
 
-      <mat-divider></mat-divider>
+            <p>
+              Infrastructure utilisée : <b>VPS</b>.
+            </p>
+          </div>
+        </div>
+      </section>
 
-      <h2>Contact</h2>
-      <p>Pour toute question : <b>aquamanager.contact@gmail.com</b></p>
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">4</span>
+          <h2>Propriété intellectuelle</h2>
+        </div>
 
-      <p class="muted">Dernière mise à jour : <b>[date]</b></p>
+        <p>
+          L’ensemble du site, de l’application, du code, des contenus, textes,
+          éléments graphiques, interfaces et fonctionnalités d’AquaManager est
+          protégé par le droit d’auteur.
+        </p>
+
+        <p>
+          Toute reproduction, distribution, modification ou exploitation non
+          autorisée, totale ou partielle, est interdite sans autorisation préalable.
+        </p>
+      </section>
+
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">5</span>
+          <h2>Responsabilité</h2>
+        </div>
+
+        <p>
+          AquaManager fournit des fonctionnalités de suivi aquariophile, notamment
+          la gestion des aquariums, l’enregistrement des paramètres d’eau, la
+          création de tâches et la consultation de statistiques.
+        </p>
+
+        <p>
+          Les informations, recommandations et statistiques affichées sont fournies
+          à titre d’assistance. Elles ne constituent pas un avis professionnel,
+          vétérinaire ou spécialisé.
+        </p>
+      </section>
+
+      <section class="legal-section">
+        <div class="section-title">
+          <span class="section-number">6</span>
+          <h2>Contact</h2>
+        </div>
+
+        <div class="contact-box">
+          <mat-icon>mail</mat-icon>
+          <span>
+            Pour toute question, tu peux contacter AquaManager à l’adresse :
+            <b>aquamanager.contact@gmail.com</b>
+          </span>
+        </div>
+      </section>
+
+      <div class="legal-update">
+        <mat-icon>update</mat-icon>
+        <span>Dernière mise à jour : <b>24 juillet 2026</b></span>
+      </div>
     </mat-card-content>
   </mat-card>
 
-  <div class="links">
-    <a routerLink="/privacy">Politique de confidentialité</a>
-    <span>•</span>
-    <a routerLink="/terms">CGU</a>
-  </div>
+  <nav class="legal-links" aria-label="Liens légaux">
+    <a routerLink="/privacy">
+      <mat-icon>shield</mat-icon>
+      Politique de confidentialité
+    </a>
+
+    <a routerLink="/terms">
+      <mat-icon>description</mat-icon>
+      CGU
+    </a>
+  </nav>
 </div>

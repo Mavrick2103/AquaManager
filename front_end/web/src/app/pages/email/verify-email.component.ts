@@ -22,8 +22,11 @@ export class VerifyEmailComponent {
   ok = signal<boolean | null>(null);
   message = signal<string>('Vérification en cours…');
 
+  private accessTokenAfterVerify = signal<string | null>(null);
+
   constructor() {
     const token = this.route.snapshot.queryParamMap.get('token');
+
     if (!token) {
       this.loading.set(false);
       this.ok.set(false);
@@ -34,12 +37,28 @@ export class VerifyEmailComponent {
     this.auth.verifyEmail(token)
       .then((res) => {
         this.ok.set(!!res?.ok);
-        this.message.set(res?.message ?? (res?.ok ? 'Email vérifié.' : 'Lien invalide ou expiré.'));
+        this.message.set(
+          res?.message ?? (res?.ok ? 'Email vérifié.' : 'Lien invalide ou expiré.')
+        );
+
+        if (res?.ok && res?.access_token) {
+          this.accessTokenAfterVerify.set(res.access_token);
+        }
       })
       .catch(() => {
         this.ok.set(false);
         this.message.set('Erreur serveur. Réessaie plus tard.');
       })
       .finally(() => this.loading.set(false));
+  }
+
+  async connectAfterVerification() {
+    const token = this.accessTokenAfterVerify();
+
+    if (!token) {
+      return;
+    }
+
+    await this.auth.completeVerifyLogin(token);
   }
 }

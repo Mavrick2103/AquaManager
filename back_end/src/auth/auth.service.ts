@@ -66,11 +66,33 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    const tokenHash = this.sha256(token);
-    const user = await this.users.verifyEmailByTokenHash(tokenHash);
-    if (!user) return { ok: false, message: 'Lien invalide ou expiré' };
-    return { ok: true, message: 'Email vérifié' };
+  const tokenHash = this.sha256(token);
+  const user = await this.users.verifyEmailByTokenHash(tokenHash);
+
+  if (!user) {
+    return {
+      ok: false,
+      message: 'Ce lien est invalide, expiré ou déjà utilisé.',
+      access: null,
+      refresh: null,
+    };
   }
+
+  const payload: JwtPayload = {
+    sub: user.id,
+    role: (user.role ?? 'USER').toUpperCase(),
+  };
+
+  const access = await this.signAccess(payload);
+  const refresh = await this.signRefresh(payload);
+
+  return {
+    ok: true,
+    message: 'Email vérifié. Connexion en cours…',
+    access,
+    refresh,
+  };
+}
 
   async forgotPassword(email: string) {
     const token = randomBytes(32).toString('hex');

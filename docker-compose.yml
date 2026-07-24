@@ -38,6 +38,13 @@ services:
       CONTACT_TO_EMAIL: ${CONTACT_TO_EMAIL:-aquamanager.contact@gmail.com}
       ANALYTICS_SALT: ${ANALYTICS_SALT:-change_me_long_random_string_32_chars_min}
 
+      #IA
+      environment:
+  OPENAI_API_KEY: ${OPENAI_API_KEY}
+  OPENAI_MODEL_LUNA: ${OPENAI_MODEL_LUNA:-gpt-4o-mini}
+      
+
+
             # ✅ STRIPE
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}

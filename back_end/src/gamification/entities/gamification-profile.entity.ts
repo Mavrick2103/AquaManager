@@ -13,7 +13,6 @@ export class GamificationProfile {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Index()
   @Column()
   userId: number;
 

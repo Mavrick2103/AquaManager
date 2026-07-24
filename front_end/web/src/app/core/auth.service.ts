@@ -88,10 +88,21 @@ export class AuthService {
       return null;
     }
   }
-  async verifyEmail(token: string): Promise<{ ok: boolean; message?: string }> {
-  return await this.http
-    .post<{ ok: boolean; message?: string }>(`${environment.apiUrl}/auth/verify-email`, { token })
-    .toPromise() as any;
+  
+  async verifyEmail(token: string): Promise<{ ok: boolean; message?: string; access_token?: string | null }> {
+  return await firstValueFrom(
+    this.http.post<{ ok: boolean; message?: string; access_token?: string | null }>(
+      `${environment.apiUrl}/auth/verify-email`,
+      { token },
+      { withCredentials: true }
+    )
+  );
+}
+
+async completeVerifyLogin(accessToken: string) {
+  this.accessToken = accessToken;
+  await this.fetchMe();
+  return this.router.navigateByUrl('/home');
 }
 
 async forgotPassword(email: string): Promise<{ ok: boolean; message?: string }> {

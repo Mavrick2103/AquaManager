@@ -434,3 +434,15 @@
   font-weight: 700;
   color: #64748b;
 }
+.pill.activity {
+  border-color: rgba(57, 181, 74, 0.25);
+  background: linear-gradient(
+    135deg,
+    rgba(57, 181, 74, 0.09),
+    rgba(0, 159, 227, 0.07)
+  );
+}
+
+.pill.activity mat-icon {
+  color: #39b54a;
+}
