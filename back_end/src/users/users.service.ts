@@ -308,9 +308,7 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
 
   // ✅ ADMIN: LIST
   async adminList(search?: string) {
-  const qb = this.repo
-    .createQueryBuilder('u')
-    .leftJoinAndSelect('u.gamificationProfile', 'gp');
+  const qb = this.repo.createQueryBuilder('u');
 
   qb.select([
     'u.id',
@@ -323,12 +321,6 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
     'u.createdAt',
     'u.emailVerifiedAt',
     'u.lastActivityAt',
-
-    'gp.id',
-    'gp.level',
-    'gp.xp',
-    'gp.currentStreak',
-    'gp.bestStreak',
   ]);
 
   if (search?.trim()) {
@@ -340,25 +332,43 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
 
   const users = await qb.getMany();
 
-  return users.map((user) => ({
-    id: user.id,
-    fullName: user.fullName,
-    email: user.email,
-    role: user.role,
+  const userIds = users.map((u) => u.id);
 
-    subscriptionPlan: user.subscriptionPlan,
-    subscriptionEndsAt: user.subscriptionEndsAt,
-    subscriptionStatus: user.subscriptionStatus,
+  const profiles = userIds.length
+    ? await this.gamificationProfileRepo.find({
+        where: {
+          userId: In(userIds),
+        },
+      })
+    : [];
 
-    createdAt: user.createdAt,
-    lastActivityAt: user.lastActivityAt,
-    emailVerifiedAt: user.emailVerifiedAt,
+  const profileByUserId = new Map(
+    profiles.map((profile) => [profile.userId, profile]),
+  );
 
-    level: (user as any).gamificationProfile?.level ?? 1,
-    xp: (user as any).gamificationProfile?.xp ?? 0,
-    currentStreak: (user as any).gamificationProfile?.currentStreak ?? 0,
-    bestStreak: (user as any).gamificationProfile?.bestStreak ?? 0,
-  }));
+  return users.map((user) => {
+    const profile = profileByUserId.get(user.id);
+
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+
+      subscriptionPlan: user.subscriptionPlan,
+      subscriptionEndsAt: user.subscriptionEndsAt,
+      subscriptionStatus: user.subscriptionStatus,
+
+      createdAt: user.createdAt,
+      lastActivityAt: user.lastActivityAt,
+      emailVerifiedAt: user.emailVerifiedAt,
+
+      level: profile?.level ?? 1,
+      xp: profile?.xp ?? 0,
+      currentStreak: profile?.currentStreak ?? 0,
+      bestStreak: profile?.bestStreak ?? 0,
+    };
+  });
 }
 
   // ✅ ADMIN: GET ONE

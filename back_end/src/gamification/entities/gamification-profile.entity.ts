@@ -11,32 +11,32 @@ import {
 @Index(['userId'], { unique: true })
 export class GamificationProfile {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  userId: number;
+  userId!: number;
 
   @Column({ type: 'int', default: 0 })
-  xp: number;
+  xp!: number;
 
   @Column({ type: 'int', default: 1 })
-  level: number;
+  level!: number;
 
   @Column({ type: 'int', default: 0 })
-  currentStreak: number;
+  currentStreak!: number;
 
   @Column({ type: 'int', default: 0 })
-  bestStreak: number;
+  bestStreak!: number;
 
   @Column({ type: 'date', nullable: true })
-  lastActivityDate: string | null;
+  lastActivityDate!: string | null;
 
   @Column({ type: 'varchar', length: 80, nullable: true })
-  recentBadgeKey: string | null;
+  recentBadgeKey!: string | null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
