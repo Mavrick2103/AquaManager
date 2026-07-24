@@ -308,29 +308,58 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
 
   // ✅ ADMIN: LIST
   async adminList(search?: string) {
-    const qb = this.repo.createQueryBuilder('u');
+  const qb = this.repo
+    .createQueryBuilder('u')
+    .leftJoinAndSelect('u.gamificationProfile', 'gp');
 
-    qb.select([
-      'u.id',
-      'u.fullName',
-      'u.email',
-      'u.role',
-      'u.subscriptionPlan',
-      'u.subscriptionStatus',
-      'u.subscriptionEndsAt',
-      'u.createdAt',
-      'u.emailVerifiedAt',
-      'u.lastActivityAt',
-    ]);
+  qb.select([
+    'u.id',
+    'u.fullName',
+    'u.email',
+    'u.role',
+    'u.subscriptionPlan',
+    'u.subscriptionStatus',
+    'u.subscriptionEndsAt',
+    'u.createdAt',
+    'u.emailVerifiedAt',
+    'u.lastActivityAt',
 
-    if (search?.trim()) {
-      const q = `%${search.trim().toLowerCase()}%`;
-      qb.andWhere('(LOWER(u.email) LIKE :q OR LOWER(u.fullName) LIKE :q)', { q });
-    }
+    'gp.id',
+    'gp.level',
+    'gp.xp',
+    'gp.currentStreak',
+    'gp.bestStreak',
+  ]);
 
-    qb.orderBy('u.createdAt', 'DESC');
-    return qb.getMany();
+  if (search?.trim()) {
+    const q = `%${search.trim().toLowerCase()}%`;
+    qb.andWhere('(LOWER(u.email) LIKE :q OR LOWER(u.fullName) LIKE :q)', { q });
   }
+
+  qb.orderBy('u.createdAt', 'DESC');
+
+  const users = await qb.getMany();
+
+  return users.map((user) => ({
+    id: user.id,
+    fullName: user.fullName,
+    email: user.email,
+    role: user.role,
+
+    subscriptionPlan: user.subscriptionPlan,
+    subscriptionEndsAt: user.subscriptionEndsAt,
+    subscriptionStatus: user.subscriptionStatus,
+
+    createdAt: user.createdAt,
+    lastActivityAt: user.lastActivityAt,
+    emailVerifiedAt: user.emailVerifiedAt,
+
+    level: (user as any).gamificationProfile?.level ?? 1,
+    xp: (user as any).gamificationProfile?.xp ?? 0,
+    currentStreak: (user as any).gamificationProfile?.currentStreak ?? 0,
+    bestStreak: (user as any).gamificationProfile?.bestStreak ?? 0,
+  }));
+}
 
   // ✅ ADMIN: GET ONE
   async adminGetOne(id: number) {
