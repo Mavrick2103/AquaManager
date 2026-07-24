@@ -130,6 +130,10 @@
             Actifs uniquement
           </mat-slide-toggle>
 
+          <mat-slide-toggle [formControl]="subscribedOnlyCtrl">
+            Abonnés uniquement
+          </mat-slide-toggle>
+
           <mat-slide-toggle [formControl]="adminOnlyCtrl">
             Admin uniquement
           </mat-slide-toggle>
@@ -156,7 +160,7 @@
           {{ filteredUsers.length }} utilisateur{{ filteredUsers.length > 1 ? 's' : '' }} affiché{{ filteredUsers.length > 1 ? 's' : '' }}
         </span>
 
-        <span *ngIf="searchCtrl.value || activeOnlyCtrl.value || adminOnlyCtrl.value || editorOnlyCtrl.value || sortCtrl.value !== 'createdAt_desc'">
+        <span *ngIf="searchCtrl.value || activeOnlyCtrl.value || subscribedOnlyCtrl.value || adminOnlyCtrl.value || editorOnlyCtrl.value || sortCtrl.value !== 'createdAt_desc'">
           Filtre ou tri actif
         </span>
       </div>

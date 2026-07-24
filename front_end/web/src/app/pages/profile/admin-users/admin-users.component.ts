@@ -65,6 +65,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   adminOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
   editorOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
   sortCtrl = new FormControl<UserSortMode>('createdAt_desc', { nonNullable: true });
+  subscribedOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
 
   displayedColumns = [
     'id',
@@ -112,40 +113,44 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.reload();
+  this.reload();
 
-    this.searchCtrl.valueChanges
-      .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => this.reload());
+  this.searchCtrl.valueChanges
+    .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.destroy$))
+    .subscribe(() => this.reload());
 
-    this.activeOnlyCtrl.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.applyFilters());
+  this.activeOnlyCtrl.valueChanges
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(() => this.applyFilters());
 
-    this.adminOnlyCtrl.valueChanges
-  .pipe(takeUntil(this.destroy$))
-  .subscribe((enabled) => {
-    if (enabled) {
-      this.editorOnlyCtrl.setValue(false, { emitEvent: false });
-    }
+  this.adminOnlyCtrl.valueChanges
+    .pipe(takeUntil(this.destroy$))
+    .subscribe((enabled) => {
+      if (enabled) {
+        this.editorOnlyCtrl.setValue(false, { emitEvent: false });
+      }
 
-    this.sortCtrl.valueChanges
-  .pipe(takeUntil(this.destroy$))
-  .subscribe(() => this.applyFilters());
+      this.applyFilters();
+    });
 
-    this.applyFilters();
-  });
+  this.editorOnlyCtrl.valueChanges
+    .pipe(takeUntil(this.destroy$))
+    .subscribe((enabled) => {
+      if (enabled) {
+        this.adminOnlyCtrl.setValue(false, { emitEvent: false });
+      }
 
-    this.editorOnlyCtrl.valueChanges
-  .pipe(takeUntil(this.destroy$))
-  .subscribe((enabled) => {
-    if (enabled) {
-      this.adminOnlyCtrl.setValue(false, { emitEvent: false });
-    }
+      this.applyFilters();
+    });
 
-    this.applyFilters();
-  });
-  }
+  this.subscribedOnlyCtrl.valueChanges
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(() => this.applyFilters());
+
+  this.sortCtrl.valueChanges
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(() => this.applyFilters());
+}
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -169,6 +174,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   this.activeOnlyCtrl.setValue(false, { emitEvent: false });
   this.adminOnlyCtrl.setValue(false, { emitEvent: false });
   this.editorOnlyCtrl.setValue(false, { emitEvent: false });
+  this.subscribedOnlyCtrl.setValue(false, { emitEvent: false });
   this.sortCtrl.setValue('createdAt_desc', { emitEvent: false });
 
   this.reload();
@@ -206,12 +212,14 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   const activeOnly = this.activeOnlyCtrl.value;
   const adminOnly = this.adminOnlyCtrl.value;
   const editorOnly = this.editorOnlyCtrl.value;
+  const subscribedOnly = this.subscribedOnlyCtrl.value;
   const sortMode = this.sortCtrl.value;
 
   let rows = this.users.filter((u) => {
     if (activeOnly && !this.isActive(u)) return false;
     if (adminOnly && u.role !== 'ADMIN') return false;
     if (editorOnly && u.role !== 'EDITOR') return false;
+    if (subscribedOnly && !this.isSubscribed(u)) return false;
 
     return true;
   });
@@ -439,6 +447,32 @@ userCreatedTime(u: AdminUser): number {
   hasPaidPlan(u: AdminUser): boolean {
     return u.subscriptionPlan === 'PREMIUM' || u.subscriptionPlan === 'PRO';
   }
+
+  isSubscribed(u: AdminUser): boolean {
+  const plan = u.subscriptionPlan ?? 'CLASSIC';
+
+  if (plan !== 'PREMIUM' && plan !== 'PRO') {
+    return false;
+  }
+
+  const status = u.subscriptionStatus ?? 'none';
+
+  if (status !== 'active' && status !== 'trialing') {
+    return false;
+  }
+
+  if (!u.subscriptionEndsAt) {
+    return true; // abonnement à vie / sans expiration
+  }
+
+  const end = new Date(u.subscriptionEndsAt).getTime();
+
+  if (!Number.isFinite(end)) {
+    return false;
+  }
+
+  return end > Date.now();
+}
 
   deleteUser(u: AdminUser): void {
     if (this.isSaving(u) || this.isSavingSubscription(u)) return;
