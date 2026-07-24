@@ -236,14 +236,21 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
 }
 
 userLevel(u: AdminUser): number {
-  return Number((u as any).level ?? (u as any).gamificationLevel ?? 0);
+  return Number(
+    (u as any).level ??
+    (u as any).gamification?.level ??
+    (u as any).gamificationProfile?.level ??
+    (u as any).profile?.level ??
+    0
+  );
 }
 
 userActivityDaysMonth(u: AdminUser): number {
   return Number(
-    (u as any).activityDaysMonth ??
-    (u as any).monthlyActivityDays ??
-    (u as any).activeDaysInMonth ??
+    (u as any).currentStreak ??
+    (u as any).gamification?.currentStreak ??
+    (u as any).gamificationProfile?.currentStreak ??
+    (u as any).profile?.currentStreak ??
     0
   );
 }
