@@ -186,8 +186,12 @@ describe('WaterMeasurementService (unit)', () => {
         aquariumId,
       );
 
-      expect(usersService.hasAtLeastPlan).toHaveBeenCalledWith(userId, 'PREMIUM');
-      expect(recommendationService.generateForMeasurement).not.toHaveBeenCalled();
+      expect(usersService.hasAtLeastPlan).not.toHaveBeenCalled();
+      expect(recommendationService.generateForMeasurement).toHaveBeenCalledWith({
+        userId,
+        aquariumId,
+        measurement: savedEntity,
+      });
 
       expect(res).toEqual({
         measurement: savedEntity,

@@ -2,6 +2,16 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { TaskType } from './tasks.service';
+
+export type AiSuggestedTask = {
+  type: TaskType;
+  title: string;
+  description: string;
+  suggestedDueAt: string | null;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  reason: string;
+};
 
 export type AiAquariumAnalysisResponse = {
   model: string;
@@ -10,6 +20,7 @@ export type AiAquariumAnalysisResponse = {
   used: number;
   remaining: number;
   analysis: string;
+  suggestedTasks: AiSuggestedTask[];
 };
 
 @Injectable({

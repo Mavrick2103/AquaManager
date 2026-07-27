@@ -112,19 +112,12 @@ export class WaterMeasurementService {
      */
     await this.gamificationService.onMeasurementCreated(userId, aquariumId);
 
-    /**
-     * Recommandations détaillées uniquement Premium.
-     * C'est ici que la partie payante reste protégée.
-     */
-    const isPremium = await this.usersService.hasAtLeastPlan(userId, 'PREMIUM');
-
-    const recommendations = isPremium
-      ? await this.recoService.generateForMeasurement({
-          userId,
-          aquariumId,
-          measurement: saved,
-        })
-      : [];
+    // L'assistant à règles est disponible pour tous les plans.
+    const recommendations = await this.recoService.generateForMeasurement({
+      userId,
+      aquariumId,
+      measurement: saved,
+    });
 
     return {
       measurement: saved,

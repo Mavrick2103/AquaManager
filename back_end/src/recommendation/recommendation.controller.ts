@@ -1,9 +1,7 @@
 import { Controller, Get, Param, ParseIntPipe, Post, Query, Req, Body } from '@nestjs/common';
 import { RecommendationService } from './recommendation.service';
-import { PlanRequired } from '../auth/decorators/plan.decorator';
 
 @Controller('recommendations')
-@PlanRequired('PREMIUM')
 export class RecommendationController {
   constructor(private readonly service: RecommendationService) {}
 

@@ -47,7 +47,10 @@ import {
 import {
   AiApi,
   AiAquariumAnalysisResponse,
+  AiSuggestedTask,
 } from '../../../core/ai.service';
+import { TasksService } from '../../../core/tasks.service';
+import { UserService } from '../../../core/user.service';
 
 import {
   AquariumTargetsService,
@@ -173,6 +176,8 @@ export class AquariumDetailComponent implements OnInit {
   private targetsApi = inject(AquariumTargetsService);
   private billing = inject(BillingService);
   private aiApi = inject(AiApi);
+  private tasksApi = inject(TasksService);
+  private usersApi = inject(UserService);
 
   private readonly apiOrigin = (environment.apiUrl || '')
     .replace(/\/$/, '')
@@ -184,6 +189,7 @@ export class AquariumDetailComponent implements OnInit {
   saving = false;
 
   isPremium = false;
+  solutionView: 'assistant' | 'ai' = 'assistant';
   private solutionsLoadedOnce = false;
 
   checkoutLoading = false;
@@ -340,22 +346,23 @@ aiChatQuestion = '';
     this.targetsLoading = true;
 
     try {
+      const me = await this.usersApi.getMe();
+      const status = String(me.subscriptionStatus ?? 'none').toLowerCase();
+      const plan = String(me.subscriptionPlan ?? 'CLASSIC').toUpperCase();
+      this.isPremium =
+        me.role === 'ADMIN' ||
+        ((plan === 'PREMIUM' || plan === 'PRO') &&
+          (status === 'active' || status === 'trialing'));
       this.targets = await this.targetsApi.getForAquarium(this.id);
-      this.isPremium = true;
       this.buildTargetsForm(this.targets);
     } catch (e: any) {
-      const status = e?.status ?? e?.error?.statusCode;
-
-      this.isPremium = false;
       this.targets = null;
       this.targetsForm = null;
       this.recos = [];
 
-      if (status !== 403) {
-        this.snack.open('Impossible de charger les solutions pour le moment', 'Fermer', {
-          duration: 3000,
-        });
-      }
+      this.snack.open('Impossible de charger les solutions pour le moment', 'Fermer', {
+        duration: 3000,
+      });
 
       return;
     } finally {
@@ -460,32 +467,21 @@ aiChatQuestion = '';
   }
 
   async loadPendingRecos(): Promise<void> {
-    if (!this.isPremium) return;
-
     this.recosLoading = true;
 
     try {
       const list = await this.recosApi.listPending(this.id);
       this.recos = Array.isArray(list) ? list : [];
     } catch (e: any) {
-      const status = e?.status ?? e?.error?.statusCode;
-
-      if (status === 403) {
-        this.isPremium = false;
-        this.recos = [];
-      } else {
-        this.snack.open('Impossible de charger les solutions', 'Fermer', {
-          duration: 3000,
-        });
-      }
+      this.snack.open('Impossible de charger les solutions', 'Fermer', {
+        duration: 3000,
+      });
     } finally {
       this.recosLoading = false;
     }
   }
 
   async refreshSolutions(): Promise<void> {
-    if (!this.isPremium) return;
-
     await this.loadTargets();
     await this.loadPendingRecos();
   }
@@ -639,9 +635,50 @@ async analyzePhotoWithAi(): Promise<void> {
   }
 }
 
-  async acceptReco(r: Recommendation): Promise<void> {
-    if (!this.isPremium) return;
+  async addAiSuggestedTask(task: AiSuggestedTask): Promise<void> {
+    const ref = this.dialog.open(RecommendationScheduleDialogComponent, {
+      width: '520px',
+      data: {
+        title: task.title,
+        message: task.reason,
+        initialDueAt: task.suggestedDueAt,
+      },
+      autoFocus: false,
+      restoreFocus: false,
+    });
 
+    const result = await firstValueFrom(ref.afterClosed());
+    if (!result?.dueAt) return;
+
+    try {
+      await firstValueFrom(
+        this.tasksApi.create({
+          aquariumId: this.id,
+          type: task.type,
+          title: task.title,
+          description: task.description,
+          dueAt: result.dueAt,
+          repeat: null,
+          fertilization: null,
+        }),
+      );
+      this.snack.open('Tâche IA ajoutée au planning ✅', 'OK', {
+        duration: 2500,
+      });
+    } catch (e: any) {
+      this.snack.open(
+        e?.error?.message || "Impossible d'ajouter la tâche au planning",
+        'Fermer',
+        { duration: 3000 },
+      );
+    }
+  }
+
+  selectSolutionView(view: 'assistant' | 'ai'): void {
+    this.solutionView = view;
+  }
+
+  async acceptReco(r: Recommendation): Promise<void> {
     const initial = (r as any)?.actionPayload?.dueAt ?? null;
 
     const ref = this.dialog.open(RecommendationScheduleDialogComponent, {
@@ -675,8 +712,6 @@ async analyzePhotoWithAi(): Promise<void> {
   }
 
   async rejectReco(id: number): Promise<void> {
-    if (!this.isPremium) return;
-
     try {
       await this.recosApi.reject(id);
 
@@ -698,8 +733,6 @@ async analyzePhotoWithAi(): Promise<void> {
   }
 
   async loadTargets(): Promise<void> {
-    if (!this.isPremium) return;
-
     this.targetsLoading = true;
 
     try {
@@ -708,12 +741,6 @@ async analyzePhotoWithAi(): Promise<void> {
       this.targets = dto;
       this.buildTargetsForm(dto);
     } catch (e: any) {
-      const status = e?.status ?? e?.error?.statusCode;
-
-      if (status === 403) {
-        this.isPremium = false;
-      }
-
       this.targets = null;
       this.targetsForm = null;
     } finally {
@@ -1158,7 +1185,6 @@ async analyzePhotoWithAi(): Promise<void> {
     min: number | null;
     max: number | null;
   }> {
-    if (!this.isPremium) return [];
     if (!this.targets?.targets) return [];
 
     const m = this.lastMeasurement;
@@ -1198,7 +1224,6 @@ async analyzePhotoWithAi(): Promise<void> {
   }
 
   get isTankHealthy(): boolean {
-    if (!this.isPremium) return false;
     if (this.recosLoading || this.targetsLoading) return false;
     if (!this.targets || !this.targetsForm) return false;
     if (!this.lastMeasurement) return false;

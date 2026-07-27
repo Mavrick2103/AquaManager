@@ -7,6 +7,10 @@ export interface UserMe {
   id: number;
   email: string;
   fullName: string;
+  role?: 'USER' | 'EDITOR' | 'ADMIN';
+  subscriptionPlan?: 'CLASSIC' | 'PREMIUM' | 'PRO';
+  subscriptionStatus?: 'none' | 'active' | 'trialing' | 'canceled' | 'past_due' | 'incomplete';
+  subscriptionEndsAt?: string | null;
 }
 
 export interface UpdateMeDto {

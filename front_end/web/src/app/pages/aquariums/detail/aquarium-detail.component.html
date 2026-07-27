@@ -265,34 +265,141 @@
 
   <!-- ===================== Solutions ===================== -->
   <mat-tab label="Solutions">
-    <div class="tab-section sol-wrap">
-      <ng-container *ngIf="isPremium; else classicPaywall">
+    <div
+      class="tab-section sol-wrap"
+      [class.sol-wrap--classic]="!isPremium"
+      [class.sol-wrap--premium]="isPremium"
+    >
+      <ng-container>
+        <nav class="solution-switcher" role="tablist" aria-label="Types de solutions">
+          <button
+            type="button"
+            role="tab"
+            id="assistant-tab"
+            [attr.aria-selected]="solutionView === 'assistant'"
+            aria-controls="assistant-panel"
+            class="solution-switcher__tab solution-switcher__tab--assistant"
+            [class.solution-switcher__tab--active]="solutionView === 'assistant'"
+            (click)="selectSolutionView('assistant')"
+          >
+            <span class="solution-switcher__icon solution-switcher__icon--assistant">
+              <mat-icon>tips_and_updates</mat-icon>
+            </span>
+            <span class="solution-switcher__copy">
+              <strong>Assistant AquaManager</strong>
+              <small>Conseils et planning</small>
+            </span>
+            <span class="solution-switcher__access">Inclus</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            id="ai-tab"
+            [attr.aria-selected]="solutionView === 'ai'"
+            aria-controls="ai-panel"
+            class="solution-switcher__tab solution-switcher__tab--ai"
+            [class.solution-switcher__tab--active]="solutionView === 'ai'"
+            (click)="selectSolutionView('ai')"
+          >
+            <span class="solution-switcher__icon solution-switcher__icon--ai">
+              <mat-icon>auto_awesome</mat-icon>
+            </span>
+            <span class="solution-switcher__copy">
+              <strong>Assistant IA</strong>
+              <small>Analyse personnalisée</small>
+            </span>
+            <span
+              class="solution-switcher__access"
+              [class.solution-switcher__access--locked]="!isPremium"
+            >
+              <mat-icon *ngIf="!isPremium">lock</mat-icon>
+              Premium
+            </span>
+          </button>
+        </nav>
+
         <section class="sol-hero">
           <div class="sol-hero__left">
             <div class="sol-hero__eyebrow">
-              <mat-icon>auto_awesome</mat-icon>
-              Assistant intelligent
+              <mat-icon>{{ solutionView === 'ai' ? 'auto_awesome' : 'tips_and_updates' }}</mat-icon>
+              {{ solutionView === 'ai' ? 'Assistant IA' : 'Assistant AquaManager' }}
             </div>
 
             <h2 class="sol-hero__title">
-              Solutions pour ton aquarium
-              <span class="sol-hero__badge">Premium</span>
+              {{
+                solutionView === 'ai'
+                  ? isPremium
+                    ? 'Pose une question sur ton aquarium'
+                    : 'Découvre l’analyse IA Premium'
+                  : 'Suivi et recommandations de ton aquarium'
+              }}
+              <span
+                class="sol-hero__badge"
+                [class.sol-hero__badge--premium]="isPremium || solutionView === 'ai'"
+              >
+                {{
+                  solutionView === 'ai' && !isPremium
+                    ? 'Premium requis'
+                    : isPremium
+                      ? 'Premium'
+                      : 'Classic'
+                }}
+              </span>
             </h2>
 
             <p class="sol-hero__subtitle">
-              AquaManager analyse ta dernière mesure, compare avec tes objectifs et te propose des actions concrètes.
+              {{
+                solutionView === 'ai'
+                  ? isPremium
+                    ? 'Discute avec l’IA, analyse une photo ou utilise une question rapide.'
+                    : 'L’IA Premium fournit des conseils personnalisés et peut suggérer des tâches.'
+                  : 'AquaManager compare ta dernière mesure aux valeurs de référence et propose des actions concrètes.'
+              }}
             </p>
+
+            <div
+              class="sol-hero__benefits"
+              aria-label="Fonctions disponibles"
+              *ngIf="solutionView === 'assistant'"
+            >
+              <span>
+                <mat-icon>rule</mat-icon>
+                Analyse des mesures
+              </span>
+              <span>
+                <mat-icon>event_available</mat-icon>
+                Ajout au planning
+              </span>
+            </div>
           </div>
 
-          <div class="sol-hero__right">
-            <button mat-flat-button color="primary" type="button" (click)="refreshSolutions()">
+          <div class="sol-hero__right" *ngIf="solutionView === 'assistant'">
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="targetsLoading || recosLoading"
+              (click)="refreshSolutions()"
+            >
               <mat-icon>refresh</mat-icon>
-              Rafraîchir l’analyse
+              {{
+                targetsLoading || recosLoading
+                  ? 'Actualisation…'
+                  : 'Actualiser les recommandations'
+              }}
             </button>
           </div>
         </section>
 
-      <section class="ai-hub">
+        <div
+          *ngIf="solutionView === 'ai'"
+          class="solution-view-panel"
+          id="ai-panel"
+          role="tabpanel"
+          aria-labelledby="ai-tab"
+        >
+       <section class="ai-hub" *ngIf="isPremium; else aiPremiumUpsell">
           <div class="ai-hub__head">
             <div>
               <div class="ai-hub__eyebrow">
@@ -438,7 +545,7 @@
                   <span>{{ aiError }}</span>
                 </div>
 
-                <div class="ai-chat-input">
+                  <div class="ai-chat-input">
                   <mat-form-field appearance="outline">
                     <mat-label>Ta question</mat-label>
                     <textarea
@@ -461,6 +568,20 @@
                     <mat-icon>{{ aiLoading ? 'hourglass_top' : 'send' }}</mat-icon>
                     Envoyer
                   </button>
+                </div>
+
+                <div class="reco-list" *ngIf="aiAnalysis?.suggestedTasks?.length">
+                  <mat-card class="reco-card" *ngFor="let task of aiAnalysis!.suggestedTasks">
+                    <mat-card-content>
+                      <h4>{{ task.title }}</h4>
+                      <p>{{ task.reason }}</p>
+                      <button mat-flat-button color="primary" type="button"
+                        (click)="addAiSuggestedTask(task)">
+                        <mat-icon>event</mat-icon>
+                        Ajouter au planning
+                      </button>
+                    </mat-card-content>
+                  </mat-card>
                 </div>
               </mat-card-content>
             </mat-card>
@@ -564,6 +685,19 @@
                     </div>
 
                     <div class="ai-result__text" [innerText]="aiPhotoAnalysis.analysis"></div>
+                    <div class="reco-list" *ngIf="aiPhotoAnalysis.suggestedTasks?.length">
+                      <mat-card class="reco-card" *ngFor="let task of aiPhotoAnalysis.suggestedTasks">
+                        <mat-card-content>
+                          <h4>{{ task.title }}</h4>
+                          <p>{{ task.reason }}</p>
+                          <button mat-flat-button color="primary" type="button"
+                            (click)="addAiSuggestedTask(task)">
+                            <mat-icon>event</mat-icon>
+                            Ajouter au planning
+                          </button>
+                        </mat-card-content>
+                      </mat-card>
+                    </div>
                   </div>
                 </mat-card-content>
               </mat-card>
@@ -592,6 +726,51 @@
           </div>
         </section>
 
+        <ng-template #aiPremiumUpsell>
+          <section class="classic-upgrade" aria-labelledby="premium-discovery-title">
+            <div class="classic-upgrade__content">
+              <div class="classic-upgrade__eyebrow">
+                <mat-icon>auto_awesome</mat-icon>
+                Pour aller plus loin
+              </div>
+              <h3 id="premium-discovery-title">Demande directement conseil à l’IA</h3>
+              <p>
+                L’assistant Classic reste disponible ci-dessous. Premium ajoute une discussion
+                personnalisée, l’analyse de photos et des tâches intelligentes à valider.
+              </p>
+
+              <div class="classic-upgrade__features">
+                <span><mat-icon>chat</mat-icon> Questions personnalisées</span>
+                <span><mat-icon>image_search</mat-icon> Diagnostic photo</span>
+                <span><mat-icon>add_task</mat-icon> Tâches suggérées par l’IA</span>
+              </div>
+            </div>
+
+            <div class="classic-upgrade__action">
+              <div class="classic-upgrade__label">Option Premium</div>
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                [disabled]="checkoutLoading"
+                (click)="startPremiumCheckout()"
+              >
+                <mat-icon>workspace_premium</mat-icon>
+                {{ checkoutLoading ? 'Redirection…' : 'Découvrir Premium' }}
+              </button>
+              <small>Tu gardes toutes les fonctions Classic.</small>
+            </div>
+          </section>
+        </ng-template>
+        </div>
+
+        <div
+          *ngIf="solutionView === 'assistant'"
+          class="solution-view-panel"
+          id="assistant-panel"
+          role="tabpanel"
+          aria-labelledby="assistant-tab"
+        >
         <mat-card class="health-card" [class.health-card--ok]="isTankHealthy">
           <mat-card-content class="health-card__content">
             <div class="health-card__icon">
@@ -627,10 +806,16 @@
               <div>
                 <h3>
                   <mat-icon>tune</mat-icon>
-                  Objectifs de référence
+                  {{ isPremium ? 'Objectifs personnalisés' : 'Valeurs de référence' }}
                 </h3>
 
-                <p>Les valeurs utilisées pour comparer tes mesures.</p>
+                <p>
+                  {{
+                    isPremium
+                      ? 'Adapte précisément les plages utilisées pour analyser ton aquarium.'
+                      : 'Consulte les plages utilisées automatiquement pour analyser tes mesures.'
+                  }}
+                </p>
 
                 <div class="species-target-box" *ngIf="hasSpeciesAverageTargets">
                   <div class="species-target-box__text">
@@ -662,6 +847,7 @@
                   </div>
 
                   <button
+                    *ngIf="isPremium"
                     mat-stroked-button
                     type="button"
                     [disabled]="targetsLoading"
@@ -725,7 +911,7 @@
                         </mat-panel-description>
                       </mat-expansion-panel-header>
 
-                      <div class="targets-editor">
+                      <div class="targets-editor" *ngIf="isPremium; else targetsReadOnly">
                         <div class="targets-editor__top">
                           <mat-form-field appearance="outline" class="profile-select">
                             <mat-label>Profil</mat-label>
@@ -779,6 +965,12 @@
                           </div>
                         </div>
                       </div>
+                      <ng-template #targetsReadOnly>
+                        <p>
+                          Le profil de référence est accessible en Classic.
+                          La personnalisation manuelle des objectifs est réservée à Premium.
+                        </p>
+                      </ng-template>
                     </mat-expansion-panel>
                   </mat-accordion>
                 </mat-card-content>
@@ -891,6 +1083,7 @@
             </ng-container>
           </section>
         </div>
+        </div>
       </ng-container>
 
       <ng-template #classicPaywall>
@@ -939,7 +1132,8 @@
             </div>
 
             <div class="premium-hero__cta">
-              <button mat-raised-button color="primary" type="button" [disabled]="checkoutLoading">
+              <button mat-raised-button color="primary" type="button"
+                [disabled]="checkoutLoading" (click)="startPremiumCheckout()">
                 <mat-icon>lock_open</mat-icon>
                 {{ checkoutLoading ? 'Redirection…' : 'Passer Premium (bientôt)' }}
               </button>

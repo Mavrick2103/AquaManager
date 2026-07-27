@@ -36,6 +36,27 @@ export class AquariumTargetsService {
     private readonly aquariumsRepo: Repository<Aquarium>,
   ) {}
 
+  private async ensureOwnership(userId: number, aquariumId: number): Promise<void> {
+    const owned = await this.aquariumsRepo.exist({
+      where: { id: aquariumId, user: { id: userId } },
+    });
+    if (!owned) throw new NotFoundException('Aquarium introuvable');
+  }
+
+  async resolveTargetMapForUser(userId: number, aquariumId: number) {
+    await this.ensureOwnership(userId, aquariumId);
+    return this.resolveTargetMap(aquariumId);
+  }
+
+  async updateForUser(
+    userId: number,
+    aquariumId: number,
+    input: { profileKey?: string; targets?: TargetMap },
+  ) {
+    await this.ensureOwnership(userId, aquariumId);
+    return this.updateForAquarium(aquariumId, input);
+  }
+
   /**
    * Retourne les targets persistées (ou les crée avec un profil par défaut).
    */

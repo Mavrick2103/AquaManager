@@ -15,6 +15,16 @@ import { Aquarium } from '../aquariums/aquariums.entity';
 import { WaterMeasurement } from '../water-measurement/water-measurement.entity';
 import { UsersService } from '../users/users.service';
 import { AnalyzePhotoDto } from './dto/analyze-photo.dto';
+import { TaskType } from '../tasks/task.entity';
+
+type AiSuggestedTask = {
+  type: TaskType;
+  title: string;
+  description: string;
+  suggestedDueAt: string | null;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  reason: string;
+};
 
 @Injectable()
 export class AiService {
@@ -123,23 +133,21 @@ Tu peux aider sur :
 - fertilisation
 - équilibre général du bac
 
-IMPORTANT :
-- N'utilise pas de Markdown.
-- N'utilise pas de titres avec ##.
-- N'utilise pas de texte en gras avec **.
-- Fais une mise en forme simple.
-- Saute une ligne entre chaque section.
-- Réponds précisément à la question posée.
-
-Structure recommandée :
-
-1. Réponse directe
-
-2. Analyse avec les données du bac
-
-3. Conseils adaptés
-
-4. Points à vérifier
+Retourne uniquement un objet JSON valide, sans Markdown :
+{
+  "analysis": "réponse complète en français",
+  "suggestedTasks": [{
+    "type": "WATER_CHANGE | FERTILIZATION | TRIM | WATER_TEST | OTHER",
+    "title": "titre court",
+    "description": "action concrète et prudente",
+    "suggestedDueAt": "date ISO 8601 ou null",
+    "priority": "LOW | MEDIUM | HIGH",
+    "reason": "raison fondée sur les données du bac"
+  }]
+}
+Propose au maximum 3 tâches, uniquement si elles sont réellement utiles.
+La date actuelle est ${new Date().toISOString()}.
+N'invente jamais une mesure absente.
 `.trim(),
       input: prompt,
       max_output_tokens: 900,
@@ -147,6 +155,7 @@ Structure recommandée :
 
     const responseText =
       response.output_text?.trim() || 'Impossible de générer une analyse IA.';
+    const parsed = this.parseStructuredResponse(responseText);
 
     const usage = (response as any).usage;
 
@@ -164,7 +173,7 @@ Structure recommandée :
         inputTokens,
         outputTokens,
         totalTokens,
-        responseText,
+        responseText: parsed.analysis,
       }),
     );
 
@@ -174,7 +183,8 @@ Structure recommandée :
       quota,
       used: usedThisMonth + 1,
       remaining: Math.max(quota - usedThisMonth - 1, 0),
-      analysis: responseText,
+      analysis: parsed.analysis,
+      suggestedTasks: parsed.suggestedTasks,
     };
   }
 
@@ -193,6 +203,65 @@ Structure recommandée :
   if (plan === 'PREMIUM') return 30;
   return 1;
 }
+
+  private parseStructuredResponse(responseText: string): {
+    analysis: string;
+    suggestedTasks: AiSuggestedTask[];
+  } {
+    const cleaned = responseText
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+
+    try {
+      const parsed = JSON.parse(cleaned);
+      const analysis =
+        typeof parsed?.analysis === 'string' && parsed.analysis.trim()
+          ? parsed.analysis.trim()
+          : responseText;
+      const allowedTypes = new Set<string>(Object.values(TaskType));
+      const allowedPriorities = new Set(['LOW', 'MEDIUM', 'HIGH']);
+      const suggestedTasks = (Array.isArray(parsed?.suggestedTasks)
+        ? parsed.suggestedTasks
+        : []
+      )
+        .slice(0, 3)
+        .filter(
+          (task: any) =>
+            allowedTypes.has(task?.type) &&
+            typeof task?.title === 'string' &&
+            task.title.trim().length > 0 &&
+            typeof task?.reason === 'string' &&
+            task.reason.trim().length > 0,
+        )
+        .map((task: any): AiSuggestedTask => {
+          const rawDate =
+            typeof task.suggestedDueAt === 'string'
+              ? new Date(task.suggestedDueAt)
+              : null;
+          return {
+            type: task.type as TaskType,
+            title: task.title.trim().slice(0, 200),
+            description:
+              typeof task.description === 'string'
+                ? task.description.trim().slice(0, 2000)
+                : task.reason.trim().slice(0, 2000),
+            suggestedDueAt:
+              rawDate && !Number.isNaN(rawDate.getTime())
+                ? rawDate.toISOString()
+                : null,
+            priority: allowedPriorities.has(task.priority)
+              ? task.priority
+              : 'MEDIUM',
+            reason: task.reason.trim().slice(0, 1000),
+          };
+        });
+
+      return { analysis, suggestedTasks };
+    } catch {
+      return { analysis: responseText, suggestedTasks: [] };
+    }
+  }
 
 private async countUsageThisMonth(
   userId: number,
@@ -382,6 +451,21 @@ Liste les erreurs à ne pas faire.
 
 6. Question utilisateur
 Réponds précisément à la question posée si elle existe.
+
+Retourne uniquement un objet JSON valide, sans Markdown :
+{
+  "analysis": "observation, hypothèses prudentes, causes, solutions et points à éviter",
+  "suggestedTasks": [{
+    "type": "WATER_CHANGE | FERTILIZATION | TRIM | WATER_TEST | OTHER",
+    "title": "titre court",
+    "description": "action concrète et prudente",
+    "suggestedDueAt": "date ISO 8601 ou null",
+    "priority": "LOW | MEDIUM | HIGH",
+    "reason": "raison fondée sur la photo et les données disponibles"
+  }]
+}
+Propose au maximum 3 tâches et seulement si les données les justifient.
+La date actuelle est ${new Date().toISOString()}.
       `.trim(),
       input: [
         {
@@ -419,6 +503,7 @@ Réponds précisément à la question posée si elle existe.
 
   const responseText =
     response.output_text?.trim() || 'Impossible de générer une analyse photo.';
+  const parsed = this.parseStructuredResponse(responseText);
 
   const usage = (response as any).usage;
 
@@ -436,7 +521,7 @@ Réponds précisément à la question posée si elle existe.
       inputTokens,
       outputTokens,
       totalTokens,
-      responseText,
+      responseText: parsed.analysis,
     }),
   );
 
@@ -446,7 +531,8 @@ Réponds précisément à la question posée si elle existe.
     quota,
     used: usedThisMonth + 1,
     remaining: Math.max(quota - usedThisMonth - 1, 0),
-    analysis: responseText,
+    analysis: parsed.analysis,
+    suggestedTasks: parsed.suggestedTasks,
   };
 }
 

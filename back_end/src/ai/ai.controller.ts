@@ -16,10 +16,12 @@ import { AnalyzeAquariumDto } from './dto/analyze-aquarium.dto';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AiRateLimit } from '../common/throttling/rate-limit.decorator';
+import { PlanRequired } from '../auth/decorators/plan.decorator';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
 @AiRateLimit()
+@PlanRequired('PREMIUM')
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
