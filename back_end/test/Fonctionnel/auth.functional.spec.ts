@@ -9,6 +9,7 @@ import { UsersService } from '../../src/users/users.service';
 import { CreateUserDto } from '../../src/users/dto/create-user.dto';
 import { MailService } from '../../src/mail/mail.service';
 import { mailServiceMock } from '../utils/mail.mock';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 // Mock argon2
 jest.mock('argon2', () => ({
@@ -54,6 +55,7 @@ describe('Auth (tests fonctionnels)', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }])],
       controllers: [AuthController],
       providers: [
         AuthService,

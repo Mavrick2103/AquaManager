@@ -12,6 +12,7 @@ import { extname } from 'path';
 import { ContactDto } from './contact.dto';
 import { MailService } from '../mail/mail.service';
 import { Public } from '../auth/decorators/public.decorator';
+import { ContactRateLimit } from '../common/throttling/rate-limit.decorator';
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB / fichier
@@ -28,6 +29,7 @@ export class ContactController {
 
   @Public()
   @Post()
+  @ContactRateLimit()
   @UseInterceptors(
     FilesInterceptor('attachments', MAX_FILES, {
       limits: { fileSize: MAX_FILE_SIZE },

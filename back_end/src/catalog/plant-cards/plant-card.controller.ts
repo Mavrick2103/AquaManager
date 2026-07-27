@@ -32,6 +32,7 @@ import { promises as fsp } from 'fs';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Public } from '../../auth/decorators/public.decorator';
+import { ImageUploadRateLimit } from '../../common/throttling/rate-limit.decorator';
 
 
 function getUploadDir(): string {
@@ -103,6 +104,7 @@ onePublicBySlug(@Param('slug') slug: string) {
   // SHARED UPLOAD (ADMIN + EDITOR)
   // =========================
   @Post('species/plant/upload')
+  @ImageUploadRateLimit()
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'EDITOR')
   @UseInterceptors(FileInterceptor('file', multerImageOptions()))
@@ -126,6 +128,7 @@ onePublicBySlug(@Param('slug') slug: string) {
   }
 
   @Post('editor/plant-cards')
+  @ImageUploadRateLimit()
   @UseGuards(RolesGuard)
   @Roles('EDITOR')
   @UseInterceptors(FileInterceptor('file', multerImageOptions()))
@@ -181,6 +184,7 @@ onePublicBySlug(@Param('slug') slug: string) {
   }
 
   @Post('admin/plant-cards')
+  @ImageUploadRateLimit()
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('file', multerImageOptions()))

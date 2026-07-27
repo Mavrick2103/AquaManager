@@ -23,6 +23,11 @@ async function bootstrap() {
 
   const isProd = process.env.NODE_ENV === 'production';
 
+  // Nginx est l'unique proxy directement devant l'API en production.
+  // Express peut ainsi déterminer req.ip depuis X-Forwarded-For sans
+  // faire confiance à une chaîne de proxies arbitraire.
+  app.set('trust proxy', 1);
+
   // ✅ API prefix
   app.setGlobalPrefix('api');
 

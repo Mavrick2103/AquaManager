@@ -70,7 +70,7 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-AquaManager <aquamanager.contact@gmail.com>}
 
     ports:
-      - "${API_HOST_PORT:-3000}:3000"
+      - "${API_HOST_PORT:-127.0.0.1:3000}:3000"
     volumes:
       - ${UPLOADS_HOST_PATH:-./data/uploads}:/data/uploads
       - ${TMP_HOST_PATH:-./data/tmp}:/app/tmp

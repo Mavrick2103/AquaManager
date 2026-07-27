@@ -3,6 +3,7 @@ import { BillingService } from './billing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../auth/decorators/public.decorator';
 import type { Request } from 'express';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('billing')
 export class BillingController {
@@ -37,6 +38,7 @@ export class BillingController {
   // ✅ PUBLIC (Stripe webhook)
   @Public()
   @Post('webhook')
+  @SkipThrottle()
   @HttpCode(200)
   webhook(@Req() req: Request, @Headers('stripe-signature') sig: string) {
     return this.billing.handleWebhook(req.body as any, sig);

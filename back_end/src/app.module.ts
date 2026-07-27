@@ -21,6 +21,7 @@ import { AquariumTargetsModule } from './aquarium-targets/aquarium-targets.modul
 import { BillingModule } from './billing/billing.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { AiModule } from './ai/ai.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -50,6 +51,12 @@ import { AiModule } from './ai/ai.module';
 
     TypeOrmModule.forRoot(typeOrmConfig()),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 100,
+      },
+    ]),
     UsersModule,
     AquariumsModule,
     AuthModule,

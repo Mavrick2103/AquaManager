@@ -10,6 +10,12 @@ import { LoginDto } from '../users/dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import {
+  ForgotPasswordRateLimit,
+  LoginRateLimit,
+  RegisterRateLimit,
+  ResetPasswordRateLimit,
+} from '../common/throttling/rate-limit.decorator';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -27,6 +33,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @LoginRateLimit()
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { access, refresh } = await this.auth.login(dto.email, dto.password);
     res.cookie('refresh_token', refresh, REFRESH_COOKIE_OPTIONS);
@@ -64,6 +71,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @RegisterRateLimit()
   register(@Body() dto: CreateUserDto) {
     return this.auth.register(dto);
   }
@@ -89,12 +97,14 @@ async verifyEmail(
 
   @Public()
   @Post('forgot-password')
+  @ForgotPasswordRateLimit()
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.auth.forgotPassword(dto.email);
   }
 
   @Public()
   @Post('reset-password')
+  @ResetPasswordRateLimit()
   resetPassword(@Body() dto: ResetPasswordDto) {
    return this.auth.resetPassword(dto.token, dto.newPassword);
   }

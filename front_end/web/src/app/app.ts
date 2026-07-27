@@ -11,7 +11,7 @@ import { APP_VERSION } from './core/app-version';
 export class App {
   router = inject(Router);
 
-  private authRoutes = ['/login', '/register', '/reset-password'];
+  private authRoutes = ['/login', '/register', '/auth/reset-password'];
   appVersion = APP_VERSION;
   
   get hideChrome() {

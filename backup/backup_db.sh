@@ -7,8 +7,11 @@ BACKUP_DIR="${PROJECT_DIR}/backup/db"
 CONTAINER_DB="aquamanager_db"
 
 DB_NAME="${DB_NAME:-aquamanager}"
-DB_ROOT_PASS="${DB_ROOT_PASS:-rootpass}"   # adapte si tu as changé MYSQL_ROOT_PASSWORD
-KEEP_LAST=2
+DB_ROOT_PASS="${DB_ROOT_PASS:-rootpass}"
+
+KEEP_LAST=8
+
+RESTIC_ENV="/etc/aquamanager/restic.env"
 # ====================
 
 mkdir -p "$BACKUP_DIR"
@@ -18,15 +21,32 @@ FILE="${BACKUP_DIR}/${DB_NAME}_${TS}.sql.gz"
 
 echo "[INFO] Dump MySQL -> ${FILE}"
 
-# Dump + gzip
 docker exec "$CONTAINER_DB" sh -lc \
-  "mysqldump -uroot -p\"$DB_ROOT_PASS\" --single-transaction --routines --triggers \"$DB_NAME\" 2>/dev/null" \
+  "mysqldump -uroot -p\"$DB_ROOT_PASS\" \
+  --single-transaction \
+  --routines \
+  --triggers \
+  \"$DB_NAME\" 2>/dev/null" \
   | gzip > "$FILE"
 
-echo "[INFO] OK: $(du -h "$FILE" | awk '{print $1}')"
+gzip -t "$FILE"
 
-# Garder uniquement les 2 derniers
-echo "[INFO] Rotation: garder ${KEEP_LAST} fichiers"
-ls -1t "${BACKUP_DIR}/${DB_NAME}_"*.sql.gz 2>/dev/null | tail -n +$((KEEP_LAST + 1)) | xargs -r rm -f
+echo "[INFO] OK local: $(du -h "$FILE" | awk '{print $1}')"
+
+echo "[INFO] Envoi Restic vers le stockage externe"
+
+set -a
+source "$RESTIC_ENV"
+set +a
+
+restic backup "$FILE"
+
+echo "[INFO] Vérification du dépôt Restic"
+restic check
+
+echo "[INFO] Rotation locale: garder ${KEEP_LAST} fichiers"
+ls -1t "${BACKUP_DIR}/${DB_NAME}_"*.sql.gz 2>/dev/null \
+  | tail -n +$((KEEP_LAST + 1)) \
+  | xargs -r rm -f
 
 echo "[INFO] Terminé."
