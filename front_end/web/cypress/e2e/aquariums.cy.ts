@@ -123,7 +123,8 @@ describe('Flow complet AquaManager (création + suppression)', () => {
 
     cy.wait('@deleteAq');
     cy.wait('@listAfterDelete');
-    cy.contains(/aucun aquarium pour le moment/i).should('exist');
+    cy.get('.aquarium-card').should('not.exist');
+    cy.contains('.empty-state h2', /créons ton premier aquarium/i).should('be.visible');
   });
 });
 
