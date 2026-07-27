@@ -15,6 +15,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 
 import { environment } from '../../../../environments/environment';
+import { SeoService } from '../../../core/seo.service';
 
 type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER' | 'SAUMATRE';
 
@@ -88,6 +89,7 @@ export class PlantCardDetailPageComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly cdr: ChangeDetectorRef,
     private readonly location: Location,
+    private readonly seo: SeoService,
   ) {}
 
   ngOnInit(): void {
@@ -95,6 +97,7 @@ export class PlantCardDetailPageComponent implements OnInit {
 
     if (!slug) {
       this.notFound = true;
+      this.seo.markNotFound();
       return;
     }
 
@@ -191,12 +194,51 @@ export class PlantCardDetailPageComponent implements OnInit {
         next: (row) => {
           this.item = row ?? null;
           this.notFound = !row;
+          if (row) {
+            const scientificName = row.scientificName ? ` (${row.scientificName})` : '';
+            const description = [
+              `Fiche complète de la plante ${row.commonName}${scientificName}.`,
+              row.placement ? `Placement : ${row.placement}.` : '',
+              row.light ? `Éclairage : ${row.light}.` : '',
+              row.notes || '',
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .slice(0, 160);
+            const image = this.coverSrc(row.imageUrl);
+            this.seo.apply({
+              title: `${row.commonName}${scientificName} – Fiche plante | AquaManager`,
+              description,
+              path: `/plantes/${encodeURIComponent(row.slug)}`,
+              image,
+              structuredData: {
+                '@context': 'https://schema.org',
+                '@type': 'Article',
+                headline: `Fiche plante : ${row.commonName}`,
+                description,
+                image: image ? [image] : undefined,
+                mainEntityOfPage: `https://aquamanager.fr/plantes/${encodeURIComponent(row.slug)}`,
+                about: {
+                  '@type': 'Thing',
+                  name: row.commonName,
+                  alternateName: row.scientificName || undefined,
+                },
+                publisher: {
+                  '@type': 'Organization',
+                  name: 'AquaManager',
+                },
+              },
+            });
+          } else {
+            this.seo.markNotFound();
+          }
           this.cdr.markForCheck();
         },
         error: (err) => {
           console.error(err);
           this.notFound = true;
           this.item = null;
+          this.seo.markNotFound();
           this.cdr.markForCheck();
         },
       });

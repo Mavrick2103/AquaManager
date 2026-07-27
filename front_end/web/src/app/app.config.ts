@@ -10,6 +10,7 @@ import {
 } from '@angular/common/http';
 
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { AuthInterceptor } from './core/auth.interceptor';
 
 import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
@@ -40,5 +41,6 @@ export const appConfig: ApplicationConfig = {
     provideNativeDateAdapter(),
     MatDatepickerModule,
     MatNativeDateModule,
+    provideClientHydration(withEventReplay()),
   ],
 };

@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Title, Meta } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,6 +30,7 @@ import { APP_VERSION } from '../../core/app-version';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatIconModule,
     MatButtonModule,
     MatDialogModule,
@@ -49,6 +51,22 @@ export class CalendarComponent {
   currentMonth = signal(new Date(this.today.getFullYear(), this.today.getMonth(), 1));
   tasks = signal<Task[]>([]);
   appVersion = APP_VERSION;
+  loading = false;
+  loadError = false;
+  changingTaskId: string | number | null = null;
+  viewMode: 'month' | 'list' = 'month';
+  aquariumFilter = 'ALL';
+  typeFilter: Task['type'] | 'ALL' = 'ALL';
+  statusFilter: Task['status'] | 'OVERDUE' | 'ALL' = 'ALL';
+  dateFilter: 'ALL' | 'TODAY' = 'ALL';
+
+  readonly taskTypes: Array<{ value: Task['type']; label: string }> = [
+    { value: 'WATER_CHANGE', label: 'Changement d’eau' },
+    { value: 'FERTILIZATION', label: 'Fertilisation' },
+    { value: 'TRIM', label: 'Taille et entretien' },
+    { value: 'WATER_TEST', label: 'Test de l’eau' },
+    { value: 'OTHER', label: 'Autre' },
+  ];
 
 
   weeks = computed(() => {
@@ -95,7 +113,8 @@ export class CalendarComponent {
     this.openCreate(this.today);
   }
 
-  openCreate(day: Date) {
+  openCreate(day: Date, event?: Event) {
+    event?.stopPropagation();
     this.dialog
       .open(TaskDialogComponent, {
         data: { date: day },
@@ -140,18 +159,139 @@ export class CalendarComponent {
 
   private reloadMonth() {
     const monthStr = format(this.currentMonth(), 'yyyy-MM');
+    this.loading = true;
+    this.loadError = false;
     this.tasksApi.list(monthStr).subscribe({
-      next: (res) => this.tasks.set(res ?? []),
+      next: (res) => {
+        this.tasks.set(res ?? []);
+        this.loading = false;
+      },
       error: (err) => {
         console.error('Load tasks failed:', err);
         this.tasks.set([]);
+        this.loading = false;
+        this.loadError = true;
       },
     });
   }
 
   dayTasks(d: Date) {
     const iso = format(d, 'yyyy-MM-dd');
-    return this.tasks().filter((t) => t.dueAt.startsWith(iso));
+    return this.filteredTasks.filter((t) => t.dueAt.startsWith(iso));
+  }
+
+  get filteredTasks(): Task[] {
+    return this.tasks().filter(task => {
+      if (this.aquariumFilter !== 'ALL' && String(task.aquarium?.id) !== this.aquariumFilter) {
+        return false;
+      }
+      if (this.typeFilter !== 'ALL' && task.type !== this.typeFilter) return false;
+      if (this.statusFilter === 'OVERDUE') return this.isOverdue(task);
+      if (this.statusFilter !== 'ALL' && task.status !== this.statusFilter) return false;
+      if (this.dateFilter === 'TODAY' && !task.dueAt.startsWith(format(this.today, 'yyyy-MM-dd'))) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  get aquariumOptions(): Array<{ id: string; name: string }> {
+    const aquariums = new Map<string, string>();
+    for (const task of this.tasks()) {
+      if (task.aquarium?.id == null) continue;
+      aquariums.set(String(task.aquarium.id), task.aquarium.name || `Aquarium ${task.aquarium.id}`);
+    }
+    return [...aquariums.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  }
+
+  get sortedTasks(): Task[] {
+    return [...this.filteredTasks].sort((a, b) => {
+      if (a.status !== b.status) return a.status === 'PENDING' ? -1 : 1;
+      return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+    });
+  }
+
+  get pendingCount(): number {
+    return this.tasks().filter(task => task.status === 'PENDING').length;
+  }
+
+  get overdueCount(): number {
+    return this.tasks().filter(task => this.isOverdue(task)).length;
+  }
+
+  get todayCount(): number {
+    const todayIso = format(this.today, 'yyyy-MM-dd');
+    return this.tasks().filter(
+      task => task.status === 'PENDING' && task.dueAt.startsWith(todayIso),
+    ).length;
+  }
+
+  get upcomingCount(): number {
+    const start = new Date(this.today.getFullYear(), this.today.getMonth(), this.today.getDate());
+    const end = addDays(start, 7).getTime();
+    return this.tasks().filter(task => {
+      const due = new Date(task.dueAt).getTime();
+      return task.status === 'PENDING' && due >= start.getTime() && due < end;
+    }).length;
+  }
+
+  isOverdue(task: Task): boolean {
+    return task.status === 'PENDING' && new Date(task.dueAt).getTime() < Date.now();
+  }
+
+  taskIcon(type: Task['type']): string {
+    if (type === 'WATER_CHANGE') return 'water_drop';
+    if (type === 'FERTILIZATION') return 'eco';
+    if (type === 'TRIM') return 'content_cut';
+    if (type === 'WATER_TEST') return 'science';
+    return 'build';
+  }
+
+  taskTypeLabel(type: Task['type']): string {
+    return this.taskTypes.find(item => item.value === type)?.label ?? 'Autre';
+  }
+
+  taskDueDate(task: Task): Date {
+    return new Date(task.dueAt);
+  }
+
+  resetFilters(): void {
+    this.aquariumFilter = 'ALL';
+    this.typeFilter = 'ALL';
+    this.statusFilter = 'ALL';
+    this.dateFilter = 'ALL';
+  }
+
+  filterOverdue(): void {
+    this.statusFilter = 'OVERDUE';
+    this.dateFilter = 'ALL';
+    this.viewMode = 'list';
+  }
+
+  filterToday(): void {
+    this.resetFilters();
+    this.dateFilter = 'TODAY';
+    this.viewMode = 'list';
+  }
+
+  async toggleTask(task: Task, event: Event): Promise<void> {
+    event.stopPropagation();
+    if (this.changingTaskId !== null) return;
+    this.changingTaskId = task.id;
+    this.tasksApi
+      .update(task.id, { status: task.status === 'DONE' ? 'PENDING' : 'DONE' })
+      .subscribe({
+        next: () => {
+          this.changingTaskId = null;
+          this.reloadMonth();
+        },
+        error: error => {
+          console.error('Update task failed:', error);
+          this.changingTaskId = null;
+        },
+      });
   }
 
   fmt(d: Date, pattern: string) {

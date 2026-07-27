@@ -16,6 +16,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
 
 import { environment } from '../../../../environments/environment';
+import { SeoService } from '../../../core/seo.service';
 
 type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER' | 'SAUMATRE';
 type Temperament = 'PACIFIQUE' | 'SEMI_AGRESSIF' | 'AGRESSIF';
@@ -90,6 +91,7 @@ export class FishCardDetailPageComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly cdr: ChangeDetectorRef,
     private readonly location: Location,
+    private readonly seo: SeoService,
   ) {}
 
   ngOnInit(): void {
@@ -97,6 +99,7 @@ export class FishCardDetailPageComponent implements OnInit {
 
     if (!slug) {
       this.notFound = true;
+      this.seo.markNotFound();
       return;
     }
 
@@ -220,12 +223,53 @@ export class FishCardDetailPageComponent implements OnInit {
         next: (row) => {
           this.item = row ?? null;
           this.notFound = !row;
+          if (row) {
+            const scientificName = row.scientificName ? ` (${row.scientificName})` : '';
+            const description = [
+              `Fiche complète du ${row.commonName}${scientificName}.`,
+              row.minVolumeL ? `Volume minimum : ${row.minVolumeL} litres.` : '',
+              row.tempMin != null && row.tempMax != null
+                ? `Température : ${row.tempMin} à ${row.tempMax} °C.`
+                : '',
+              row.behavior || '',
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .slice(0, 160);
+            const image = this.coverSrc(row.imageUrl);
+            this.seo.apply({
+              title: `${row.commonName}${scientificName} – Fiche poisson | AquaManager`,
+              description,
+              path: `/poissons/${encodeURIComponent(row.slug)}`,
+              image,
+              structuredData: {
+                '@context': 'https://schema.org',
+                '@type': 'Article',
+                headline: `Fiche poisson : ${row.commonName}`,
+                description,
+                image: image ? [image] : undefined,
+                mainEntityOfPage: `https://aquamanager.fr/poissons/${encodeURIComponent(row.slug)}`,
+                about: {
+                  '@type': 'Thing',
+                  name: row.commonName,
+                  alternateName: row.scientificName || undefined,
+                },
+                publisher: {
+                  '@type': 'Organization',
+                  name: 'AquaManager',
+                },
+              },
+            });
+          } else {
+            this.seo.markNotFound();
+          }
           this.cdr.markForCheck();
         },
         error: (err) => {
           console.error(err);
           this.notFound = true;
           this.item = null;
+          this.seo.markNotFound();
           this.cdr.markForCheck();
         },
       });

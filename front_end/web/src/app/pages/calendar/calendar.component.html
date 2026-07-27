@@ -1,140 +1,225 @@
-<!-- calendar.component.html -->
 <section class="toolbar">
   <a class="brand" routerLink="/">
     <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
   </a>
-
   <h1>Mon calendrier</h1>
-
   <button mat-raised-button class="btn-primary" (click)="openCreateQuick()">
-    <mat-icon>add</mat-icon>
-    <span>Nouvelle tâche</span>
+    <mat-icon>add</mat-icon><span>Nouvelle tâche</span>
   </button>
 </section>
 
-<div class="page-wrap">
-  <section class="cal -compact">
+<main class="page-wrap">
+  <section class="calendar-dashboard">
+    <div class="calendar-dashboard__intro">
+      <span>Centre d’entretien</span>
+      <h2>Ce qui mérite ton attention</h2>
+      <p>Priorise les soins de tes aquariums sans parcourir tout le calendrier.</p>
+    </div>
+
+    <div class="calendar-summary">
+      <button type="button" class="summary-card summary-card--late" (click)="filterOverdue()">
+        <span class="summary-card__icon"><mat-icon>notification_important</mat-icon></span>
+        <span><strong>{{ overdueCount }}</strong><small>En retard</small></span>
+        <mat-icon class="summary-card__arrow">arrow_forward</mat-icon>
+      </button>
+      <button type="button" class="summary-card" (click)="filterToday()">
+        <span class="summary-card__icon"><mat-icon>today</mat-icon></span>
+        <span><strong>{{ todayCount }}</strong><small>Aujourd’hui</small></span>
+        <mat-icon class="summary-card__arrow">arrow_forward</mat-icon>
+      </button>
+      <div class="summary-card">
+        <span class="summary-card__icon summary-card__icon--week"><mat-icon>date_range</mat-icon></span>
+        <span><strong>{{ upcomingCount }}</strong><small>7 prochains jours</small></span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-card__icon summary-card__icon--pending"><mat-icon>pending_actions</mat-icon></span>
+        <span><strong>{{ pendingCount }}</strong><small>À faire ce mois</small></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="calendar-controls">
+    <div class="calendar-filters">
+      <label>
+        <span>Aquarium</span>
+        <select [(ngModel)]="aquariumFilter">
+          <option value="ALL">Tous les aquariums</option>
+          <option *ngFor="let aquarium of aquariumOptions" [value]="aquarium.id">{{ aquarium.name }}</option>
+        </select>
+      </label>
+      <label>
+        <span>Entretien</span>
+        <select [(ngModel)]="typeFilter">
+          <option value="ALL">Tous les types</option>
+          <option *ngFor="let type of taskTypes" [value]="type.value">{{ type.label }}</option>
+        </select>
+      </label>
+      <label>
+        <span>État</span>
+        <select [(ngModel)]="statusFilter" (ngModelChange)="dateFilter = 'ALL'">
+          <option value="ALL">Toutes les tâches</option>
+          <option value="PENDING">À faire</option>
+          <option value="OVERDUE">En retard</option>
+          <option value="DONE">Terminées</option>
+        </select>
+      </label>
+      <button
+        type="button"
+        class="reset-filters"
+        (click)="resetFilters()"
+        *ngIf="aquariumFilter !== 'ALL' || typeFilter !== 'ALL' || statusFilter !== 'ALL' || dateFilter !== 'ALL'"
+      >
+        <mat-icon>filter_alt_off</mat-icon> Réinitialiser
+      </button>
+    </div>
+
+    <div class="view-switcher" role="group" aria-label="Mode d’affichage">
+      <button type="button" [class.is-active]="viewMode === 'month'" (click)="viewMode = 'month'">
+        <mat-icon>calendar_month</mat-icon> Mois
+      </button>
+      <button type="button" [class.is-active]="viewMode === 'list'" (click)="viewMode = 'list'">
+        <mat-icon>view_agenda</mat-icon> Liste
+      </button>
+    </div>
+  </section>
+
+  <div class="calendar-feedback" *ngIf="loading">
+    <mat-icon>hourglass_top</mat-icon> Chargement du planning…
+  </div>
+  <div class="calendar-feedback calendar-feedback--error" *ngIf="loadError">
+    <span>Impossible de charger les tâches.</span>
+    <button mat-stroked-button type="button" (click)="thisMonth()">Réessayer</button>
+  </div>
+
+  <section class="cal -compact" *ngIf="viewMode === 'month' && !loadError">
     <header class="cal__head">
       <div class="cal__head-row">
-        <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()">
-          <mat-icon>chevron_left</mat-icon>
-        </button>
-
-        <h1 class="cal__title">
+        <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()"><mat-icon>chevron_left</mat-icon></button>
+        <h2 class="cal__title">
           <span class="cal__title--month">{{ fmt(currentMonth(),'MMMM') | titlecase }}</span>
           <span class="cal__title--year">{{ fmt(currentMonth(),'yyyy') }}</span>
-        </h1>
-
-        <button mat-icon-button aria-label="Mois suivant" (click)="nextMonth()">
-          <mat-icon>chevron_right</mat-icon>
-        </button>
+        </h2>
+        <button mat-icon-button aria-label="Mois suivant" (click)="nextMonth()"><mat-icon>chevron_right</mat-icon></button>
       </div>
-
-      <div class="cal__head-actions">
-        <button mat-stroked-button (click)="thisMonth()">Aujourd’hui</button>
-      </div>
+      <div class="cal__head-actions"><button mat-stroked-button (click)="thisMonth()">Aujourd’hui</button></div>
     </header>
 
     <div class="cal__grid" role="grid" aria-label="Calendrier mensuel">
       <div class="cal__dow" *ngFor="let d of ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']">{{ d }}</div>
-
       <ng-container *ngFor="let week of weeks()">
-        <button
+        <div
           class="cal__cell"
           *ngFor="let day of week"
           role="gridcell"
+          tabindex="0"
           [class.-out]="!isSameMonth(day)"
           [class.-today]="isToday(day)"
           (click)="openDayTasks(day)"
+          (keydown.enter)="openDayTasks(day)"
         >
           <div class="cal__cell-head">
             <span class="cal__day">{{ fmt(day,'d') }}</span>
             <span class="cal__today-pill" *ngIf="isToday(day)">Aujourd’hui</span>
+            <button type="button" class="cal__quick-add" (click)="openCreate(day, $event)"
+              [attr.aria-label]="'Ajouter une tâche le ' + fmt(day, 'd MMMM')">
+              <mat-icon>add</mat-icon>
+            </button>
           </div>
-
           <ul class="cal__tasks">
             <li
-              *ngFor="let t of dayTasks(day) | slice:0:2"
+              *ngFor="let task of dayTasks(day) | slice:0:2"
               class="cal__task"
               [ngClass]="{
-                '-water': t.type === 'WATER_CHANGE',
-                '-fert':  t.type === 'FERTILIZATION',
-                '-trim':  t.type === 'TRIM',
-                '-test':  t.type === 'WATER_TEST'
+                '-water': task.type === 'WATER_CHANGE',
+                '-fert': task.type === 'FERTILIZATION',
+                '-trim': task.type === 'TRIM',
+                '-test': task.type === 'WATER_TEST',
+                '-done': task.status === 'DONE'
               }"
-              [title]="t.title + (t.aquarium?.name ? ' – ' + t.aquarium?.name : '')"
+              [title]="task.title + (task.aquarium?.name ? ' – ' + task.aquarium?.name : '')"
             >
               <span class="dot"></span>
-              <span class="txt">{{ t.title }}</span>
+              <span class="txt">{{ task.title }}</span>
+              <button type="button" class="cal__task-check" (click)="toggleTask(task, $event)"
+                [disabled]="changingTaskId === task.id" [attr.aria-label]="'Terminer ' + task.title">
+                <mat-icon>{{ task.status === 'DONE' ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+              </button>
             </li>
-
-            <li *ngIf="dayTasks(day).length > 2" class="cal__more">
-              +{{ dayTasks(day).length - 2 }}…
-            </li>
+            <li *ngIf="dayTasks(day).length > 2" class="cal__more">+{{ dayTasks(day).length - 2 }} autres</li>
           </ul>
-        </button>
+        </div>
       </ng-container>
     </div>
   </section>
-</div>
 
-<!-- ===== Footer ===== -->
+  <section class="agenda-view" *ngIf="viewMode === 'list' && !loadError">
+    <header class="agenda-view__header">
+      <div><span>Vue chronologique</span><h2>{{ sortedTasks.length }} tâche{{ sortedTasks.length > 1 ? 's' : '' }}</h2></div>
+      <button mat-raised-button class="btn-primary" type="button" (click)="openCreateQuick()">
+        <mat-icon>add</mat-icon> Nouvelle tâche
+      </button>
+    </header>
+
+    <div class="agenda-list" *ngIf="sortedTasks.length; else emptyAgenda">
+      <article class="agenda-task" *ngFor="let task of sortedTasks"
+        role="button" tabindex="0"
+        [class.agenda-task--late]="isOverdue(task)" [class.agenda-task--done]="task.status === 'DONE'"
+        (click)="openDayTasks(taskDueDate(task))"
+        (keydown.enter)="openDayTasks(taskDueDate(task))">
+        <button type="button" class="agenda-task__check" (click)="toggleTask(task, $event)"
+          [disabled]="changingTaskId === task.id">
+          <mat-icon>{{ task.status === 'DONE' ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+        </button>
+        <span class="agenda-task__icon"><mat-icon>{{ taskIcon(task.type) }}</mat-icon></span>
+        <div class="agenda-task__content">
+          <div><strong>{{ task.title }}</strong><span class="agenda-task__late" *ngIf="isOverdue(task)">En retard</span></div>
+          <p *ngIf="task.description">{{ task.description }}</p>
+          <div class="agenda-task__meta">
+            <span><mat-icon>event</mat-icon>{{ task.dueAt | date:'EEEE d MMMM à HH:mm' }}</span>
+            <span *ngIf="task.aquarium?.name"><mat-icon>water</mat-icon>{{ task.aquarium?.name }}</span>
+            <span><mat-icon>category</mat-icon>{{ taskTypeLabel(task.type) }}</span>
+          </div>
+        </div>
+      </article>
+    </div>
+    <ng-template #emptyAgenda>
+      <div class="agenda-empty">
+        <mat-icon>event_available</mat-icon><h3>Aucune tâche à afficher</h3>
+        <p>Modifie les filtres ou planifie le prochain entretien de ton aquarium.</p>
+        <button mat-flat-button color="primary" type="button" (click)="openCreateQuick()">
+          <mat-icon>add</mat-icon> Planifier une tâche
+        </button>
+      </div>
+    </ng-template>
+  </section>
+</main>
+
 <footer class="footer">
   <div class="footer-content">
     <div class="footer-brand">
       <img src="/Logo_AquaManger.png" alt="AquaManager" class="footer-logo" />
-      <p class="footer-desc">
-        AquaManager – Suivez, entretenez et sublimez vos aquariums en toute simplicité 🌿🐠
-      </p>
+      <p class="footer-desc">AquaManager – Suivez, entretenez et sublimez vos aquariums en toute simplicité.</p>
     </div>
-
-    <div class="footer-links">
-      <h3>Navigation</h3>
-      <ul>
-        <li><a routerLink="/a-propos-gestion-aquarium">A Propos</a></li>
-        <li><a routerLink="/home">Accueil</a></li>
-        <li><a routerLink="/aquariums">Mes aquariums</a></li>
-        <li><a routerLink="/calendar">Calendrier</a></li>
-        <li><a routerLink="/profile">Profil</a></li>
-      </ul>
-    </div>
-
-    <div class="footer-links">
-      <h3>Légal</h3>
-      <ul>
-        <li><a routerLink="/new-version">Nouveautés</a></li>
-        <li><a routerLink="/legal">Mentions légales</a></li>
-        <li><a routerLink="/privacy">Politique de confidentialité</a></li>
-        <li><a routerLink="/terms">CGU</a></li>
-        <li><a routerLink="/contact" class="footer-policy">Contact</a></li>
-      </ul>
-    </div>
-
-    <div class="footer-social">
-      <h3>Suivez-nous</h3>
-      <div class="social-icons">
-        <a
-          href="https://www.instagram.com/aquamanager_france/"
-          aria-label="Instagram"
-        ><mat-icon>photo_camera</mat-icon></a>
-      </div>
-    </div>
+    <div class="footer-links"><h3>Navigation</h3><ul>
+      <li><a routerLink="/a-propos-gestion-aquarium">À propos</a></li><li><a routerLink="/home">Accueil</a></li>
+      <li><a routerLink="/aquariums">Mes aquariums</a></li><li><a routerLink="/calendar">Calendrier</a></li>
+      <li><a routerLink="/profile">Profil</a></li>
+    </ul></div>
+    <div class="footer-links"><h3>Légal</h3><ul>
+      <li><a routerLink="/new-version">Nouveautés</a></li><li><a routerLink="/legal">Mentions légales</a></li>
+      <li><a routerLink="/privacy">Politique de confidentialité</a></li><li><a routerLink="/terms">CGU</a></li>
+      <li><a routerLink="/contact" class="footer-policy">Contact</a></li>
+    </ul></div>
+    <div class="footer-social"><h3>Suivez-nous</h3><div class="social-icons">
+      <a href="https://www.instagram.com/aquamanager_france/" aria-label="Instagram"><mat-icon>photo_camera</mat-icon></a>
+    </div></div>
   </div>
-
   <mat-divider></mat-divider>
-
   <div class="footer-bottom">
     <p>© {{ today.getFullYear() }} AquaManager — Tous droits réservés</p>
-    <span class="footer-version">
-  v{{ appVersion.number }} — {{ appVersion.date }}
-</span>
-
-    <div class="footer-legal">
-      <a routerLink="/legal" class="footer-policy">Mentions légales</a>
-      <span class="sep">•</span>
-      <a routerLink="/privacy" class="footer-policy">Confidentialité</a>
-      <span class="sep">•</span>
-      <a routerLink="/terms" class="footer-policy">CGU</a>
+    <span class="footer-version">v{{ appVersion.number }} — {{ appVersion.date }}</span>
+    <div class="footer-legal"><a routerLink="/legal">Mentions légales</a><span class="sep">•</span>
+      <a routerLink="/privacy">Confidentialité</a><span class="sep">•</span><a routerLink="/terms">CGU</a>
     </div>
   </div>
 </footer>

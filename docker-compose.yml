@@ -82,6 +82,7 @@ services:
     container_name: aquamanager_front
     depends_on:
       - api
+      - ssr
     ports:
       - "${FRONT_HTTP_PORT:-80}:80"
       - "${FRONT_HTTPS_PORT:-443}:443"
@@ -90,6 +91,20 @@ services:
       - ${PORTFOLIO_DIST_PATH:-./data/portfolio-romain}:/var/www/portfolio-romain:ro
       - certbot_www:/var/www/certbot
       - certbot_certs:/etc/letsencrypt
+
+  ssr:
+    build:
+      context: ./front_end/web
+      dockerfile: Dockerfile.ssr
+    container_name: aquamanager_ssr
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SSR_API_URL: http://api:3000/api
+    expose:
+      - "4000"
 
   certbot:
     image: certbot/certbot

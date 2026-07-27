@@ -1,0 +1,21 @@
+# Build Angular browser and server bundles.
+FROM node:20-bookworm-slim AS builder
+WORKDIR /app
+ENV CYPRESS_INSTALL_BINARY=0
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# Run only the Angular SSR server. Nginx remains the public reverse proxy.
+FROM node:20-bookworm-slim
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=4000
+
+COPY --from=builder /app/dist/web ./dist/web
+
+EXPOSE 4000
+CMD ["node", "dist/web/server/server.mjs"]

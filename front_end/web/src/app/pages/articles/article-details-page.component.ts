@@ -1,5 +1,12 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from '@angular/core';
-import { CommonModule, Location } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  Inject,
+  OnInit,
+  PLATFORM_ID,
+} from '@angular/core';
+import { CommonModule, isPlatformBrowser, Location } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { finalize, take } from 'rxjs';
 
@@ -8,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { PublicArticlesApi, ArticleDto } from '../../core/articles.public';
+import { SeoService } from '../../core/seo.service';
 import { environment } from '../../../environments/environment';
 
 type TocItem = { id: string; text: string; level: 2 | 3 };
@@ -42,6 +50,8 @@ export class ArticleDetailsPageComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly location: Location,
     private readonly cdr: ChangeDetectorRef,
+    private readonly seo: SeoService,
+    @Inject(PLATFORM_ID) private readonly platformId: object,
   ) {}
 
   ngOnInit(): void {
@@ -51,6 +61,7 @@ export class ArticleDetailsPageComponent implements OnInit {
     if (!slug) {
       this.loading = false;
       this.notFound = true;
+      this.seo.markNotFound();
       this.cdr.markForCheck();
       return;
     }
@@ -68,6 +79,7 @@ export class ArticleDetailsPageComponent implements OnInit {
           if (!a?.id) {
             this.notFound = true;
             this.article = null;
+            this.seo.markNotFound();
             this.cdr.markForCheck();
             return;
           }
@@ -78,16 +90,45 @@ export class ArticleDetailsPageComponent implements OnInit {
           this.safeHtml = prepared.html;
           this.toc = prepared.toc;
 
-          // ✅ TRACK VIEW (ne bloque pas l'UI)
-          this.trackArticleView(slug);
+          const description = this.buildDescription(a.excerpt || a.content);
+          const image = this.coverSrc(a.coverImageUrl);
+          this.seo.apply({
+            title: `${a.title} – AquaManager`,
+            description,
+            path: `/articles/${encodeURIComponent(a.slug)}`,
+            image,
+            type: 'article',
+            structuredData: {
+              '@context': 'https://schema.org',
+              '@type': 'Article',
+              headline: a.title,
+              description,
+              image: image ? [image] : undefined,
+              datePublished: a.publishedAt || a.createdAt,
+              dateModified: a.updatedAt,
+              mainEntityOfPage: `https://aquamanager.fr/articles/${encodeURIComponent(a.slug)}`,
+              publisher: {
+                '@type': 'Organization',
+                name: 'AquaManager',
+                logo: {
+                  '@type': 'ImageObject',
+                  url: 'https://aquamanager.fr/Logo_AquaManager.png',
+                },
+              },
+            },
+          });
 
-          queueMicrotask(() => this.bindSmoothAnchorScroll());
+          if (isPlatformBrowser(this.platformId)) {
+            this.trackArticleView(slug);
+            queueMicrotask(() => this.bindSmoothAnchorScroll());
+          }
           this.cdr.markForCheck();
         },
         error: (err) => {
           console.error(err);
           this.notFound = true;
           this.article = null;
+          this.seo.markNotFound();
           this.cdr.markForCheck();
         },
       });
@@ -195,6 +236,15 @@ export class ArticleDetailsPageComponent implements OnInit {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .slice(0, 64);
+  }
+
+  private buildDescription(value: string): string {
+    const plainText = String(value || '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/[#*_`>\[\]()]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return (plainText || 'Conseils et informations pour mieux entretenir votre aquarium.').slice(0, 160);
   }
 
   private bindSmoothAnchorScroll(): void {
