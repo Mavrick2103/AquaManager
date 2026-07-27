@@ -21,7 +21,11 @@ jobs:
       - name: Déploiement sur le serveur
         run: |
           echo "[CD] Connexion au serveur..."
-          ssh -o StrictHostKeyChecking=no "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=20 \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
           set -euo pipefail
           cd /home/ubuntu/apps/AquaManager
 
@@ -29,7 +33,11 @@ jobs:
           git pull origin main
 
           echo "[CD] Reconstruction et redémarrage des conteneurs Docker..."
-          docker compose up -d --build
+          docker compose build api
+          docker compose build frontend
+          docker compose build ssr
+          docker compose up -d --no-build
+          docker compose ps
 
           echo "[CD] Nettoyage des anciennes images inutilisées..."
           docker image prune -f || true
