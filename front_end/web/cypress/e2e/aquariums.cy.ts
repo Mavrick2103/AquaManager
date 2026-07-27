@@ -5,7 +5,8 @@ const rx = {
   refresh: '**/api/auth/refresh',
   me:      '**/api/users/me',
 
-  aqsAny:  '**/api/aquariums**',         // match large (safe)
+  aqsAny:  '**/api/aquariums',
+  aqOverview: '**/api/aquariums/overview',
   aqById:  (id: number | string) => `**/api/aquariums/${id}**`,
 
   tasksAny: '**/api/tasks**',
@@ -47,7 +48,7 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     };
 
     let listCall = 0;
-    cy.intercept('GET', rx.aqsAny, (req) => {
+    cy.intercept('GET', rx.aqOverview, (req) => {
       listCall += 1;
       req.reply({ statusCode: 200, body: listCall === 1 ? [] : [created] });
     }).as('aqListSeq');
@@ -78,9 +79,9 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     cy.wait('@createAquarium');
     cy.wait('@aqListSeq');
 
-    cy.contains('mat-card-title', 'Bac test', { timeout: 10000 }).should('be.visible');
-    cy.contains('mat-card-subtitle', '70×50×50').should('be.visible');
-    cy.contains('mat-chip', /eau douce/i).should('exist');
+    cy.contains('.aquarium-card h3', 'Bac test', { timeout: 10000 }).should('be.visible');
+    cy.contains('.aquarium-card__heading p', /70\s*×\s*50\s*×\s*50/).should('be.visible');
+    cy.contains('.aquarium-card__type', /eau douce/i).should('exist');
   });
 
   it('supprime un aquarium existant', () => {
@@ -93,7 +94,7 @@ describe('Flow complet AquaManager (création + suppression)', () => {
       volumeL: 96,
     };
 
-    cy.intercept('GET', rx.aqsAny, { statusCode: 200, body: [aq] }).as('aqList');
+    cy.intercept('GET', rx.aqOverview, { statusCode: 200, body: [aq] }).as('aqList');
     cy.intercept('GET', rx.aqById(2), { statusCode: 200, body: aq }).as('getDetail');
     cy.intercept('GET', rx.measuresFor(2), { statusCode: 200, body: [] }).as('getMeasures');
     cy.intercept('GET', rx.measuresAny,    { statusCode: 200, body: [] }).as('getAllMeasures');
@@ -101,7 +102,7 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     cy.visit('/aquariums');
     cy.wait('@aqList');
 
-    cy.contains('mat-card-title', /aqua à supprimer/i)
+    cy.contains('.aquarium-card h3', /aqua à supprimer/i)
       .should('be.visible')
       .click({ force: true });
 
@@ -110,19 +111,19 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     cy.on('window:confirm', () => true);
 
     cy.intercept('DELETE', rx.aqById(2), { statusCode: 200, body: { ok: true } }).as('deleteAq');
-    cy.intercept('GET', rx.aqsAny, { statusCode: 200, body: [] }).as('listAfterDelete');
+    cy.intercept('GET', rx.aqOverview, { statusCode: 200, body: [] }).as('listAfterDelete');
 
     cy.contains('button', /paramètres/i, { timeout: 10000 })
       .should('be.visible')
       .click({ force: true });
 
-    cy.contains('button.mat-mdc-menu-item, button[mat-menu-item], button', /supprimer/i, { timeout: 10000 })
+    cy.get('mat-dialog-container', { timeout: 10000 })
       .should('be.visible')
-      .click({ force: true });
+      .within(() => cy.contains('button', /supprimer/i).click());
 
     cy.wait('@deleteAq');
     cy.wait('@listAfterDelete');
-    cy.contains(/vous n’avez pas encore d’aquarium/i).should('exist');
+    cy.contains(/aucun aquarium pour le moment/i).should('exist');
   });
 });
 
@@ -138,7 +139,7 @@ describe('Sécurité front — XSS & token', () => {
 
     // 1) GET par défaut (prendra les requêtes après la 1ère)
     cy.intercept(
-      { method: 'GET', url: rx.aqsAny },
+      { method: 'GET', url: rx.aqOverview },
       {
         statusCode: 200,
         body: [{
@@ -152,7 +153,7 @@ describe('Sécurité front — XSS & token', () => {
     // 2) IMPORTANT: l’intercept le plus récent gagne -> on met celui-ci EN DERNIER
     // pour qu’il attrape la 1ère requête uniquement.
     cy.intercept(
-      { method: 'GET', url: rx.aqsAny, times: 1 },
+      { method: 'GET', url: rx.aqOverview, times: 1 },
       { statusCode: 200, body: [] }
     ).as('aqListEmpty');
 
@@ -186,8 +187,8 @@ describe('Sécurité front — XSS & token', () => {
     cy.wait(['@createXss', '@listWithXss']);
 
     cy.then(() => expect(alerts, 'aucun alert() déclenché').to.have.length(0));
-    cy.get('mat-card-title img').should('not.exist');
-    cy.get('mat-card-title').should('contain.text', '<img');
+    cy.get('.aquarium-card__heading h3 img').should('not.exist');
+    cy.get('.aquarium-card__heading h3').should('contain.text', '<img');
   });
 
   it('ne stocke PAS le token en localStorage après login', () => {

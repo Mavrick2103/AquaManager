@@ -85,8 +85,8 @@ describe('Mesures et graphiques - AquaManager', () => {
   it('affiche les graphiques des paramètres', () => {
     cy.get('.mini-grid', { timeout: 10000 }).should('exist');
     cy.get('app-water-measurements-chart').its('length').should('be.greaterThan', 0);
-    cy.get('app-water-measurements-chart[metric="ph"]').should('exist');
-    cy.get('app-water-measurements-chart[metric="temp"]').should('exist');
+    cy.get('app-water-measurements-chart .metric-name').should('contain.text', 'pH');
+    cy.get('app-water-measurements-chart .metric-name').should('contain.text', 'Température');
   });
 
   
