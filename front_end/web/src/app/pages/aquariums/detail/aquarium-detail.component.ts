@@ -34,10 +34,20 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { FormsModule } from '@angular/forms';
 
 import { AquariumsService, Aquarium } from '../../../core/aquariums.service';
-import { WaterMeasurementsChartComponent } from './chart/chart.component';
+import {
+  MaintenanceEvent,
+  MetricKey,
+  WaterMeasurementsChartComponent,
+} from './chart/chart.component';
+import {
+  ChartDetailDialogComponent,
+  ChartDetailDialogData,
+} from './chart/chart-detail-dialog.component';
 import { MeasurementDialogComponent } from './measurement-dialog.component';
 import { EditAquariumDialogComponent } from './edit-aquarium-dialog.component';
 import { AquariumAddItemDialogComponent } from './dialog_ajout/aquarium-add-item-dialog.component';
+import { AquariumProtocolsComponent } from './protocols/aquarium-protocols.component';
+import { AquariumTasksComponent } from './tasks/aquarium-tasks.component';
 
 import {
   RecommendationsService,
@@ -49,7 +59,7 @@ import {
   AiAquariumAnalysisResponse,
   AiSuggestedTask,
 } from '../../../core/ai.service';
-import { TasksService } from '../../../core/tasks.service';
+import { Task, TasksService } from '../../../core/tasks.service';
 import { UserService } from '../../../core/user.service';
 
 import {
@@ -65,6 +75,37 @@ import {
 } from '../../../core/aquarium-targets.service';
 
 type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER';
+type ChartGroupKey = 'essential' | 'balance' | 'plants' | 'marine';
+type ChartMetricConfig = {
+  metric: MetricKey;
+  targetKey: ParamKey;
+  label: string;
+  group: ChartGroupKey;
+};
+type MaintenanceImpact = {
+  key: MetricKey;
+  label: string;
+  unit: string;
+  before: number;
+  after: number;
+  delta: number;
+  percent: number | null;
+};
+type HistoryMetricView = {
+  key: MetricKey;
+  label: string;
+  value: number;
+  unit: string;
+  status: 'ok' | 'warning' | 'unknown';
+};
+type MeasurementHistoryView = {
+  measurement: WaterMeasurement;
+  metrics: HistoryMetricView[];
+  evaluated: number;
+  warnings: number;
+  unknown: number;
+  status: 'ok' | 'warning' | 'unknown';
+};
 
 export interface WaterMeasurement {
   id: number;
@@ -160,6 +201,8 @@ type AquariumPlantRow = {
     FormsModule,
 
     WaterMeasurementsChartComponent,
+    AquariumProtocolsComponent,
+    AquariumTasksComponent,
   ],
   templateUrl: './aquarium-detail.component.html',
   styleUrls: ['./aquarium-detail.component.scss'],
@@ -187,9 +230,13 @@ export class AquariumDetailComponent implements OnInit {
   id!: number;
   loading = true;
   saving = false;
+  protocolAquarium: Aquarium | null = null;
 
   isPremium = false;
   solutionView: 'assistant' | 'ai' = 'assistant';
+  selectedTabIndex = 0;
+  initialProtocolKey: 'STARTUP' | null = null;
+  targetPanelExpanded = false;
   private solutionsLoadedOnce = false;
 
   checkoutLoading = false;
@@ -204,6 +251,67 @@ export class AquariumDetailComponent implements OnInit {
   });
 
   measurements: WaterMeasurement[] = [];
+  maintenanceEvents: MaintenanceEvent[] = [];
+  maintenanceImpacts: Record<string, MaintenanceImpact[]> = {};
+  showMaintenanceMarkers = true;
+  chartPeriodDays = 30;
+  chartSortAlertsFirst = false;
+  readonly chartPeriods = [
+    { label: '7 jours', days: 7 },
+    { label: '30 jours', days: 30 },
+    { label: '3 mois', days: 90 },
+    { label: '1 an', days: 365 },
+    { label: 'Tout', days: 0 },
+  ];
+  readonly chartGroups: Array<{
+    key: ChartGroupKey;
+    title: string;
+    subtitle: string;
+    icon: string;
+  }> = [
+    {
+      key: 'essential',
+      title: 'Paramètres essentiels',
+      subtitle: 'Les indicateurs principaux de l’équilibre du bac',
+      icon: 'monitor_heart',
+    },
+    {
+      key: 'balance',
+      title: 'Équilibre de l’eau',
+      subtitle: 'Dureté, minéraux et équilibre chimique',
+      icon: 'water',
+    },
+    {
+      key: 'plants',
+      title: 'Nutrition des plantes',
+      subtitle: 'Éléments utiles au suivi d’un aquarium planté',
+      icon: 'eco',
+    },
+    {
+      key: 'marine',
+      title: 'Paramètres marins',
+      subtitle: 'Salinité et minéraux de l’eau de mer',
+      icon: 'waves',
+    },
+  ];
+  readonly chartMetrics: ChartMetricConfig[] = [
+    { metric: 'temp', targetKey: 'temp', label: 'Température', group: 'essential' },
+    { metric: 'ph', targetKey: 'ph', label: 'pH', group: 'essential' },
+    { metric: 'no2', targetKey: 'no2', label: 'NO₂', group: 'essential' },
+    { metric: 'no3', targetKey: 'no3', label: 'NO₃', group: 'essential' },
+    { metric: 'nh3', targetKey: 'nh3', label: 'Ammoniaque', group: 'essential' },
+    { metric: 'kh', targetKey: 'kh', label: 'KH', group: 'balance' },
+    { metric: 'gh', targetKey: 'gh', label: 'GH', group: 'balance' },
+    { metric: 'co2', targetKey: 'co2', label: 'CO₂ estimé', group: 'balance' },
+    { metric: 'po4', targetKey: 'po4', label: 'PO₄', group: 'balance' },
+    { metric: 'fe', targetKey: 'fe', label: 'Fer', group: 'plants' },
+    { metric: 'k', targetKey: 'k', label: 'Potassium', group: 'plants' },
+    { metric: 'sio2', targetKey: 'sio2', label: 'Silicates', group: 'plants' },
+    { metric: 'dkh', targetKey: 'dkh', label: 'dKH', group: 'marine' },
+    { metric: 'salinity', targetKey: 'salinity', label: 'Salinité', group: 'marine' },
+    { metric: 'ca', targetKey: 'ca', label: 'Calcium', group: 'marine' },
+    { metric: 'mg', targetKey: 'mg', label: 'Magnésium', group: 'marine' },
+  ];
 
   recosLoading = false;
   recos: Recommendation[] = [];
@@ -235,6 +343,7 @@ aiChatQuestion = '';
   limitOptions = [5, 10, 20, 0];
   selectedLimit = 5;
   displayedMeasurements: WaterMeasurement[] = [];
+  measurementHistory: MeasurementHistoryView[] = [];
 
   fishInTank: AquariumFishRow[] = [];
   plantsInTank: AquariumPlantRow[] = [];
@@ -275,6 +384,9 @@ aiChatQuestion = '';
 
   async ngOnInit(): Promise<void> {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
+    this.initialProtocolKey =
+      this.route.snapshot.queryParamMap.get('protocol') === 'STARTUP' ? 'STARTUP' : null;
+    if (this.initialProtocolKey) this.selectedTabIndex = 3;
 
     if (!this.id) {
       this.snack.open('ID aquarium invalide', 'Fermer', { duration: 3000 });
@@ -283,8 +395,16 @@ aiChatQuestion = '';
     }
 
     await this.load();
-    await this.loadMeasurements();
-    await this.loadTankItems();
+    await Promise.all([
+      this.loadMeasurements(),
+      this.loadMaintenanceEvents(),
+      this.loadTargets(),
+      this.loadTankItems(),
+    ]);
+
+    if (this.route.snapshot.queryParamMap.get('action') === 'measure') {
+      window.setTimeout(() => this.openMeasurementDialog(), 0);
+    }
   }
 
   getProfileLabel(key?: TargetProfileKey | null): string {
@@ -295,11 +415,243 @@ aiChatQuestion = '';
     return this.profileLabels[k] ?? 'Custom';
   }
 
-  private getRange(key: ParamKey): TargetRange | null {
+  getRange(key: ParamKey): TargetRange | null {
     const t = this.targets?.targets as any;
     const r = t?.[key] as TargetRange | undefined;
 
     return r ?? null;
+  }
+
+  get visibleChartGroups() {
+    const allowed =
+      this.waterType === 'EAU_DOUCE'
+        ? new Set<ChartGroupKey>(['essential', 'balance', 'plants'])
+        : new Set<ChartGroupKey>(['essential', 'marine']);
+
+    return this.chartGroups.filter(group => allowed.has(group.key));
+  }
+
+  get chartPeriodLabel(): string {
+    return this.chartPeriods.find(period => period.days === this.chartPeriodDays)?.label ?? 'Période';
+  }
+
+  get chartPeriodEvents(): MaintenanceEvent[] {
+    const cutoff =
+      this.chartPeriodDays > 0
+        ? Date.now() - this.chartPeriodDays * 24 * 60 * 60 * 1000
+        : null;
+
+    return this.maintenanceEvents
+      .filter(event => cutoff === null || new Date(event.date).getTime() >= cutoff)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  maintenanceIcon(type: MaintenanceEvent['type']): string {
+    if (type === 'WATER_CHANGE') return 'water_drop';
+    if (type === 'FERTILIZATION') return 'eco';
+    if (type === 'TRIM') return 'content_cut';
+    if (type === 'WATER_TEST') return 'science';
+    return 'build';
+  }
+
+  private calculateMaintenanceImpact(event: MaintenanceEvent): MaintenanceImpact[] {
+    const eventTime = new Date(event.date).getTime();
+    const maxDistance = 21 * 24 * 60 * 60 * 1000;
+    const chronological = [...this.measurements].sort(
+      (a, b) => new Date(a.measuredAt).getTime() - new Date(b.measuredAt).getTime(),
+    );
+    const before = [...chronological]
+      .reverse()
+      .find(measurement => new Date(measurement.measuredAt).getTime() < eventTime);
+    const after = chronological.find(
+      measurement => new Date(measurement.measuredAt).getTime() >= eventTime,
+    );
+
+    if (!before || !after) return [];
+    if (
+      eventTime - new Date(before.measuredAt).getTime() > maxDistance ||
+      new Date(after.measuredAt).getTime() - eventTime > maxDistance
+    ) {
+      return [];
+    }
+
+    const preferred: Partial<Record<MaintenanceEvent['type'], MetricKey[]>> = {
+      WATER_CHANGE: ['no3', 'no2', 'ph'],
+      FERTILIZATION: ['po4', 'k', 'fe'],
+      TRIM: ['no3', 'po4', 'ph'],
+      WATER_TEST: ['ph', 'temp', 'no2'],
+      OTHER: ['no3', 'ph', 'temp'],
+    };
+    const meta: Partial<Record<MetricKey, { label: string; unit: string }>> = {
+      ph: { label: 'pH', unit: '' },
+      temp: { label: 'Température', unit: '°C' },
+      no2: { label: 'NO₂', unit: 'mg/L' },
+      no3: { label: 'NO₃', unit: 'mg/L' },
+      po4: { label: 'PO₄', unit: 'mg/L' },
+      fe: { label: 'Fer', unit: 'mg/L' },
+      k: { label: 'Potassium', unit: 'mg/L' },
+    };
+
+    return (preferred[event.type] ?? [])
+      .map(key => {
+        const beforeValue = before[key as keyof WaterMeasurement];
+        const afterValue = after[key as keyof WaterMeasurement];
+        if (
+          typeof beforeValue !== 'number' ||
+          typeof afterValue !== 'number' ||
+          !Number.isFinite(beforeValue) ||
+          !Number.isFinite(afterValue)
+        ) {
+          return null;
+        }
+
+        const delta = Number((afterValue - beforeValue).toFixed(2));
+        return {
+          key,
+          label: meta[key]?.label ?? key,
+          unit: meta[key]?.unit ?? '',
+          before: beforeValue,
+          after: afterValue,
+          delta,
+          percent:
+            beforeValue === 0
+              ? null
+              : Math.round(((afterValue - beforeValue) / Math.abs(beforeValue)) * 100),
+        };
+      })
+      .filter((impact): impact is MaintenanceImpact => impact !== null)
+      .slice(0, 2);
+  }
+
+  formatImpactValue(value: number): string {
+    return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(value);
+  }
+
+  private rebuildMaintenanceImpacts(): void {
+    this.maintenanceImpacts = Object.fromEntries(
+      this.maintenanceEvents.map(event => [
+        event.id,
+        this.calculateMaintenanceImpact(event),
+      ]),
+    );
+  }
+
+  get chartSummary(): { measured: number; ok: number; warning: number; unknown: number } {
+    const metrics = this.availableChartMetrics;
+    let measured = 0;
+    let ok = 0;
+    let warning = 0;
+    let unknown = 0;
+
+    for (const metric of metrics) {
+      const value = this.latestMetricValue(metric.metric);
+      if (value === null) continue;
+
+      measured += 1;
+      const status = this.metricStatus(metric);
+      if (status === 'ok') ok += 1;
+      else if (status === 'warning') warning += 1;
+      else unknown += 1;
+    }
+
+    return { measured, ok, warning, unknown };
+  }
+
+  get measurementFreshness(): {
+    level: 'recent' | 'due' | 'old';
+    label: string;
+    detail: string;
+  } {
+    const measuredAt = this.lastMeasurement?.measuredAt;
+    const timestamp = measuredAt ? new Date(measuredAt).getTime() : Number.NaN;
+    const elapsedDays = Number.isFinite(timestamp)
+      ? Math.max(0, Math.floor((Date.now() - timestamp) / 86_400_000))
+      : 0;
+    const detail =
+      elapsedDays === 0
+        ? "Mesurée aujourd'hui"
+        : `Il y a ${elapsedDays} jour${elapsedDays > 1 ? 's' : ''}`;
+
+    if (elapsedDays < 7) return { level: 'recent', label: 'Mesure récente', detail };
+    if (elapsedDays <= 14) return { level: 'due', label: 'À renouveler', detail };
+    return { level: 'old', label: 'Mesure ancienne', detail };
+  }
+
+  openTargetConfiguration(): void {
+    this.solutionView = 'assistant';
+    this.selectedTabIndex = 2;
+    this.targetPanelExpanded = true;
+
+    window.setTimeout(() => {
+      document
+        .getElementById('aquarium-target-configuration')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
+  }
+
+  metricsForGroup(group: ChartGroupKey): ChartMetricConfig[] {
+    const metrics = this.availableChartMetrics.filter(metric => metric.group === group);
+    if (!this.chartSortAlertsFirst) return metrics;
+
+    const rank = (metric: ChartMetricConfig) => {
+      const status = this.metricStatus(metric);
+      return status === 'warning' ? 0 : status === 'ok' ? 1 : 2;
+    };
+
+    return [...metrics].sort((a, b) => rank(a) - rank(b));
+  }
+
+  openChartDetails(metric: ChartMetricConfig): void {
+    this.dialog.open<ChartDetailDialogComponent, ChartDetailDialogData>(
+      ChartDetailDialogComponent,
+      {
+        width: '900px',
+        maxWidth: '96vw',
+        maxHeight: '92vh',
+        data: {
+          aquariumId: this.id,
+          waterType: this.waterType,
+          metric: metric.metric,
+          label: metric.label,
+          measurements: this.measurements,
+          events: this.maintenanceEvents,
+          periodDays: this.chartPeriodDays,
+          periodLabel: this.chartPeriodLabel,
+          target: this.getRange(metric.targetKey),
+        },
+      },
+    );
+  }
+
+  private get availableChartMetrics(): ChartMetricConfig[] {
+    return this.chartMetrics.filter(metric =>
+      this.waterType === 'EAU_DOUCE'
+        ? metric.group !== 'marine'
+        : metric.group === 'essential' || metric.group === 'marine',
+    );
+  }
+
+  private metricStatus(metric: ChartMetricConfig): 'ok' | 'warning' | 'unknown' {
+    const value = this.latestMetricValue(metric.metric);
+    const range = this.getRange(metric.targetKey);
+    if (value === null || !range || (range.min == null && range.max == null)) return 'unknown';
+    if (range.min != null && value < range.min) return 'warning';
+    if (range.max != null && value > range.max) return 'warning';
+    return 'ok';
+  }
+
+  private latestMetricValue(metric: MetricKey): number | null {
+    const latest = this.measurements[0];
+    if (!latest) return null;
+
+    if (metric === 'co2') {
+      if (latest.ph == null || latest.kh == null) return null;
+      const value = 3 * latest.kh * Math.pow(10, 7 - latest.ph);
+      return Number.isFinite(value) ? value : null;
+    }
+
+    const value = latest[metric as keyof WaterMeasurement];
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
   }
 
   getTargetMin(key: ParamKey): string {
@@ -335,7 +687,7 @@ aiChatQuestion = '';
   }
 
   async onTabChange(index: number): Promise<void> {
-    if (index !== 1) return;
+    if (index !== 2) return;
     if (this.solutionsLoadedOnce) return;
 
     this.solutionsLoadedOnce = true;
@@ -391,6 +743,7 @@ aiChatQuestion = '';
       profileKey: [profileKey],
       targets: this.fb.group(group),
     });
+    this.rebuildMeasurementHistory();
   }
 
   async applyTargetProfile(profileKey: TargetProfileKey): Promise<void> {
@@ -778,7 +1131,10 @@ async analyzePhotoWithAi(): Promise<void> {
     try {
       const a = await firstValueFrom(this.api.getById(this.id));
 
-      if (a) this.form.patchValue(a as any);
+      if (a) {
+        this.form.patchValue(a as any);
+        this.protocolAquarium = a;
+      }
     } catch {
       this.snack.open('Impossible de charger cet aquarium', 'Fermer', {
         duration: 3000,
@@ -812,7 +1168,8 @@ async analyzePhotoWithAi(): Promise<void> {
     try {
       const dto = this.form.getRawValue() as Partial<Aquarium>;
 
-      await firstValueFrom(this.api.update(this.id, dto));
+      const updated = await firstValueFrom(this.api.update(this.id, dto));
+      this.protocolAquarium = updated;
 
       this.form.markAsPristine();
 
@@ -871,6 +1228,82 @@ async analyzePhotoWithAi(): Promise<void> {
       this.selectedLimit === 0
         ? this.measurements
         : this.measurements.slice(0, this.selectedLimit);
+    this.rebuildMeasurementHistory();
+  }
+
+  private rebuildMeasurementHistory(): void {
+    const units: Partial<Record<MetricKey, string>> = {
+      temp: '°C',
+      no2: 'mg/L',
+      no3: 'mg/L',
+      nh3: 'mg/L',
+      kh: '°d',
+      gh: '°d',
+      po4: 'mg/L',
+      fe: 'mg/L',
+      k: 'mg/L',
+      sio2: 'mg/L',
+      dkh: '°d',
+      salinity: 'ppt',
+      ca: 'mg/L',
+      mg: 'mg/L',
+    };
+
+    this.measurementHistory = this.displayedMeasurements.map(measurement => {
+      const metrics = this.availableChartMetrics
+        .filter(metric => metric.metric !== 'co2')
+        .map(metric => {
+          const raw = measurement[metric.metric as keyof WaterMeasurement];
+          if (typeof raw !== 'number' || !Number.isFinite(raw)) return null;
+
+          const range = this.getRange(metric.targetKey);
+          let status: HistoryMetricView['status'] = 'unknown';
+          if (range && (range.min != null || range.max != null)) {
+            status =
+              (range.min != null && raw < range.min) ||
+              (range.max != null && raw > range.max)
+                ? 'warning'
+                : 'ok';
+          }
+
+          return {
+            key: metric.metric,
+            label: metric.label,
+            value: raw,
+            unit: units[metric.metric] ?? '',
+            status,
+          };
+        })
+        .filter((metric): metric is HistoryMetricView => metric !== null);
+      const warnings = metrics.filter(metric => metric.status === 'warning').length;
+      const evaluated = metrics.filter(metric => metric.status !== 'unknown').length;
+      const unknown = metrics.length - evaluated;
+
+      return {
+        measurement,
+        metrics,
+        evaluated,
+        warnings,
+        unknown,
+        status: warnings > 0 ? 'warning' : evaluated > 0 ? 'ok' : 'unknown',
+      };
+    });
+  }
+
+  historyStatusLabel(view: MeasurementHistoryView): string {
+    if (view.status === 'warning') {
+      return `${view.warnings} valeur${view.warnings > 1 ? 's' : ''} à vérifier`;
+    }
+    if (view.status === 'ok') return 'Valeurs évaluées correctes';
+    return 'Sans référence';
+  }
+
+  formatHistoryValue(value: number): string {
+    return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(value);
+  }
+
+  trackHistory(_: number, view: MeasurementHistoryView): number {
+    return view.measurement.id;
   }
 
   async loadMeasurements(): Promise<void> {
@@ -883,10 +1316,34 @@ async analyzePhotoWithAi(): Promise<void> {
       );
 
       this.applyLimit();
+      this.rebuildMaintenanceImpacts();
     } catch {
       this.snack.open('Erreur lors du chargement des mesures', 'Fermer', {
         duration: 3000,
       });
+    }
+  }
+
+  async loadMaintenanceEvents(): Promise<void> {
+    try {
+      const tasks = await firstValueFrom(this.tasksApi.list());
+      this.maintenanceEvents = (tasks ?? [])
+        .filter(
+          (task: Task) =>
+            task.status === 'DONE' && Number(task.aquarium?.id) === Number(this.id),
+        )
+        .map((task: Task) => ({
+          id: String(task.id),
+          title: task.title,
+          description: task.description,
+          date: task.dueAt,
+          type: task.type,
+        }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      this.rebuildMaintenanceImpacts();
+    } catch {
+      this.maintenanceEvents = [];
+      this.maintenanceImpacts = {};
     }
   }
 

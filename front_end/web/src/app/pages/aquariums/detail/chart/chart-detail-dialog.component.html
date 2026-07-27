@@ -1,0 +1,65 @@
+<header class="detail-header">
+  <div>
+    <span>Analyse du paramètre</span>
+    <h2>{{ data.label }}</h2>
+    <p>Période : {{ data.periodLabel }}</p>
+  </div>
+
+  <button mat-icon-button type="button" aria-label="Fermer" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+
+<mat-dialog-content>
+  <section class="stats-grid" aria-label="Statistiques de la période">
+    <article>
+      <span>Mesures</span>
+      <strong>{{ count }}</strong>
+    </article>
+    <article>
+      <span>Minimum</span>
+      <strong>{{ format(minimum) }}</strong>
+    </article>
+    <article>
+      <span>Moyenne</span>
+      <strong>{{ format(average) }}</strong>
+    </article>
+    <article>
+      <span>Maximum</span>
+      <strong>{{ format(maximum) }}</strong>
+    </article>
+    <article *ngIf="inTargetPercent !== null">
+      <span>Dans l’objectif</span>
+      <strong>{{ inTargetPercent }} %</strong>
+    </article>
+  </section>
+
+  <app-water-measurements-chart
+    [aquariumId]="data.aquariumId"
+    [waterType]="data.waterType"
+    [metric]="data.metric"
+    [measurements]="data.measurements"
+    [events]="data.events"
+    [periodDays]="data.periodDays"
+    [target]="data.target"
+  />
+
+  <section class="detail-events" *ngIf="periodEvents.length">
+    <h3>Entretiens visibles sur la courbe</h3>
+    <div>
+      <article *ngFor="let event of periodEvents">
+        <mat-icon>{{ eventIcon(event.type) }}</mat-icon>
+        <span>
+          <strong>{{ event.title }}</strong>
+          <time [attr.datetime]="event.date">{{ event.date | date: 'd MMMM y à HH:mm' }}</time>
+        </span>
+      </article>
+    </div>
+  </section>
+
+  <p class="co2-notice" *ngIf="data.metric === 'co2'">
+    <mat-icon>info</mat-icon>
+    Le CO₂ est une estimation calculée à partir du pH et du KH. Il ne s’agit pas
+    d’une mesure directe.
+  </p>
+</mat-dialog-content>

@@ -18,6 +18,16 @@ export interface Aquarium {
   createdAt: string;
 }
 
+export interface AquariumOverview extends Aquarium {
+  fishCount: number;
+  plantCount: number;
+  lastMeasuredAt: string | null;
+  overdueTaskCount: number;
+  nextTaskAt: string | null;
+  nextTaskTitle: string | null;
+  activeProtocolCount: number;
+}
+
 export interface CreateAquariumDto {
   name: string;
   lengthCm: number;
@@ -34,6 +44,10 @@ export class AquariumsService {
 
   list(): Observable<Aquarium[]> {
     return this.http.get<Aquarium[]>(this.base);
+  }
+
+  overview(): Observable<AquariumOverview[]> {
+    return this.http.get<AquariumOverview[]>(`${this.base}/overview`);
   }
 
   getById(id: number): Observable<Aquarium> {

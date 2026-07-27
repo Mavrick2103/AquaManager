@@ -76,7 +76,10 @@ describe('AquariumDialogComponent', () => {
     component.submit();
 
     expect(apiSpy.create).toHaveBeenCalled();
-    expect(dialogRefSpy.close).toHaveBeenCalledWith(true);
+    expect(dialogRefSpy.close).toHaveBeenCalledWith({
+      aquarium: mockAquarium,
+      setupCycling: true,
+    });
   });
 
   it('submit() ne devrait pas appeler api.create() si formulaire invalide', () => {

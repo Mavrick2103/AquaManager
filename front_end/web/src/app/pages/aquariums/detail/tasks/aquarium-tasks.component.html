@@ -1,0 +1,90 @@
+<section class="tasks">
+  <header class="tasks__header">
+    <div>
+      <span class="eyebrow">Planning de ce bac</span>
+      <h2>Toutes les tâches de l’aquarium</h2>
+      <p>Visualise les prochaines actions et retrouve l’historique des entretiens.</p>
+    </div>
+    <button mat-flat-button color="primary" type="button" (click)="openCalendar()">
+      <mat-icon>add_task</mat-icon>
+      Gérer le planning
+    </button>
+  </header>
+
+  <div class="summary" aria-label="Résumé des tâches">
+    <div><mat-icon>pending_actions</mat-icon><span><strong>{{ pendingTasks.length }}</strong> à faire</span></div>
+    <div [class.alert]="overdueCount > 0">
+      <mat-icon>notification_important</mat-icon><span><strong>{{ overdueCount }}</strong> en retard</span>
+    </div>
+    <div><mat-icon>task_alt</mat-icon><span><strong>{{ completedTasks.length }}</strong> terminées</span></div>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <mat-spinner diameter="32"></mat-spinner>
+    <span>Chargement des tâches…</span>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <section class="list-section">
+      <div class="section-title">
+        <div><span>À faire</span><h3>Prochaines actions</h3></div>
+        <b>{{ pendingTasks.length }}</b>
+      </div>
+
+      <div class="task-list" *ngIf="pendingTasks.length; else noPending">
+        <article class="task" *ngFor="let task of pendingTasks" [class.overdue]="isOverdue(task)">
+          <button class="check" type="button" (click)="toggleStatus(task)"
+            [attr.aria-label]="'Marquer ' + task.title + ' comme terminée'">
+            <mat-icon>radio_button_unchecked</mat-icon>
+          </button>
+          <span class="type-icon"><mat-icon>{{ icon(task.type) }}</mat-icon></span>
+          <div class="content">
+            <div class="heading">
+              <strong>{{ task.title }}</strong>
+              <span class="late" *ngIf="isOverdue(task)">En retard</span>
+            </div>
+            <p *ngIf="task.description">{{ task.description }}</p>
+            <div class="meta">
+              <span><mat-icon>event</mat-icon>{{ task.dueAt | date: 'EEE d MMM y à HH:mm' }}</span>
+              <span><mat-icon>category</mat-icon>{{ typeLabel(task.type) }}</span>
+              <span *ngIf="repeatLabel(task) as repeat"><mat-icon>repeat</mat-icon>{{ repeat }}</span>
+            </div>
+          </div>
+          <button mat-icon-button type="button" class="edit" (click)="openDetails(task)"
+            [attr.aria-label]="'Modifier ' + task.title"><mat-icon>edit</mat-icon></button>
+        </article>
+      </div>
+
+      <ng-template #noPending>
+        <div class="empty">
+          <mat-icon>done_all</mat-icon><strong>Tout est à jour</strong>
+          <span>Aucune tâche n’est prévue pour cet aquarium.</span>
+        </div>
+      </ng-template>
+    </section>
+
+    <section class="list-section completed">
+      <div class="section-title">
+        <div><span>Historique</span><h3>Tâches terminées</h3></div>
+        <b>{{ completedTasks.length }}</b>
+      </div>
+      <div class="task-list" *ngIf="completedTasks.length; else noCompleted">
+        <article class="task done" *ngFor="let task of completedTasks">
+          <button class="check" type="button" (click)="toggleStatus(task)"
+            [attr.aria-label]="'Remettre ' + task.title + ' à faire'"><mat-icon>check_circle</mat-icon></button>
+          <span class="type-icon"><mat-icon>{{ icon(task.type) }}</mat-icon></span>
+          <div class="content">
+            <strong>{{ task.title }}</strong>
+            <div class="meta">
+              <span><mat-icon>event</mat-icon>{{ task.dueAt | date: 'd MMMM y' }}</span>
+              <span><mat-icon>category</mat-icon>{{ typeLabel(task.type) }}</span>
+            </div>
+          </div>
+          <button mat-icon-button type="button" class="edit" (click)="openDetails(task)"
+            [attr.aria-label]="'Voir ' + task.title"><mat-icon>more_horiz</mat-icon></button>
+        </article>
+      </div>
+      <ng-template #noCompleted><div class="empty compact">Aucune tâche terminée pour le moment.</div></ng-template>
+    </section>
+  </ng-container>
+</section>

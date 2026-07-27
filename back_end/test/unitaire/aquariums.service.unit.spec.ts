@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
 import { AquariumsService } from '../../src/aquariums/aquariums.service';
 import { Aquarium } from '../../src/aquariums/aquariums.entity';
@@ -14,7 +14,7 @@ describe('AquariumsService (unit)', () => {
   let service: AquariumsService;
   let repo: jest.Mocked<Repository<Aquarium>>;
   let usersRepo: jest.Mocked<Repository<User>>;
-  let usersService: { touchActivity: jest.Mock };
+  let usersService: { touchActivity: jest.Mock; getEffectivePlan: jest.Mock };
 
   beforeEach(async () => {
     const aquariumRepoMock: Partial<jest.Mocked<Repository<Aquarium>>> = {
@@ -23,6 +23,8 @@ describe('AquariumsService (unit)', () => {
       create: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
+      query: jest.fn(),
     };
 
     const usersRepoMock: Partial<jest.Mocked<Repository<User>>> = {
@@ -32,6 +34,7 @@ describe('AquariumsService (unit)', () => {
     // ✅ mock UsersService (car AquariumsService l'injecte maintenant)
     usersService = {
       touchActivity: jest.fn().mockResolvedValue(undefined),
+      getEffectivePlan: jest.fn().mockResolvedValue('CLASSIC'),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -121,6 +124,72 @@ describe('AquariumsService (unit)', () => {
     expect(repo.save).toHaveBeenCalled();
     expect(usersService.touchActivity).toHaveBeenCalledWith(1);
     expect(res.id).toBeDefined();
+  });
+
+  it('getOverview() -> renvoie une synthèse chiffrée des aquariums du user', async () => {
+    repo.query.mockResolvedValue([{
+      id: '5',
+      name: 'Récif',
+      lengthCm: '90',
+      widthCm: '45',
+      heightCm: '45',
+      volumeL: '182',
+      fishCount: '8',
+      plantCount: '3',
+      overdueTaskCount: '1',
+      activeProtocolCount: '2',
+    }] as any);
+
+    const result = await service.getOverview(7);
+
+    expect(repo.query).toHaveBeenCalledWith(expect.stringContaining('WHERE a.userId = ?'), [7]);
+    expect(result[0]).toMatchObject({
+      id: 5,
+      fishCount: 8,
+      plantCount: 3,
+      overdueTaskCount: 1,
+      activeProtocolCount: 2,
+    });
+    expect(usersService.touchActivity).toHaveBeenCalledWith(7);
+  });
+
+  it('create() -> bloque un compte Classic ayant déjà 2 aquariums', async () => {
+    usersRepo.findOne.mockResolvedValue({ id: 1 } as any);
+    usersService.getEffectivePlan.mockResolvedValue('CLASSIC');
+    repo.count.mockResolvedValue(2);
+
+    await expect(
+      service.create(1, {
+        name: 'Troisième bac',
+        lengthCm: 60,
+        widthCm: 30,
+        heightCm: 30,
+        waterType: 'EAU_DOUCE',
+        startDate: '2026-01-01',
+      } as any),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('create() -> ne limite pas le plan Pro', async () => {
+    usersRepo.findOne.mockResolvedValue({ id: 1 } as any);
+    usersService.getEffectivePlan.mockResolvedValue('PRO');
+    repo.create.mockImplementation((x: any) => x);
+    repo.save.mockImplementation(async (x: any) => ({ id: 10, ...x }));
+
+    await expect(
+      service.create(1, {
+        name: 'Bac Pro',
+        lengthCm: 60,
+        widthCm: 30,
+        heightCm: 30,
+        waterType: 'EAU_DOUCE',
+        startDate: '2026-01-01',
+      } as any),
+    ).resolves.toMatchObject({ id: 10 });
+
+    expect(repo.count).not.toHaveBeenCalled();
   });
 
   it('update() -> 404 si non trouvé', async () => {

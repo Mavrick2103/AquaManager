@@ -1,7 +1,43 @@
-<mat-card class="chart-card">
+<mat-card
+  class="chart-card"
+  [class.chart-card--interactive]="interactive"
+  [attr.role]="interactive ? 'button' : null"
+  [attr.tabindex]="interactive ? 0 : null"
+  (click)="requestDetails()"
+  (keydown.enter)="requestDetails()"
+  (keydown.space)="requestDetails(); $event.preventDefault()"
+>
   <div class="chart-header" *ngIf="metric">
-    <span class="metric-name">{{ metricLabel }}</span>
-    <span class="metric-unit" *ngIf="metricUnit">{{ metricUnit }}</span>
+    <div>
+      <span class="metric-name">{{ metricLabel }}</span>
+      <span class="metric-unit" *ngIf="metricUnit">{{ metricUnit }}</span>
+    </div>
+
+    <span class="metric-status" [class]="'metric-status metric-status--' + status">
+      {{ statusLabel }}
+    </span>
+  </div>
+
+  <div class="metric-summary" *ngIf="hasData">
+    <strong>
+      {{ formatValue(latestValue) }}
+      <small *ngIf="metricUnit">{{ metricUnit }}</small>
+    </strong>
+    <span>{{ variationLabel }}</span>
+  </div>
+
+  <div class="measurement-date" *ngIf="latestDateLabel">
+    Dernière mesure : {{ latestDateLabel }}
+  </div>
+
+  <div class="target-caption" *ngIf="targetLabel">
+    <span class="target-caption__swatch"></span>
+    Objectif : {{ targetLabel }} {{ metricUnit }}
+  </div>
+
+  <div class="target-caption target-caption--missing" *ngIf="hasData && !targetLabel">
+    <mat-icon>info</mat-icon>
+    Non évaluable : aucune plage de référence configurée
   </div>
 
   <div class="chart-wrapper" [style.height.px]="180">
@@ -14,5 +50,10 @@
     <div class="overlay empty" *ngIf="!loading && !hasData">
       Aucune mesure à afficher.
     </div>
+  </div>
+
+  <div class="chart-details-hint" *ngIf="interactive && hasData">
+    Voir l’analyse détaillée
+    <mat-icon>arrow_forward</mat-icon>
   </div>
 </mat-card>

@@ -1,0 +1,361 @@
+<section class="protocols" aria-labelledby="protocols-title">
+  <header class="protocols__hero">
+    <div class="protocols__hero-icon">
+      <mat-icon>route</mat-icon>
+    </div>
+    <div>
+      <span class="protocols__eyebrow">Entretien guidé</span>
+      <h2 id="protocols-title">Protocoles intelligents</h2>
+      <p>
+        Choisis un objectif, vérifie chaque étape puis ajoute le programme au planning de
+        <strong>{{ aquarium.name }}</strong>.
+      </p>
+    </div>
+    <div class="protocols__context">
+      <span><mat-icon>water_drop</mat-icon>{{ aquarium.waterType === 'EAU_DE_MER' ? 'Eau de mer' : 'Eau douce' }}</span>
+      <span><mat-icon>straighten</mat-icon>{{ aquarium.volumeL | number:'1.0-0' }} L</span>
+      <span *ngIf="plantCount"><mat-icon>eco</mat-icon>{{ plantCount }} plante{{ plantCount > 1 ? 's' : '' }}</span>
+    </div>
+  </header>
+
+  <div class="protocols__notice">
+    <mat-icon>verified_user</mat-icon>
+    <p>
+      <strong>Tu gardes le contrôle.</strong>
+      AquaManager prépare le programme, mais aucune étape n’est ajoutée sans ta validation.
+      Les tâches pourront ensuite être déplacées, modifiées ou supprimées dans le calendrier.
+    </p>
+  </div>
+
+  <div class="protocol-grid" *ngIf="!loading; else protocolLoader">
+    <article
+      class="protocol-card protocol-card--{{ protocol.tone }}"
+      *ngFor="let protocol of protocols"
+      [class.protocol-card--recommended]="protocol.recommended"
+    >
+      <div class="protocol-card__top">
+        <div class="protocol-card__icon"><mat-icon>{{ protocol.icon }}</mat-icon></div>
+        <span class="protocol-card__badge" *ngIf="protocol.recommended">
+          <mat-icon>auto_awesome</mat-icon>Recommandé
+        </span>
+        <span class="protocol-card__badge protocol-card__badge--active" *ngIf="isExisting(protocol.key)">
+          <mat-icon>check_circle</mat-icon>Déjà planifié
+        </span>
+      </div>
+
+      <div class="protocol-card__body">
+        <h3>{{ protocol.title }}</h3>
+        <p class="protocol-card__subtitle">{{ protocol.subtitle }}</p>
+        <p class="protocol-card__reason">{{ protocol.reason }}</p>
+      </div>
+
+      <div class="protocol-card__meta">
+        <span><mat-icon>format_list_numbered</mat-icon>{{ protocol.steps.length }} étapes</span>
+        <span><mat-icon>schedule</mat-icon>{{ protocol.duration }}</span>
+      </div>
+
+      <button mat-flat-button type="button" (click)="selectProtocol(protocol)">
+        <mat-icon>{{ isExisting(protocol.key) ? 'visibility' : 'arrow_forward' }}</mat-icon>
+        {{ isExisting(protocol.key) ? 'Voir le protocole' : 'Préparer ce protocole' }}
+      </button>
+    </article>
+  </div>
+
+  <ng-template #protocolLoader>
+    <div class="protocols__loader">
+      <mat-progress-spinner mode="indeterminate" diameter="34"></mat-progress-spinner>
+      <span>Vérification du planning…</span>
+    </div>
+  </ng-template>
+
+  <section class="active-protocols" aria-labelledby="active-protocols-title">
+    <header class="active-protocols__header">
+      <div>
+        <span class="protocols__eyebrow">Planning actif</span>
+        <h2 id="active-protocols-title">Protocoles en cours</h2>
+        <p>Consulte, ajuste ou arrête les programmes déjà ajoutés à cet aquarium.</p>
+      </div>
+      <span class="active-protocols__count" *ngIf="activeProtocols.length">
+        {{ activeProtocols.length }}
+        protocole{{ activeProtocols.length > 1 ? 's' : '' }}
+      </span>
+    </header>
+
+    <div class="active-protocols__list" *ngIf="activeProtocols.length; else noActiveProtocol">
+      <article
+        class="active-protocol active-protocol--{{ protocol.tone }}"
+        *ngFor="let protocol of activeProtocols"
+      >
+        <header class="active-protocol__header">
+          <div class="active-protocol__identity">
+            <span class="active-protocol__icon"><mat-icon>{{ protocol.icon }}</mat-icon></span>
+            <div>
+              <span>En cours</span>
+              <h3>{{ protocol.title }}</h3>
+              <p>
+                {{ protocol.tasks.length }} étape{{ protocol.tasks.length > 1 ? 's' : '' }}
+                dans le planning
+              </p>
+            </div>
+          </div>
+          <button
+            mat-stroked-button
+            type="button"
+            class="active-protocol__delete"
+            [disabled]="deletingProtocolKey !== null"
+            (click)="deleteProtocol(protocol)"
+          >
+            <mat-progress-spinner
+              *ngIf="deletingProtocolKey === protocol.key"
+              mode="indeterminate"
+              diameter="18"
+            ></mat-progress-spinner>
+            <mat-icon *ngIf="deletingProtocolKey !== protocol.key">delete_outline</mat-icon>
+            Supprimer le protocole
+          </button>
+        </header>
+
+        <div class="active-protocol__progress">
+          <span [style.width.%]="protocolProgress(protocol)"></span>
+        </div>
+
+        <div class="active-task-list">
+          <article class="active-task" *ngFor="let task of protocol.tasks">
+            <ng-container *ngIf="editingTaskId !== task.id; else taskEditor">
+              <div class="active-task__date">
+                <strong>{{ task.dueAt | date:'dd' }}</strong>
+                <span>{{ task.dueAt | date:'MMM' }}</span>
+                <small>{{ task.dueAt | date:'HH:mm' }}</small>
+              </div>
+              <div class="active-task__body">
+                <div class="active-task__title-row">
+                  <h4>{{ task.title }}</h4>
+                  <span class="active-task__repeat" *ngIf="taskRepeatLabel(task) as repeat">
+                    <mat-icon>repeat</mat-icon>{{ repeat }}
+                  </span>
+                </div>
+                <p>{{ cleanProtocolDescription(task.description) }}</p>
+              </div>
+              <div class="active-task__actions">
+                <button
+                  mat-icon-button
+                  type="button"
+                  title="Modifier cette étape"
+                  [attr.aria-label]="'Modifier ' + task.title"
+                  (click)="startTaskEdit(task)"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="active-task__remove"
+                  title="Supprimer cette étape"
+                  [disabled]="deletingTaskId !== null"
+                  [attr.aria-label]="'Supprimer ' + task.title"
+                  (click)="deleteTask(task)"
+                >
+                  <mat-progress-spinner
+                    *ngIf="deletingTaskId === task.id"
+                    mode="indeterminate"
+                    diameter="18"
+                  ></mat-progress-spinner>
+                  <mat-icon *ngIf="deletingTaskId !== task.id">delete</mat-icon>
+                </button>
+              </div>
+            </ng-container>
+
+            <ng-template #taskEditor>
+              <div class="active-task-editor">
+                <div class="active-task-editor__head">
+                  <div>
+                    <span>Modifier l’étape</span>
+                    <h4>{{ task.title }}</h4>
+                  </div>
+                  <span class="active-task__repeat" *ngIf="taskRepeatLabel(task) as repeat">
+                    <mat-icon>repeat</mat-icon>{{ repeat }}
+                  </span>
+                </div>
+                <label>
+                  <span>Date et heure</span>
+                  <input type="datetime-local" [(ngModel)]="editDueAt" [disabled]="savingTask" />
+                </label>
+                <label>
+                  <span>Consigne</span>
+                  <textarea rows="3" maxlength="1500" [(ngModel)]="editDescription" [disabled]="savingTask"></textarea>
+                </label>
+                <div class="active-task-editor__actions">
+                  <button mat-button type="button" [disabled]="savingTask" (click)="cancelTaskEdit()">
+                    Annuler
+                  </button>
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    type="button"
+                    [disabled]="savingTask || !editDueAt"
+                    (click)="saveTaskEdit(task)"
+                  >
+                    <mat-progress-spinner *ngIf="savingTask" mode="indeterminate" diameter="18"></mat-progress-spinner>
+                    <mat-icon *ngIf="!savingTask">save</mat-icon>
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            </ng-template>
+          </article>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #noActiveProtocol>
+      <div class="active-protocols__empty" *ngIf="!loading">
+        <span><mat-icon>event_available</mat-icon></span>
+        <div>
+          <h3>Aucun protocole en cours</h3>
+          <p>Choisis un programme ci-dessus pour créer un suivi guidé dans ton planning.</p>
+        </div>
+      </div>
+    </ng-template>
+  </section>
+</section>
+
+<div class="protocol-preview-backdrop" *ngIf="selectedProtocol" (click)="closePreview()">
+  <aside
+    class="protocol-preview"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="protocol-preview-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="protocol-preview__header">
+      <div class="protocol-preview__heading">
+        <div class="protocol-preview__icon protocol-preview__icon--{{ selectedProtocol.tone }}">
+          <mat-icon>{{ selectedProtocol.icon }}</mat-icon>
+        </div>
+        <div>
+          <span>Aperçu du programme</span>
+          <h2 id="protocol-preview-title">{{ selectedProtocol.title }}</h2>
+        </div>
+      </div>
+      <button mat-icon-button type="button" aria-label="Fermer" [disabled]="creating" (click)="closePreview()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </header>
+
+    <div class="protocol-preview__body">
+      <label class="start-date" *ngIf="selectedProtocol.key !== 'VACATION'">
+        <span>
+          <mat-icon>calendar_today</mat-icon>
+          Date de début
+        </span>
+        <input type="date" [(ngModel)]="startDate" [disabled]="creating" />
+      </label>
+
+      <div class="absence-dates" *ngIf="selectedProtocol.key === 'VACATION'">
+        <div class="absence-dates__intro">
+          <mat-icon>flight_takeoff</mat-icon>
+          <div>
+            <strong>Dates de l’absence</strong>
+            <span>Le programme s’adapte automatiquement à sa durée.</span>
+          </div>
+        </div>
+        <div class="absence-dates__fields">
+          <label>
+            <span>Départ</span>
+            <input
+              type="date"
+              [(ngModel)]="absenceDepartureDate"
+              [disabled]="creating"
+              (ngModelChange)="onAbsenceDatesChange()"
+            />
+          </label>
+          <mat-icon>arrow_forward</mat-icon>
+          <label>
+            <span>Retour</span>
+            <input
+              type="date"
+              [(ngModel)]="absenceReturnDate"
+              [min]="minimumReturnDate"
+              [disabled]="creating"
+              (ngModelChange)="onAbsenceDatesChange()"
+            />
+          </label>
+        </div>
+        <div class="absence-dates__duration">
+          <mat-icon>nights_stay</mat-icon>
+          <strong>{{ absenceDurationDays }} jour{{ absenceDurationDays > 1 ? 's' : '' }} d’absence</strong>
+          <span *ngIf="absenceDurationDays >= 7">Une vérification intermédiaire est prévue.</span>
+        </div>
+      </div>
+
+      <div class="protocol-preview__summary">
+        <span>{{ selectedSteps.size }} étape{{ selectedSteps.size > 1 ? 's' : '' }} sélectionnée{{ selectedSteps.size > 1 ? 's' : '' }}</span>
+        <span>
+          {{
+            selectedProtocol.key === 'VACATION'
+              ? absenceDurationDays + ' jours'
+              : selectedProtocol.duration
+          }}
+        </span>
+      </div>
+
+      <ol class="protocol-steps">
+        <li
+          class="protocol-step"
+          *ngFor="let step of previewSteps; let index = index"
+          [class.protocol-step--disabled]="!selectedSteps.has(step.id)"
+        >
+          <div class="protocol-step__rail">
+            <span>{{ index + 1 }}</span>
+          </div>
+          <div class="protocol-step__content">
+            <div class="protocol-step__title-row">
+              <div>
+                <strong>{{ step.title }}</strong>
+                <span class="protocol-step__date">{{ stepDateLabel(step) }}</span>
+              </div>
+              <mat-checkbox
+                [checked]="selectedSteps.has(step.id)"
+                [disabled]="creating"
+                [attr.aria-label]="'Inclure ' + step.title"
+                (change)="toggleStep(step.id, $event.checked)"
+              ></mat-checkbox>
+            </div>
+            <p>{{ step.description }}</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <footer class="protocol-preview__footer">
+      <p>
+        <mat-icon>info</mat-icon>
+        {{
+          isExisting(selectedProtocol.key)
+            ? 'Ce protocole est déjà présent dans le calendrier.'
+            : 'Les horaires sont fixés à 9 h et restent modifiables.'
+        }}
+      </p>
+      <div>
+        <button mat-button type="button" [disabled]="creating" (click)="closePreview()">Annuler</button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="creating || !selectedSteps.size || isExisting(selectedProtocol.key)"
+          (click)="activateProtocol()"
+        >
+          <mat-progress-spinner *ngIf="creating" mode="indeterminate" diameter="20"></mat-progress-spinner>
+          <mat-icon *ngIf="!creating">{{ isExisting(selectedProtocol.key) ? 'check_circle' : 'event_available' }}</mat-icon>
+          {{
+            creating
+              ? 'Création…'
+              : isExisting(selectedProtocol.key)
+                ? 'Déjà planifié'
+                : 'Ajouter au planning'
+          }}
+        </button>
+      </div>
+    </footer>
+  </aside>
+</div>

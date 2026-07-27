@@ -10,8 +10,15 @@
 .chart-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: flex-start;
+  gap: 10px;
   margin-bottom: 8px;
+
+  > div {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+  }
 
   .metric-name {
     font-size: 1rem;
@@ -25,6 +32,105 @@
   }
 }
 
+.chart-card--interactive {
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 159, 227, 0.28);
+    box-shadow: 0 12px 26px rgba(0, 119, 154, 0.11);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(0, 159, 227, 0.25);
+    outline-offset: 3px;
+  }
+}
+
+.metric-status {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 850;
+
+  &--ok {
+    color: #18752d;
+    background: rgba(57, 181, 74, 0.12);
+  }
+
+  &--warning {
+    color: #a33a27;
+    background: rgba(220, 73, 47, 0.12);
+  }
+
+  &--unknown {
+    color: #607078;
+    background: rgba(96, 112, 120, 0.1);
+  }
+}
+
+.metric-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+
+  strong {
+    color: #1f3522;
+    font-size: 1.42rem;
+    font-weight: 900;
+
+    small {
+      color: #5b6b63;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+  }
+
+  span {
+    color: #5b6b63;
+    font-size: 0.7rem;
+    text-align: right;
+  }
+}
+
+.target-caption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 18px;
+  margin-bottom: 5px;
+  color: #54705a;
+  font-size: 0.68rem;
+
+  &__swatch {
+    width: 16px;
+    height: 7px;
+    border-radius: 3px;
+    background: rgba(57, 181, 74, 0.18);
+    border: 1px solid rgba(57, 181, 74, 0.28);
+  }
+
+  &--missing {
+    color: #68777b;
+
+    mat-icon {
+      width: 15px;
+      height: 15px;
+      font-size: 15px;
+    }
+  }
+}
+
+.measurement-date {
+  margin-bottom: 7px;
+  color: #718078;
+  font-size: 0.67rem;
+}
+
 .chart-wrapper {
   position: relative;
   width: 100%;
@@ -36,3 +142,33 @@
 
 .overlay { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
 .empty   { color: #607d8b; font-size: 0.85rem; }
+
+.chart-details-hint {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 8px;
+  color: #087f8c;
+  font-size: 0.7rem;
+  font-weight: 800;
+
+  mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+}
+
+
+@media (max-width: 520px) {
+  .metric-summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+
+    span {
+      text-align: left;
+    }
+  }
+}

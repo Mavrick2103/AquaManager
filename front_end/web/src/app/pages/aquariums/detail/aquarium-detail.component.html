@@ -80,7 +80,12 @@
   </div>
 </section>
 
-<mat-tab-group dynamicHeight class="tabs-group" (selectedIndexChange)="onTabChange($event)">
+<mat-tab-group
+  dynamicHeight
+  class="tabs-group"
+  [(selectedIndex)]="selectedTabIndex"
+  (selectedIndexChange)="onTabChange($event)"
+>
   <!-- ===================== Mesures ===================== -->
   <mat-tab label="Mesures">
     <div class="tab-section">
@@ -91,82 +96,210 @@
         </button>
       </div>
 
-      <div class="mini-grid">
-        <div class="mini-card">
-          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="ph" />
+      <section class="chart-toolbar" aria-labelledby="chart-period-title">
+        <div class="chart-toolbar__intro">
+          <span class="chart-toolbar__eyebrow">Évolution des paramètres</span>
+          <h2 id="chart-period-title">Choisis la période à analyser</h2>
+          <p>La zone verte représente la plage de référence de ton aquarium.</p>
         </div>
 
-        <div class="mini-card">
-          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="temp" />
+        <div class="chart-periods" role="group" aria-label="Période des graphiques">
+          <button
+            type="button"
+            *ngFor="let period of chartPeriods"
+            [class.chart-periods__button--active]="chartPeriodDays === period.days"
+            [attr.aria-pressed]="chartPeriodDays === period.days"
+            (click)="chartPeriodDays = period.days"
+          >
+            {{ period.label }}
+          </button>
+        </div>
+      </section>
+
+      <section class="measurement-overview" *ngIf="lastMeasurement">
+        <div class="measurement-overview__date">
+          <mat-icon>schedule</mat-icon>
+          <div>
+            <span>Dernière mesure</span>
+            <strong>{{ lastMeasurement.measuredAt | date: 'd MMMM y à HH:mm' }}</strong>
+            <div
+              class="measurement-freshness"
+              [class]="'measurement-freshness measurement-freshness--' + measurementFreshness.level"
+            >
+              <span>{{ measurementFreshness.label }}</span>
+              <small>{{ measurementFreshness.detail }}</small>
+            </div>
+          </div>
         </div>
 
-        <div class="mini-card">
-          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no2" />
+        <div class="measurement-overview__stats">
+          <span>
+            <strong>{{ chartSummary.measured }}</strong>
+            paramètres renseignés
+          </span>
+          <span class="is-ok" *ngIf="chartSummary.ok + chartSummary.warning > 0">
+            <strong>{{ chartSummary.ok + chartSummary.warning }}</strong>
+            évalués · {{ chartSummary.ok }} correct{{ chartSummary.ok > 1 ? 's' : '' }}
+          </span>
+          <span class="is-warning" *ngIf="chartSummary.warning > 0">
+            <strong>{{ chartSummary.warning }}</strong>
+            à vérifier
+          </span>
+          <span
+            *ngIf="chartSummary.unknown > 0"
+            title="Ces paramètres possèdent une valeur, mais aucune plage minimale ou maximale ne permet encore de les évaluer."
+          >
+            <strong>{{ chartSummary.unknown }}</strong>
+            non évaluables
+          </span>
         </div>
 
-        <div class="mini-card">
-          <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="no3" />
+        <div class="measurement-overview__reference">
+          <span>
+            <mat-icon>tune</mat-icon>
+            Profil de référence
+            <strong>{{ getProfileLabel() }}</strong>
+          </span>
+          <button type="button" (click)="openTargetConfiguration()">
+            Configurer les références
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
         </div>
 
-        <ng-container *ngIf="waterType === 'EAU_DOUCE'">
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="kh" />
+        <button
+          *ngIf="chartSummary.warning > 0"
+          type="button"
+          class="chart-sort"
+          [class.chart-sort--active]="chartSortAlertsFirst"
+          [attr.aria-pressed]="chartSortAlertsFirst"
+          (click)="chartSortAlertsFirst = !chartSortAlertsFirst"
+        >
+          <mat-icon>priority_high</mat-icon>
+          Anomalies en premier
+        </button>
+
+        <div class="measurement-overview__healthy" *ngIf="chartSummary.warning === 0">
+          <mat-icon>check_circle</mat-icon>
+          <span>
+            <strong>
+              {{ chartSummary.ok + chartSummary.warning }} paramètre{{
+                chartSummary.ok + chartSummary.warning > 1 ? 's' : ''
+              }}
+              évalué{{ chartSummary.ok + chartSummary.warning > 1 ? 's' : '' }}
+            </strong>
+            Aucun dépassement parmi les paramètres évalués
+          </span>
+        </div>
+
+        <button
+          *ngIf="measurementFreshness.level === 'old'"
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="measurement-overview__renew"
+          (click)="openMeasurementDialog()"
+        >
+          <mat-icon>add_chart</mat-icon>
+          Ajouter une nouvelle mesure
+        </button>
+      </section>
+
+      <section class="maintenance-timeline" *ngIf="chartPeriodEvents.length">
+        <header class="maintenance-timeline__header">
+          <div>
+            <span class="maintenance-timeline__eyebrow">Journal du bac</span>
+            <h3>Entretiens sur cette période</h3>
+            <p>
+              Ces événements peuvent expliquer certaines variations dans les mesures.
+            </p>
           </div>
 
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="gh" />
-          </div>
+          <button
+            type="button"
+            class="maintenance-timeline__toggle"
+            [class.maintenance-timeline__toggle--active]="showMaintenanceMarkers"
+            [attr.aria-pressed]="showMaintenanceMarkers"
+            (click)="showMaintenanceMarkers = !showMaintenanceMarkers"
+          >
+            <mat-icon>{{ showMaintenanceMarkers ? 'visibility' : 'visibility_off' }}</mat-icon>
+            {{ showMaintenanceMarkers ? 'Repères affichés' : 'Afficher sur les courbes' }}
+          </button>
+        </header>
 
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="co2" />
-          </div>
+        <div class="maintenance-timeline__track">
+          <article class="maintenance-timeline__event" *ngFor="let event of chartPeriodEvents">
+            <span class="maintenance-timeline__icon">
+              <mat-icon>{{ maintenanceIcon(event.type) }}</mat-icon>
+            </span>
+            <div>
+              <time [attr.datetime]="event.date">{{ event.date | date: 'd MMMM y' }}</time>
+              <strong>{{ event.title }}</strong>
+              <div
+                class="maintenance-impact"
+                *ngIf="maintenanceImpacts[event.id] as impacts"
+              >
+                <span
+                  *ngFor="let impact of impacts"
+                  [class.maintenance-impact__up]="impact.delta > 0"
+                  [class.maintenance-impact__down]="impact.delta < 0"
+                >
+                  <b>{{ impact.label }}</b>
+                  {{ formatImpactValue(impact.before) }}
+                  <mat-icon>arrow_forward</mat-icon>
+                  {{ formatImpactValue(impact.after) }} {{ impact.unit }}
+                  <small *ngIf="impact.percent !== null">
+                    {{ impact.percent > 0 ? '+' : '' }}{{ impact.percent }} %
+                  </small>
+                </span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
 
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="po4" />
-          </div>
+      <mat-accordion class="chart-groups" multi>
+        <mat-expansion-panel
+          *ngFor="let group of visibleChartGroups; let first = first"
+          [expanded]="first"
+          class="chart-group"
+        >
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <mat-icon>{{ group.icon }}</mat-icon>
+              {{ group.title }}
+            </mat-panel-title>
+            <mat-panel-description>{{ group.subtitle }}</mat-panel-description>
+          </mat-expansion-panel-header>
 
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="fe" />
+          <div class="mini-grid">
+            <div class="mini-card" *ngFor="let item of metricsForGroup(group.key)">
+              <app-water-measurements-chart
+                [aquariumId]="id"
+                [waterType]="waterType"
+                [metric]="item.metric"
+                [measurements]="measurements"
+                [events]="maintenanceEvents"
+                [showEvents]="showMaintenanceMarkers"
+                [periodDays]="chartPeriodDays"
+                [target]="getRange(item.targetKey)"
+                [interactive]="true"
+                (detailsRequested)="openChartDetails(item)"
+              />
+            </div>
           </div>
-
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="k" />
-          </div>
-
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="sio2" />
-          </div>
-
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="nh3" />
-          </div>
-        </ng-container>
-
-        <ng-container *ngIf="waterType === 'EAU_DE_MER'">
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="dkh" />
-          </div>
-
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="sal" />
-          </div>
-
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="ca" />
-          </div>
-
-          <div class="mini-card">
-            <app-water-measurements-chart [aquariumId]="id" [waterType]="waterType" metric="mg" />
-          </div>
-        </ng-container>
-      </div>
+        </mat-expansion-panel>
+      </mat-accordion>
 
       <section class="history" *ngIf="!loading">
         <div class="history-header">
-          <h2>Historique des mesures</h2>
+          <div>
+            <span class="history-header__eyebrow">Journal des analyses</span>
+            <h2>Historique des mesures</h2>
+            <p>Retrouve rapidement les évolutions et les valeurs à surveiller.</p>
+          </div>
 
           <mat-form-field appearance="outline" class="limit-select">
-            <mat-label>Afficher</mat-label>
+            <mat-label>Nombre de relevés</mat-label>
             <mat-select [(value)]="selectedLimit" (selectionChange)="applyLimit()">
               <mat-option *ngFor="let n of limitOptions" [value]="n">
                 {{ n === 0 ? 'Toutes' : n }}
@@ -175,92 +308,97 @@
           </mat-form-field>
         </div>
 
-        <div class="history-table-wrapper">
-          <table mat-table [dataSource]="displayedMeasurements" class="mat-elevation-z0">
-            <ng-container matColumnDef="measuredAt">
-              <th mat-header-cell *matHeaderCellDef>Date</th>
-              <td mat-cell *matCellDef="let m">{{ m.measuredAt | date: 'medium' }}</td>
-            </ng-container>
+        <div class="history-list">
+          <article
+            class="history-entry"
+            *ngFor="let view of measurementHistory; trackBy: trackHistory"
+            [class]="'history-entry history-entry--' + view.status"
+          >
+            <div class="history-entry__date">
+              <span class="history-entry__day">
+                {{ view.measurement.measuredAt | date: 'dd' }}
+              </span>
+              <span>
+                <strong>{{ view.measurement.measuredAt | date: 'MMMM y' }}</strong>
+                <small>{{ view.measurement.measuredAt | date: 'HH:mm' }}</small>
+              </span>
+            </div>
 
-            <ng-container matColumnDef="ph">
-              <th mat-header-cell *matHeaderCellDef>pH</th>
-              <td mat-cell *matCellDef="let m">{{ m.ph ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="temp">
-              <th mat-header-cell *matHeaderCellDef>Temp (°C)</th>
-              <td mat-cell *matCellDef="let m">{{ m.temp ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="no2">
-              <th mat-header-cell *matHeaderCellDef>NO₂</th>
-              <td mat-cell *matCellDef="let m">{{ m.no2 ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="no3">
-              <th mat-header-cell *matHeaderCellDef>NO₃</th>
-              <td mat-cell *matCellDef="let m">{{ m.no3 ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="kh">
-              <th mat-header-cell *matHeaderCellDef>KH</th>
-              <td mat-cell *matCellDef="let m">{{ m.kh ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="gh">
-              <th mat-header-cell *matHeaderCellDef>GH</th>
-              <td mat-cell *matCellDef="let m">{{ m.gh ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="po4">
-              <th mat-header-cell *matHeaderCellDef>PO₄</th>
-              <td mat-cell *matCellDef="let m">{{ m.po4 ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="fe">
-              <th mat-header-cell *matHeaderCellDef>Fe</th>
-              <td mat-cell *matCellDef="let m">{{ m.fe ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container *ngIf="waterType === 'EAU_DOUCE'" matColumnDef="k">
-              <th mat-header-cell *matHeaderCellDef>K</th>
-              <td mat-cell *matCellDef="let m">{{ m.k ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container *ngIf="waterType === 'EAU_DE_MER'" matColumnDef="dkh">
-              <th mat-header-cell *matHeaderCellDef>dKH</th>
-              <td mat-cell *matCellDef="let m">{{ m.dkh ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container *ngIf="waterType === 'EAU_DE_MER'" matColumnDef="salinity">
-              <th mat-header-cell *matHeaderCellDef>Salinité</th>
-              <td mat-cell *matCellDef="let m">{{ m.salinity ?? '—' }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let m">
-                <button
-                  mat-icon-button
-                  color="warn"
-                  (click)="deleteMeasurement(m.id)"
-                  aria-label="Supprimer"
+            <div class="history-entry__content">
+              <div class="history-entry__summary">
+                <span
+                  class="history-entry__status"
+                  [class]="'history-entry__status history-entry__status--' + view.status"
                 >
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </td>
-            </ng-container>
+                  <mat-icon>
+                    {{
+                      view.status === 'warning'
+                        ? 'warning'
+                        : view.status === 'ok'
+                          ? 'check_circle'
+                          : 'help_outline'
+                    }}
+                  </mat-icon>
+                  {{ historyStatusLabel(view) }}
+                </span>
+                <small>
+                  {{ view.metrics.length }} paramètre{{ view.metrics.length > 1 ? 's' : '' }}
+                  renseigné{{ view.metrics.length > 1 ? 's' : '' }}
+                </small>
+              </div>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-          </table>
+              <div class="history-entry__metrics">
+                <span
+                  *ngFor="let metric of view.metrics"
+                  [class]="'history-metric history-metric--' + metric.status"
+                  [title]="
+                    metric.status === 'unknown'
+                      ? 'Aucune plage de référence configurée'
+                      : metric.status === 'warning'
+                        ? 'Valeur hors de la plage de référence'
+                        : 'Valeur dans la plage de référence'
+                  "
+                >
+                  <small>{{ metric.label }}</small>
+                  <strong>
+                    {{ formatHistoryValue(metric.value) }}
+                    <em *ngIf="metric.unit">{{ metric.unit }}</em>
+                  </strong>
+                </span>
+              </div>
+            </div>
+
+            <button
+              mat-icon-button
+              type="button"
+              class="history-entry__delete"
+              (click)="deleteMeasurement(view.measurement.id)"
+              [attr.aria-label]="
+                'Supprimer la mesure du ' + (view.measurement.measuredAt | date: 'd MMMM y')
+              "
+              title="Supprimer ce relevé"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </article>
         </div>
 
-        <p *ngIf="!displayedMeasurements.length" class="history-empty">
-          Aucune mesure enregistrée pour le moment.
-        </p>
+        <div *ngIf="!measurementHistory.length" class="history-empty">
+          <mat-icon>science</mat-icon>
+          <strong>Aucune mesure enregistrée</strong>
+          <span>Ajoute ton premier relevé pour commencer le suivi de ton aquarium.</span>
+          <button mat-flat-button color="primary" type="button" (click)="openMeasurementDialog()">
+            <mat-icon>add</mat-icon>
+            Ajouter une mesure
+          </button>
+        </div>
       </section>
     </div>
+  </mat-tab>
+
+  <!-- ===================== Tâches ===================== -->
+  <mat-tab label="Tâches">
+    <app-aquarium-tasks [aquariumId]="id" />
   </mat-tab>
 
   <!-- ===================== Solutions ===================== -->
@@ -868,10 +1006,17 @@
             </mat-card>
 
             <ng-template #targetsOk>
-              <mat-card class="sol-card targets-card" *ngIf="targets && targetsForm; else noTargets">
+              <mat-card
+                id="aquarium-target-configuration"
+                class="sol-card targets-card"
+                *ngIf="targets && targetsForm; else noTargets"
+              >
                 <mat-card-content>
                   <mat-accordion class="targets-accordion">
-                    <mat-expansion-panel class="targets-panel" [expanded]="false">
+                    <mat-expansion-panel
+                      class="targets-panel"
+                      [(expanded)]="targetPanelExpanded"
+                    >
                       <mat-expansion-panel-header>
                         <mat-panel-title>
                           <div class="targets-title">
@@ -1197,6 +1342,16 @@
         </section>
       </ng-template>
     </div>
+  </mat-tab>
+
+  <mat-tab label="Protocoles">
+    <app-aquarium-protocols
+      *ngIf="protocolAquarium"
+      [aquarium]="protocolAquarium"
+      [fishCount]="fishInTank.length"
+      [plantCount]="plantsInTank.length"
+      [initialProtocolKey]="initialProtocolKey"
+    ></app-aquarium-protocols>
   </mat-tab>
 
   <!-- ===================== Dans mon Aquarium ===================== -->

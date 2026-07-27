@@ -1,61 +1,237 @@
-<section class="toolbar">
-  <a class="brand" routerLink="/">
+<header class="page-header">
+  <a class="brand" routerLink="/" aria-label="Retour à l’accueil">
     <img src="/Logo_AquaManger.png" alt="AquaManager" class="logo" />
   </a>
 
-  <h1>Mes aquariums</h1>
+  <div class="page-header__title">
+    <span>Tableau de bord</span>
+    <h1>Mes aquariums</h1>
+    <p>Retrouve l’essentiel de tes bacs et ce qui mérite ton attention.</p>
+  </div>
 
-  <button mat-raised-button class="btn-primary" (click)="openCreate()">
-    <mat-icon>add</mat-icon>
-    <span>Nouvel aquarium</span>
+  <button
+    mat-raised-button
+    class="btn-primary"
+    [class.btn-primary--limited]="isAtLimit"
+    (click)="openCreate()"
+  >
+    <mat-icon>{{ isAtLimit ? 'lock' : 'add' }}</mat-icon>
+    <span>{{ isAtLimit ? 'Quota atteint' : 'Nouvel aquarium' }}</span>
   </button>
-</section>
+</header>
 
 <ng-container *ngIf="!loading; else loadingTpl">
-  <section class="grid" *ngIf="items.length; else empty">
-    <mat-card class="card"
-              *ngFor="let a of items"
-              (click)="goTo(a)"
-              style="cursor:pointer;">
-      <mat-card-header>
-        <mat-card-title>{{ a.name }}</mat-card-title>
-        <mat-card-subtitle>
-          {{ a.lengthCm }}×{{ a.widthCm }}×{{ a.heightCm }} cm • ≈ {{ litersOf(a) }} L
-        </mat-card-subtitle>
-      </mat-card-header>
-
-      <mat-card-content>
-        <div class="row">
-          <span class="label">Type d'eau</span>
-          <mat-chip-set>
-            <mat-chip [ngClass]="a.waterType === 'EAU_DE_MER' ? 'mer' : 'douce'">
-              {{ a.waterType === 'EAU_DE_MER' ? 'Eau de mer' : 'Eau douce' }}
-            </mat-chip>
-          </mat-chip-set>
+  <main class="aquariums-main">
+    <section class="overview-strip" aria-label="Résumé des aquariums">
+      <div class="overview-strip__stat">
+        <span class="overview-strip__icon"><mat-icon>water</mat-icon></span>
+        <div>
+          <strong>{{ items.length }}</strong>
+          <span>Aquarium{{ items.length > 1 ? 's' : '' }}</span>
         </div>
+      </div>
 
-        <div class="row">
-          <span class="label">Mise en eau</span>
-          <span class="value">{{ a.startDate | date:'dd/MM/yyyy' }}</span>
+      <div class="overview-strip__stat">
+        <span class="overview-strip__icon overview-strip__icon--attention">
+          <mat-icon>notifications_active</mat-icon>
+        </span>
+        <div>
+          <strong>{{ attentionCount }}</strong>
+          <span>À surveiller</span>
         </div>
-      </mat-card-content>
-    </mat-card>
-  </section>
+      </div>
 
-  <ng-template #empty>
-    <mat-card class="empty">
-      <mat-card-content>
-        <p>Vous n’avez pas encore d’aquarium.</p>
-        <button mat-raised-button class="btn-primary" (click)="openCreate()">
-          <mat-icon>add</mat-icon> Créer mon premier aquarium
+      <div class="overview-strip__quota" [class.overview-strip__quota--limit]="isAtLimit">
+        <div>
+          <span>Plan {{ planLabel }}</span>
+          <strong *ngIf="aquariumLimit !== null">{{ items.length }} / {{ aquariumLimit }} bacs utilisés</strong>
+          <strong *ngIf="aquariumLimit === null">Aquariums illimités</strong>
+        </div>
+        <button
+          *ngIf="isAtLimit && effectivePlan !== 'PRO'"
+          mat-stroked-button
+          type="button"
+          (click)="goToSubscription()"
+        >
+          Voir les abonnements
         </button>
-      </mat-card-content>
-    </mat-card>
-  </ng-template>
+      </div>
+    </section>
+
+    <section class="aquarium-tools" *ngIf="items.length">
+      <div>
+        <span class="aquarium-tools__eyebrow">Vue d’ensemble</span>
+        <h2>État de tes aquariums</h2>
+      </div>
+      <div class="aquarium-filters" role="group" aria-label="Filtrer les aquariums">
+        <button
+          type="button"
+          [class.is-active]="activeFilter === 'ALL'"
+          [attr.aria-pressed]="activeFilter === 'ALL'"
+          (click)="activeFilter = 'ALL'"
+        >
+          Tous <span>{{ items.length }}</span>
+        </button>
+        <button
+          type="button"
+          [class.is-active]="activeFilter === 'ATTENTION'"
+          [attr.aria-pressed]="activeFilter === 'ATTENTION'"
+          (click)="activeFilter = 'ATTENTION'"
+        >
+          À surveiller <span>{{ attentionCount }}</span>
+        </button>
+        <button
+          type="button"
+          [class.is-active]="activeFilter === 'STABLE'"
+          [attr.aria-pressed]="activeFilter === 'STABLE'"
+          (click)="activeFilter = 'STABLE'"
+        >
+          À jour <span>{{ items.length - attentionCount }}</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="aquarium-grid" *ngIf="displayedItems.length; else filteredEmpty">
+      <article
+        class="aquarium-card"
+        *ngFor="let aquarium of displayedItems"
+        [class]="'aquarium-card aquarium-card--' + aquariumStatus(aquarium)"
+        tabindex="0"
+        role="link"
+        [attr.aria-label]="'Ouvrir ' + aquarium.name"
+        (click)="goTo(aquarium)"
+        (keydown.enter)="goTo(aquarium)"
+      >
+        <div
+          class="aquarium-card__cover"
+          [class.aquarium-card__cover--marine]="aquarium.waterType === 'EAU_DE_MER'"
+        >
+          <div class="aquarium-card__bubbles" aria-hidden="true">
+            <i></i><i></i><i></i>
+          </div>
+          <mat-icon class="aquarium-card__water-icon">
+            {{ aquarium.waterType === 'EAU_DE_MER' ? 'waves' : 'water_drop' }}
+          </mat-icon>
+          <span class="aquarium-card__type">
+            {{ aquarium.waterType === 'EAU_DE_MER' ? 'Eau de mer' : 'Eau douce' }}
+          </span>
+          <span
+            class="aquarium-card__status"
+            [class]="'aquarium-card__status aquarium-card__status--' + aquariumStatus(aquarium)"
+          >
+            <mat-icon>
+              {{
+                aquariumStatus(aquarium) === 'stable'
+                  ? 'check_circle'
+                  : aquariumStatus(aquarium) === 'urgent'
+                    ? 'priority_high'
+                    : 'science'
+              }}
+            </mat-icon>
+            {{ statusLabel(aquarium) }}
+          </span>
+        </div>
+
+        <div class="aquarium-card__content">
+          <div class="aquarium-card__heading">
+            <div>
+              <h3>{{ aquarium.name }}</h3>
+              <p>
+                {{ aquarium.volumeL | number:'1.0-0' }} L ·
+                {{ aquarium.lengthCm }} × {{ aquarium.widthCm }} × {{ aquarium.heightCm }} cm
+              </p>
+            </div>
+            <span class="aquarium-card__age">
+              <mat-icon>history</mat-icon>{{ aquariumAge(aquarium) }}
+            </span>
+          </div>
+
+          <div class="aquarium-card__metrics">
+            <div>
+              <mat-icon>set_meal</mat-icon>
+              <span><strong>{{ aquarium.fishCount }}</strong> poisson{{ aquarium.fishCount > 1 ? 's' : '' }}</span>
+            </div>
+            <div>
+              <mat-icon>eco</mat-icon>
+              <span><strong>{{ aquarium.plantCount }}</strong> plante{{ aquarium.plantCount > 1 ? 's' : '' }}</span>
+            </div>
+            <div>
+              <mat-icon>route</mat-icon>
+              <span><strong>{{ aquarium.activeProtocolCount }}</strong> protocole{{ aquarium.activeProtocolCount > 1 ? 's' : '' }}</span>
+            </div>
+          </div>
+
+          <div class="aquarium-card__followup">
+            <div class="followup-item">
+              <span class="followup-item__icon"><mat-icon>science</mat-icon></span>
+              <div>
+                <span>Dernière analyse</span>
+                <strong>{{ measurementLabel(aquarium) }}</strong>
+              </div>
+            </div>
+
+            <div class="followup-item" [class.followup-item--overdue]="aquarium.overdueTaskCount">
+              <span class="followup-item__icon">
+                <mat-icon>{{ aquarium.overdueTaskCount ? 'event_busy' : 'event_available' }}</mat-icon>
+              </span>
+              <div>
+                <span>{{ aquarium.overdueTaskCount ? 'Entretien en retard' : 'Prochaine action' }}</span>
+                <strong *ngIf="aquarium.overdueTaskCount">
+                  {{ aquarium.overdueTaskCount }} tâche{{ aquarium.overdueTaskCount > 1 ? 's' : '' }} à rattraper
+                </strong>
+                <strong *ngIf="!aquarium.overdueTaskCount && aquarium.nextTaskAt">
+                  {{ aquarium.nextTaskTitle }} · {{ aquarium.nextTaskAt | date:'d MMM' }}
+                </strong>
+                <strong *ngIf="!aquarium.overdueTaskCount && !aquarium.nextTaskAt">
+                  Rien de prévu
+                </strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="aquarium-card__actions">
+          <button mat-stroked-button type="button" (click)="addMeasurement(aquarium, $event)">
+            <mat-icon>add_chart</mat-icon>
+            Ajouter une mesure
+          </button>
+          <span>
+            Voir le détail
+            <mat-icon>arrow_forward</mat-icon>
+          </span>
+        </footer>
+      </article>
+    </section>
+
+    <ng-template #filteredEmpty>
+      <section class="filtered-empty" *ngIf="items.length">
+        <mat-icon>filter_alt_off</mat-icon>
+        <h3>Aucun aquarium dans ce filtre</h3>
+        <button mat-stroked-button type="button" (click)="activeFilter = 'ALL'">Afficher tous les bacs</button>
+      </section>
+    </ng-template>
+
+    <section class="empty-state" *ngIf="!items.length">
+      <div class="empty-state__visual">
+        <mat-icon>water_drop</mat-icon>
+        <span></span><span></span><span></span>
+      </div>
+      <span class="aquarium-tools__eyebrow">Premier pas</span>
+      <h2>Créons ton premier aquarium</h2>
+      <p>
+        Renseigne ses dimensions et son type d’eau. AquaManager préparera ensuite son suivi
+        et pourra t’accompagner pendant le cyclage.
+      </p>
+      <button mat-raised-button class="btn-primary" type="button" (click)="openCreate()">
+        <mat-icon>add</mat-icon> Créer mon aquarium
+      </button>
+    </section>
+  </main>
 </ng-container>
 
 <ng-template #loadingTpl>
   <div class="loading">
-    <mat-spinner diameter="40"></mat-spinner>
+    <mat-spinner diameter="42"></mat-spinner>
+    <span>Préparation de tes aquariums…</span>
   </div>
 </ng-template>

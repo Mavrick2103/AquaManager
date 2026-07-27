@@ -9,6 +9,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AquariumsService, CreateAquariumDto, WaterType } from '../../../core/aquariums.service';
 
 @Component({
@@ -17,7 +19,7 @@ import { AquariumsService, CreateAquariumDto, WaterType } from '../../../core/aq
   imports: [
     CommonModule, ReactiveFormsModule, MatDialogModule, MatFormFieldModule,
     MatInputModule, MatSelectModule, MatDatepickerModule, MatNativeDateModule,
-    MatButtonModule, MatIconModule,
+    MatButtonModule, MatIconModule, MatCheckboxModule, MatSnackBarModule,
   ],
   templateUrl: './aquarium-dialog.component.html',
   styleUrls: ['./aquarium-dialog.component.scss'],
@@ -26,6 +28,7 @@ export class AquariumDialogComponent {
   private fb = inject(FormBuilder);
   private api = inject(AquariumsService);
   private ref = inject(MatDialogRef<AquariumDialogComponent>);
+  private snack = inject(MatSnackBar);
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: any) {
     // calcul initial du litrage
@@ -44,6 +47,7 @@ export class AquariumDialogComponent {
     heightCm: [35, [Validators.required, Validators.min(10), Validators.max(200)]],
     waterType: ['EAU_DOUCE' as WaterType, [Validators.required]],
     startDate: [new Date(), [Validators.required]],
+    setupCycling: [true],
   });
 
   private updateLiters(): void {
@@ -78,12 +82,20 @@ export class AquariumDialogComponent {
     };
 
     this.api.create(dto).subscribe({
-      next: () => {
+      next: (aquarium) => {
         this.submitting.set(false);
-        this.ref.close(true);
+        this.ref.close({
+          aquarium,
+          setupCycling: v.setupCycling !== false,
+        });
       },
-      error: () => {
+      error: (error) => {
         this.submitting.set(false);
+        this.snack.open(
+          error?.error?.message ?? 'Impossible de créer cet aquarium.',
+          'Fermer',
+          { duration: 5000 },
+        );
       },
     });
   }

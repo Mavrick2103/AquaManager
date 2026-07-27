@@ -16,6 +16,11 @@ export class AquariumsController {
     return this.service.findMine(req.user.userId);
   }
 
+  @Get('overview')
+  getOverview(@Request() req) {
+    return this.service.getOverview(req.user.userId);
+  }
+
   @Post()
   create(@Request() req, @Body() dto: CreateAquariumDto) {
     return this.service.create(req.user.userId, dto);

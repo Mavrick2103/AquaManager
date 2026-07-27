@@ -17,6 +17,8 @@ type RepoMock = {
   create: jest.Mock;
   save: jest.Mock;
   remove: jest.Mock;
+  count: jest.Mock;
+  query: jest.Mock;
 };
 
 type UsersRepoMock = {
@@ -26,6 +28,7 @@ type UsersRepoMock = {
 type UsersServiceMock = {
   touchActivity: jest.Mock;
   findById?: jest.Mock;
+  getEffectivePlan: jest.Mock;
 };
 
 describe('Aquariums (tests fonctionnels)', () => {
@@ -43,6 +46,8 @@ describe('Aquariums (tests fonctionnels)', () => {
       create: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
+      query: jest.fn(),
     };
 
     const usersRepoMock: UsersRepoMock = {
@@ -53,6 +58,7 @@ describe('Aquariums (tests fonctionnels)', () => {
       touchActivity: jest.fn().mockResolvedValue(undefined),
       // si ton UsersService a aussi findById injecté/utile ailleurs, laisse-le :
       findById: jest.fn(),
+      getEffectivePlan: jest.fn().mockResolvedValue('CLASSIC'),
     };
 
     const module: TestingModule = await Test.createTestingModule({

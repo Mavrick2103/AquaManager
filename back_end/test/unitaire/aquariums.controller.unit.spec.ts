@@ -10,6 +10,7 @@ describe('AquariumsController', () => {
 
   const mockService: Partial<jest.Mocked<AquariumsService>> = {
     findMine: jest.fn(),
+    getOverview: jest.fn(),
     findOne: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
@@ -37,6 +38,13 @@ describe('AquariumsController', () => {
     const res = await controller.findMine(req);
     expect(service.findMine).toHaveBeenCalledWith(1);
     expect(res).toEqual([{ id: 1 }]);
+  });
+
+  it('GET /aquariums/overview -> getOverview()', async () => {
+    service.getOverview.mockResolvedValue([{ id: 1, fishCount: 4 }] as any);
+    const res = await controller.getOverview(req);
+    expect(service.getOverview).toHaveBeenCalledWith(1);
+    expect(res).toEqual([{ id: 1, fishCount: 4 }]);
   });
 
   it('GET /aquariums/:id -> findOne()', async () => {
