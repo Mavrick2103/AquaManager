@@ -469,9 +469,10 @@ ${previous}
       );
     }
 
-    if (post.format === 'REEL') {
-      await this.waitForInstagramContainer(containerData.id, token, version);
-    }
+    // Meta peut retourner l'ID du conteneur avant que son Media ID soit
+    // disponible, y compris pour une image simple. Attendre systématiquement
+    // l'état FINISHED évite l'erreur "Media ID is not available".
+    await this.waitForInstagramContainer(containerData.id, token, version);
 
     const publishResponse = await fetch(`${base}/media_publish`, {
       method: 'POST',
@@ -682,7 +683,7 @@ Règles impératives :
     token: string,
     version: string,
   ): Promise<void> {
-    for (let attempt = 0; attempt < 8; attempt += 1) {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
       const response = await fetch(
         `https://graph.instagram.com/${version}/${containerId}?fields=status_code`,
         { headers: { Authorization: `Bearer ${token}` } },
@@ -692,7 +693,7 @@ Règles impératives :
       if (data?.status_code === 'ERROR' || data?.status_code === 'EXPIRED') {
         throw new BadRequestException('Instagram n’a pas pu traiter la vidéo');
       }
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
     throw new BadRequestException('La vidéo est encore en cours de traitement. Réessayez dans un instant.');
   }

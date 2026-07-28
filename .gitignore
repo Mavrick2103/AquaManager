@@ -14,8 +14,15 @@ out-tsc
 .vscode
 
 # === Env files ===
+.env
+.env.*
+!.env.example
 back_end/.env*
 *.local
+
+# === Production backups / local deployment artifacts ===
+backup/
+*.save
 
 # === IDE / OS ===
 .idea

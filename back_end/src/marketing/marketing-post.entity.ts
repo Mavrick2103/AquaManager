@@ -10,7 +10,7 @@ import {
 export type MarketingPostStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'PUBLISHED';
 export type MarketingPostFormat = 'POST' | 'CAROUSEL' | 'REEL' | 'STORY';
 
-@Entity('marketing_posts')
+@Entity('marketing_post')
 export class MarketingPost {
   @PrimaryGeneratedColumn()
   id: number;

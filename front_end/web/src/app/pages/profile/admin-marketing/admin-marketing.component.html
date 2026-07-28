@@ -79,16 +79,30 @@
     </form>
   </section>
 
-  @if (generationProgress > 0) {
-    <section class="generation-progress" aria-live="polite">
+    <section
+      class="generation-progress"
+      aria-live="polite"
+      [hidden]="generationProgress() === 0"
+    >
       <div>
         <span><mat-icon>auto_awesome</mat-icon>{{ generationLabel }}</span>
-        <strong>{{ generationProgress }} %</strong>
+        <strong #progressLabel>0 %</strong>
       </div>
-      <mat-progress-bar mode="determinate" [value]="generationProgress"></mat-progress-bar>
+      <div
+        class="generation-progress-track"
+        role="progressbar"
+        aria-label="Progression de la création"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="generationProgress()"
+      >
+        <span
+          #progressFill
+          class="generation-progress-fill"
+        ></span>
+      </div>
       <small>La création du visuel peut prendre quelques instants.</small>
     </section>
-  }
 
   <section class="studio-grid">
     <aside class="proposal-panel">

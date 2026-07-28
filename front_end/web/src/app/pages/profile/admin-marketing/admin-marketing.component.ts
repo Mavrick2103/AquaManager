@@ -1,5 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -8,7 +17,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { finalize } from 'rxjs';
 import {
   MarketingFormat,
@@ -30,7 +38,6 @@ import {
     MatInputModule,
     MatSelectModule,
     MatSnackBarModule,
-    MatProgressBarModule,
   ],
   templateUrl: './admin-marketing.component.html',
   styleUrl: './admin-marketing.component.scss',
@@ -51,7 +58,9 @@ export class AdminMarketingComponent implements OnInit {
   generatingImageId: number | null = null;
   modifyingId: number | null = null;
   deletingId: number | null = null;
-  generationProgress = 0;
+  readonly generationProgress = signal(0);
+  @ViewChild('progressLabel') private progressLabel?: ElementRef<HTMLElement>;
+  @ViewChild('progressFill') private progressFill?: ElementRef<HTMLElement>;
   generationLabel = '';
   private generationTimer: ReturnType<typeof setInterval> | null = null;
   instagramConnected = false;
@@ -155,8 +164,11 @@ export class AdminMarketingComponent implements OnInit {
   }
 
   askAgent(): void {
+    if (this.generating || this.generationTimer !== null) return;
+
     const value = this.agentForm.getRawValue();
     this.generating = true;
+    this.cdr.detectChanges();
     this.startGenerationProgress();
     this.api.generate(value.topic, 'POST')
       .pipe(finalize(() => {
@@ -180,6 +192,8 @@ export class AdminMarketingComponent implements OnInit {
   }
 
   revise(post: MarketingPost): void {
+    if (this.generating || this.modifyingId !== null || this.generationTimer !== null) return;
+
     const instruction = window.prompt(
       'Que doit modifier l’agent dans ce post ?',
       'Rendre le contenu plus précis et mieux adapté à AquaManager',
@@ -187,6 +201,7 @@ export class AdminMarketingComponent implements OnInit {
     if (!instruction?.trim()) return;
 
     this.modifyingId = post.id;
+    this.cdr.detectChanges();
     this.startGenerationProgress('Analyse de vos modifications…');
     this.api.revise(post.id, instruction.trim())
       .pipe(finalize(() => {
@@ -240,18 +255,18 @@ export class AdminMarketingComponent implements OnInit {
 
   private startGenerationProgress(label = 'Analyse du sujet et des articles AquaManager…'): void {
     this.resetGenerationProgress();
-    this.generationProgress = 8;
+    this.setGenerationProgress(8);
     this.generationLabel = label;
     this.generationTimer = setInterval(() => {
-      if (this.generationProgress < 35) {
+      if (this.generationProgress() < 35) {
         this.generationLabel = 'Rédaction du texte Instagram…';
-      } else if (this.generationProgress < 70) {
+      } else if (this.generationProgress() < 70) {
         this.generationLabel = 'Création du visuel AquaManager…';
       } else {
         this.generationLabel = 'Finalisation et contrôle anti-doublon…';
       }
-      this.generationProgress = Math.min(92, this.generationProgress + 4);
-      this.cdr.markForCheck();
+      this.setGenerationProgress(Math.min(92, this.generationProgress() + 4));
+      this.cdr.detectChanges();
     }, 1000);
     this.cdr.markForCheck();
   }
@@ -259,21 +274,32 @@ export class AdminMarketingComponent implements OnInit {
   private completeGenerationProgress(label = 'Post complet créé avec succès'): void {
     if (this.generationTimer) clearInterval(this.generationTimer);
     this.generationTimer = null;
-    this.generationProgress = 100;
+    this.setGenerationProgress(100);
     this.generationLabel = label;
+    this.cdr.detectChanges();
     setTimeout(() => {
-      this.generationProgress = 0;
+      this.setGenerationProgress(0);
       this.generationLabel = '';
-      this.cdr.markForCheck();
+      this.cdr.detectChanges();
     }, 1800);
   }
 
   private resetGenerationProgress(): void {
     if (this.generationTimer) clearInterval(this.generationTimer);
     this.generationTimer = null;
-    this.generationProgress = 0;
+    this.setGenerationProgress(0);
     this.generationLabel = '';
     this.cdr.markForCheck();
+  }
+
+  private setGenerationProgress(progress: number): void {
+    this.generationProgress.set(progress);
+    if (this.progressLabel) {
+      this.progressLabel.nativeElement.textContent = `${progress} %`;
+    }
+    if (this.progressFill) {
+      this.progressFill.nativeElement.style.width = `${progress}%`;
+    }
   }
 
   selectPost(post: MarketingPost): void {
