@@ -3,6 +3,7 @@
 
 :host {
   display: block;
+  overflow-x: clip;
   background:
     radial-gradient(1200px 600px at 10% -10%, rgba(0,159,227,.07), transparent 60%),
     radial-gradient(1200px 600px at 110% -20%, rgba(57,181,74,.07), transparent 60%),
@@ -12,9 +13,20 @@
 }
 
 .page-wrap {
+  width: 100%;
   max-width: 1180px;
   margin: 0 auto;
   padding: .5rem 1rem 2.5rem;
+  box-sizing: border-box;
+}
+
+.calendar-dashboard,
+.calendar-controls,
+.calendar-filters,
+.cal,
+.cal__grid {
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
 }
 
@@ -371,7 +383,7 @@
 
 .cal__grid{
   display:grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--gap);
   margin-top: .8rem;
 }
@@ -388,6 +400,7 @@
 }
 
 .cal__cell{
+  min-width: 0;
   text-align:left;
   min-height: 140px;
   border:1px solid var(--line);

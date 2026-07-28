@@ -134,9 +134,11 @@ Règles :
 - N'invente aucune fonctionnalité qui ne figure pas dans le contexte.
 - Évite les promesses médicales et les certitudes absolues.
 - Commence la légende par une accroche claire.
-- Ajoute un appel à l'action vers aquamanager.fr.
+- Termine par un appel à l'action indiquant clairement « lien dans la bio ».
+- Choisis toujours comme source l'article AquaManager le plus directement lié au sujet, sinon la page d'accueil.
 - Utilise au maximum 6 hashtags pertinents.
 - Pour un REEL, ajoute un script vidéo court et tournable dans la légende.
+- Écarte tout angle éditorial déjà traité dans l'historique, même si les mots employés sont différents.
 
 Format JSON :
 {
@@ -211,7 +213,9 @@ ${previous}
     const captionWithoutDuplicateLink = proposal.caption
       .trim()
       .replace(/\n*🔗\s*https?:\/\/\S+\s*$/i, '');
-    const finalCaption = `${captionWithoutDuplicateLink}\n\n🔗 ${sourceUrl}`.slice(0, 5000);
+    const finalCaption =
+      `${captionWithoutDuplicateLink}\n\n📌 Guide complet : lien dans la bio\n🔗 ${sourceUrl}`
+        .slice(0, 5000);
 
     const scheduledAt = this.nextEditorialSlot();
     const replacement = replacePostId ? await this.get(replacePostId) : null;
@@ -636,6 +640,7 @@ Règles impératives :
     history: MarketingPost[],
   ): MarketingPost | null {
     const candidateTitle = this.normalizeMarketingText(title);
+    const candidateTitleTokens = this.meaningfulTokens(title);
     const candidateTokens = this.meaningfulTokens(`${title} ${caption}`);
 
     for (const post of history) {
@@ -643,15 +648,24 @@ Règles impératives :
       if (candidateTitle === previousTitle) return post;
 
       const previousTokens = this.meaningfulTokens(`${post.title} ${post.caption}`);
+      const previousTitleTokens = this.meaningfulTokens(post.title);
       const intersection = [...candidateTokens].filter((token) => previousTokens.has(token)).length;
       const union = new Set([...candidateTokens, ...previousTokens]).size;
       const similarity = union ? intersection / union : 0;
+      const titleIntersection = [...candidateTitleTokens]
+        .filter((token) => previousTitleTokens.has(token)).length;
+      const titleUnion = new Set([...candidateTitleTokens, ...previousTitleTokens]).size;
+      const titleSimilarity = titleUnion ? titleIntersection / titleUnion : 0;
 
       const titleContained =
         candidateTitle.length >= 12 &&
         (previousTitle.includes(candidateTitle) || candidateTitle.includes(previousTitle));
 
-      if (titleContained || similarity >= 0.46) return post;
+      if (
+        titleContained ||
+        similarity >= 0.40 ||
+        (titleIntersection >= 2 && titleSimilarity >= 0.30)
+      ) return post;
     }
 
     return null;

@@ -96,7 +96,7 @@
       <div class="cal__head-row">
         <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()"><mat-icon>chevron_left</mat-icon></button>
         <h2 class="cal__title">
-          <span class="cal__title--month">{{ fmt(currentMonth(),'MMMM') | titlecase }}</span>
+          <span class="cal__title--month">{{ fmt(currentMonth(),'MMMM') | titlecase }}</span>&nbsp;
           <span class="cal__title--year">{{ fmt(currentMonth(),'yyyy') }}</span>
         </h2>
         <button mat-icon-button aria-label="Mois suivant" (click)="nextMonth()"><mat-icon>chevron_right</mat-icon></button>

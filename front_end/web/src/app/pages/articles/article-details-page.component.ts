@@ -112,7 +112,7 @@ export class ArticleDetailsPageComponent implements OnInit {
                 name: 'AquaManager',
                 logo: {
                   '@type': 'ImageObject',
-                  url: 'https://aquamanager.fr/Logo_AquaManager.png',
+                  url: 'https://aquamanager.fr/Logo_AquaManger.png',
                 },
               },
             },
@@ -183,6 +183,13 @@ export class ArticleDetailsPageComponent implements OnInit {
         const id = this.slugify(text);
         toc.push({ id, text, level: 3 });
         html += `<h3 id="${id}">${this.escapeHtml(text)}</h3>`;
+        continue;
+      }
+
+      // Horizontal separator.
+      if (/^---+$/.test(line)) {
+        closeList();
+        html += '<hr class="article-separator" />';
         continue;
       }
 

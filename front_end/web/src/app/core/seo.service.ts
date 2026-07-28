@@ -21,7 +21,7 @@ export class SeoService {
 
   apply(page: SeoPage): void {
     const canonicalUrl = new URL(page.path, this.origin).toString();
-    const imageUrl = page.image ? new URL(page.image, this.origin).toString() : `${this.origin}/Logo_AquaManager.png`;
+    const imageUrl = page.image ? new URL(page.image, this.origin).toString() : `${this.origin}/Logo_AquaManger.png`;
 
     this.title.setTitle(page.title);
     this.updateName('description', page.description);

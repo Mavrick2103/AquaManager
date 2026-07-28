@@ -137,6 +137,7 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
   get statusLabel(): string {
     if (this.status === 'ok') return 'Dans l’objectif';
     if (this.status === 'warning') return 'Hors objectif';
+    if (this.targetLabel) return this.hasData ? 'À évaluer' : 'Objectif configuré';
     return 'Objectif non défini';
   }
 

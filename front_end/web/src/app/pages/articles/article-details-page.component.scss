@@ -235,6 +235,12 @@
   :deep(ul) { margin: 0 0 14px; padding-left: 18px; }
   :deep(li) { margin: 6px 0; }
   :deep(strong) { font-weight: 1000; }
+  :deep(.article-separator) {
+    height: 1px;
+    margin: 24px 0;
+    border: 0;
+    background: rgba(31, 88, 91, .16);
+  }
 }
 
 @media (max-width: 980px) {

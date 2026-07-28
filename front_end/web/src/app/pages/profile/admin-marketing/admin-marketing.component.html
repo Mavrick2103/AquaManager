@@ -214,6 +214,13 @@
               <div class="agent-reason"><mat-icon>psychology</mat-icon><p>{{ selectedPost.aiRationale }}</p></div>
             }
 
+            @if (selectedPost.sourceUrl) {
+              <a class="source-link" [href]="selectedPost.sourceUrl" target="_blank" rel="noopener noreferrer">
+                <mat-icon>link</mat-icon>
+                Vérifier la page AquaManager associée
+              </a>
+            }
+
             <button mat-stroked-button type="button" [disabled]="generatingImageId === selectedPost.id"
               (click)="generateImage(selectedPost)">
               <mat-icon>refresh</mat-icon>
