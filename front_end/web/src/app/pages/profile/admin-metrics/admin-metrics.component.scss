@@ -648,3 +648,234 @@
 .legend-dot.pro {
   background: rgba(57, 181, 74, 0.9);
 }
+
+/* ========== CENTRE DE PILOTAGE ========== */
+.refresh-button {
+  margin-left: 12px;
+  border-color: var(--am-border);
+  border-radius: 12px;
+
+  mat-icon {
+    margin-right: 6px;
+  }
+}
+
+.spinning {
+  animation: admin-spin 900ms linear infinite;
+}
+
+@keyframes admin-spin {
+  to { transform: rotate(360deg); }
+}
+
+.command-center {
+  margin-bottom: 22px;
+  padding: 20px;
+  border: 1px solid var(--am-border);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 90% 0, rgba(30, 167, 255, 0.12), transparent 34%),
+    var(--am-surface);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.07);
+}
+
+.command-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+
+  h1 {
+    margin: 2px 0 4px;
+    color: var(--am-text);
+    font-size: clamp(20px, 2vw, 28px);
+    line-height: 1.15;
+  }
+
+  p {
+    margin: 0;
+    color: var(--am-muted);
+  }
+}
+
+.summary-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 16px;
+  color: #9a5a00;
+  background: #fff2d7;
+
+  &.clear {
+    color: #13795b;
+    background: #e4f8ef;
+  }
+}
+
+.summary-copy {
+  min-width: 0;
+}
+
+.eyebrow {
+  color: #147cae;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.action-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 78px;
+  padding: 13px;
+  border: 1px solid var(--am-border);
+  border-radius: 16px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.86);
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(30, 167, 255, 0.4);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.09);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(30, 167, 255, 0.3);
+    outline-offset: 2px;
+  }
+}
+
+.action-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 13px;
+
+  &.articles { color: #7950b7; background: #f0e9fb; }
+  &.fish { color: #087da9; background: #e4f5fb; }
+  &.plants { color: #267a49; background: #e6f6eb; }
+  &.users { color: #a75a15; background: #fff0df; }
+}
+
+.action-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+
+  strong {
+    color: var(--am-text);
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  span {
+    margin-top: 5px;
+    overflow: hidden;
+    color: var(--am-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+  }
+}
+
+.action-arrow {
+  color: rgba(15, 23, 42, 0.4);
+}
+
+.health-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--am-border);
+}
+
+.health-item {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  color: #13795b;
+
+  > span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+  }
+
+  strong {
+    color: var(--am-text);
+    font-size: 13px;
+  }
+
+  small {
+    color: var(--am-muted);
+    font-size: 11px;
+  }
+
+  &.warning {
+    color: #b26b08;
+  }
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 140ms ease;
+
+  &:hover {
+    background: rgba(30, 167, 255, 0.06);
+  }
+}
+
+@media (max-width: 1180px) {
+  .action-grid,
+  .health-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .refresh-button {
+    min-width: 44px;
+    padding: 0 10px;
+    font-size: 0;
+
+    mat-icon {
+      margin: 0;
+    }
+  }
+
+  .command-center {
+    padding: 15px;
+  }
+
+  .command-summary {
+    grid-template-columns: auto minmax(0, 1fr);
+
+    > a {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+  }
+
+  .action-grid,
+  .health-strip {
+    grid-template-columns: 1fr;
+  }
+}

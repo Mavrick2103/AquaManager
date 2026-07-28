@@ -22,6 +22,7 @@ import { BillingModule } from './billing/billing.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { AiModule } from './ai/ai.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { MarketingModule } from './marketing/marketing.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     BillingModule,
     GamificationModule,
     AiModule,
+    MarketingModule,
   ],
 })
 export class AppModule {}

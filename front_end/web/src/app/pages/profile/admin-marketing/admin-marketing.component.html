@@ -1,0 +1,240 @@
+<main class="agent-studio">
+  <header class="agent-header">
+    <div class="header-copy">
+      <span class="agent-kicker"><mat-icon>auto_awesome</mat-icon>Agent IA AquaManager</span>
+      <h1>Votre contenu Instagram,<br /><em>prêt à être validé.</em></h1>
+      <p>L’agent crée chaque semaine un post complet avec son texte et son image. Rien n’est publié sans votre accord.</p>
+    </div>
+    <div class="connection-card" [class.online]="instagramConnected">
+      <span class="connection-icon"><mat-icon>{{ instagramConnected ? 'check_circle' : 'link_off' }}</mat-icon></span>
+      <div>
+        <small>Compte de publication</small>
+        <strong>{{ instagramConnected ? ('@' + instagramUsername) : 'Instagram non connecté' }}</strong>
+      </div>
+    </div>
+  </header>
+
+  <section class="automation-bar">
+    <div class="automation-state">
+      <span class="pulse"></span>
+      <div>
+        <strong>Création automatique {{ scheduleForm.controls.enabled.value ? 'active' : 'désactivée' }}</strong>
+        <small>
+          {{ cadenceLabel(scheduleForm.controls.cadence.value) }},
+          le {{ dayLabel(scheduleForm.controls.dayOfWeek.value) }}
+          à {{ twoDigits(scheduleForm.controls.hour.value) }}:{{ twoDigits(scheduleForm.controls.minute.value) }}
+        </small>
+      </div>
+    </div>
+    <form [formGroup]="scheduleForm" class="schedule-controls">
+      <div class="schedule-field"><span>État</span><mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-select formControlName="enabled" aria-label="État de la création automatique">
+          <mat-option [value]="true">Activée</mat-option><mat-option [value]="false">Désactivée</mat-option>
+        </mat-select>
+      </mat-form-field></div>
+      <div class="schedule-field"><span>Rythme</span><mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-select formControlName="cadence" aria-label="Rythme de création">
+          <mat-option value="WEEKLY">Chaque semaine</mat-option><mat-option value="BIWEEKLY">Toutes les 2 semaines</mat-option>
+          <mat-option value="MONTHLY">Chaque mois</mat-option>
+        </mat-select>
+      </mat-form-field></div>
+      <div class="schedule-field"><span>Jour</span><mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-select formControlName="dayOfWeek" aria-label="Jour de création">
+          <mat-option [value]="1">Lundi</mat-option><mat-option [value]="2">Mardi</mat-option>
+          <mat-option [value]="3">Mercredi</mat-option><mat-option [value]="4">Jeudi</mat-option>
+          <mat-option [value]="5">Vendredi</mat-option><mat-option [value]="6">Samedi</mat-option>
+          <mat-option [value]="0">Dimanche</mat-option>
+        </mat-select>
+      </mat-form-field></div>
+      <div class="schedule-field"><span>Heure</span><mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-select formControlName="hour" aria-label="Heure de création">
+          @for (hour of [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]; track hour) {
+            <mat-option [value]="hour">{{ twoDigits(hour) }} h</mat-option>
+          }
+        </mat-select>
+      </mat-form-field></div>
+      <div class="schedule-field"><span>Minute</span><mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-select formControlName="minute" aria-label="Minute de création">
+          <mat-option [value]="0">00</mat-option><mat-option [value]="15">15</mat-option>
+          <mat-option [value]="30">30</mat-option><mat-option [value]="45">45</mat-option>
+        </mat-select>
+      </mat-form-field></div>
+      <button mat-flat-button type="button" class="save-schedule" [disabled]="savingSchedule" (click)="saveSchedule()">
+        <mat-icon>schedule</mat-icon>{{ savingSchedule ? 'Enregistrement…' : 'Enregistrer' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="manual-bar">
+    <div><strong>Besoin d’un post maintenant ?</strong><small>Laissez l’agent choisir ou indiquez un sujet.</small></div>
+    <form [formGroup]="agentForm" class="quick-generate">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Donner un sujet à l’agent (facultatif)</mat-label>
+        <input matInput formControlName="topic" placeholder="Ex. expliquer le suivi du pH" />
+      </mat-form-field>
+      <button class="generate-complete" mat-flat-button type="button" [disabled]="generating" (click)="askAgent()">
+        <mat-icon>{{ generating ? 'hourglass_top' : 'auto_awesome' }}</mat-icon>
+        {{ generating ? 'Création du texte et de l’image…' : 'Créer un post maintenant' }}
+      </button>
+    </form>
+  </section>
+
+  @if (generationProgress > 0) {
+    <section class="generation-progress" aria-live="polite">
+      <div>
+        <span><mat-icon>auto_awesome</mat-icon>{{ generationLabel }}</span>
+        <strong>{{ generationProgress }} %</strong>
+      </div>
+      <mat-progress-bar mode="determinate" [value]="generationProgress"></mat-progress-bar>
+      <small>La création du visuel peut prendre quelques instants.</small>
+    </section>
+  }
+
+  <section class="studio-grid">
+    <aside class="proposal-panel">
+      <div class="panel-heading">
+        <div>
+          <span>Propositions</span>
+          <h2>À examiner</h2>
+        </div>
+        <button mat-icon-button type="button" aria-label="Actualiser" (click)="refresh()"><mat-icon>refresh</mat-icon></button>
+      </div>
+
+      @if (loading) {
+        <div class="proposal-empty"><mat-icon>hourglass_top</mat-icon><span>Chargement…</span></div>
+      } @else if (!posts.length) {
+        <div class="proposal-empty">
+          <mat-icon>auto_awesome</mat-icon>
+          <strong>Aucune proposition</strong>
+          <span>Demandez à l’agent de créer votre premier post.</span>
+        </div>
+      } @else {
+        <div class="proposal-list">
+          @for (post of posts; track post.id) {
+            <button type="button" class="proposal-item" [class.selected]="selectedPost?.id === post.id"
+              (click)="selectPost(post)">
+              <span class="proposal-thumb">
+                @if (post.mediaUrl) {
+                  <img [src]="post.mediaUrl" alt="" />
+                } @else {
+                  <mat-icon>image_not_supported</mat-icon>
+                }
+              </span>
+              <span class="proposal-copy">
+                <span class="proposal-meta">
+                  <i [attr.data-status]="post.status"></i>
+                  {{ statusLabel(post.status) }}
+                  <b>·</b>
+                  {{ post.createdAt | date:'dd MMM' }}
+                </span>
+                <strong>{{ post.title }}</strong>
+                <small>{{ post.generatedByAi ? 'Créé par l’agent IA' : 'Création manuelle' }}</small>
+              </span>
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          }
+        </div>
+      }
+    </aside>
+
+    <section class="review-panel">
+      @if (!selectedPost) {
+        <div class="review-empty">
+          <span><mat-icon>touch_app</mat-icon></span>
+          <h2>Sélectionnez une proposition</h2>
+          <p>Le post complet apparaîtra ici comme sur Instagram.</p>
+        </div>
+      } @else {
+        <div class="review-top">
+          <div>
+            <span class="review-label">Prévisualisation avant publication</span>
+            <h2>{{ selectedPost.title }}</h2>
+          </div>
+          <span class="review-status" [attr.data-status]="selectedPost.status">{{ statusLabel(selectedPost.status) }}</span>
+        </div>
+
+        <div class="review-workspace">
+          <div class="instagram-frame">
+            <div class="ig-header">
+              <span class="ig-avatar"><mat-icon>water_drop</mat-icon></span>
+              <div><strong>aquamanager_france</strong><small>Publication suggérée</small></div>
+              <mat-icon>more_horiz</mat-icon>
+            </div>
+            <div class="ig-media">
+              @if (selectedPost.mediaUrl) {
+                <img [src]="selectedPost.mediaUrl" alt="Visuel généré pour le post Instagram" />
+              } @else {
+                <div class="missing-generated-image"><mat-icon>broken_image</mat-icon><strong>Image manquante</strong></div>
+              }
+            </div>
+            <div class="ig-actions">
+              <div><mat-icon>favorite_border</mat-icon><mat-icon>chat_bubble_outline</mat-icon><mat-icon>send</mat-icon></div>
+              <mat-icon>bookmark_border</mat-icon>
+            </div>
+            <div class="ig-likes">Aimé par la communauté AquaManager</div>
+            <div class="ig-caption">
+              <strong>aquamanager_france</strong>
+              <p>{{ selectedPost.caption }}</p>
+            </div>
+          </div>
+
+          <aside class="decision-card">
+            <div class="content-check">
+              <h3>Contrôle du contenu</h3>
+              <div class="check-row ok"><mat-icon>check</mat-icon><span>Texte généré</span></div>
+              <div class="check-row" [class.ok]="selectedPost.mediaUrl">
+                <mat-icon>{{ selectedPost.mediaUrl ? 'check' : 'close' }}</mat-icon><span>Image générée</span>
+              </div>
+              <div class="check-row ok"><mat-icon>check</mat-icon><span>Anti-doublon vérifié</span></div>
+              <div class="check-row ok"><mat-icon>check</mat-icon><span>Validation humaine obligatoire</span></div>
+            </div>
+
+            @if (selectedPost.aiRationale) {
+              <div class="agent-reason"><mat-icon>psychology</mat-icon><p>{{ selectedPost.aiRationale }}</p></div>
+            }
+
+            <button mat-stroked-button type="button" [disabled]="generatingImageId === selectedPost.id"
+              (click)="generateImage(selectedPost)">
+              <mat-icon>refresh</mat-icon>
+              {{ generatingImageId === selectedPost.id ? 'Nouvelle image en cours…' : 'Régénérer uniquement l’image' }}
+            </button>
+
+            @if (selectedPost.generatedByAi && selectedPost.status !== 'PUBLISHED') {
+              <button mat-stroked-button type="button" class="delete-action"
+                [disabled]="deletingId === selectedPost.id" (click)="removeGeneratedPost(selectedPost)">
+                <mat-icon>{{ deletingId === selectedPost.id ? 'hourglass_top' : 'delete_outline' }}</mat-icon>
+                {{ deletingId === selectedPost.id ? 'Suppression…' : 'Supprimer ce post IA' }}
+              </button>
+            }
+
+            @if (selectedPost.status === 'PENDING_APPROVAL') {
+              <button mat-stroked-button type="button" class="reject-action"
+                [disabled]="modifyingId === selectedPost.id" (click)="revise(selectedPost)">
+                <mat-icon>{{ modifyingId === selectedPost.id ? 'hourglass_top' : 'edit_note' }}</mat-icon>
+                {{ modifyingId === selectedPost.id ? 'Modification en cours…' : 'Demander une modification' }}
+              </button>
+              <button mat-flat-button type="button" class="approve-action"
+                [disabled]="!selectedPost.mediaUrl" (click)="approve(selectedPost)">
+                <mat-icon>check_circle</mat-icon>Approuver ce post
+              </button>
+            }
+
+            @if (selectedPost.status === 'APPROVED') {
+              <div class="approved-message"><mat-icon>verified</mat-icon><span>Post approuvé et prêt à publier</span></div>
+              <button mat-flat-button type="button" class="publish-action"
+                [disabled]="!instagramConnected || publishingId === selectedPost.id"
+                (click)="publish(selectedPost)">
+                <mat-icon>{{ publishingId === selectedPost.id ? 'hourglass_top' : 'rocket_launch' }}</mat-icon>
+                {{ publishingId === selectedPost.id ? 'Publication en cours…' : 'Publier sur Instagram' }}
+              </button>
+            }
+
+            @if (selectedPost.status === 'PUBLISHED') {
+              <div class="published-message"><mat-icon>celebration</mat-icon><span>Publié sur Instagram</span></div>
+            }
+          </aside>
+        </div>
+      }
+    </section>
+  </section>
+</main>

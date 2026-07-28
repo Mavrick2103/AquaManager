@@ -45,6 +45,14 @@ interface AdminMetricsDto {
   aquariums: { total: number; createdInRange: number };
   tasks: { total: number; createdInRange: number; doneTotal: number; doneInRange: number };
   measurements: { total: number; createdInRange: number };
+  attention: { unverifiedUsers: number; inactiveUsers: number; overdueTasks: number };
+  moderation: {
+    pendingArticles: number;
+    pendingFishCards: number;
+    pendingPlantCards: number;
+    totalPending: number;
+  };
+  content: { publishedArticles: number; approvedFishCards: number; approvedPlantCards: number };
 }
 
 @Component({
@@ -219,6 +227,15 @@ export class AdminMetricsComponent {
     const dd = typeof d === 'number' ? d : 0;
     if (!dd || dd <= 0) return '—';
     return (nn / dd).toFixed(digits);
+  }
+
+  totalAttention(): number {
+    if (!this.metrics) return 0;
+    return (
+      this.metrics.moderation.totalPending +
+      this.metrics.attention.unverifiedUsers +
+      this.metrics.attention.overdueTasks
+    );
   }
 
   roleClass(role: Role): string {

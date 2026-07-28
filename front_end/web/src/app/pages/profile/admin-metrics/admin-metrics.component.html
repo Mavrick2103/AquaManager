@@ -77,6 +77,17 @@
             <mat-button-toggle value="all">Total</mat-button-toggle>
           </mat-button-toggle-group>
         </div>
+        <button
+          mat-stroked-button
+          class="refresh-button"
+          type="button"
+          (click)="load()"
+          [disabled]="loading"
+          aria-label="Actualiser les données du tableau de bord"
+        >
+          <mat-icon [class.spinning]="loading">refresh</mat-icon>
+          Actualiser
+        </button>
       </mat-toolbar>
 
       <div class="state" *ngIf="loading">
@@ -90,6 +101,92 @@
       </div>
 
       <ng-container *ngIf="metrics && !loading">
+        <section class="command-center" aria-labelledby="command-center-title">
+          <div class="command-summary">
+            <div class="summary-icon" [class.clear]="totalAttention() === 0">
+              <mat-icon>{{ totalAttention() === 0 ? 'verified' : 'notifications_active' }}</mat-icon>
+            </div>
+            <div class="summary-copy">
+              <span class="eyebrow">Centre de pilotage</span>
+              <h1 id="command-center-title">
+                {{ totalAttention() === 0 ? 'Tout est sous contrôle' : totalAttention() + ' actions à examiner' }}
+              </h1>
+              <p>
+                {{ totalAttention() === 0
+                  ? 'Aucune validation ni alerte prioritaire actuellement.'
+                  : 'Commencez par les validations et les comptes qui demandent votre attention.' }}
+              </p>
+            </div>
+            <a mat-flat-button color="primary" routerLink="/admin/users">
+              <mat-icon>manage_accounts</mat-icon>
+              Gérer les utilisateurs
+            </a>
+          </div>
+
+          <div class="action-grid">
+            <a class="action-card" routerLink="/admin/articles">
+              <span class="action-icon articles"><mat-icon>article</mat-icon></span>
+              <span class="action-copy">
+                <strong>{{ metrics.moderation.pendingArticles }}</strong>
+                <span>articles à valider</span>
+              </span>
+              <mat-icon class="action-arrow">arrow_forward</mat-icon>
+            </a>
+
+            <a class="action-card" routerLink="/admin/species/fish">
+              <span class="action-icon fish"><mat-icon>set_meal</mat-icon></span>
+              <span class="action-copy">
+                <strong>{{ metrics.moderation.pendingFishCards }}</strong>
+                <span>fiches poissons en attente</span>
+              </span>
+              <mat-icon class="action-arrow">arrow_forward</mat-icon>
+            </a>
+
+            <a class="action-card" routerLink="/admin/species/plant">
+              <span class="action-icon plants"><mat-icon>eco</mat-icon></span>
+              <span class="action-copy">
+                <strong>{{ metrics.moderation.pendingPlantCards }}</strong>
+                <span>fiches plantes en attente</span>
+              </span>
+              <mat-icon class="action-arrow">arrow_forward</mat-icon>
+            </a>
+
+            <a class="action-card" routerLink="/admin/users">
+              <span class="action-icon users"><mat-icon>person_off</mat-icon></span>
+              <span class="action-copy">
+                <strong>{{ metrics.attention.unverifiedUsers }}</strong>
+                <span>comptes non vérifiés</span>
+              </span>
+              <mat-icon class="action-arrow">arrow_forward</mat-icon>
+            </a>
+          </div>
+
+          <div class="health-strip" aria-label="État du site">
+            <div class="health-item">
+              <mat-icon>check_circle</mat-icon>
+              <span><strong>API opérationnelle</strong><small>Données chargées correctement</small></span>
+            </div>
+            <div class="health-item">
+              <mat-icon>library_books</mat-icon>
+              <span><strong>{{ metrics.content.publishedArticles }}</strong><small>articles publiés</small></span>
+            </div>
+            <div class="health-item">
+              <mat-icon>pets</mat-icon>
+              <span>
+                <strong>{{ metrics.content.approvedFishCards + metrics.content.approvedPlantCards }}</strong>
+                <small>fiches espèces actives</small>
+              </span>
+            </div>
+            <div class="health-item" [class.warning]="metrics.attention.overdueTasks > 0">
+              <mat-icon>{{ metrics.attention.overdueTasks > 0 ? 'event_busy' : 'event_available' }}</mat-icon>
+              <span>
+                <strong>{{ metrics.attention.overdueTasks }}</strong>
+                <small>tâches utilisateur en retard</small>
+              </span>
+            </div>
+          </div>
+        </section>
+
         <section class="grid">
   <!-- USERS -->
   <mat-card class="kpi kpi-users">
@@ -451,7 +548,13 @@
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+              <tr
+                mat-row
+                class="clickable-row"
+                *matRowDef="let row; columns: displayedColumns"
+                [routerLink]="['/admin/users', row.id]"
+                [attr.aria-label]="'Ouvrir le profil de ' + row.fullName"
+              ></tr>
             </table>
           </div>
         </mat-card>

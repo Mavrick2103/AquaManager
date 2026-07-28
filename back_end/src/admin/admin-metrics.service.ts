@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, In, Brackets } from 'typeorm';
+import { Repository, MoreThanOrEqual, LessThan, IsNull, Brackets } from 'typeorm';
 
 import { User } from '../users/user.entity';
 import { Aquarium } from '../aquariums/aquariums.entity';
 import { Task, TaskStatus } from '../tasks/task.entity';
 import { WaterMeasurement } from '../water-measurement/water-measurement.entity';
+import { Article } from '../articles/entities/article.entity';
+import { FishCard } from '../catalog/fish-cards/fish-card.entity';
+import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
 
 export type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 
@@ -54,6 +57,9 @@ export class AdminMetricsService {
     @InjectRepository(Aquarium) private readonly aquariumsRepo: Repository<Aquarium>,
     @InjectRepository(Task) private readonly tasksRepo: Repository<Task>,
     @InjectRepository(WaterMeasurement) private readonly measurementsRepo: Repository<WaterMeasurement>,
+    @InjectRepository(Article) private readonly articlesRepo: Repository<Article>,
+    @InjectRepository(FishCard) private readonly fishCardsRepo: Repository<FishCard>,
+    @InjectRepository(PlantCard) private readonly plantCardsRepo: Repository<PlantCard>,
   ) {}
 
   private hasUserCreatedAt(): boolean {
@@ -176,6 +182,36 @@ const subscriptionsTotalActive = premiumActive + proActive;
       ? await this.measurementsRepo.count({ where: { createdAt: MoreThanOrEqual(from) } as any })
       : measurementsTotal;
 
+    const inactiveSince = new Date();
+    inactiveSince.setDate(inactiveSince.getDate() - 30);
+
+    const [
+      unverifiedUsers,
+      inactiveUsers,
+      overdueTasks,
+      pendingArticles,
+      pendingFishCards,
+      pendingPlantCards,
+      publishedArticles,
+      approvedFishCards,
+      approvedPlantCards,
+    ] = await Promise.all([
+      this.usersRepo.count({ where: { emailVerifiedAt: IsNull() } as any }),
+      this.usersRepo
+        .createQueryBuilder('u')
+        .where('u.lastActivityAt IS NULL OR u.lastActivityAt < :inactiveSince', { inactiveSince })
+        .getCount(),
+      this.tasksRepo.count({
+        where: { status: TaskStatus.PENDING, dueAt: LessThan(new Date()) } as any,
+      }),
+      this.articlesRepo.count({ where: { status: 'PENDING_REVIEW' } }),
+      this.fishCardsRepo.count({ where: { status: 'PENDING' } as any }),
+      this.plantCardsRepo.count({ where: { status: 'PENDING' } as any }),
+      this.articlesRepo.count({ where: { status: 'PUBLISHED' } }),
+      this.fishCardsRepo.count({ where: { status: 'APPROVED', isActive: true } as any }),
+      this.plantCardsRepo.count({ where: { status: 'APPROVED', isActive: true } as any }),
+    ]);
+
     return {
       generatedAt: new Date().toISOString(),
       range,
@@ -212,6 +248,22 @@ const subscriptionsTotalActive = premiumActive + proActive;
       measurements: {
         total: measurementsTotal,
         createdInRange: measurementsCreatedInRange,
+      },
+      attention: {
+        unverifiedUsers,
+        inactiveUsers,
+        overdueTasks,
+      },
+      moderation: {
+        pendingArticles,
+        pendingFishCards,
+        pendingPlantCards,
+        totalPending: pendingArticles + pendingFishCards + pendingPlantCards,
+      },
+      content: {
+        publishedArticles,
+        approvedFishCards,
+        approvedPlantCards,
       },
     };
   }

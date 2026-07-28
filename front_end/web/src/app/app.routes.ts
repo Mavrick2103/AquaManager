@@ -187,6 +187,15 @@ export const routes: Routes = [
     canActivate: [AuthGuard, AdminOnlyGuard],
   },
   {
+    path: 'admin/marketing',
+    loadComponent: () =>
+      import('./pages/profile/admin-marketing/admin-marketing.component').then(
+        (m) => m.AdminMarketingComponent,
+      ),
+    data: { title: 'Admin – Communication – AquaManager', robots: 'noindex' },
+    canActivate: [AuthGuard, AdminOnlyGuard],
+  },
+  {
     path: 'admin/users',
     loadComponent: () =>
       import('./pages/profile/admin-users/admin-users.component').then((m) => m.AdminUsersComponent),
