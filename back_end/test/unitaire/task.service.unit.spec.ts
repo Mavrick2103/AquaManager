@@ -294,6 +294,71 @@ describe('TaskService (unit)', () => {
     });
   });
 
+  describe('recurring occurrence status', () => {
+    it('completes only the selected occurrence', async () => {
+      const occurrenceAt = '2025-01-08T10:00:00.000Z';
+      const existing = {
+        id: 12,
+        title: 'Weekly test',
+        description: null,
+        dueAt: new Date('2025-01-01T10:00:00.000Z'),
+        status: TaskStatus.PENDING,
+        type: TaskType.WATER_TEST,
+        isRepeat: true,
+        repeatMode: 'WEEKLY',
+        repeatDays: ['WED'],
+        repeatEveryWeeks: null,
+        repeatEndAt: null,
+        completedOccurrences: [],
+        user: { id: 1 },
+        aquarium: { id: 7 },
+        fertilizers: [],
+      } as any;
+
+      (repo.findOne as jest.Mock)
+        .mockResolvedValueOnce(existing)
+        .mockImplementation(async () => existing);
+      (repo.save as jest.Mock).mockImplementation(async (task: any) => task);
+
+      await service.update(1, `r:12:${occurrenceAt}`, { status: TaskStatus.DONE });
+
+      expect(existing.status).toBe(TaskStatus.PENDING);
+      expect(existing.completedOccurrences).toEqual([occurrenceAt]);
+      expect(repo.save).toHaveBeenCalledWith(existing);
+    });
+
+    it('reopens only the selected occurrence', async () => {
+      const occurrenceAt = '2025-01-08T10:00:00.000Z';
+      const otherOccurrence = '2025-01-15T10:00:00.000Z';
+      const existing = {
+        id: 12,
+        title: 'Weekly test',
+        description: null,
+        dueAt: new Date('2025-01-01T10:00:00.000Z'),
+        status: TaskStatus.PENDING,
+        type: TaskType.WATER_TEST,
+        isRepeat: true,
+        repeatMode: 'WEEKLY',
+        repeatDays: ['WED'],
+        repeatEveryWeeks: null,
+        repeatEndAt: null,
+        completedOccurrences: [occurrenceAt, otherOccurrence],
+        user: { id: 1 },
+        aquarium: { id: 7 },
+        fertilizers: [],
+      } as any;
+
+      (repo.findOne as jest.Mock)
+        .mockResolvedValueOnce(existing)
+        .mockImplementation(async () => existing);
+      (repo.save as jest.Mock).mockImplementation(async (task: any) => task);
+
+      await service.update(1, `r:12:${occurrenceAt}`, { status: TaskStatus.PENDING });
+
+      expect(existing.completedOccurrences).toEqual([otherOccurrence]);
+    });
+  });
+
   describe('remove', () => {
     it('404 si non trouvé ou non appartenant au user', async () => {
       repo.findOne.mockResolvedValue(null as any);

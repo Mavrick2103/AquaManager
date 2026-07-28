@@ -82,6 +82,13 @@ export class Task {
   @Column({ type: 'datetime', nullable: true })
   repeatEndAt?: Date | null;
 
+  /**
+   * Occurrences terminées d'une tâche répétitive, identifiées par leur date ISO.
+   * Le statut du modèle ne doit pas être utilisé pour terminer toute la série.
+   */
+  @Column({ type: 'json', nullable: true })
+  completedOccurrences?: string[] | null;
+
   // ===== Fertilizers =====
   @OneToMany(() => TaskFertilizer, (f) => f.task, { cascade: false })
   fertilizers?: TaskFertilizer[];

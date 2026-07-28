@@ -31,6 +31,7 @@ type RepeatPayload =
     };
 
 type FertLine = { name: string; qty: number; unit: FertilizerUnit };
+type TaskReference = { id: number; occurrenceAt: string | null };
 
 @Injectable()
 export class TaskService {
@@ -45,21 +46,25 @@ private readonly gamificationService: GamificationService,  ) {}
   // =========================
   // Helpers: id parsing
   // =========================
-  private parseTaskId(raw: string): number {
+  private parseTaskReference(raw: string): TaskReference {
     if (!raw) throw new BadRequestException('Missing task id');
 
     // ids virtuels: r:<baseId>:<dueAtIso>
     if (raw.startsWith('r:')) {
-      const parts = raw.split(':');
-      if (parts.length < 3) throw new BadRequestException('Invalid recurring task id');
-      const baseId = Number(parts[1]);
+      const match = /^r:(\d+):(.+)$/.exec(raw);
+      if (!match) throw new BadRequestException('Invalid recurring task id');
+      const baseId = Number(match[1]);
       if (!Number.isFinite(baseId)) throw new BadRequestException('Invalid recurring task id');
-      return baseId;
+      const occurrence = new Date(match[2]);
+      if (Number.isNaN(occurrence.getTime())) {
+        throw new BadRequestException('Invalid recurring task occurrence');
+      }
+      return { id: baseId, occurrenceAt: occurrence.toISOString() };
     }
 
     const n = Number(raw);
     if (!Number.isFinite(n)) throw new BadRequestException('Invalid task id');
-    return n;
+    return { id: n, occurrenceAt: null };
   }
 
   // =========================
@@ -205,6 +210,7 @@ private readonly gamificationService: GamificationService,  ) {}
     const endAt = t.repeatEndAt ? new Date(t.repeatEndAt) : null;
 
     const occurrences: Array<any> = [];
+    const completedOccurrences = new Set(t.completedOccurrences ?? []);
 
     for (let day = new Date(cursorStart); day < cursorEnd; day = this.addDaysUTC(day, 1)) {
       // ✅ borne EXCLUSIVE : si dueCandidate >= endAt => stop
@@ -253,7 +259,7 @@ private readonly gamificationService: GamificationService,  ) {}
         title: t.title,
         description: t.description ?? undefined,
         dueAt,
-        status: t.status,
+        status: completedOccurrences.has(dueAt) ? TaskStatus.DONE : TaskStatus.PENDING,
         type: t.type,
         aquarium: t.aquarium ? { id: t.aquarium.id, name: (t.aquarium as any).name } : undefined,
         repeat: this.toRepeatResponse(t),
@@ -376,13 +382,46 @@ private readonly gamificationService: GamificationService,  ) {}
   }
 
   async update(userId: number, rawId: string, dto: UpdateTaskDto) {
-    const id = this.parseTaskId(rawId);
+    const reference = this.parseTaskReference(rawId);
+    const id = reference.id;
 
     const task = await this.repo.findOne({
       where: { id },
       relations: { user: true, aquarium: true, fertilizers: true },
     });
     if (!task || task.user.id !== userId) throw new NotFoundException();
+
+    let occurrenceStatusHandled = false;
+    if (reference.occurrenceAt && dto.status !== undefined) {
+      if (!task.isRepeat || task.repeatMode === RepeatMode.NONE) {
+        throw new BadRequestException('Task is not recurring');
+      }
+
+      const occurrenceDate = new Date(reference.occurrenceAt);
+      const monthStart = new Date(
+        Date.UTC(occurrenceDate.getUTCFullYear(), occurrenceDate.getUTCMonth(), 1),
+      );
+      const monthEnd = new Date(monthStart);
+      monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1);
+      const occurrenceExists = this.expandRepeatsIntoMonth(task, monthStart, monthEnd).some(
+        (item) => item.dueAt === reference.occurrenceAt,
+      );
+      if (!occurrenceExists) {
+        throw new BadRequestException('Recurring task occurrence does not exist');
+      }
+
+      const completed = new Set(task.completedOccurrences ?? []);
+      if (dto.status === TaskStatus.DONE) {
+        completed.add(reference.occurrenceAt);
+      } else {
+        completed.delete(reference.occurrenceAt);
+      }
+      task.completedOccurrences = [...completed].sort();
+
+      // Répare aussi les séries marquées DONE par l'ancien comportement.
+      task.status = TaskStatus.PENDING;
+      occurrenceStatusHandled = true;
+    }
 
     if (dto.aquariumId !== undefined) {
       const aq = await this.aqRepo.findOne({
@@ -395,7 +434,7 @@ private readonly gamificationService: GamificationService,  ) {}
     }
 
     if (dto.dueAt !== undefined) task.dueAt = new Date(dto.dueAt);
-    if (dto.status !== undefined) task.status = dto.status;
+    if (dto.status !== undefined && !occurrenceStatusHandled) task.status = dto.status;
 
     // type + titre auto
     if (dto.type !== undefined) {
@@ -465,7 +504,7 @@ private readonly gamificationService: GamificationService,  ) {}
   }
 
   async remove(userId: number, rawId: string) {
-    const id = this.parseTaskId(rawId);
+    const id = this.parseTaskReference(rawId).id;
 
     const task = await this.repo.findOne({
       where: { id },

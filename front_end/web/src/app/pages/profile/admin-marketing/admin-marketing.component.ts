@@ -17,6 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import {
   MarketingFormat,
@@ -38,6 +39,7 @@ import {
     MatInputModule,
     MatSelectModule,
     MatSnackBarModule,
+    RouterLink,
   ],
   templateUrl: './admin-marketing.component.html',
   styleUrl: './admin-marketing.component.scss',

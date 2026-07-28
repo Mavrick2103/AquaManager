@@ -1,6 +1,24 @@
 :host { display:block; min-height:100%; color:#173c3d; background:#f3f7f6; }
 * { box-sizing:border-box; }
 .agent-studio { width:min(1500px,100%); margin:auto; padding:38px 42px 64px; }
+.page-navigation { display:flex; align-items:center; margin-bottom:22px; }
+.back-button {
+  min-height:42px;
+  padding:0 18px!important;
+  border-color:#c8dcd9!important;
+  border-radius:999px!important;
+  color:#126d68!important;
+  background:rgba(255,255,255,.88)!important;
+  font-weight:800;
+  box-shadow:0 7px 20px rgba(29,71,72,.06);
+  transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.back-button:hover {
+  transform:translateX(-2px);
+  border-color:#83bbb5!important;
+  box-shadow:0 9px 24px rgba(29,71,72,.1);
+}
+.back-button mat-icon { margin-right:7px; }
 .agent-header { display:flex; justify-content:space-between; align-items:flex-end; gap:30px; margin-bottom:26px; }
 .agent-kicker { display:inline-flex; align-items:center; gap:7px; color:#087d75; font-size:.72rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
 .agent-kicker mat-icon { width:18px; height:18px; font-size:18px; }
