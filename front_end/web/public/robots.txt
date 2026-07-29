@@ -6,6 +6,8 @@ Disallow: /register
 Disallow: /auth/
 Disallow: /aquariums
 Disallow: /calendar
+Disallow: /dashboard
+Disallow: /home
 Disallow: /profile
 Disallow: /admin
 Disallow: /dashboard

@@ -22,7 +22,7 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
-    path: 'a-propos-gestion-aquarium',
+    path: '',
     renderMode: RenderMode.Server,
   },
   {

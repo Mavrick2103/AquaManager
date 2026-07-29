@@ -1,151 +1,159 @@
-<div class="contact-wrap">
-  <div class="hero">
-    <mat-card class="card">
-      <!-- TOP BAR : Retour + badge -->
-      <div class="topbar">
-        <button
-          class="back-btn"
-          mat-stroked-button
-          type="button"
-          (click)="goBack()"
-          aria-label="Retour"
-        >
-          <mat-icon>arrow_back</mat-icon>
-          <span class="back-txt">Retour</span>
-        </button>
+<div class="contact-page">
+  <nav class="public-nav" aria-label="Navigation principale">
+    <a class="public-brand" href="/" aria-label="Accueil AquaManager">
+      <img src="/Logo_AquaManger.png" alt="AquaManager" />
+    </a>
+    <div class="public-links">
+      <a href="/about">À propos</a>
+      <a href="/species">Fiches espèces</a>
+      <a href="/articles">Conseils</a>
+      <a class="active" href="/contact" aria-current="page">Contact</a>
+      <a class="login-link" href="/login">Connexion</a>
+    </div>
+  </nav>
 
-        <div class="badge">
-          <mat-icon>support_agent</mat-icon>
-          Support AquaManager
-        </div>
-      </div>
-
-      <!-- Header -->
-      <div class="title">
-        <h1>Contact</h1>
-        <p class="subtitle">
-          Un bug, une question ou une idée ? Écris-nous ici, on te répondra au plus vite.
-          Tu peux joindre des images ou un PDF pour illustrer ton message.
+  <main>
+    <header class="contact-hero">
+      <button class="back-btn" mat-stroked-button type="button" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>Retour
+      </button>
+      <div class="contact-hero__content">
+        <span class="badge"><mat-icon>support_agent</mat-icon>Support AquaManager</span>
+        <h1>Une question ? Écrivez-nous</h1>
+        <p>
+          Signalez un problème, posez une question ou partagez une idée. Votre retour nous aide
+          à construire une application vraiment utile aux aquariophiles.
         </p>
       </div>
+      <div class="contact-hero__visual" aria-hidden="true">
+        <span><mat-icon>forum</mat-icon></span>
+        <span><mat-icon>favorite</mat-icon></span>
+      </div>
+    </header>
 
-      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <!-- Grid -->
-        <div class="grid">
+    <section class="contact-layout">
+      <aside class="contact-guide">
+        <span class="section-kicker">Nous contacter</span>
+        <h2>Nous sommes à votre écoute</h2>
+        <p>Ajoutez suffisamment de contexte pour nous permettre de comprendre rapidement votre demande.</p>
+
+        <div class="guide-item">
+          <mat-icon>bug_report</mat-icon>
+          <div><strong>Vous avez trouvé un bug ?</strong><small>Indiquez la page, l’action réalisée et le résultat obtenu.</small></div>
+        </div>
+        <div class="guide-item">
+          <mat-icon>lightbulb</mat-icon>
+          <div><strong>Vous avez une idée ?</strong><small>Expliquez le besoin concret que cette amélioration résoudrait.</small></div>
+        </div>
+        <div class="guide-item">
+          <mat-icon>attach_file</mat-icon>
+          <div><strong>Besoin d’illustrer votre demande ?</strong><small>Ajoutez jusqu’à {{ maxFiles }} images ou PDF, dans la limite de {{ maxTotalMb }} Mo.</small></div>
+        </div>
+
+        <div class="privacy-note">
+          <mat-icon>verified_user</mat-icon>
+          Vos pièces jointes servent uniquement à traiter votre demande.
+        </div>
+      </aside>
+
+      <section class="form-card" aria-labelledby="contact-form-title">
+        <div class="form-heading">
+          <span><mat-icon>mail</mat-icon></span>
+          <div>
+            <span class="section-kicker">Votre message</span>
+            <h2 id="contact-form-title">Comment pouvons-nous vous aider ?</h2>
+          </div>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="grid">
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Type de demande</mat-label>
+              <mat-select formControlName="category">
+                <mat-option *ngFor="let c of categories" [value]="c.value">
+                  <mat-icon class="opt-ic">{{ c.icon }}</mat-icon>{{ c.label }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="form.controls.category.touched && form.controls.category.invalid">
+                Choisissez un type de demande
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Votre adresse e-mail</mat-label>
+              <input matInput type="email" formControlName="fromEmail" autocomplete="email" />
+              <mat-icon matSuffix>alternate_email</mat-icon>
+              <mat-error *ngIf="form.controls.fromEmail.touched && form.controls.fromEmail.invalid">
+                Saisissez une adresse e-mail valide
+              </mat-error>
+            </mat-form-field>
+          </div>
+
           <mat-form-field appearance="outline" class="field">
-            <mat-label>Type de demande</mat-label>
-            <mat-select formControlName="category">
-              <mat-option *ngFor="let c of categories" [value]="c.value">
-                <mat-icon class="opt-ic">{{ c.icon }}</mat-icon>
-                {{ c.label }}
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="form.controls.category.touched && form.controls.category.invalid">
-              Choisis un type
+            <mat-label>Sujet</mat-label>
+            <input matInput type="text" formControlName="subject" />
+            <mat-icon matSuffix>subject</mat-icon>
+            <mat-hint align="end">{{ form.controls.subject.value.length || 0 }} / 120</mat-hint>
+            <mat-error *ngIf="form.controls.subject.touched && form.controls.subject.invalid">
+              Le sujet doit contenir entre 4 et 120 caractères
             </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="field">
-            <mat-label>Ton e-mail</mat-label>
-            <input matInput type="email" formControlName="fromEmail" autocomplete="email" />
-            <mat-icon matSuffix>alternate_email</mat-icon>
-            <mat-error *ngIf="form.controls.fromEmail.touched && form.controls.fromEmail.invalid">
-              Email invalide
+            <mat-label>Décrivez votre demande</mat-label>
+            <textarea matInput rows="7" formControlName="message" placeholder="Expliquez-nous votre demande…"></textarea>
+            <mat-hint align="end">{{ form.controls.message.value.length || 0 }} / 4000</mat-hint>
+            <mat-error *ngIf="form.controls.message.touched && form.controls.message.invalid">
+              Le message doit contenir au moins 20 caractères
             </mat-error>
           </mat-form-field>
-        </div>
 
-        <mat-form-field appearance="outline" class="field">
-          <mat-label>Sujet</mat-label>
-          <input matInput type="text" formControlName="subject" />
-          <mat-icon matSuffix>subject</mat-icon>
-          <mat-hint align="end">{{ (form.controls.subject.value.length || 0) }} / 120</mat-hint>
-          <mat-error *ngIf="form.controls.subject.touched && form.controls.subject.invalid">
-            Sujet requis (4 à 120 caractères)
-          </mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="field">
-          <mat-label>Décris le problème / la demande</mat-label>
-          <textarea matInput rows="7" formControlName="message"></textarea>
-          <mat-hint align="end">{{ (form.controls.message.value.length || 0) }} / 4000</mat-hint>
-          <mat-error *ngIf="form.controls.message.touched && form.controls.message.invalid">
-            Message requis (min 20 caractères)
-          </mat-error>
-        </mat-form-field>
-
-        <!-- Upload box -->
-        <div class="upload">
-          <div class="upload-head">
-            <div>
-              <div class="upload-title">
-                <mat-icon>attach_file</mat-icon>
-                <span>Pièces jointes</span>
+          <div class="upload">
+            <div class="upload-head">
+              <div>
+                <div class="upload-title"><mat-icon>cloud_upload</mat-icon><span>Pièces jointes</span></div>
+                <div class="upload-sub">PNG, JPG, WEBP ou PDF · {{ maxFiles }} fichiers · {{ maxTotalMb }} Mo au total</div>
               </div>
-              <div class="upload-sub">
-                Max {{ maxFiles }} fichiers — {{ maxTotalMb }} MB au total (PNG/JPG/WEBP/PDF)
-              </div>
+              <label class="pick" for="contactFiles"><mat-icon>add</mat-icon><span>Choisir</span></label>
             </div>
+            <input id="contactFiles" class="file-input" type="file" multiple
+              accept="image/png,image/jpeg,image/webp,application/pdf" (change)="onPickFiles($event)" />
 
-            <label class="pick" for="contactFiles">
-              <mat-icon>upload</mat-icon>
-              <span>Choisir des fichiers</span>
-            </label>
-          </div>
-
-          <input
-            id="contactFiles"
-            class="file-input"
-            type="file"
-            multiple
-            accept="image/png,image/jpeg,image/webp,application/pdf"
-            (change)="onPickFiles($event)"
-          />
-
-          <div class="files" *ngIf="files.length">
-            <div class="file" *ngFor="let f of files; let i = index">
-              <mat-icon>description</mat-icon>
-
-              <div class="meta">
-                <div class="name">{{ f.name }}</div>
-                <div class="size">{{ (f.size / 1024 / 1024) | number:'1.2-2' }} MB</div>
+            <div class="files" *ngIf="files.length">
+              <div class="file" *ngFor="let f of files; let i = index">
+                <mat-icon>description</mat-icon>
+                <div class="meta">
+                  <div class="name">{{ f.name }}</div>
+                  <div class="size">{{ (f.size / 1024 / 1024) | number:'1.2-2' }} Mo</div>
+                </div>
+                <button mat-icon-button type="button" class="remove" (click)="removeFile(i)" aria-label="Retirer">
+                  <mat-icon>close</mat-icon>
+                </button>
               </div>
-
-              <button
-                mat-icon-button
-                type="button"
-                class="remove"
-                (click)="removeFile(i)"
-                aria-label="Retirer"
-              >
-                <mat-icon>close</mat-icon>
-              </button>
-            </div>
-
-            <div class="upload-footer">
-              <mat-icon>info</mat-icon>
-              <span>Total : {{ totalSizeMb() | number:'1.0-2' }} MB</span>
+              <div class="upload-footer"><mat-icon>info</mat-icon><span>Total : {{ totalSizeMb() | number:'1.0-2' }} Mo</span></div>
             </div>
           </div>
-        </div>
 
-        <!-- CTA -->
-        <button class="btn-primary" mat-raised-button type="submit" [disabled]="loading">
-          <mat-icon>send</mat-icon>
-          <span *ngIf="!loading">Envoyer</span>
-          <mat-progress-spinner *ngIf="loading" diameter="18" mode="indeterminate"></mat-progress-spinner>
-        </button>
+          <p class="ok" *ngIf="successMsg" role="status"><mat-icon>check_circle</mat-icon>{{ successMsg }}</p>
+          <p class="err" *ngIf="errorMsg" role="alert"><mat-icon>error</mat-icon>{{ errorMsg }}</p>
 
-        <p class="ok" *ngIf="successMsg">
-          <mat-icon>check_circle</mat-icon>
-          {{ successMsg }}
-        </p>
+          <button class="btn-primary" mat-raised-button type="submit" [disabled]="loading">
+            <mat-icon *ngIf="!loading">send</mat-icon>
+            <span *ngIf="!loading">Envoyer mon message</span>
+            <mat-progress-spinner *ngIf="loading" diameter="18" mode="indeterminate"></mat-progress-spinner>
+            <span *ngIf="loading">Envoi en cours…</span>
+          </button>
+        </form>
+      </section>
+    </section>
+  </main>
 
-        <p class="err" *ngIf="errorMsg">
-          <mat-icon>error</mat-icon>
-          {{ errorMsg }}
-        </p>
-      </form>
-    </mat-card>
-  </div>
+  <footer class="public-footer">
+    <span>AquaManager — votre aquarium, simplement.</span>
+    <nav aria-label="Liens de pied de page">
+      <a href="/about">À propos</a><a href="/species">Fiches espèces</a>
+      <a href="/articles">Conseils</a><a href="/legal">Mentions légales</a>
+      <a href="/privacy">Confidentialité</a>
+    </nav>
+  </footer>
 </div>

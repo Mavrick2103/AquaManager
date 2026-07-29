@@ -31,6 +31,9 @@ export class SeoService {
     this.updateProperty('og:type', page.type ?? 'website');
     this.updateProperty('og:url', canonicalUrl);
     this.updateProperty('og:image', imageUrl);
+    this.updateProperty('og:image:alt', page.title);
+    this.updateProperty('og:site_name', 'AquaManager');
+    this.updateProperty('og:locale', 'fr_FR');
     this.updateName('twitter:card', 'summary_large_image');
     this.updateName('twitter:title', page.title);
     this.updateName('twitter:description', page.description);

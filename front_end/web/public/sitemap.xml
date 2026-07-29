@@ -2,9 +2,8 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
   <url><loc>https://aquamanager.fr/</loc></url>
-  <url><loc>https://aquamanager.fr/login/</loc></url>
-  <url><loc>https://aquamanager.fr/a-propos-gestion-aquarium</loc></url>
   <url><loc>https://aquamanager.fr/contact</loc></url>
   <url><loc>https://aquamanager.fr/articles</loc></url>
+  <url><loc>https://aquamanager.fr/species</loc></url>
 
 </urlset>

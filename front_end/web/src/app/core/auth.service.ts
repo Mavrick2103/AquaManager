@@ -61,7 +61,7 @@ export class AuthService {
 
     this.accessToken = res.access_token;
     await this.fetchMe();
-    return this.router.navigateByUrl('/');
+    return this.router.navigateByUrl('/dashboard');
   }
 
   async refreshAccessToken(): Promise<string | null> {
@@ -102,7 +102,7 @@ export class AuthService {
 async completeVerifyLogin(accessToken: string) {
   this.accessToken = accessToken;
   await this.fetchMe();
-  return this.router.navigateByUrl('/home');
+  return this.router.navigateByUrl('/dashboard');
 }
 
 async forgotPassword(email: string): Promise<{ ok: boolean; message?: string }> {

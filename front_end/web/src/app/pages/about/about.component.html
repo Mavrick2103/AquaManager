@@ -1,263 +1,289 @@
 <div class="about-page">
-  <!-- HERO -->
-  <section class="hero">
-    <div class="badge">
-      <mat-icon>water_drop</mat-icon>
-      Gestion d’aquarium • suivi • rappels • stabilité
+  <nav class="public-nav" aria-label="Navigation principale">
+    <a class="public-brand" routerLink="/" aria-label="Accueil AquaManager">
+      <img src="/Logo_AquaManger.png" alt="AquaManager, application de gestion d’aquarium" />
+    </a>
+    <div class="public-links">
+      <a routerLink="/species">Fiches espèces</a>
+      <a routerLink="/articles">Conseils</a>
+      <a routerLink="/contact">Contact</a>
+      <a class="login-link" routerLink="/login">Connexion</a>
     </div>
+  </nav>
 
-    <h1>AquaManager : la gestion d’aquarium, enfin simple et claire</h1>
+  <main>
+    <section class="hero">
+      <div class="badge">
+        <mat-icon>water_drop</mat-icon>
+        Suivi d’aquarium gratuit, simple et intelligent
+      </div>
 
-    <p class="subtitle">
-      AquaManager centralise tes paramètres, ton entretien et ton historique pour stabiliser ton bac,
-      éviter les oublis, et mieux comprendre ce qui fonctionne vraiment.
-    </p>
+      <h1>L’application qui vous aide à garder un aquarium stable</h1>
 
-    <div class="hero-cta">
-      <button class="primary" mat-raised-button routerLink="/register">
-        Créer un compte
-      </button>
-      <button class="ghost" mat-stroked-button routerLink="/login">
-        Se connecter
-      </button>
-    </div>
-  </section>
-
-  <!-- À PROPOS / SEO -->
-  <section class="section card seo-highlight">
-    <div class="content">
-      <h2><mat-icon>info</mat-icon>À propos</h2>
-      <p>
-        AquaManager est une application de <span class="keyword">gestion d’aquarium</span> conçue pour
-        t’aider à suivre les paramètres de l’eau, planifier l’entretien, et conserver un historique fiable.
+      <p class="subtitle">
+        Centralisez vos mesures, vos entretiens, vos habitants et vos observations.
+        AquaManager transforme le suivi quotidien de votre aquarium en une routine claire et utile.
       </p>
-      <p>
-        L’objectif est simple : garder un aquarium stable, limiter les problèmes (algues, variations, stress),
-        et te faire gagner du temps au quotidien.
-      </p>
-    </div>
-  </section>
 
-  <!-- POURQUOI -->
-  <section class="section card">
-    <h2><mat-icon>psychology</mat-icon>Pourquoi AquaManager existe</h2>
-    <p>
-      Gérer un aquarium, ce n’est pas juste nourrir des poissons. Il faut suivre la stabilité des paramètres,
-      l’équilibre de l’azote (NO2/NO3), l’éclairage, l’entretien et tout ce qui s’accumule dans le temps.
-    </p>
-    <p>
-      AquaManager te permet de centraliser tout ça au même endroit, sans te perdre entre des notes, des applis
-      et des tableaux.
-    </p>
-  </section>
-
-  <!-- COMMENT ÇA MARCHE -->
-  <section class="section card">
-    <h2><mat-icon>timeline</mat-icon>Comment fonctionne l’application</h2>
-
-    <div class="steps">
-      <div class="step">
-        <div class="top">
-          <div class="num">1</div>
-          <h3>Créer ton aquarium</h3>
-        </div>
-        <p>Volume, type d’eau, matériel, population : tu poses le contexte.</p>
+      <div class="hero-cta">
+        <a class="primary" mat-raised-button routerLink="/register">
+          <mat-icon>rocket_launch</mat-icon>
+          Créer gratuitement mon aquarium
+        </a>
+        <a class="ghost" mat-stroked-button routerLink="/login">
+          J’ai déjà un compte
+        </a>
       </div>
 
-      <div class="step">
-        <div class="top">
-          <div class="num">2</div>
-          <h3>Enregistrer tes mesures</h3>
-        </div>
-        <p>pH, GH, KH, NO2, NO3, température : un historique clair et exploitable.</p>
+      <div class="hero-reassurance" aria-label="Avantages de la formule gratuite">
+        <span><mat-icon>check_circle</mat-icon>Formule Classic gratuite</span>
+        <span><mat-icon>check_circle</mat-icon>Jusqu’à 2 aquariums</span>
+        <span><mat-icon>check_circle</mat-icon>Accessible sur mobile et ordinateur</span>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="Fonctions principales">
+      <div><strong>1 espace</strong><span>pour tout centraliser</span></div>
+      <div><strong>12+ paramètres</strong><span>d’eau disponibles</span></div>
+      <div><strong>24 h / 24</strong><span>accessible en ligne</span></div>
+      <div><strong>3 formules</strong><span>selon vos besoins</span></div>
+    </section>
+
+    <section id="fonctionnalites" class="section intro-section">
+      <div class="section-heading">
+        <span class="section-kicker">Un suivi vraiment utile</span>
+        <h2>Tout ce qu’il faut pour comprendre et entretenir votre aquarium</h2>
+        <p>
+          AquaManager rassemble les informations dispersées entre carnets, rappels et tableaux
+          pour vous donner une vision claire de chaque bac.
+        </p>
       </div>
 
-      <div class="step">
-        <div class="top">
-          <div class="num">3</div>
-          <h3>Planifier l’entretien</h3>
-        </div>
-        <p>Rappels : changements d’eau, nettoyage, fertilisation, taille… moins d’oublis.</p>
-      </div>
+      <div class="feature-showcase">
+        <article class="feature-card feature-card--large">
+          <span class="feature-icon"><mat-icon>monitor_heart</mat-icon></span>
+          <div>
+            <span class="feature-label">Paramètres d’eau</span>
+            <h3>Suivez l’évolution de votre bac, pas seulement une valeur isolée</h3>
+            <p>
+              Enregistrez pH, GH, KH, NO2, NO3, température et autres mesures. Les graphiques,
+              objectifs et événements vous aident à replacer chaque variation dans son contexte.
+            </p>
+          </div>
+        </article>
 
-      <div class="step">
-        <div class="top">
-          <div class="num">4</div>
-          <h3>Stabiliser ton bac</h3>
-        </div>
-        <p>Tu comprends ce qui marche grâce au lien entre actions et paramètres.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- À QUI ÇA SERT -->
-  <section class="section card">
-    <h2><mat-icon>groups</mat-icon>À qui ça sert</h2>
-    <p>AquaManager s’adresse à tous les aquariophiles :</p>
-
-    <div class="benefits">
-      <div class="benefit">
-        <mat-icon>check_circle</mat-icon>
-        <div>
-          <strong>Débutants</strong><br />
-          <span>Démarrer proprement et éviter les erreurs classiques.</span>
-        </div>
-      </div>
-
-      <div class="benefit">
-        <mat-icon>check_circle</mat-icon>
-        <div>
-          <strong>Confirmés</strong><br />
-          <span>Gagner du temps et suivre précisément l’évolution du bac.</span>
-        </div>
-      </div>
-
-      <div class="benefit">
-        <mat-icon>check_circle</mat-icon>
-        <div>
-          <strong>Bacs plantés / crevettes</strong><br />
-          <span>Améliorer la stabilité, essentielle pour la santé et les couleurs.</span>
-        </div>
-      </div>
-
-      <div class="benefit">
-        <mat-icon>check_circle</mat-icon>
-        <div>
-          <strong>Suivi sur le long terme</strong><br />
-          <span>Comprendre ce qui améliore (ou dérègle) l’équilibre de l’aquarium.</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CE QUE ÇA APPORTE -->
-  <section class="section card">
-    <h2><mat-icon>verified</mat-icon>Ce que ça t’apporte concrètement</h2>
-
-    <div class="benefits">
-      <div class="benefit">
-        <mat-icon>check_circle</mat-icon>
-        <div>
-          <strong>Moins d’algues</strong><br />
-          <span>Parce que tu stabilises plutôt que de bricoler au jour le jour.</span>
-        </div>
-      </div>
-
-      <div class="benefit">
-        <mat-icon>check_circle</mat-icon>
-        <div>
-          <strong>Moins de pertes</strong><br />
-          <span>Tu détectes plus tôt les dérives de paramètres.</span>
-        </div>
-      </div>
-
-      <div class="benefit">
-        <mat-icon>check_circle</mat-icon>
-        <div>
-          <strong>Entretien régulier</strong><br />
-          <span>Une routine claire grâce aux rappels.</span>
-        </div>
-      </div>
-
-      <div class="benefit">
-        <mat-icon>check_circle</mat-icon>
-        <div>
-          <strong>Historique utile</strong><br />
-          <span>Tu comprends ce qui marche et ce qui crée un déséquilibre.</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- EN COURS DE DEV + IA + OUVERT AUX IDÉES -->
-  <section class="section card roadmap">
-    <h2><mat-icon>rocket_launch</mat-icon>Une application en évolution</h2>
-
-    <p>
-      AquaManager est actuellement <strong>en cours de développement</strong>.
-      De nombreuses nouvelles fonctionnalités arrivent progressivement pour rendre la
-      <strong>gestion d’aquarium</strong> encore plus simple, plus fiable et plus intelligente.
-    </p>
-
-    <div class="roadmap-grid">
-      <div class="roadmap-item">
-        <mat-icon>smart_toy</mat-icon>
-        <div>
-          <h3>Une IA dédiée à l’aquarium</h3>
+        <article class="feature-card">
+          <span class="feature-icon"><mat-icon>event_available</mat-icon></span>
+          <span class="feature-label">Planning</span>
+          <h3>Un entretien sans oubli</h3>
           <p>
-            L’objectif : t’aider à interpréter tes paramètres, repérer des dérives,
-            et te proposer des actions adaptées pour gagner du temps au quotidien.
+            Programmez changements d’eau, tests, fertilisation et tâches répétitives dans un
+            calendrier conçu pour vos aquariums.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon"><mat-icon>assignment_turned_in</mat-icon></span>
+          <span class="feature-label">Protocoles</span>
+          <h3>Des routines guidées</h3>
+          <p>
+            Cyclage, entretien courant, lutte contre les algues ou préparation d’une absence :
+            avancez étape par étape.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon"><mat-icon>pets</mat-icon></span>
+          <span class="feature-label">Population</span>
+          <h3>Poissons et plantes réunis</h3>
+          <p>
+            Gérez les habitants de chaque aquarium et consultez les
+            <a routerLink="/species">fiches poissons et plantes</a> publiques.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <span class="feature-icon"><mat-icon>auto_awesome</mat-icon></span>
+          <span class="feature-label">Aide intelligente</span>
+          <h3>Des recommandations adaptées</h3>
+          <p>
+            L’assistant analyse vos données et propose des actions prudentes. L’IA Premium va plus
+            loin dans l’analyse et peut préparer des tâches pour votre planning.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section journey-section">
+      <div class="section-heading">
+        <span class="section-kicker">Simple dès le départ</span>
+        <h2>Votre aquarium organisé en quatre étapes</h2>
+      </div>
+
+      <ol class="journey">
+        <li>
+          <span>1</span>
+          <div><strong>Créez votre bac</strong><small>Type d’eau, volume et informations essentielles.</small></div>
+        </li>
+        <li>
+          <span>2</span>
+          <div><strong>Ajoutez vos mesures</strong><small>Constituez progressivement un historique fiable.</small></div>
+        </li>
+        <li>
+          <span>3</span>
+          <div><strong>Planifiez votre routine</strong><small>Transformez les besoins du bac en actions concrètes.</small></div>
+        </li>
+        <li>
+          <span>4</span>
+          <div><strong>Suivez son équilibre</strong><small>Observez les tendances et intervenez avec méthode.</small></div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="section plans-section">
+      <div class="section-heading">
+        <span class="section-kicker">Une formule adaptée à chaque aquariophile</span>
+        <h2>Commencez gratuitement avec Classic</h2>
+        <p>
+          AquaManager est accessible gratuitement avec la formule Classic. Les abonnements Premium
+          et Pro sont encore en préparation et seront proposés prochainement.
+        </p>
+      </div>
+
+      <div class="plans-notice" role="note">
+        <span><mat-icon>campaign</mat-icon></span>
+        <div>
+          <strong>Premium et Pro arrivent prochainement</strong>
+          <p>
+            Les fonctionnalités sont présentées pour vous donner un aperçu de la suite.
+            Aucun abonnement payant n’est disponible pour le moment.
           </p>
         </div>
       </div>
 
-      <div class="roadmap-item">
-        <mat-icon>update</mat-icon>
-        <div>
-          <h3>Des nouveautés régulièrement</h3>
-          <p>
-            Améliorations de l’historique, rappels plus intelligents, fiches plus complètes,
-            et d’autres ajouts en continu.
+      <div class="plans-grid">
+        <article class="plan-card plan-card--available">
+          <span class="plan-status plan-status--available">Disponible gratuitement</span>
+          <span class="plan-name">Classic</span>
+          <h3>Pour bien commencer</h3>
+          <p>Le suivi essentiel et l’assistant intelligent pour gérer jusqu’à deux aquariums.</p>
+          <ul>
+            <li><mat-icon>check</mat-icon>Mesures et graphiques</li>
+            <li><mat-icon>check</mat-icon>Calendrier et protocoles</li>
+            <li><mat-icon>check</mat-icon>Assistant intelligent</li>
+          </ul>
+          <a mat-stroked-button routerLink="/register">Commencer gratuitement</a>
+        </article>
+
+        <article class="plan-card plan-card--featured">
+          <span class="plan-status">Bientôt disponible</span>
+          <span class="plan-name">Premium</span>
+          <h3>Pour aller plus loin</h3>
+          <p>L’analyse par IA et davantage de capacité pour suivre jusqu’à cinq aquariums.</p>
+          <ul>
+            <li><mat-icon>check</mat-icon>Tout le contenu Classic</li>
+            <li><mat-icon>check</mat-icon>Analyses IA approfondies</li>
+            <li><mat-icon>check</mat-icon>Suggestions de tâches</li>
+          </ul>
+          <span class="coming-soon-action"><mat-icon>schedule</mat-icon>Arrive prochainement</span>
+        </article>
+
+        <article class="plan-card">
+          <span class="plan-status">Bientôt disponible</span>
+          <span class="plan-name">Pro</span>
+          <h3>Pour gérer sans limite</h3>
+          <p>Une formule pensée pour les utilisateurs qui suivent de nombreux aquariums.</p>
+          <ul>
+            <li><mat-icon>check</mat-icon>Aquariums illimités</li>
+            <li><mat-icon>check</mat-icon>Fonctions avancées</li>
+            <li><mat-icon>check</mat-icon>Suivi multi-bacs</li>
+          </ul>
+          <span class="coming-soon-action"><mat-icon>schedule</mat-icon>Arrive prochainement</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="section resources-section">
+      <div>
+        <span class="section-kicker">Apprendre et progresser</span>
+        <h2>Des ressources publiques pour mieux comprendre l’aquariophilie</h2>
+        <p>
+          Explorez les espèces et lisez des conseils pratiques même sans créer de compte.
+        </p>
+      </div>
+      <div class="resource-links">
+        <a routerLink="/species">
+          <mat-icon>set_meal</mat-icon>
+          <span><strong>Fiches espèces</strong><small>Poissons et plantes d’aquarium</small></span>
+          <mat-icon>arrow_forward</mat-icon>
+        </a>
+        <a routerLink="/articles">
+          <mat-icon>menu_book</mat-icon>
+          <span><strong>Articles et guides</strong><small>Entretien, eau et équilibre du bac</small></span>
+          <mat-icon>arrow_forward</mat-icon>
+        </a>
+      </div>
+    </section>
+
+    <section class="section faq-section">
+      <div class="section-heading">
+        <span class="section-kicker">Questions fréquentes</span>
+        <h2>Ce qu’il faut savoir avant de commencer</h2>
+      </div>
+
+      <div class="faq">
+        <article class="qa">
+          <div class="q"><mat-icon>question_mark</mat-icon><h3>AquaManager est-il gratuit ?</h3></div>
+          <p class="a">
+            Oui. La formule Classic permet de suivre gratuitement jusqu’à deux aquariums avec les
+            mesures, le calendrier, les protocoles et l’assistant intelligent.
           </p>
-        </div>
-      </div>
-
-      <div class="roadmap-item">
-        <mat-icon>forum</mat-icon>
-        <div>
-          <h3>Je suis ouvert à tes idées</h3>
-          <p>
-            Une suggestion intéressante ? Un besoin précis ?
-            Je reste <strong>ouvert à toute proposition</strong> pour améliorer l’application
-            et répondre aux vrais besoins des aquariophiles.
+        </article>
+        <article class="qa">
+          <div class="q"><mat-icon>question_mark</mat-icon><h3>Quels paramètres puis-je suivre ?</h3></div>
+          <p class="a">
+            Vous pouvez notamment enregistrer le pH, le GH, le KH, les nitrites, les nitrates,
+            la température et plusieurs paramètres spécifiques à votre type d’aquarium.
           </p>
-        </div>
+        </article>
+        <article class="qa">
+          <div class="q"><mat-icon>question_mark</mat-icon><h3>L’application remplace-t-elle les tests d’eau ?</h3></div>
+          <p class="a">
+            Non. Vous continuez à mesurer l’eau avec vos tests habituels. AquaManager organise les
+            résultats et vous aide à comprendre leur évolution.
+          </p>
+        </article>
+        <article class="qa">
+          <div class="q"><mat-icon>question_mark</mat-icon><h3>Puis-je gérer plusieurs aquariums ?</h3></div>
+          <p class="a">
+            Oui. Classic permet deux aquariums, Premium jusqu’à cinq et Pro ne limite pas le nombre
+            de bacs.
+          </p>
+        </article>
       </div>
-    </div>
+    </section>
 
-    <div class="contact-hint">
-      <mat-icon>mail</mat-icon>
-      <span>
-        N’hésite pas à me contacter via la page
-        <a routerLink="/contact" class="contact-link">Contact</a>.
-      </span>
-    </div>
-  </section>
-
-  <!-- FAQ -->
-  <section class="section card">
-    <h2><mat-icon>help</mat-icon>FAQ</h2>
-
-    <div class="faq">
-      <div class="qa">
-        <div class="q">
-          <mat-icon>question_mark</mat-icon>
-          <span class="title">AquaManager, c’est pour quel type de bac ?</span>
-        </div>
-        <div class="a">
-          Eau douce, bac planté, crevettes, communautaire : l’application est pensée pour la gestion quotidienne.
-        </div>
+    <section class="final-cta">
+      <span class="final-cta__icon"><mat-icon>water_drop</mat-icon></span>
+      <div>
+        <span class="section-kicker">Votre prochain relevé peut être le premier</span>
+        <h2>Donnez à votre aquarium le suivi qu’il mérite</h2>
+        <p>Créez votre compte gratuitement et centralisez votre premier bac en quelques minutes.</p>
       </div>
+      <a mat-raised-button routerLink="/register">
+        Commencer gratuitement
+        <mat-icon>arrow_forward</mat-icon>
+      </a>
+    </section>
+  </main>
 
-      <div class="qa">
-        <div class="q">
-          <mat-icon>question_mark</mat-icon>
-          <span class="title">Quels paramètres puis-je suivre ?</span>
-        </div>
-        <div class="a">
-          pH, GH, KH, NO2, NO3, température… et tu peux étendre selon ton modèle de données.
-        </div>
-      </div>
- 
-      <div class="qa">
-        <div class="q">
-          <mat-icon>question_mark</mat-icon>
-          <span class="title">Est-ce que l’application remplace les tests en gouttes ?</span>
-        </div>
-        <div class="a">
-          Non. Tu mesures avec tes tests, et l’app organise l’historique pour t’aider à interpréter l’évolution.
-        </div>
-      </div>
-    </div>
-  </section>
+  <footer class="public-footer">
+    <span>© AquaManager</span>
+    <nav aria-label="Liens légaux">
+      <a routerLink="/legal">Mentions légales</a>
+      <a routerLink="/privacy">Confidentialité</a>
+      <a routerLink="/terms">CGU</a>
+      <a routerLink="/contact">Contact</a>
+    </nav>
+  </footer>
 </div>

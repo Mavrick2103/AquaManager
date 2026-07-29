@@ -27,7 +27,7 @@ export class SeoController {
   @Header('Content-Type', 'application/xml; charset=utf-8')
   async sitemapXml() {
     const staticUrls: SitemapUrl[] = [
-      { loc: `${this.baseUrl}/a-propos-gestion-aquarium`, changefreq: 'monthly', priority: '0.8' },
+      { loc: `${this.baseUrl}/`, changefreq: 'weekly', priority: '1.0' },
       { loc: `${this.baseUrl}/contact`, changefreq: 'monthly', priority: '0.6' },
       { loc: `${this.baseUrl}/articles`, changefreq: 'weekly', priority: '0.9' },
       { loc: `${this.baseUrl}/species`, changefreq: 'weekly', priority: '0.8' },

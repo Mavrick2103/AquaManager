@@ -73,7 +73,8 @@ export const routes: Routes = [
   },
   {
     path: 'a-propos-gestion-aquarium',
-    loadComponent: () => import('./pages/about/about.component').then((m) => m.AboutComponent),
+    redirectTo: '',
+    pathMatch: 'full',
   },
 
   // ✅ ARTICLES PUBLICS
@@ -96,7 +97,13 @@ export const routes: Routes = [
   // =========================
 
   // ✅ Accueil après login
-  { path: '', component: HomeComponent, canActivate: [AuthGuard], pathMatch: 'full' },
+  {
+    path: '',
+    loadComponent: () => import('./pages/about/about.component').then((m) => m.AboutComponent),
+    pathMatch: 'full',
+  },
+  { path: 'dashboard', component: HomeComponent, canActivate: [AuthGuard] },
+  { path: 'home', redirectTo: 'dashboard', pathMatch: 'full' },
 
   {
     path: 'aquariums',
