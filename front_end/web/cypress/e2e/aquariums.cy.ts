@@ -73,6 +73,7 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     cy.contains('.mat-mdc-option, .mat-option', /eau douce/i).click();
 
     cy.get('mat-dialog-container').within(() => {
+      cy.get('mat-checkbox[formControlName="setupCycling"] input').uncheck({ force: true });
       cy.contains('button', /enregistrer/i).click();
     });
 
@@ -138,7 +139,6 @@ describe('Sécurité front — XSS & token', () => {
     const alerts: string[] = [];
     cy.on('window:alert', (txt) => alerts.push(txt));
 
-    // 1) GET par défaut (prendra les requêtes après la 1ère)
     cy.intercept(
       { method: 'GET', url: rx.aqOverview },
       {
@@ -151,6 +151,7 @@ describe('Sécurité front — XSS & token', () => {
       }
     ).as('listWithXss');
 
+    // 1) GET par défaut (prendra les requêtes après la 1ère)
     // 2) IMPORTANT: l’intercept le plus récent gagne -> on met celui-ci EN DERNIER
     // pour qu’il attrape la 1ère requête uniquement.
     cy.intercept(
@@ -182,6 +183,7 @@ describe('Sécurité front — XSS & token', () => {
     cy.contains('.mat-mdc-option, .mat-option', /eau douce/i).click();
 
     cy.get('mat-dialog-container').within(() => {
+      cy.get('mat-checkbox[formControlName="setupCycling"] input').uncheck({ force: true });
       cy.contains('button', /créer|enregistrer|valider/i).click();
     });
 

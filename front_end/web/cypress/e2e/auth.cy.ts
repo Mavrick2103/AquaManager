@@ -26,7 +26,7 @@ describe('Authentification', () => {
     cy.get('button[type="submit"]').click();
 
     cy.wait(['@login', '@me']);
-    cy.visit('/');
+    cy.url().should('include', '/dashboard');
     cy.contains('Mes aquariums').should('be.visible');
   });
 
@@ -42,7 +42,7 @@ describe('Authentification', () => {
       body: { access_token: null },
     }).as('refreshFail');
 
-    cy.visit('/');
+    cy.visit('/dashboard');
     cy.wait('@refreshFail');
 
     cy.url().should('include', '/login');
