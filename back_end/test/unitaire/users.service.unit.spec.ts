@@ -14,6 +14,9 @@ import { Task } from '../../src/tasks/task.entity';
 import { AquariumFishCard } from '../../src/catalog/aquarium-card-pivot/aquarium-fish-card.entity';
 import { AquariumPlantCard } from '../../src/catalog/aquarium-card-pivot/aquarium-plant-card.entity';
 import { GamificationProfile } from '../../src/gamification/entities/gamification-profile.entity';
+import { Article } from '../../src/articles/entities/article.entity';
+import { FishCard } from '../../src/catalog/fish-cards/fish-card.entity';
+import { PlantCard } from '../../src/catalog/plant-cards/plant-card.entity';
 
 jest.mock('argon2', () => ({
   hash: jest.fn(async (s: string) => 'hashed:' + s),
@@ -79,6 +82,9 @@ describe('UsersService (unit)', () => {
         { provide: getRepositoryToken(AquariumFishCard), useValue: aqFishRepoMock },
         { provide: getRepositoryToken(AquariumPlantCard), useValue: aqPlantRepoMock },
         {provide: getRepositoryToken(GamificationProfile), useValue: gamificationProfileRepoMock},
+        { provide: getRepositoryToken(Article), useValue: { find: jest.fn() } },
+        { provide: getRepositoryToken(FishCard), useValue: { find: jest.fn() } },
+        { provide: getRepositoryToken(PlantCard), useValue: { find: jest.fn() } },
       ],
     }).compile();
 

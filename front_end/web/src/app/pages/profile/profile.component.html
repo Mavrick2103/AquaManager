@@ -215,77 +215,61 @@
         <mat-icon>admin_panel_settings</mat-icon><span>Admin</span>
       </ng-template>
 
-      <section class="tab-pane">
-        <div class="admin-grid">
-          <mat-card class="admin-card">
-            <div class="admin-head">
-              <mat-icon>show_chart</mat-icon>
-              <h3>Dashboard Admin</h3>
-            </div>
-            <p>Suivre l'évolution du site</p>
-            <div class="admin-actions">
-              <button mat-stroked-button color="primary" [routerLink]="'/admin/metrics'">
-                <mat-icon>manage_accounts</mat-icon>
-                Ouvrir le suivi
-              </button>
-            </div>
-          </mat-card>
+      <section class="tab-pane admin-portal">
+        <div class="admin-portal-hero">
+          <div class="admin-portal-hero__icon"><mat-icon>admin_panel_settings</mat-icon></div>
+          <div class="admin-portal-hero__copy">
+            <span>Réservé aux administrateurs</span>
+            <h2>Centre d’administration AquaManager</h2>
+            <p>Pilotez l’activité, gérez les accès, modérez les contenus et préparez la communication depuis un espace unique.</p>
+          </div>
+          <a mat-flat-button routerLink="/admin/metrics">
+            Ouvrir le centre
+            <mat-icon>arrow_forward</mat-icon>
+          </a>
+        </div>
 
-          <mat-card class="admin-card">
-            <div class="admin-head">
-              <mat-icon>group</mat-icon>
-              <h3>Utilisateurs</h3>
-            </div>
-            <p>Créer, modifier et gérer les utilisateurs.</p>
-            <div class="admin-actions">
-              <button mat-stroked-button color="primary" [routerLink]="'/admin/users'">
-                <mat-icon>view_list</mat-icon>
-                Gérer les utilisateurs
-              </button>
-            </div>
-          </mat-card>
+        <div class="admin-shortcuts" aria-label="Raccourcis d’administration">
+          <a class="admin-shortcut admin-shortcut--primary" routerLink="/admin/metrics">
+            <span class="admin-shortcut__icon"><mat-icon>monitoring</mat-icon></span>
+            <span class="admin-shortcut__copy"><small>Pilotage</small><strong>Vue d’ensemble</strong><em>Évolution, alertes et activité du site</em></span>
+            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
+          </a>
 
-          <mat-card class="admin-card">
-            <div class="admin-head">
-              <mat-icon>local_florist</mat-icon>
-              <h3>Plantes</h3>
-            </div>
-            <p>Créer / modifier les fiches plantes (lumière, CO₂, sol, croissance…).</p>
-            <div class="admin-actions">
-              <button mat-stroked-button color="primary" routerLink="/admin/species/plant">
-                <mat-icon>edit</mat-icon>
-                Gérer les plantes
-              </button>
-            </div>
-          </mat-card>
+          <a class="admin-shortcut" routerLink="/admin/users">
+            <span class="admin-shortcut__icon"><mat-icon>manage_accounts</mat-icon></span>
+            <span class="admin-shortcut__copy"><small>Accès</small><strong>Utilisateurs</strong><em>Rôles, abonnements et comptes</em></span>
+            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
+          </a>
 
-          <mat-card class="admin-card">
-            <div class="admin-head">
-              <mat-icon>pets</mat-icon>
-              <h3>Espèces</h3>
-            </div>
-            <p>Créer / modifier les espèces (paramètres, compatibilités, taille, biotope…)</p>
-            <div class="admin-actions">
-              <button mat-stroked-button color="primary" routerLink="/admin/species/fish">
-                <mat-icon>library_books</mat-icon>
-                Gérer les espèces
-              </button>
-            </div>
-          </mat-card>
+          <a class="admin-shortcut" routerLink="/admin/species/fish">
+            <span class="admin-shortcut__icon"><mat-icon>set_meal</mat-icon></span>
+            <span class="admin-shortcut__copy"><small>Catalogue</small><strong>Fiches poissons</strong><em>Créer, vérifier et publier</em></span>
+            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
+          </a>
 
-          <mat-card class="admin-card">
-            <div class="admin-head">
-              <mat-icon>campaign</mat-icon>
-              <h3>Communication</h3>
-            </div>
-            <p>Préparer, planifier et valider les contenus Instagram d’AquaManager.</p>
-            <div class="admin-actions">
-              <button mat-stroked-button color="primary" routerLink="/admin/marketing">
-                <mat-icon>calendar_month</mat-icon>
-                Ouvrir le studio
-              </button>
-            </div>
-          </mat-card>
+          <a class="admin-shortcut" routerLink="/admin/species/plant">
+            <span class="admin-shortcut__icon"><mat-icon>eco</mat-icon></span>
+            <span class="admin-shortcut__copy"><small>Catalogue</small><strong>Fiches plantes</strong><em>Maintenir le catalogue végétal</em></span>
+            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
+          </a>
+
+          <a class="admin-shortcut" routerLink="/admin/articles">
+            <span class="admin-shortcut__icon"><mat-icon>article</mat-icon></span>
+            <span class="admin-shortcut__copy"><small>Éditorial</small><strong>Articles & conseils</strong><em>Rédiger, modérer et publier</em></span>
+            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
+          </a>
+
+          <a class="admin-shortcut" routerLink="/admin/marketing">
+            <span class="admin-shortcut__icon"><mat-icon>campaign</mat-icon></span>
+            <span class="admin-shortcut__copy"><small>Rayonnement</small><strong>Communication</strong><em>Préparer les contenus sociaux</em></span>
+            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
+          </a>
+        </div>
+
+        <div class="admin-security-note">
+          <mat-icon>verified_user</mat-icon>
+          <span><strong>Accès protégé</strong><small>Cette section et ses routes sont réservées au rôle administrateur.</small></span>
         </div>
       </section>
     </mat-tab>

@@ -25,6 +25,7 @@ import {
   SubscriptionPlan,
   UserRole,
 } from '../../../core/admin-users.service';
+import { AdminSidebarComponent } from '../../../shared/admin-sidebar/admin-sidebar.component';
 
 type UserSortMode = 'createdAt_desc' | 'level_desc' | 'activityDays_desc' | 'lastActivity_desc';
 
@@ -37,6 +38,7 @@ type UserSortMode = 'createdAt_desc' | 'level_desc' | 'activityDays_desc' | 'las
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
+    AdminSidebarComponent,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
@@ -59,6 +61,18 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
 
   users: AdminUser[] = [];
   filteredUsers: AdminUser[] = [];
+
+  get verifiedUsersCount(): number {
+    return this.users.filter((user) => Boolean(user.emailVerifiedAt)).length;
+  }
+
+  get subscribedUsersCount(): number {
+    return this.users.filter((user) => user.subscriptionPlan === 'PREMIUM' || user.subscriptionPlan === 'PRO').length;
+  }
+
+  get privilegedUsersCount(): number {
+    return this.users.filter((user) => user.role === 'ADMIN' || user.role === 'EDITOR').length;
+  }
 
   searchCtrl = new FormControl<string>('', { nonNullable: true });
   activeOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });

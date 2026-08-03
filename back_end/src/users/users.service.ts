@@ -20,6 +20,9 @@ import { Task } from '../tasks/task.entity';
 import { AquariumFishCard } from '../catalog/aquarium-card-pivot/aquarium-fish-card.entity';
 import { AquariumPlantCard } from '../catalog/aquarium-card-pivot/aquarium-plant-card.entity';
 import { GamificationProfile } from '../gamification/entities/gamification-profile.entity';
+import { Article } from '../articles/entities/article.entity';
+import { FishCard } from '../catalog/fish-cards/fish-card.entity';
+import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
 
 type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 type NewUsersPoint = { label: string; count: number };
@@ -35,6 +38,9 @@ export class UsersService {
     @InjectRepository(AquariumPlantCard) private readonly aqPlantRepo: Repository<AquariumPlantCard>,
     @InjectRepository(GamificationProfile)
     private readonly gamificationProfileRepo: Repository<GamificationProfile>,
+    @InjectRepository(Article) private readonly articleRepo: Repository<Article>,
+    @InjectRepository(FishCard) private readonly fishCardRepo: Repository<FishCard>,
+    @InjectRepository(PlantCard) private readonly plantCardRepo: Repository<PlantCard>,
   ) {}
 
   findById(id: number) {
@@ -469,14 +475,25 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
           take: 500,
         })
       : [];
-        const gamificationProfile = await this.gamificationProfileRepo.findOne({
+    const gamificationProfile = await this.gamificationProfileRepo.findOne({
   where: { userId: id },
 });
+
+    const [editorArticles, editorFishCards, editorPlantCards] = await Promise.all([
+      this.articleRepo.find({ where: { authorId: id }, order: { createdAt: 'DESC' } }),
+      this.fishCardRepo.find({ where: { createdById: id }, order: { createdAt: 'DESC' } }),
+      this.plantCardRepo.find({ where: { createdBy: id }, order: { createdAt: 'DESC' } }),
+    ]);
+
 return { user, aquariums, measurements, fish, plants, tasks, gamification: {
     level: gamificationProfile?.level ?? 1,
     xp: gamificationProfile?.xp ?? 0,
     currentStreak: gamificationProfile?.currentStreak ?? 0,
     bestStreak: gamificationProfile?.bestStreak ?? 0,
+  }, editor: {
+    articles: editorArticles.map((article) => ({ id: article.id, title: article.title, createdAt: article.createdAt, status: article.status })),
+    fishCards: editorFishCards.map((card) => ({ id: card.id, commonName: card.commonName, createdAt: card.createdAt, status: card.status })),
+    plantCards: editorPlantCards.map((card) => ({ id: card.id, commonName: card.commonName, createdAt: card.createdAt, status: card.status })),
   },
 };  
 }

@@ -18,6 +18,7 @@ import { MatListModule } from '@angular/material/list';
 
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { AdminSidebarComponent } from '../../../shared/admin-sidebar/admin-sidebar.component';
 
 type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 type Role = 'USER' | 'ADMIN' | 'EDITOR';
@@ -25,6 +26,7 @@ type Role = 'USER' | 'ADMIN' | 'EDITOR';
 type NewUsersPoint = { label: string; count: number };
 type ActiveUsersPoint = { label: string; count: number };
 type SubscriptionPoint = { label: string; premium: number; pro: number; total: number };
+type ActivityBar = { label: string; value: number; icon: string; tone: string };
 
 interface AdminMetricsDto {
   generatedAt: string;
@@ -53,6 +55,21 @@ interface AdminMetricsDto {
     totalPending: number;
   };
   content: { publishedArticles: number; approvedFishCards: number; approvedPlantCards: number };
+  operations: {
+    infrastructure: {
+      mysql: 'ok' | 'error';
+      disk: { status: 'ok' | 'warning' | 'critical' | 'unknown'; freeBytes: number | null; totalBytes: number | null; usedPercent: number | null };
+      backup: { status: 'ok' | 'warning' | 'critical' | 'unknown'; lastAt: string | null; ageHours: number | null };
+    };
+    alerts: {
+      trackingAvailable: boolean;
+      apiErrors: number;
+      stripeFailures: number;
+      emailFailures: number;
+      recent: Array<{ type: string; route: string; statusCode: number; createdAt: string }>;
+    };
+  };
+  featureUsage: Record<string, { events: number; users: number; detail?: string }>;
 }
 
 @Component({
@@ -62,6 +79,7 @@ interface AdminMetricsDto {
     CommonModule,
     RouterModule,
     HttpClientModule,
+    AdminSidebarComponent,
 
     MatToolbarModule,
     MatCardModule,
@@ -482,5 +500,68 @@ maxSubscriptionsTotal(): number {
 subscriptionBarHeight(value: number): number {
   const max = this.maxSubscriptionsTotal();
   return Math.max(4, Math.round((Number(value ?? 0) / max) * 100));
+}
+
+classicAccounts(): number {
+  if (!this.metrics) return 0;
+  return Math.max(0, this.metrics.users.total - this.metrics.subscriptions.totalActive);
+}
+
+planPercent(value: number): number {
+  const total = this.metrics?.users.total ?? 0;
+  return total > 0 ? Math.round((value / total) * 100) : 0;
+}
+
+planDonutStyle(): string {
+  if (!this.metrics || this.metrics.users.total <= 0) {
+    return 'conic-gradient(#e5e7eb 0 100%)';
+  }
+
+  const premium = (this.metrics.subscriptions.premiumActive / this.metrics.users.total) * 100;
+  const pro = (this.metrics.subscriptions.proActive / this.metrics.users.total) * 100;
+  const proEnd = premium + pro;
+  return `conic-gradient(#299fbc 0 ${premium}%, #7859b3 ${premium}% ${proEnd}%, #d9e2e5 ${proEnd}% 100%)`;
+}
+
+activityBars(): ActivityBar[] {
+  if (!this.metrics) return [];
+  return [
+    { label: 'Inscriptions', value: this.metrics.users.newInRange ?? 0, icon: 'person_add', tone: 'users' },
+    { label: 'Aquariums créés', value: this.metrics.aquariums.createdInRange, icon: 'waves', tone: 'aquariums' },
+    { label: 'Mesures ajoutées', value: this.metrics.measurements.createdInRange, icon: 'science', tone: 'measures' },
+    { label: 'Tâches créées', value: this.metrics.tasks.createdInRange, icon: 'checklist', tone: 'tasks' },
+  ];
+}
+
+activityBarHeight(value: number): number {
+  const max = Math.max(1, ...this.activityBars().map((item) => item.value));
+  return value <= 0 ? 3 : Math.max(8, Math.round((value / max) * 100));
+}
+
+formatBytes(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return 'Indisponible';
+  const units = ['o', 'Ko', 'Mo', 'Go', 'To'];
+  let current = value;
+  let unit = 0;
+  while (current >= 1024 && unit < units.length - 1) { current /= 1024; unit++; }
+  return `${current.toFixed(unit >= 3 ? 1 : 0)} ${units[unit]}`;
+}
+
+featureRows(): Array<{ key: string; label: string; icon: string; events: number; users: number }> {
+  const usage = this.metrics?.featureUsage;
+  if (!usage) return [];
+  return [
+    { key: 'assistant', label: 'Assistant intelligent', icon: 'psychology_alt', ...usage['assistant'] },
+    { key: 'ai', label: 'Intelligence artificielle', icon: 'auto_awesome', ...usage['ai'] },
+    { key: 'protocols', label: 'Protocoles', icon: 'assignment_turned_in', ...usage['protocols'] },
+    { key: 'calendar', label: 'Calendrier', icon: 'calendar_month', ...usage['calendar'] },
+    { key: 'measurements', label: 'Mesures', icon: 'science', ...usage['measurements'] },
+    { key: 'species', label: 'Fiches espèces', icon: 'pets', ...usage['species'] },
+  ];
+}
+
+featureWidth(value: number): number {
+  const max = Math.max(1, ...this.featureRows().map((row) => row.events));
+  return value <= 0 ? 0 : Math.max(5, Math.round((value / max) * 100));
 }
 }

@@ -11,15 +11,62 @@ import { WaterMeasurement } from '../water-measurement/water-measurement.entity'
 import { buildDefaultWaterRules } from './rules/default-water-rules';
 import { TaskService } from '../tasks/task.service';
 import { AquariumTargetsService } from '../aquarium-targets/aquarium-targets.service';
+import { FeatureUsageEvent } from './feature-usage-event.entity';
 
 @Injectable()
 export class RecommendationService {
   constructor(
     @InjectRepository(Recommendation)
     private readonly repo: Repository<Recommendation>,
+    @InjectRepository(FeatureUsageEvent)
+    private readonly featureUsageRepo: Repository<FeatureUsageEvent>,
     private readonly taskService: TaskService,
     private readonly aquariumTargetsService: AquariumTargetsService,
   ) {}
+
+  async trackAssistantOpen(userId: number, aquariumId: number) {
+    if (!Number.isInteger(aquariumId) || aquariumId <= 0) {
+      throw new BadRequestException('Aquarium invalide');
+    }
+    await this.featureUsageRepo.save(
+      this.featureUsageRepo.create({ userId, aquariumId, feature: 'ASSISTANT_OPEN' }),
+    );
+    return { tracked: true };
+  }
+
+  async trackSpeciesView(
+    kind: 'fish' | 'plant',
+    resourceId: number,
+    rawVisitorKey?: string,
+  ) {
+    const visitorKey = String(rawVisitorKey ?? '').trim();
+    if (!/^[a-zA-Z0-9-]{16,64}$/.test(visitorKey)) {
+      throw new BadRequestException('Identifiant de visite invalide');
+    }
+
+    const feature = kind === 'fish' ? 'FISH_CARD_VIEW' : 'PLANT_CARD_VIEW';
+    const recent = await this.featureUsageRepo.exist({
+      where: {
+        feature,
+        resourceId,
+        visitorKey,
+        createdAt: MoreThan(new Date(Date.now() - 30 * 60 * 1000)),
+      },
+    });
+
+    if (recent) return { tracked: false };
+
+    await this.featureUsageRepo.save(
+      this.featureUsageRepo.create({
+        userId: null,
+        aquariumId: null,
+        feature,
+        resourceId,
+        visitorKey,
+      }),
+    );
+    return { tracked: true };
+  }
 
   /**
    * Crée des recommandations "PENDING" à partir d'une mesure.

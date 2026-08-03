@@ -24,6 +24,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AdminArticlesService } from '../../../core/admin-articles.service';
 import { UserService, UserMe } from '../../../core/user.service';
+import { AdminSidebarComponent } from '../../../shared/admin-sidebar/admin-sidebar.component';
 
 export type AppRole = 'USER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN';
 export type ArticleStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED';
@@ -60,6 +61,7 @@ export interface ArticleDto {
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
+    AdminSidebarComponent,
 
     MatCardModule,
     MatFormFieldModule,
@@ -98,6 +100,9 @@ export class AdminArticlesPageComponent implements OnInit {
 
   items: ArticleDto[] = [];
   filtered: ArticleDto[] = [];
+  get publishedCount(): number { return this.items.filter((article) => article.status === 'PUBLISHED').length; }
+  get pendingReviewCount(): number { return this.items.filter((article) => article.status === 'PENDING_REVIEW').length; }
+  get draftCount(): number { return this.items.filter((article) => article.status === 'DRAFT').length; }
   themes: ThemeDto[] = [];
 
   form: FormGroup = this.fb.group({

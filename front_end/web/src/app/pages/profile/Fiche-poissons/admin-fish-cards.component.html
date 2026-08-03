@@ -1,68 +1,27 @@
 <!-- admin-fish-cards.component.html -->
 <div class="admin-layout">
-  <aside class="sidebar" role="navigation" aria-label="Menu administration">
-    <a class="brand" routerLink="/dashboard" aria-label="Retour au tableau de bord">
-      <img
-        src="/Logo_AquaManger.png"
-        alt="AquaManager"
-        class="logo"
-        loading="lazy"
-        decoding="async"
-      />
-    </a>
-
-    <div class="sidebar-title">ADMINISTRATION</div>
-
-    <mat-nav-list class="nav">
-      <a mat-list-item routerLink="/admin/metrics" routerLinkActive="active" *ngIf="isAdmin">
-        <mat-icon matListItemIcon>manage_accounts</mat-icon>
-        <span matListItemTitle>Dashboard</span>
-      </a>
-
-      <a mat-list-item routerLink="/admin/users" routerLinkActive="active" *ngIf="isAdmin">
-        <mat-icon matListItemIcon>group</mat-icon>
-        <span matListItemTitle>Utilisateurs</span>
-      </a>
-
-      <a mat-list-item routerLink="/admin/species/fish" routerLinkActive="active">
-        <mat-icon matListItemIcon>pets</mat-icon>
-        <span matListItemTitle>Poissons</span>
-      </a>
-
-      <a mat-list-item routerLink="/admin/species/plant" routerLinkActive="active">
-        <mat-icon matListItemIcon>local_florist</mat-icon>
-        <span matListItemTitle>Plantes</span>
-      </a>
-
-      <a mat-list-item routerLink="/admin/articles" routerLinkActive="active">
-        <mat-icon matListItemIcon>tips_and_updates</mat-icon>
-        <span matListItemTitle>Articles / Conseils</span>
-      </a>
-    </mat-nav-list>
-
-    <div class="sidebar-footer">
-      <a mat-stroked-button class="back-btn" routerLink="/profile" aria-label="Retour au profil">
-        <mat-icon>arrow_back</mat-icon>
-        Profil
-      </a>
-    </div>
-  </aside>
+  <aside appAdminSidebar class="sidebar" [adminAccess]="isAdmin"></aside>
 
   <main class="content">
     <div class="page">
-      <div class="header">
+      <header class="header admin-page-hero hero-fish">
+        <div class="hero-symbol"><mat-icon>set_meal</mat-icon></div>
         <div class="titles">
-          <div class="title">
-            Fiches Poissons ({{ isAdmin ? 'Admin' : 'Éditeur' }})
-          </div>
-          <div class="subtitle" *ngIf="isAdmin">
-            Créer, modifier, supprimer — validation des fiches éditeurs
-          </div>
-          <div class="subtitle" *ngIf="isEditor">
-            Crée/modifie tes fiches — elles seront validées par un admin avant publication
-          </div>
+          <span class="hero-kicker">Catalogue aquatique</span>
+          <div class="title">Fiches poissons</div>
+          <div class="subtitle">Gérez les espèces, leurs paramètres de maintenance et leur publication.</div>
         </div>
-      </div>
+        <div class="hero-actions">
+          <span class="access-badge"><mat-icon>verified_user</mat-icon>{{ isAdmin ? 'Administrateur' : 'Éditeur' }}</span>
+          <button mat-flat-button type="button" (click)="tabIndex = 1"><mat-icon>add</mat-icon>Nouvelle fiche</button>
+        </div>
+      </header>
+
+      <section class="content-overview" aria-label="Résumé des fiches poissons">
+        <div><span><mat-icon>set_meal</mat-icon></span><p><small>Catalogue</small><strong>{{ rows.length }}</strong><em>fiches poissons</em></p></div>
+        <div><span class="ok"><mat-icon>check_circle</mat-icon></span><p><small>Publiées</small><strong>{{ approvedCount }}</strong><em>visibles au public</em></p></div>
+        <div><span class="pending"><mat-icon>pending_actions</mat-icon></span><p><small>À modérer</small><strong>{{ pendingCount }}</strong><em>en attente de décision</em></p></div>
+      </section>
 
       <mat-card class="tabs">
         <mat-tab-group [(selectedIndex)]="tabIndex" animationDuration="0ms">

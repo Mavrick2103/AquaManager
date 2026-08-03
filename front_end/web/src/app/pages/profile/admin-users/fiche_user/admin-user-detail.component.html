@@ -89,6 +89,34 @@
           <div class="pill-value">{{ data.user.role }}</div>
         </div>
       </div>
+
+      <div class="pill subscription">
+        <mat-icon>workspace_premium</mat-icon>
+        <div class="pill-text"><div class="pill-title">Abonnement</div><div class="pill-value">{{ data.user.subscriptionPlan || 'CLASSIC' }}</div></div>
+      </div>
+
+      <div class="pill" [class.verified]="data.user.emailVerifiedAt">
+        <mat-icon>{{ data.user.emailVerifiedAt ? 'verified' : 'mark_email_unread' }}</mat-icon>
+        <div class="pill-text"><div class="pill-title">Email vérifié</div><div class="pill-value">{{ data.user.emailVerifiedAt ? 'Oui' : 'Non' }}</div></div>
+      </div>
+    </section>
+
+    <section class="account-details" aria-label="Informations complètes du compte">
+      <header><div><span>Compte</span><h3>Informations et activité</h3></div><mat-icon>manage_accounts</mat-icon></header>
+      <div class="details-grid">
+        <div><small>Nom complet</small><strong>{{ data.user.fullName || '—' }}</strong></div>
+        <div><small>Adresse email</small><strong class="mono">{{ data.user.email }}</strong></div>
+        <div><small>Rôle</small><strong>{{ data.user.role }}</strong></div>
+        <div><small>Identifiant</small><strong class="mono">#{{ data.user.id }}</strong></div>
+        <div><small>Inscription</small><strong>{{ formatDateTime(data.user.createdAt) }}</strong></div>
+        <div><small>Dernière activité</small><strong>{{ formatDateTime(data.user.lastActivityAt) }}</strong></div>
+        <div><small>Email vérifié le</small><strong>{{ formatDateTime(data.user.emailVerifiedAt) }}</strong></div>
+        <div><small>Abonnement</small><strong>{{ subscriptionLabel() }}</strong></div>
+        <div><small>Fin d’abonnement</small><strong>{{ formatDateTime(data.user.subscriptionEndsAt) }}</strong></div>
+        <div><small>Niveau</small><strong>{{ data.gamification?.level ?? 1 }}</strong></div>
+        <div><small>Expérience</small><strong>{{ data.gamification?.xp ?? 0 }} XP</strong></div>
+        <div><small>Série actuelle / record</small><strong>{{ data.gamification?.currentStreak ?? 0 }} / {{ data.gamification?.bestStreak ?? 0 }} jours</strong></div>
+      </div>
     </section>
 
     <mat-tab-group dynamicHeight class="tabs">
@@ -129,6 +157,11 @@
                     </span>
                   </td>
                 </ng-container>
+
+                <ng-container matColumnDef="dimensions"><th mat-header-cell *matHeaderCellDef>Dimensions</th><td mat-cell *matCellDef="let a">{{ a.lengthCm ?? '—' }} × {{ a.widthCm ?? '—' }} × {{ a.heightCm ?? '—' }} cm</td></ng-container>
+                <ng-container matColumnDef="volume"><th mat-header-cell *matHeaderCellDef>Volume</th><td mat-cell *matCellDef="let a">{{ a.volumeL ?? '—' }} L</td></ng-container>
+                <ng-container matColumnDef="startDate"><th mat-header-cell *matHeaderCellDef>Mise en eau</th><td mat-cell *matCellDef="let a">{{ formatDate(a.startDate) }}</td></ng-container>
+                <ng-container matColumnDef="createdAt"><th mat-header-cell *matHeaderCellDef>Création</th><td mat-cell *matCellDef="let a">{{ formatDateTime(a.createdAt) }}</td></ng-container>
 
                 <tr mat-header-row *matHeaderRowDef="aquariumsCols"></tr>
                 <tr mat-row *matRowDef="let row; columns: aquariumsCols"></tr>
@@ -221,6 +254,19 @@
                   <td mat-cell *matCellDef="let m">{{ m.no3 ?? '—' }}</td>
                 </ng-container>
 
+                <ng-container matColumnDef="kh"><th mat-header-cell *matHeaderCellDef>KH</th><td mat-cell *matCellDef="let m">{{ m.kh ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="gh"><th mat-header-cell *matHeaderCellDef>GH</th><td mat-cell *matCellDef="let m">{{ m.gh ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="po4"><th mat-header-cell *matHeaderCellDef>PO₄</th><td mat-cell *matCellDef="let m">{{ m.po4 ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="fe"><th mat-header-cell *matHeaderCellDef>Fe</th><td mat-cell *matCellDef="let m">{{ m.fe ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="k"><th mat-header-cell *matHeaderCellDef>K</th><td mat-cell *matCellDef="let m">{{ m.k ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="sio2"><th mat-header-cell *matHeaderCellDef>SiO₂</th><td mat-cell *matCellDef="let m">{{ m.sio2 ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="nh3"><th mat-header-cell *matHeaderCellDef>NH₃</th><td mat-cell *matCellDef="let m">{{ m.nh3 ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="dkh"><th mat-header-cell *matHeaderCellDef>dKH</th><td mat-cell *matCellDef="let m">{{ m.dkh ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="salinity"><th mat-header-cell *matHeaderCellDef>Salinité</th><td mat-cell *matCellDef="let m">{{ m.salinity ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="ca"><th mat-header-cell *matHeaderCellDef>Ca</th><td mat-cell *matCellDef="let m">{{ m.ca ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="mg"><th mat-header-cell *matHeaderCellDef>Mg</th><td mat-cell *matCellDef="let m">{{ m.mg ?? '—' }}</td></ng-container>
+                <ng-container matColumnDef="comment"><th mat-header-cell *matHeaderCellDef>Commentaire</th><td mat-cell *matCellDef="let m">{{ m.comment || '—' }}</td></ng-container>
+
                 <tr mat-header-row *matHeaderRowDef="measuresCols"></tr>
                 <tr mat-row *matRowDef="let row; columns: measuresCols"></tr>
               </table>
@@ -242,7 +288,13 @@
                   <div class="metric"><span>Temp</span><b>{{ m.temp ?? '—' }}</b></div>
                   <div class="metric"><span>NO₂</span><b>{{ m.no2 ?? '—' }}</b></div>
                   <div class="metric"><span>NO₃</span><b>{{ m.no3 ?? '—' }}</b></div>
+                  <div class="metric"><span>KH</span><b>{{ m.kh ?? '—' }}</b></div><div class="metric"><span>GH</span><b>{{ m.gh ?? '—' }}</b></div>
+                  <div class="metric"><span>PO₄</span><b>{{ m.po4 ?? '—' }}</b></div><div class="metric"><span>Fe</span><b>{{ m.fe ?? '—' }}</b></div>
+                  <div class="metric"><span>K</span><b>{{ m.k ?? '—' }}</b></div><div class="metric"><span>SiO₂</span><b>{{ m.sio2 ?? '—' }}</b></div>
+                  <div class="metric"><span>NH₃</span><b>{{ m.nh3 ?? '—' }}</b></div><div class="metric"><span>dKH</span><b>{{ m.dkh ?? '—' }}</b></div>
+                  <div class="metric"><span>Salinité</span><b>{{ m.salinity ?? '—' }}</b></div><div class="metric"><span>Ca</span><b>{{ m.ca ?? '—' }}</b></div><div class="metric"><span>Mg</span><b>{{ m.mg ?? '—' }}</b></div>
                 </div>
+                <p class="measurement-comment" *ngIf="m.comment">{{ m.comment }}</p>
               </div>
             </div>
           </ng-container>
@@ -277,7 +329,8 @@
                 <div class="item" *ngFor="let f of data.fish">
                   <div class="left">
                     <div class="name">{{ f.fishCard.commonName || '—' }}</div>
-                    <div class="meta mono">Aquarium #{{ f.aquariumId }}</div>
+                    <div class="meta">{{ f.fishCard.scientificName || 'Nom scientifique non renseigné' }}</div>
+                    <div class="meta mono">Aquarium #{{ f.aquariumId }} · fiche #{{ f.fishCard.id }}</div>
                   </div>
                   <div class="right">
                     <span class="qty">x{{ f.count }}</span>
@@ -303,7 +356,8 @@
                 <div class="item" *ngFor="let p of data.plants">
                   <div class="left">
                     <div class="name">{{ p.plantCard.commonName || '—' }}</div>
-                    <div class="meta mono">Aquarium #{{ p.aquariumId }}</div>
+                    <div class="meta">{{ p.plantCard.scientificName || 'Nom scientifique non renseigné' }}</div>
+                    <div class="meta mono">Aquarium #{{ p.aquariumId }} · fiche #{{ p.plantCard.id }}</div>
                   </div>
                   <div class="right">
                     <span class="qty">x{{ p.count }}</span>
@@ -368,6 +422,10 @@
                   </td>
                 </ng-container>
 
+                <ng-container matColumnDef="type"><th mat-header-cell *matHeaderCellDef>Type</th><td mat-cell *matCellDef="let t">{{ t.type || '—' }}</td></ng-container>
+                <ng-container matColumnDef="repeat"><th mat-header-cell *matHeaderCellDef>Répétition</th><td mat-cell *matCellDef="let t">{{ repeatLabel(t) }}</td></ng-container>
+                <ng-container matColumnDef="createdAt"><th mat-header-cell *matHeaderCellDef>Création</th><td mat-cell *matCellDef="let t">{{ formatDateTime(t.createdAt) }}</td></ng-container>
+
                 <tr mat-header-row *matHeaderRowDef="tasksCols"></tr>
                 <tr mat-row *matRowDef="let row; columns: tasksCols"></tr>
               </table>
@@ -389,11 +447,15 @@
                 </div>
 
                 <div class="kv">
+                  <div class="kv-row"><span>Type</span><b>{{ t.type || '—' }}</b></div>
                   <div class="kv-row">
                     <span>Échéance</span>
                     <b>{{ formatDate(t.dueAt) }}</b>
                   </div>
+                  <div class="kv-row"><span>Répétition</span><b>{{ repeatLabel(t) }}</b></div>
+                  <div class="kv-row"><span>Créée le</span><b>{{ formatDateTime(t.createdAt) }}</b></div>
                 </div>
+                <p class="task-description" *ngIf="t.description">{{ t.description }}</p>
               </div>
             </div>
           </ng-container>
@@ -404,6 +466,28 @@
               <span>Aucune tâche.</span>
             </div>
           </ng-template>
+        </div>
+      </mat-tab>
+
+      <mat-tab *ngIf="data.editor">
+        <ng-template mat-tab-label>
+          <span class="tab-label"><mat-icon>edit_square</mat-icon>Contributions<span class="badge">{{ data.editor.articles.length + data.editor.fishCards.length + data.editor.plantCards.length }}</span></span>
+        </ng-template>
+        <div class="tab">
+          <div class="contributions-grid">
+            <section class="box"><div class="box-head"><h3>Articles</h3><span class="badge">{{ data.editor.articles.length }}</span></div>
+              <div class="list" *ngIf="data.editor.articles.length; else noArticles"><div class="item" *ngFor="let article of data.editor.articles"><div><div class="name">{{ article.title }}</div><div class="meta">#{{ article.id }} · {{ formatDateTime(article.createdAt) }}</div></div><span class="status">{{ article.status }}</span></div></div>
+              <ng-template #noArticles><div class="hint-block"><mat-icon>info</mat-icon>Aucun article créé.</div></ng-template>
+            </section>
+            <section class="box"><div class="box-head"><h3>Fiches poissons</h3><span class="badge">{{ data.editor.fishCards.length }}</span></div>
+              <div class="list" *ngIf="data.editor.fishCards.length; else noEditorFish"><div class="item" *ngFor="let card of data.editor.fishCards"><div><div class="name">{{ card.commonName }}</div><div class="meta">#{{ card.id }} · {{ formatDateTime(card.createdAt) }}</div></div><span class="status">{{ card.status }}</span></div></div>
+              <ng-template #noEditorFish><div class="hint-block"><mat-icon>info</mat-icon>Aucune fiche créée.</div></ng-template>
+            </section>
+            <section class="box"><div class="box-head"><h3>Fiches plantes</h3><span class="badge">{{ data.editor.plantCards.length }}</span></div>
+              <div class="list" *ngIf="data.editor.plantCards.length; else noEditorPlants"><div class="item" *ngFor="let card of data.editor.plantCards"><div><div class="name">{{ card.commonName }}</div><div class="meta">#{{ card.id }} · {{ formatDateTime(card.createdAt) }}</div></div><span class="status">{{ card.status }}</span></div></div>
+              <ng-template #noEditorPlants><div class="hint-block"><mat-icon>info</mat-icon>Aucune fiche créée.</div></ng-template>
+            </section>
+          </div>
         </div>
       </mat-tab>
     </mat-tab-group>

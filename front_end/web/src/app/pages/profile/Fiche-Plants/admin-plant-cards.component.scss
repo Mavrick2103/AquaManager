@@ -1,3 +1,5 @@
+@use '../../../shared/admin-sidebar/admin-workspace' as adminWorkspace;
+
 /* ============================================================
    AquaManager Admin – Plants
    ✅ Sidebar + responsive IDENTIQUES à AdminUsers
@@ -31,6 +33,17 @@
   overflow-x: hidden;
 }
 
+.content-overview { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; margin:0 0 14px; }
+.content-overview > div { display:grid; grid-template-columns:45px minmax(0,1fr); align-items:center; gap:11px; min-height:88px; padding:14px; border:1px solid #deebe9; border-radius:16px; background:rgba(255,255,255,.94); box-shadow:0 7px 20px rgba(17,65,70,.055); }
+.content-overview > div > span { width:43px; height:43px; display:grid; place-items:center; border-radius:13px; color:#267d87; background:#e6f4f5; }
+.content-overview > div > span.ok { color:#287a61; background:#e6f5ed; }
+.content-overview > div > span.pending { color:#9b6b1f; background:#fff2da; }
+.content-overview > div > span.draft { color:#686b8f; background:#eff0f7; }
+.content-overview p { display:grid; grid-template-columns:1fr auto; align-items:baseline; margin:0; min-width:0; }
+.content-overview small { color:#66817f; font-size:10px; font-weight:800; letter-spacing:.65px; text-transform:uppercase; }
+.content-overview strong { grid-column:2; grid-row:1/3; color:#133e49; font-size:25px; }
+.content-overview em { overflow:hidden; color:#7a8e8b; font-size:10px; font-style:normal; text-overflow:ellipsis; white-space:nowrap; }
+@media(max-width:760px){ .content-overview { grid-template-columns:1fr; } }
 /* ========== LAYOUT ========== */
 .admin-layout {
   display: flex;
@@ -716,3 +729,5 @@
   .toolbar-actions { width: 100%; }
   .toolbar-actions button { flex: 1; min-width: 150px; }
 }
+
+@include adminWorkspace.workspace;

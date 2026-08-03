@@ -16,6 +16,7 @@ import { MatDividerModule } from '@angular/material/divider';
 
 import { environment } from '../../../../environments/environment';
 import { SeoService } from '../../../core/seo.service';
+import { FeatureUsageService } from '../../../core/feature-usage.service';
 
 type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER' | 'SAUMATRE';
 
@@ -90,6 +91,7 @@ export class PlantCardDetailPageComponent implements OnInit {
     private readonly cdr: ChangeDetectorRef,
     private readonly location: Location,
     private readonly seo: SeoService,
+    private readonly featureUsage: FeatureUsageService,
   ) {}
 
   ngOnInit(): void {
@@ -195,6 +197,7 @@ export class PlantCardDetailPageComponent implements OnInit {
           this.item = row ?? null;
           this.notFound = !row;
           if (row) {
+            this.featureUsage.trackSpeciesView('plant', row.id);
             const scientificName = row.scientificName ? ` (${row.scientificName})` : '';
             const description = [
               `Fiche complète de la plante ${row.commonName}${scientificName}.`,

@@ -28,6 +28,10 @@ export class RecommendationsService {
   private http = inject(HttpClient);
   private base = environment.apiUrl;
 
+  trackAssistantOpen(aquariumId: number) {
+    return firstValueFrom(this.http.post(`${this.base}/recommendations/assistant-open`, { aquariumId }));
+  }
+
   listPending(aquariumId?: number) {
     const url = `${this.base}/recommendations/pending`;
     let params = new HttpParams();

@@ -17,7 +17,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import {
   MarketingFormat,
@@ -25,6 +24,7 @@ import {
   MarketingService,
   MarketingStatus,
 } from '../../../core/marketing.service';
+import { AdminSidebarComponent } from '../../../shared/admin-sidebar/admin-sidebar.component';
 
 @Component({
   selector: 'app-admin-marketing',
@@ -39,7 +39,7 @@ import {
     MatInputModule,
     MatSelectModule,
     MatSnackBarModule,
-    RouterLink,
+    AdminSidebarComponent,
   ],
   templateUrl: './admin-marketing.component.html',
   styleUrl: './admin-marketing.component.scss',

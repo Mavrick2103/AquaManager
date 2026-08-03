@@ -409,6 +409,11 @@
       [class.sol-wrap--premium]="isPremium"
     >
       <ng-container>
+        <header class="solution-choice-heading">
+          <span>Choisis ton accompagnement</span>
+          <h2>Que veux-tu utiliser ?</h2>
+          <p>L’assistant classique analyse les mesures avec des règles AquaManager. L’IA répond à des questions personnalisées et analyse les photos.</p>
+        </header>
         <nav class="solution-switcher" role="tablist" aria-label="Types de solutions">
           <button
             type="button"
@@ -428,6 +433,7 @@
               <small>Conseils et planning</small>
             </span>
             <span class="solution-switcher__access">Inclus</span>
+            <mat-icon class="solution-switcher__select-icon">{{ solutionView === 'assistant' ? 'check_circle' : 'arrow_forward' }}</mat-icon>
           </button>
 
           <button
@@ -454,8 +460,19 @@
               <mat-icon *ngIf="!isPremium">lock</mat-icon>
               Premium
             </span>
+            <mat-icon class="solution-switcher__select-icon">{{ solutionView === 'ai' ? 'check_circle' : 'arrow_forward' }}</mat-icon>
           </button>
         </nav>
+
+        <section class="solution-choice-empty" *ngIf="!solutionView">
+          <span class="solution-choice-empty__icon"><mat-icon>touch_app</mat-icon></span>
+          <div>
+            <h3>Aucun mode sélectionné</h3>
+            <p>Choisis l’une des deux options ci-dessus. Aucune analyse ne sera lancée automatiquement.</p>
+          </div>
+        </section>
+
+        <ng-container *ngIf="solutionView">
 
         <section class="sol-hero">
           <div class="sol-hero__left">
@@ -1229,6 +1246,7 @@
           </section>
         </div>
         </div>
+        </ng-container>
       </ng-container>
 
       <ng-template #classicPaywall>

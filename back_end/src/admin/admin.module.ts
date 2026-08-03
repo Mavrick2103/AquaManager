@@ -11,6 +11,12 @@ import { WaterMeasurement } from '../water-measurement/water-measurement.entity'
 import { Article } from '../articles/entities/article.entity';
 import { FishCard } from '../catalog/fish-cards/fish-card.entity';
 import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
+import { AiUsage } from '../ai/entities/ai-usage.entity';
+import { AquariumFishCard } from '../catalog/aquarium-card-pivot/aquarium-fish-card.entity';
+import { AquariumPlantCard } from '../catalog/aquarium-card-pivot/aquarium-plant-card.entity';
+import { OperationalEvent } from './entities/operational-event.entity';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { OperationalEventsInterceptor } from './operational-events.interceptor';
 
 @Module({
   imports: [
@@ -22,9 +28,16 @@ import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
       Article,
       FishCard,
       PlantCard,
+      AiUsage,
+      AquariumFishCard,
+      AquariumPlantCard,
+      OperationalEvent,
     ]),
   ],
   controllers: [AdminMetricsController],
-  providers: [AdminMetricsService],
+  providers: [
+    AdminMetricsService,
+    { provide: APP_INTERCEPTOR, useClass: OperationalEventsInterceptor },
+  ],
 })
 export class AdminModule {}

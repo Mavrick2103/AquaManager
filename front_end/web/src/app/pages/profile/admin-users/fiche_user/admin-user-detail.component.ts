@@ -36,9 +36,9 @@ export class AdminUserDetailComponent implements OnInit {
   data: AdminUserFull | null = null;
   userId = 0;
 
-  aquariumsCols = ['id', 'name', 'waterType'];
-  measuresCols = ['date', 'aquariumId', 'ph', 'temp', 'no2', 'no3'];
-  tasksCols = ['id', 'title', 'status', 'dueAt', 'aquariumId'];
+  aquariumsCols = ['id', 'name', 'waterType', 'dimensions', 'volume', 'startDate', 'createdAt'];
+  measuresCols = ['date', 'aquariumId', 'ph', 'temp', 'kh', 'gh', 'no2', 'no3', 'po4', 'fe', 'k', 'sio2', 'nh3', 'dkh', 'salinity', 'ca', 'mg', 'comment'];
+  tasksCols = ['id', 'title', 'type', 'status', 'dueAt', 'aquariumId', 'repeat', 'createdAt'];
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -73,6 +73,26 @@ export class AdminUserDetailComponent implements OnInit {
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yyyy = d.getFullYear();
     return `${dd}/${mm}/${yyyy}`;
+  }
+
+  formatDateTime(value?: string | null): string {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  subscriptionLabel(): string {
+    const user = this.data?.user;
+    if (!user) return '—';
+    return `${user.subscriptionPlan || 'CLASSIC'} · ${user.subscriptionStatus || 'none'}`;
+  }
+
+  repeatLabel(task: AdminUserFull['tasks'][number]): string {
+    if (!task.isRepeat) return 'Non';
+    const mode = task.repeatMode || 'RÉPÉTITIVE';
+    const days = task.repeatDays?.length ? ` · ${task.repeatDays.join(', ')}` : '';
+    return `${mode}${days}`;
   }
 
   get monthlyActivityDays(): number {

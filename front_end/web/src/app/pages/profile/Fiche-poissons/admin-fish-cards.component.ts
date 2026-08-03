@@ -38,6 +38,7 @@ import {
 } from '../../../core/fish-cards';
 import { AuthService } from '../../../core/auth.service';
 import { UserService } from '../../../core/user.service';
+import { AdminSidebarComponent } from '../../../shared/admin-sidebar/admin-sidebar.component';
 
 type AppRole = 'USER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN';
 
@@ -48,6 +49,7 @@ type AppRole = 'USER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN';
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
+    AdminSidebarComponent,
 
     MatCardModule,
     MatFormFieldModule,
@@ -79,6 +81,8 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
 
   rows: FishCard[] = [];
   filtered: FishCard[] = [];
+  get approvedCount(): number { return this.rows.filter((card) => card.status === 'APPROVED').length; }
+  get pendingCount(): number { return this.rows.filter((card) => card.status === 'PENDING').length; }
   selected: FishCard | null = null;
 
   search = '';

@@ -17,6 +17,7 @@ import { MatChipsModule } from '@angular/material/chips';
 
 import { environment } from '../../../../environments/environment';
 import { SeoService } from '../../../core/seo.service';
+import { FeatureUsageService } from '../../../core/feature-usage.service';
 
 type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER' | 'SAUMATRE';
 type Temperament = 'PACIFIQUE' | 'SEMI_AGRESSIF' | 'AGRESSIF';
@@ -92,6 +93,7 @@ export class FishCardDetailPageComponent implements OnInit {
     private readonly cdr: ChangeDetectorRef,
     private readonly location: Location,
     private readonly seo: SeoService,
+    private readonly featureUsage: FeatureUsageService,
   ) {}
 
   ngOnInit(): void {
@@ -224,6 +226,7 @@ export class FishCardDetailPageComponent implements OnInit {
           this.item = row ?? null;
           this.notFound = !row;
           if (row) {
+            this.featureUsage.trackSpeciesView('fish', row.id);
             const scientificName = row.scientificName ? ` (${row.scientificName})` : '';
             const description = [
               `Fiche complète du ${row.commonName}${scientificName}.`,

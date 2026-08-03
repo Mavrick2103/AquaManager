@@ -5,6 +5,11 @@ import { RecommendationService } from './recommendation.service';
 export class RecommendationController {
   constructor(private readonly service: RecommendationService) {}
 
+  @Post('assistant-open')
+  trackAssistantOpen(@Req() req: any, @Body() body: { aquariumId?: number }) {
+    return this.service.trackAssistantOpen(Number(req.user.userId), Number(body?.aquariumId));
+  }
+
   @Get('pending')
   async listPending(@Req() req: any, @Query('aquariumId') aquariumId?: string) {
     const userId = Number(req.user.userId);

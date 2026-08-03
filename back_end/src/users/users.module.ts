@@ -13,6 +13,9 @@ import { Task } from '../tasks/task.entity';
 import { AquariumFishCard } from '../catalog/aquarium-card-pivot/aquarium-fish-card.entity';
 import { AquariumPlantCard } from '../catalog/aquarium-card-pivot/aquarium-plant-card.entity';
 import { GamificationProfile } from '../gamification/entities/gamification-profile.entity';
+import { Article } from '../articles/entities/article.entity';
+import { FishCard } from '../catalog/fish-cards/fish-card.entity';
+import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
 
 @Module({
   imports: [
@@ -24,6 +27,9 @@ import { GamificationProfile } from '../gamification/entities/gamification-profi
       AquariumFishCard,
       AquariumPlantCard,
       GamificationProfile,
+      Article,
+      FishCard,
+      PlantCard,
     ]),
   ],
   providers: [UsersService],

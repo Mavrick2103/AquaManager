@@ -60,6 +60,9 @@ export type AdminUserAquarium = {
   createdAt?: string;
   startDate?: string;
   volumeL?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
 };
 
 export type AdminUserMeasurement = {
@@ -81,6 +84,8 @@ export type AdminUserMeasurement = {
   salinity?: number | null;
   ca?: number | null;
   mg?: number | null;
+  comment?: string | null;
+  createdAt?: string | null;
 };
 
 export type AdminUserTask = {
@@ -90,6 +95,15 @@ export type AdminUserTask = {
   dueAt: string;
   aquariumId?: number | null;
   aquarium?: { id: number; name?: string } | null;
+  description?: string | null;
+  createdAt?: string | null;
+  type?: string | null;
+  isRepeat?: boolean;
+  repeatMode?: string | null;
+  repeatEveryWeeks?: number | null;
+  repeatDays?: string[] | null;
+  repeatEndAt?: string | null;
+  completedOccurrences?: string[] | null;
 };
 
 export type AdminUserFishRow = {

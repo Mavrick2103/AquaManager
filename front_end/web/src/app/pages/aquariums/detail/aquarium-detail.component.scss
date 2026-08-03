@@ -3288,14 +3288,22 @@
   background: transparent;
 }
 
+.solution-choice-heading {
+  margin-bottom: 14px;
+
+  > span { color: #2d7f83; font-size: .72rem; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+  h2 { margin: 4px 0 5px; color: #173f4b; font-size: clamp(1.25rem, 2.3vw, 1.65rem); }
+  p { max-width: 760px; margin: 0; color: #667c82; font-size: .84rem; line-height: 1.5; }
+}
+
 .solution-switcher__tab {
   appearance: none;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 10px;
-  min-height: 58px;
-  padding: 9px 12px;
+  min-height: 76px;
+  padding: 12px 14px;
   border: 1px solid transparent;
   border-radius: 14px;
   background: #fff;
@@ -3320,6 +3328,7 @@
 
   &--active {
     transform: translateY(-1px);
+    box-shadow: 0 10px 26px rgba(22, 72, 82, .14);
   }
 
   &--assistant {
@@ -3364,6 +3373,43 @@
       text-transform: uppercase;
     }
   }
+}
+
+.solution-switcher__select-icon {
+  width: 21px;
+  height: 21px;
+  color: #87979a;
+  font-size: 21px;
+}
+
+.solution-switcher__tab--active .solution-switcher__select-icon { color: #258e83; }
+.solution-switcher__tab--ai.solution-switcher__tab--active .solution-switcher__select-icon { color: #654bbd; }
+
+.solution-choice-empty {
+  display: flex;
+  min-height: 170px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  border: 1px dashed #cddfdd;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fbfdfd, #f3f8f7);
+  text-align: left;
+
+  h3 { margin: 0 0 4px; color: #31525a; }
+  p { margin: 0; color: #74868a; font-size: .82rem; }
+}
+
+.solution-choice-empty__icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 14px;
+  color: #297f84;
+  background: #e3f2f1;
 }
 
 .solution-switcher__icon {
@@ -3485,6 +3531,14 @@
 
   .solution-switcher__access {
     display: none;
+  }
+
+  .solution-switcher__select-icon { display: none; }
+
+  .solution-choice-empty {
+    min-height: 130px;
+    align-items: flex-start;
+    padding: 18px;
   }
 
   .solution-switcher__copy {

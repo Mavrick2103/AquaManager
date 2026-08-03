@@ -67,6 +67,7 @@ services:
 
       # UPLOADS
       UPLOAD_DIR: /data/uploads
+      BACKUP_DIR: /backups
 
       # EMAIL Gmail SMTP
       APP_URL: ${APP_URL}
@@ -83,6 +84,7 @@ services:
       - ${UPLOADS_HOST_PATH:-./data/uploads}:/data/uploads
       - ${TMP_HOST_PATH:-./data/tmp}:/app/tmp
       - ./front_end/web/public/Logo_AquaManger.png:/app/assets/Logo_AquaManger.png:ro
+      - ./backup/db:/backups:ro
 
   frontend:
     build:

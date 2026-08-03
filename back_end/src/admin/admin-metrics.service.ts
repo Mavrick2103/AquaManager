@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, LessThan, IsNull, Brackets } from 'typeorm';
+import { Repository, MoreThanOrEqual, LessThan, IsNull, Brackets, DataSource } from 'typeorm';
+import { readdir, stat, statfs } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import { User } from '../users/user.entity';
 import { Aquarium } from '../aquariums/aquariums.entity';
@@ -9,6 +11,7 @@ import { WaterMeasurement } from '../water-measurement/water-measurement.entity'
 import { Article } from '../articles/entities/article.entity';
 import { FishCard } from '../catalog/fish-cards/fish-card.entity';
 import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
+import { OperationalEvent } from './entities/operational-event.entity';
 
 export type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 
@@ -60,7 +63,101 @@ export class AdminMetricsService {
     @InjectRepository(Article) private readonly articlesRepo: Repository<Article>,
     @InjectRepository(FishCard) private readonly fishCardsRepo: Repository<FishCard>,
     @InjectRepository(PlantCard) private readonly plantCardsRepo: Repository<PlantCard>,
+    @InjectRepository(OperationalEvent) private readonly operationalEventsRepo: Repository<OperationalEvent>,
+    private readonly dataSource: DataSource,
   ) {}
+
+  private async getInfrastructureHealth() {
+    let mysql: 'ok' | 'error' = 'ok';
+    try {
+      await this.dataSource.query('SELECT 1');
+    } catch {
+      mysql = 'error';
+    }
+
+    let disk: { status: 'ok' | 'warning' | 'critical' | 'unknown'; freeBytes: number | null; totalBytes: number | null; usedPercent: number | null } = {
+      status: 'unknown', freeBytes: null, totalBytes: null, usedPercent: null,
+    };
+    try {
+      const info = await statfs(process.env.UPLOAD_DIR?.trim() || process.cwd());
+      const totalBytes = Number(info.blocks) * Number(info.bsize);
+      const freeBytes = Number(info.bavail) * Number(info.bsize);
+      const usedPercent = totalBytes > 0 ? Math.round(((totalBytes - freeBytes) / totalBytes) * 100) : 0;
+      disk = { status: usedPercent >= 90 ? 'critical' : usedPercent >= 80 ? 'warning' : 'ok', freeBytes, totalBytes, usedPercent };
+    } catch {}
+
+    const backupDir = process.env.BACKUP_DIR?.trim() || '/backups';
+    let backup: { status: 'ok' | 'warning' | 'critical' | 'unknown'; lastAt: string | null; ageHours: number | null } = {
+      status: 'unknown', lastAt: null, ageHours: null,
+    };
+    try {
+      const files = (await readdir(backupDir)).filter((name) => name.endsWith('.sql.gz'));
+      const dated = await Promise.all(files.map(async (name) => ({ name, modifiedAt: (await stat(join(backupDir, name))).mtime })));
+      dated.sort((a, b) => b.modifiedAt.getTime() - a.modifiedAt.getTime());
+      if (dated[0]) {
+        const ageHours = Math.round(((Date.now() - dated[0].modifiedAt.getTime()) / 3_600_000) * 10) / 10;
+        backup = { status: ageHours <= 30 ? 'ok' : ageHours <= 48 ? 'warning' : 'critical', lastAt: dated[0].modifiedAt.toISOString(), ageHours };
+      } else {
+        backup = { status: 'critical', lastAt: null, ageHours: null };
+      }
+    } catch {}
+
+    return { mysql, disk, backup };
+  }
+
+  private async getOperationalAlerts(from: Date | null) {
+    try {
+    const qb = this.operationalEventsRepo.createQueryBuilder('event');
+    if (from) qb.where('event.createdAt >= :from', { from });
+
+    const rows = await qb
+      .select('event.type', 'type')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('event.type')
+      .getRawMany<{ type: string; count: string }>();
+    const counts = new Map(rows.map((row) => [row.type, Number(row.count)]));
+
+    const recentQb = this.operationalEventsRepo.createQueryBuilder('event');
+    if (from) recentQb.where('event.createdAt >= :from', { from });
+    const recent = await recentQb.orderBy('event.createdAt', 'DESC').take(5).getMany();
+
+    return {
+      trackingAvailable: true,
+      apiErrors: counts.get('API_ERROR') ?? 0,
+      stripeFailures: counts.get('STRIPE_FAILURE') ?? 0,
+      emailFailures: counts.get('EMAIL_FAILURE') ?? 0,
+      recent: recent.map((event) => ({ type: event.type, route: event.route, statusCode: event.statusCode, createdAt: event.createdAt })),
+    };
+    } catch {
+      return { trackingAvailable: false, apiErrors: 0, stripeFailures: 0, emailFailures: 0, recent: [] };
+    }
+  }
+
+  private async getFeatureUsage(from: Date | null) {
+    const condition = from ? ' WHERE createdAt >= ?' : '';
+    const params = from ? [from] : [];
+    const queryOne = async (sql: string, values = params) => {
+      try { return (await this.dataSource.query(sql, values))[0] ?? {}; }
+      catch { return {}; }
+    };
+
+    const [assistant, ai, protocols, calendar, measurements, species] = await Promise.all([
+      queryOne(`SELECT COUNT(*) events, COUNT(DISTINCT userId) users FROM feature_usage_events${from ? " WHERE createdAt >= ? AND feature = 'ASSISTANT_OPEN'" : " WHERE feature = 'ASSISTANT_OPEN'"}`),
+      queryOne(`SELECT COUNT(*) events, COUNT(DISTINCT userId) users FROM ai_usage${condition}`),
+      queryOne(`SELECT COUNT(*) events, COUNT(DISTINCT userId) users FROM tasks${from ? " WHERE createdAt >= ? AND description LIKE '%[AquaManager protocol:%'" : " WHERE description LIKE '%[AquaManager protocol:%'"}`),
+      queryOne(`SELECT COUNT(*) events, COUNT(DISTINCT userId) users FROM tasks${condition}`),
+      queryOne(`SELECT COUNT(*) events, COUNT(DISTINCT a.userId) users FROM water_measurements m JOIN aquariums a ON a.id = m.aquariumId${from ? ' WHERE m.createdAt >= ?' : ''}`),
+      queryOne(`SELECT COUNT(*) events, COUNT(DISTINCT visitorKey) users FROM feature_usage_events${from ? " WHERE createdAt >= ? AND feature IN ('FISH_CARD_VIEW', 'PLANT_CARD_VIEW')" : " WHERE feature IN ('FISH_CARD_VIEW', 'PLANT_CARD_VIEW')"}`),
+    ]);
+
+    const normalize = (row: any) => ({ events: Number(row.events ?? 0), users: Number(row.users ?? 0) });
+    return {
+      assistant: { ...normalize(assistant), detail: "ouvertures volontaires de l'assistant" },
+      ai: normalize(ai), protocols: normalize(protocols), calendar: normalize(calendar),
+      measurements: normalize(measurements),
+      species: { ...normalize(species), detail: 'consultations réelles dédupliquées par fiche' },
+    };
+  }
 
   private hasUserCreatedAt(): boolean {
     return this.usersRepo.metadata.columns.some((c) => c.propertyName === 'createdAt');
@@ -74,9 +171,12 @@ export class AdminMetricsService {
     const from = getFrom(range);
     const hasCreatedAt = this.hasUserCreatedAt();
 
-    const [usersTotal, admins] = await Promise.all([
+    const [usersTotal, admins, infrastructure, operationalAlerts, featureUsage] = await Promise.all([
       this.usersRepo.count(),
       this.usersRepo.count({ where: { role: 'ADMIN' } as any }),
+      this.getInfrastructureHealth(),
+      this.getOperationalAlerts(from),
+      this.getFeatureUsage(from),
     ]);
     const activeSubscriptionQb = this.usersRepo
   .createQueryBuilder('u')
@@ -265,6 +365,8 @@ const subscriptionsTotalActive = premiumActive + proActive;
         approvedFishCards,
         approvedPlantCards,
       },
+      operations: { infrastructure, alerts: operationalAlerts },
+      featureUsage,
     };
   }
 

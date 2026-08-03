@@ -1,0 +1,53 @@
+<a class="admin-brand" routerLink="/admin/metrics" aria-label="Accueil de l’administration">
+  <span class="admin-brand__mark"><mat-icon>water</mat-icon></span>
+  <span><strong>AquaManager</strong><small>Centre d’administration</small></span>
+</a>
+
+<div class="admin-context">
+  <span class="admin-context__pulse" aria-hidden="true"></span>
+  <span><strong>Espace sécurisé</strong><small>Gestion du site</small></span>
+</div>
+
+<nav class="admin-nav" aria-label="Navigation de l’administration">
+  @if (visible(pilotage).length) {
+    <section>
+      <p>Pilotage</p>
+      @for (item of visible(pilotage); track item.route) {
+        <a [routerLink]="item.route" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: item.route === '/admin/metrics' }">
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span>
+          <mat-icon class="admin-nav__arrow">chevron_right</mat-icon>
+        </a>
+      }
+    </section>
+  }
+
+  <section>
+    <p>Contenus</p>
+    @for (item of content; track item.route) {
+      <a [routerLink]="item.route" routerLinkActive="is-active">
+        <mat-icon>{{ item.icon }}</mat-icon>
+        <span><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span>
+        <mat-icon class="admin-nav__arrow">chevron_right</mat-icon>
+      </a>
+    }
+  </section>
+
+  @if (visible(communication).length) {
+    <section>
+      <p>Rayonnement</p>
+      @for (item of visible(communication); track item.route) {
+        <a [routerLink]="item.route" routerLinkActive="is-active">
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span>
+          <mat-icon class="admin-nav__arrow">chevron_right</mat-icon>
+        </a>
+      }
+    </section>
+  }
+</nav>
+
+<footer class="admin-sidebar-footer">
+  <a mat-button routerLink="/dashboard"><mat-icon>dashboard</mat-icon>Voir l’application</a>
+  <a mat-button routerLink="/profile"><mat-icon>account_circle</mat-icon>Mon profil</a>
+</footer>

@@ -1,10 +1,7 @@
-<main class="agent-studio">
-  <nav class="page-navigation" aria-label="Navigation de la page marketing">
-    <a mat-stroked-button class="back-button" routerLink="/profile">
-      <mat-icon>arrow_back</mat-icon>
-      Retour à mon profil
-    </a>
-  </nav>
+<div class="admin-layout">
+  <aside appAdminSidebar class="admin-sidebar" [adminAccess]="true"></aside>
+  <main class="admin-content">
+    <div class="agent-studio">
 
   <header class="agent-header">
     <div class="header-copy">
@@ -265,4 +262,6 @@
       }
     </section>
   </section>
-</main>
+    </div>
+  </main>
+</div>

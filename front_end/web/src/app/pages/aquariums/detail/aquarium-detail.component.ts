@@ -233,11 +233,12 @@ export class AquariumDetailComponent implements OnInit {
   protocolAquarium: Aquarium | null = null;
 
   isPremium = false;
-  solutionView: 'assistant' | 'ai' = 'assistant';
+  solutionView: 'assistant' | 'ai' | null = null;
   selectedTabIndex = 0;
   initialProtocolKey: 'STARTUP' | null = null;
   targetPanelExpanded = false;
   private solutionsLoadedOnce = false;
+  private lastAssistantTrackedAt = 0;
 
   checkoutLoading = false;
 
@@ -578,7 +579,7 @@ aiChatQuestion = '';
   }
 
   openTargetConfiguration(): void {
-    this.solutionView = 'assistant';
+    this.solutionView = null;
     this.selectedTabIndex = 2;
     this.targetPanelExpanded = true;
 
@@ -1029,6 +1030,16 @@ async analyzePhotoWithAi(): Promise<void> {
 
   selectSolutionView(view: 'assistant' | 'ai'): void {
     this.solutionView = view;
+    if (view === 'assistant') this.trackAssistantUsage();
+  }
+
+  private trackAssistantUsage(): void {
+    const now = Date.now();
+    if (now - this.lastAssistantTrackedAt < 30_000) return;
+    this.lastAssistantTrackedAt = now;
+    void this.recosApi.trackAssistantOpen(this.id).catch(() => {
+      // La télémétrie ne doit jamais bloquer l'utilisation de l'assistant.
+    });
   }
 
   async acceptReco(r: Recommendation): Promise<void> {
