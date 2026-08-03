@@ -2,7 +2,7 @@ import { CommonModule, Location } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -80,6 +80,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   editorOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
   sortCtrl = new FormControl<UserSortMode>('createdAt_desc', { nonNullable: true });
   subscribedOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
+  unverifiedOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
 
   displayedColumns = [
     'id',
@@ -124,9 +125,14 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     private readonly api: AdminUsersApi,
     private readonly location: Location,
     private readonly router: Router,
+    private readonly route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+  this.unverifiedOnlyCtrl.setValue(
+    this.route.snapshot.queryParamMap.get('filter') === 'unverified',
+    { emitEvent: false },
+  );
   this.reload();
 
   this.searchCtrl.valueChanges
@@ -161,6 +167,10 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     .pipe(takeUntil(this.destroy$))
     .subscribe(() => this.applyFilters());
 
+  this.unverifiedOnlyCtrl.valueChanges
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(() => this.applyFilters());
+
   this.sortCtrl.valueChanges
     .pipe(takeUntil(this.destroy$))
     .subscribe(() => this.applyFilters());
@@ -189,6 +199,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   this.adminOnlyCtrl.setValue(false, { emitEvent: false });
   this.editorOnlyCtrl.setValue(false, { emitEvent: false });
   this.subscribedOnlyCtrl.setValue(false, { emitEvent: false });
+  this.unverifiedOnlyCtrl.setValue(false, { emitEvent: false });
   this.sortCtrl.setValue('createdAt_desc', { emitEvent: false });
 
   this.reload();
@@ -227,6 +238,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   const adminOnly = this.adminOnlyCtrl.value;
   const editorOnly = this.editorOnlyCtrl.value;
   const subscribedOnly = this.subscribedOnlyCtrl.value;
+  const unverifiedOnly = this.unverifiedOnlyCtrl.value;
   const sortMode = this.sortCtrl.value;
 
   let rows = this.users.filter((u) => {
@@ -234,6 +246,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     if (adminOnly && u.role !== 'ADMIN') return false;
     if (editorOnly && u.role !== 'EDITOR') return false;
     if (subscribedOnly && !this.isSubscribed(u)) return false;
+    if (unverifiedOnly && Boolean(u.emailVerifiedAt)) return false;
 
     return true;
   });

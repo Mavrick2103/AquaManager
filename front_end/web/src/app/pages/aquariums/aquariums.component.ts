@@ -18,6 +18,8 @@ import {
 import { UserMe, UserService } from '../../core/user.service';
 import { firstValueFrom } from 'rxjs';
 import { AquariumDialogComponent } from './dialog/aquarium-dialog.component';
+import { SiteTourService } from '../../core/site-tour.service';
+import { TutorialDataService } from '../../core/tutorial-data.service';
 
 @Component({
   selector: 'app-aquariums',
@@ -48,6 +50,8 @@ export class AquariumsComponent implements OnInit {
     private router: Router,
     private users: UserService,
     private snack: MatSnackBar,
+    readonly siteTour: SiteTourService,
+    private readonly tutorialData: TutorialDataService,
   ) {}
 
   ngOnInit() { this.load(); }
@@ -76,12 +80,33 @@ export class AquariumsComponent implements OnInit {
       return;
     }
 
+    const tutorialMode = this.siteTour.opened();
+    if (tutorialMode) this.siteTour.suspend(true);
+
     const ref = this.dialog.open(AquariumDialogComponent, {
       width: '720px',
       autoFocus: false,
+      data: { tutorial: tutorialMode },
     });
     ref.afterClosed().subscribe(result => {
+      if (tutorialMode) this.siteTour.suspend(false);
       if (!result?.aquarium) return;
+
+      if (result.tutorial) {
+        this.tutorialData.aquarium.set(result.aquarium);
+        this.items = [{
+          ...result.aquarium,
+          fishCount: 0,
+          plantCount: 0,
+          activeProtocolCount: 0,
+          overdueTaskCount: 0,
+          nextTaskAt: null,
+          nextTaskTitle: null,
+          lastMeasuredAt: null,
+        } as AquariumOverview, ...this.items];
+        this.siteTour.targetActivated();
+        return;
+      }
 
       if (result.setupCycling) {
         this.router.navigate(['/aquariums', result.aquarium.id], {
@@ -95,6 +120,10 @@ export class AquariumsComponent implements OnInit {
   }
 
   goTo(a: Aquarium) {
+    if (a.id === -1 && this.siteTour.opened()) {
+      this.router.navigateByUrl('/tutorial/aquarium');
+      return;
+    }
     this.router.navigate(['/aquariums', a.id]);
   }
 

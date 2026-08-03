@@ -1,11 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { APP_VERSION } from './core/app-version';
+import { SiteTourComponent } from './shared/site-tour/site-tour.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, SiteTourComponent],
   templateUrl: './app.html',
 })
 export class App {

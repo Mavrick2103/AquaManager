@@ -81,6 +81,16 @@ export class AquariumDialogComponent {
       startDate: new Date(v.startDate as Date).toISOString().slice(0, 10),
     };
 
+    if (this.data?.tutorial === true) {
+      this.submitting.set(false);
+      this.ref.close({
+        aquarium: { id: -1, ...dto },
+        setupCycling: v.setupCycling !== false,
+        tutorial: true,
+      });
+      return;
+    }
+
     this.api.create(dto).subscribe({
       next: (aquarium) => {
         this.submitting.set(false);

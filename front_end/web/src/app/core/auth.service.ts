@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { SiteTourService } from './site-tour.service';
 
 export type Me = {
   userId: number;
@@ -16,7 +17,11 @@ export class AuthService {
   private accessToken: string | null = null;
   me: Me | null = null;
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private siteTour: SiteTourService,
+  ) {}
 
   get token(): string | null {
     return this.accessToken;
@@ -134,6 +139,7 @@ async resetPassword(token: string, newPassword: string): Promise<{ ok: boolean; 
       })
     );
     this.me = me;
+    this.siteTour.offerForUser(Number(me.userId));
     return this.me;
   }
 

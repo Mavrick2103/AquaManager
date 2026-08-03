@@ -66,3 +66,6 @@ h2[mat-dialog-title]{
   font-size: .82rem;
   line-height: 1.45;
 }
+.tutorial-notice { display: flex; gap: 10px; align-items: center; margin: 0 24px 14px; padding: 12px 14px; border-radius: 14px; color: #235866; background: #e5f6f2; line-height: 1.4; }
+.tutorial-notice mat-icon { flex: 0 0 auto; }
+.tutorial-cycling-help { display: flex; gap: 11px; margin-top: 12px; padding: 14px; border: 1px solid #c9dedb; border-radius: 14px; color: #315863; background: #fff; }.tutorial-cycling-help > mat-icon { flex: 0 0 auto; color: #d09232; }.tutorial-cycling-help strong { display: block; margin-bottom: 6px; color: #173f4b; }.tutorial-cycling-help p { margin: 5px 0; line-height: 1.45; }.tutorial-cycling-help small { display: block; margin-top: 9px; padding-top: 9px; border-top: 1px solid #dce8e7; color: #39766f; font-weight: 750; line-height: 1.4; }

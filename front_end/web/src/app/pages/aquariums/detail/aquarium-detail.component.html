@@ -34,7 +34,7 @@
   </div>
 </section>
 
-<section class="hero" *ngIf="!loading; else loader">
+<section class="hero" data-tour="aquarium-detail-overview" *ngIf="!loading; else loader">
   <div class="left">
     <div class="avatar" aria-hidden="true">
       <mat-icon>water_drop</mat-icon>
@@ -907,7 +907,7 @@
                 mat-raised-button
                 color="primary"
                 type="button"
-                [disabled]="checkoutLoading"
+                [disabled]="true"
                 (click)="startPremiumCheckout()"
               >
                 <mat-icon>workspace_premium</mat-icon>

@@ -9,7 +9,7 @@
 </section>
 
 <main class="page-wrap">
-  <section class="calendar-dashboard">
+  <section class="calendar-dashboard" data-tour="calendar-summary">
     <div class="calendar-dashboard__intro">
       <span>Centre d’entretien</span>
       <h2>Ce qui mérite ton attention</h2>
@@ -91,7 +91,7 @@
     <button mat-stroked-button type="button" (click)="thisMonth()">Réessayer</button>
   </div>
 
-  <section class="cal -compact" *ngIf="viewMode === 'month' && !loadError">
+  <section class="cal -compact" data-tour="calendar-grid" *ngIf="viewMode === 'month' && !loadError">
     <header class="cal__head">
       <div class="cal__head-row">
         <button mat-icon-button aria-label="Mois précédent" (click)="prevMonth()"><mat-icon>chevron_left</mat-icon></button>
@@ -204,6 +204,7 @@
       <li><a routerLink="/">À propos</a></li><li><a routerLink="/dashboard">Accueil</a></li>
       <li><a routerLink="/aquariums">Mes aquariums</a></li><li><a routerLink="/calendar">Calendrier</a></li>
       <li><a routerLink="/profile">Profil</a></li>
+      <li><button type="button" class="footer-help" (click)="siteTour.open()">Aide · Revoir le tutoriel</button></li>
     </ul></div>
     <div class="footer-links"><h3>Légal</h3><ul>
       <li><a routerLink="/new-version">Nouveautés</a></li><li><a routerLink="/legal">Mentions légales</a></li>

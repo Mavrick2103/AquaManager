@@ -104,7 +104,7 @@
               <mat-icon class="action-arrow">arrow_forward</mat-icon>
             </a>
 
-            <a class="action-card" routerLink="/admin/users">
+            <a class="action-card" routerLink="/admin/users" [queryParams]="{ filter: 'unverified' }">
               <span class="action-icon users"><mat-icon>person_off</mat-icon></span>
               <span class="action-copy">
                 <strong>{{ metrics.attention.unverifiedUsers }}</strong>

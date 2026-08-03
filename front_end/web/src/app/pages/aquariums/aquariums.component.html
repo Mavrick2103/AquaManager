@@ -12,6 +12,7 @@
   <button
     mat-raised-button
     class="btn-primary"
+    data-tour="aquarium-create"
     [class.btn-primary--limited]="isAtLimit"
     (click)="openCreate()"
   >
@@ -22,7 +23,7 @@
 
 <ng-container *ngIf="!loading; else loadingTpl">
   <main class="aquariums-main">
-    <section class="overview-strip" aria-label="Résumé des aquariums">
+    <section class="overview-strip" data-tour="aquariums-summary" aria-label="Résumé des aquariums">
       <div class="overview-strip__stat">
         <span class="overview-strip__icon"><mat-icon>water</mat-icon></span>
         <div>
@@ -133,7 +134,7 @@
         </div>
 
         <div class="aquarium-card__content">
-          <div class="aquarium-card__heading">
+          <div class="aquarium-card__heading" data-tour="aquarium-card">
             <div>
               <h3>{{ aquarium.name }}</h3>
               <p>
@@ -211,7 +212,7 @@
       </section>
     </ng-template>
 
-    <section class="empty-state" *ngIf="!items.length">
+    <section class="empty-state" data-tour="aquarium-empty" *ngIf="!items.length">
       <div class="empty-state__visual">
         <mat-icon>water_drop</mat-icon>
         <span></span><span></span><span></span>

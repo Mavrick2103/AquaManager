@@ -1,0 +1,26 @@
+<div class="tutorial-mode"><mat-icon>school</mat-icon><strong>Mode tutoriel</strong><span>Tu peux essayer toutes les actions : rien ne sera enregistré dans ton compte.</span></div>
+<header class="demo-header" data-tour="aquarium-detail-overview">
+  <button mat-icon-button type="button" (click)="router.navigateByUrl('/aquariums')"><mat-icon>arrow_back</mat-icon></button>
+  <div><span>Fiche aquarium de démonstration</span><h1>{{ data.aquarium()?.name }}</h1><p>{{ data.aquarium()?.lengthCm }} × {{ data.aquarium()?.widthCm }} × {{ data.aquarium()?.heightCm }} cm · {{ data.aquarium()?.waterType === 'EAU_DE_MER' ? 'Eau de mer' : 'Eau douce' }}</p></div>
+  <span class="temporary"><mat-icon>schedule</mat-icon>Temporaire</span>
+</header>
+<main class="demo-main">
+  <mat-tab-group class="tabs-group" [(selectedIndex)]="selectedTab">
+    <mat-tab label="Mesures"><section class="demo-panel">
+      <div class="panel-heading"><div><span>Suivi de l’eau</span><h2>Mesures et paramètres</h2><p>Retrouve ici le même parcours que sur la véritable fiche de ton aquarium.</p></div><button data-tour="tutorial-add-measurement" mat-flat-button type="button" (click)="openMeasurementDialog()"><mat-icon>add_chart</mat-icon>Ajouter une mesure</button></div>
+      <ng-container *ngIf="data.measurement() as measure">
+        <div class="result-card"><mat-icon>check_circle</mat-icon><div><strong>Mesure fictive validée</strong><span>pH {{ measure['ph'] }} · {{ measure['temp'] }} °C · les autres valeurs ont été complétées automatiquement</span></div></div>
+        <section class="demo-chart" data-tour="tutorial-measurement-chart">
+          <header><div><span>Historique généré pour la démonstration</span><h3>Évolution du pH</h3></div><span class="fake-badge">7 mesures temporaires</span></header>
+          <div class="chart-area"><div class="reference-zone"></div><svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Courbe fictive d’évolution du pH"><polyline [attr.points]="phPolyline()"></polyline><circle *ngFor="let row of data.measurements(); let i = index" [attr.cx]="phPoint(row.ph, i).split(',')[0]" [attr.cy]="phPoint(row.ph, i).split(',')[1]" r="1.8"></circle></svg></div>
+          <div class="chart-labels"><span *ngFor="let row of data.measurements()">{{ row.label }}</span></div>
+          <p><mat-icon>info</mat-icon>Les six anciennes mesures ont été inventées par le tutoriel. Elles montrent comment les graphiques permettent de repérer une tendance plutôt qu’une valeur isolée.</p>
+        </section>
+      </ng-container>
+    </section></mat-tab>
+    <mat-tab label="Tâches"><section class="demo-panel"><div class="panel-heading"><div><span>Entretien</span><h2>Tâches de l’aquarium</h2><p>Planifie les changements d’eau, tests et entretiens.</p></div></div><button data-tour="tutorial-create-task" class="demo-action" type="button" (click)="data.taskCreated.set(true)"><mat-icon>add_task</mat-icon><span><strong>Créer une tâche fictive</strong><small>Changement d’eau prévu demain</small></span></button><div class="result-card" *ngIf="data.taskCreated()"><mat-icon>event_available</mat-icon><div><strong>Changement d’eau</strong><span>Demain · uniquement dans le tutoriel</span></div></div></section></mat-tab>
+    <mat-tab label="Solutions"><section class="demo-panel"><div class="panel-heading"><div><span>Conseils</span><h2>Solutions intelligentes</h2><p>L’assistant utilise les mesures du bac pour expliquer les écarts et proposer une action adaptée.</p></div></div><div class="assistant-demo"><mat-icon>auto_awesome</mat-icon><div><strong>Exemple d’analyse</strong><p>{{ data.measurement() ? 'Tes valeurs fictives sont cohérentes. Continue le suivi régulier et surveille le NO₂.' : 'Ajoute d’abord une mesure fictive pour préparer une analyse.' }}</p></div></div></section></mat-tab>
+    <mat-tab label="Protocoles"><section class="demo-panel"><div class="panel-heading"><div><span>Entretien guidé</span><h2>Protocoles</h2><p>Choisis un objectif et vérifie son programme avant tout ajout au calendrier.</p></div></div><button data-tour="tutorial-select-protocol" class="demo-action" type="button" (click)="data.protocolSelected.set(true)"><mat-icon>rocket_launch</mat-icon><span><strong>Simuler un protocole de cyclage</strong><small>Aucune tâche réelle ne sera créée</small></span></button><div class="result-card" *ngIf="data.protocolSelected()"><mat-icon>route</mat-icon><div><strong>Protocole préparé</strong><span>Contrôles hebdomadaires simulés</span></div></div></section></mat-tab>
+    <mat-tab label="Dans mon Aquarium"><section class="demo-panel"><div class="panel-heading"><div><span>Population</span><h2>Poissons et plantes</h2><p>Ajoute les habitants afin d’adapter les références et les conseils du bac.</p></div></div><button data-tour="tutorial-add-species" class="demo-action" type="button" (click)="data.speciesAdded.set(true)"><mat-icon>set_meal</mat-icon><span><strong>Ajouter un poisson fictif</strong><small>Néon bleu · exemple temporaire</small></span></button><div class="result-card" *ngIf="data.speciesAdded()"><mat-icon>pets</mat-icon><div><strong>Néon bleu</strong><span>Ajouté uniquement à la démonstration</span></div></div></section></mat-tab>
+  </mat-tab-group>
+</main>

@@ -41,6 +41,22 @@
   padding-bottom: 4px;
 }
 
+.tutorial-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #a9dcd1;
+  border-radius: 12px;
+  color: #205964;
+  background: #e8f7f3;
+
+  mat-icon { flex: 0 0 auto; color: #398b7d; }
+  div { display: grid; gap: 3px; }
+  span { color: #58757b; font-size: .86rem; line-height: 1.4; }
+}
+
 .form-grid {
   display: flex;
   flex-direction: column;

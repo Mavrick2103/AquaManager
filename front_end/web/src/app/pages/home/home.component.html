@@ -80,7 +80,7 @@
     </p>
 
     <div class="cta-row">
-      <button mat-raised-button routerLink="/aquariums">
+      <button mat-raised-button routerLink="/aquariums" data-tour="home-aquariums">
         <mat-icon>water_drop</mat-icon>
         Mes aquariums
       </button>
@@ -396,6 +396,7 @@
         <li><a routerLink="/aquariums">Mes aquariums</a></li>
         <li><a routerLink="/calendar">Calendrier</a></li>
         <li><a routerLink="/profile">Profil</a></li>
+        <li><button type="button" class="footer-help" (click)="siteTour.open()">Aide · Revoir le tutoriel</button></li>
       </ul>
     </div>
 

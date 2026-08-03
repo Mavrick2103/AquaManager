@@ -7,9 +7,16 @@
 </h2>
 
 <div mat-dialog-content class="dialog-content">
+  <div class="tutorial-notice" *ngIf="data.tutorial">
+    <mat-icon>school</mat-icon>
+    <div>
+      <strong>Exercice du tutoriel — aucune donnée ne sera enregistrée</strong>
+      <span>Renseigne seulement le pH et la température. Les autres valeurs seront complétées automatiquement pour afficher un exemple de suivi.</span>
+    </div>
+  </div>
   <form [formGroup]="form" class="form-grid">
     <!-- Ligne 1 : Date / pH / Temp -->
-    <div class="top-row">
+    <div class="top-row" data-tour="tutorial-measurement-fields">
       <mat-form-field appearance="outline">
         <mat-label>Date de mesure</mat-label>
         <input matInput [matDatepicker]="picker" formControlName="measuredAt">
@@ -146,6 +153,7 @@
   </button>
 
   <button
+    data-tour="tutorial-save-measurement"
     mat-flat-button
     color="primary"
     (click)="save()"
@@ -153,7 +161,7 @@
   >
     <ng-container *ngIf="!loading; else loadingTpl">
       <mat-icon>save</mat-icon>
-      Enregistrer
+      {{ data.tutorial ? 'Valider la mesure fictive' : 'Enregistrer' }}
     </ng-container>
     <ng-template #loadingTpl>
       <mat-progress-spinner

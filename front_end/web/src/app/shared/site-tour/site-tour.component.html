@@ -1,0 +1,24 @@
+<ng-container *ngIf="tour.opened() && !tour.suspended()">
+  <div *ngIf="!current.selector" class="tour-shade" aria-hidden="true"></div>
+  <div *ngFor="let style of spotlightStyles" class="tour-shade-part" [ngStyle]="style" aria-hidden="true"></div>
+  <section class="tour-tooltip" [class.tour-tooltip--centered]="!current.selector" [ngStyle]="tooltipStyle" role="dialog" aria-live="polite" aria-labelledby="tour-title">
+    <header>
+      <span class="tour-icon"><mat-icon>{{ current.icon }}</mat-icon></span>
+      <span class="tour-count">{{ tour.step() + 1 }} / {{ tour.steps.length }}</span>
+      <button type="button" class="tour-close" (click)="close()" aria-label="Fermer le tutoriel"><mat-icon>close</mat-icon></button>
+    </header>
+    <div class="tour-progress"><span [style.width.%]="((tour.step() + 1) / tour.steps.length) * 100"></span></div>
+    <div class="tour-copy">
+      <h2 id="tour-title">{{ current.title }}</h2>
+      <p>{{ current.description }}</p>
+      <div class="tour-instruction" *ngIf="current.instruction"><mat-icon>touch_app</mat-icon><span>{{ current.instruction }}</span></div>
+    </div>
+    <footer>
+      <button type="button" class="tour-skip" (click)="close()">Quitter</button>
+      <div>
+        <button *ngIf="tour.step() > 0 && !current.waitForTargetClick" type="button" class="tour-back" (click)="previous()"><mat-icon>arrow_back</mat-icon></button>
+        <button *ngIf="!current.waitForTargetClick" type="button" class="tour-next" (click)="next()">{{ isLast ? 'Terminer' : 'Suivant' }}<mat-icon>{{ isLast ? 'check' : 'arrow_forward' }}</mat-icon></button>
+      </div>
+    </footer>
+  </section>
+</ng-container>

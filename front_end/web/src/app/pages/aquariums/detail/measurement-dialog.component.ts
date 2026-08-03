@@ -19,7 +19,10 @@ export interface MeasurementDialogData {
   aquariumId: number;
   type: WaterType;
   name?: string;
+  tutorial?: boolean;
 }
+
+export type TutorialMeasurementResult = MeasurementCreateDto & { tutorial: true };
 
 @Component({
   selector: 'app-measurement-dialog',
@@ -73,10 +76,18 @@ export class MeasurementDialogComponent implements OnInit {
       mg:       [null, [Validators.min(0), Validators.max(2000)]],
     });
 
+    if (this.data.tutorial) {
+      this.form.controls['ph'].addValidators(Validators.required);
+      this.form.controls['temp'].addValidators(Validators.required);
+      this.form.controls['ph'].updateValueAndValidity();
+      this.form.controls['temp'].updateValueAndValidity();
+    }
+
     this.prefillFromLast();
   }
 
   private async prefillFromLast() {
+    if (this.data.tutorial) return;
     try {
       this.loading = true;
       const last = await this.svc.getLastForAquarium(this.data.aquariumId);
@@ -156,6 +167,19 @@ export class MeasurementDialogComponent implements OnInit {
               kh: null, gh: null, fe: null, k: null, sio2: null, nh3: null,
             }),
       };
+
+      if (this.data.tutorial) {
+        const tutorialDto: TutorialMeasurementResult = {
+          ...dto,
+          no2: dto.no2 ?? 0.01,
+          no3: dto.no3 ?? 12,
+          kh: this.data.type === 'EAU_DOUCE' ? (dto.kh ?? 5) : null,
+          gh: this.data.type === 'EAU_DOUCE' ? (dto.gh ?? 8) : null,
+          tutorial: true,
+        };
+        this.ref.close(tutorialDto as any);
+        return;
+      }
 
       await this.svc.createForAquarium(this.data.aquariumId, dto);
       this.svc.notifyChanged(this.data.aquariumId);

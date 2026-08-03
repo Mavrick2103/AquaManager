@@ -120,6 +120,15 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
   },
   {
+    path: 'tutorial/aquarium',
+    loadComponent: () =>
+      import('./pages/tutorial/tutorial-aquarium.component').then(
+        (m) => m.TutorialAquariumComponent,
+      ),
+    canActivate: [AuthGuard],
+    data: { title: 'Tutoriel aquarium – AquaManager', robots: 'noindex' },
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./pages/profile/profile.component').then((m) => m.ProfileComponent),
     canActivate: [AuthGuard],

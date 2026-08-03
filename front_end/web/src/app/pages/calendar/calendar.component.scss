@@ -863,6 +863,20 @@
   &:hover { text-decoration: underline; }
 }
 
+.footer-help {
+  padding: 0;
+  border: 0;
+  color: rgba(255, 255, 255, 0.92);
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.15;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover { text-decoration: underline; }
+}
+
 .footer-social {
   justify-self: end;
   text-align: center;

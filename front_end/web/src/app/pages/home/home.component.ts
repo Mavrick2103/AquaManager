@@ -21,6 +21,7 @@ import { TasksService, Task } from '../../core/tasks.service';
 import { AquariumsService, Aquarium } from '../../core/aquariums.service';
 import { MeasurementsService, Measurement } from '../../core/water.service';
 import { APP_VERSION } from '../../core/app-version';
+import { SiteTourService } from '../../core/site-tour.service';
 
 import {
   GamificationService,
@@ -61,6 +62,7 @@ export class HomeComponent implements OnInit {
   private aquariumsApi = inject(AquariumsService);
   private measApi = inject(MeasurementsService);
   private gamificationApi = inject(GamificationService);
+  readonly siteTour = inject(SiteTourService);
 
   me: Me | null = null;
   userFullName = '';
