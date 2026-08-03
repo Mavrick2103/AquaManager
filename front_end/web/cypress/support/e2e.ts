@@ -15,3 +15,10 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands'
+
+// Les scénarios E2E testent directement les pages métier. Le tutoriel de
+// première connexion possède ses propres interactions et redirigerait sinon
+// chaque session simulée vers le dashboard avant le chargement de la page.
+Cypress.on('window:before:load', (win) => {
+  win.localStorage.setItem('aquamanager-site-tour-v2:1', '1');
+});
