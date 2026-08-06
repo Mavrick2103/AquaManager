@@ -42,6 +42,7 @@ export class ArticleDetailsPageComponent implements OnInit {
 
   safeHtml = '';
   toc: TocItem[] = [];
+  readingMinutes = 1;
 
   private readonly apiOrigin = this.computeApiOrigin(environment.apiUrl);
 
@@ -89,6 +90,7 @@ export class ArticleDetailsPageComponent implements OnInit {
           const prepared = this.prepareContent(a.content || '');
           this.safeHtml = prepared.html;
           this.toc = prepared.toc;
+          this.readingMinutes = this.estimateReadingTime(a.content || '');
 
           const description = this.buildDescription(a.excerpt || a.content);
           const image = this.coverSrc(a.coverImageUrl);
@@ -157,8 +159,9 @@ export class ArticleDetailsPageComponent implements OnInit {
     let html = '';
 
     let inList = false;
+    let listTag: 'ul' | 'ol' = 'ul';
     const closeList = () => {
-      if (inList) { html += '</ul>'; inList = false; }
+      if (inList) { html += `</${listTag}>`; inList = false; }
     };
 
     for (const raw of lines) {
@@ -196,8 +199,40 @@ export class ArticleDetailsPageComponent implements OnInit {
       // List "- item" (ou "-- item", etc.)
       const li = line.match(/^-+\s+(.+)$/);
       if (li) {
-        if (!inList) { html += '<ul>'; inList = true; }
+        if (!inList || listTag !== 'ul') {
+          closeList();
+          listTag = 'ul';
+          html += '<ul>';
+          inList = true;
+        }
         html += `<li>${this.inlineFormat(li[1])}</li>`;
+        continue;
+      }
+
+      const orderedItem = line.match(/^\d+[.)]\s+(.+)$/);
+      if (orderedItem) {
+        if (!inList || listTag !== 'ol') {
+          closeList();
+          listTag = 'ol';
+          html += '<ol>';
+          inList = true;
+        }
+        html += `<li>${this.inlineFormat(orderedItem[1])}</li>`;
+        continue;
+      }
+
+      const callout = line.match(/^\[!(ASTUCE|ATTENTION|À RETENIR|A RETENIR)\]\s*(.+)$/i);
+      if (callout) {
+        closeList();
+        const kind = callout[1].toUpperCase().startsWith('ATTENTION') ? 'warning' : 'tip';
+        html += `<aside class="article-callout ${kind}"><strong>${this.escapeHtml(callout[1])}</strong><p>${this.inlineFormat(callout[2])}</p></aside>`;
+        continue;
+      }
+
+      const quote = line.match(/^>\s+(.+)$/);
+      if (quote) {
+        closeList();
+        html += `<blockquote>${this.inlineFormat(quote[1])}</blockquote>`;
         continue;
       }
 
@@ -252,6 +287,11 @@ export class ArticleDetailsPageComponent implements OnInit {
       .replace(/\s+/g, ' ')
       .trim();
     return (plainText || 'Conseils et informations pour mieux entretenir votre aquarium.').slice(0, 160);
+  }
+
+  private estimateReadingTime(content: string): number {
+    const words = String(content || '').trim().split(/\s+/).filter(Boolean).length;
+    return Math.max(1, Math.ceil(words / 220));
   }
 
   private bindSmoothAnchorScroll(): void {

@@ -1,5 +1,8 @@
 <div class="shell">
   <div class="topbar">
+    <a class="mini-brand" routerLink="/" aria-label="Accueil AquaManager">
+      <img src="/Logo_AquaManger.png" alt="AquaManager" />
+    </a>
     <button mat-stroked-button type="button" (click)="back()">
       <mat-icon>arrow_back</mat-icon>
       Retour
@@ -26,10 +29,9 @@
     <header class="hero">
       <div class="hero-inner">
         <div class="meta">
-          <span class="pill">{{ a.theme?.name || 'Conseils' }}</span>
-          <span class="dot">•</span>
-          <span class="date">{{ (a.publishedAt || a.createdAt) | date:'mediumDate' }}</span>
-          <span class="dot">•</span>
+          <span class="pill"><mat-icon>bookmark</mat-icon>{{ a.theme?.name || 'Conseils' }}</span>
+          <span class="date"><mat-icon>calendar_month</mat-icon>{{ (a.publishedAt || a.createdAt) | date:'mediumDate' }}</span>
+          <span class="reading-time"><mat-icon>schedule</mat-icon>{{ readingMinutes }} min de lecture</span>
         </div>
 
         <h1 class="title">{{ a.title }}</h1>
@@ -37,14 +39,15 @@
         <p class="excerpt" *ngIf="a.excerpt">{{ a.excerpt }}</p>
 
         <div class="cover" *ngIf="coverSrc(a.coverImageUrl) as src">
-          <img [src]="src" loading="lazy" decoding="async" />
+          <img [src]="src" [alt]="a.title" loading="eager" decoding="async" />
+          <span class="cover-caption">Le conseil AquaManager</span>
         </div>
       </div>
     </header>
 
     <main class="layout">
       <aside class="toc" *ngIf="toc?.length">
-        <div class="toc-title">Sommaire</div>
+        <div class="toc-title"><mat-icon>format_list_bulleted</mat-icon>Dans cet article</div>
         <nav class="toc-nav">
           <a
             *ngFor="let t of toc"
@@ -55,6 +58,7 @@
             {{ t.text }}
           </a>
         </nav>
+        <a class="all-articles" routerLink="/articles"><mat-icon>arrow_back</mat-icon>Tous les conseils</a>
       </aside>
 
       <article class="content">

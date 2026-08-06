@@ -30,6 +30,7 @@
         </div>
 
         <div class="hero-text">
+          <span class="identity-label">Portrait de l’espèce</span>
           <h1>{{ f.commonName }}</h1>
           <p class="sub" *ngIf="f.scientificName"><em>{{ f.scientificName }}</em></p>
 
@@ -85,6 +86,7 @@
           <mat-icon>tune</mat-icon>
           Paramètres & maintenance
         </h2>
+        <p class="section-intro">Les conditions essentielles pour offrir à cette espèce un environnement stable et adapté.</p>
 
         <div class="grid">
           <div class="kv">
@@ -170,6 +172,7 @@
           <mat-icon>description</mat-icon>
           Infos utiles
         </h2>
+        <p class="section-intro">Comportement, reproduction et particularités à connaître avant de l’accueillir.</p>
 
         <div class="blocks">
           <div class="block" *ngIf="f.behavior">
