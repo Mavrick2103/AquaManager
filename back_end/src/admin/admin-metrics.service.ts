@@ -240,13 +240,19 @@ const subscriptionsTotalActive = premiumActive + proActive;
     }
 
     // -----------------------
-    // Derniers users
+    // Utilisateurs récemment connectés.
+    // La période suit le filtre sélectionné, sans jamais remonter au-delà de 7 jours.
     // -----------------------
-    const latest = await this.usersRepo.find({
-      select: ['id', 'fullName', 'email', 'role', 'createdAt'] as any,
-      order: hasCreatedAt ? ({ createdAt: 'DESC' } as any) : ({ id: 'DESC' } as any),
-      take: 10,
-    });
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const recentActivityFrom = from && from > sevenDaysAgo ? from : sevenDaysAgo;
+    const latest = hasLastActivity
+      ? await this.usersRepo.find({
+          select: ['id', 'fullName', 'email', 'role', 'lastActivityAt'] as any,
+          where: { lastActivityAt: MoreThanOrEqual(recentActivityFrom) } as any,
+          order: { lastActivityAt: 'DESC' } as any,
+          take: 10,
+        })
+      : [];
 
     // -----------------------
     // Aquariums

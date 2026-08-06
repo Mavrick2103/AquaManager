@@ -1,4 +1,4 @@
-export type MetricsRange = '7d' | '30d' | 'all';
+export type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 
 export interface AdminMetricsDto {
   generatedAt: string;
@@ -11,7 +11,13 @@ export interface AdminMetricsDto {
     newInRange: number | null;       // null si User.createdAt n'existe pas
     activeInRange: number;
 
-    latest: Array<{ id: number; fullName: string; email: string; role: 'USER' | 'ADMIN' }>;
+    latest: Array<{
+      id: number;
+      fullName: string;
+      email: string;
+      role: 'USER' | 'ADMIN' | 'EDITOR';
+      lastActivityAt: string | Date | null;
+    }>;
     note?: string;
   };
 

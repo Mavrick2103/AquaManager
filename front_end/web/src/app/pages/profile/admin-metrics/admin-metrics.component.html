@@ -619,13 +619,13 @@
         <mat-card class="table-card">
           <div class="table-head">
             <div class="table-head-text">
-              <h2>Derniers utilisateurs</h2>
-              <p>Les derniers comptes créés (utile pour valider les rôles / inscriptions).</p>
+              <h2>Dernières connexions</h2>
+              <p>Utilisateurs connectés sur {{ rangeLabel() | lowercase }}, dans la limite des 7 derniers jours.</p>
             </div>
             <mat-icon aria-hidden="true">manage_accounts</mat-icon>
           </div>
 
-          <div class="table-wrap">
+          <div class="table-wrap" *ngIf="metrics.users.latest.length; else noRecentUsers">
             <table mat-table [dataSource]="metrics.users.latest" class="mat-elevation-z0">
               <ng-container matColumnDef="id">
                 <th mat-header-cell *matHeaderCellDef>ID</th>
@@ -653,6 +653,13 @@
                 </td>
               </ng-container>
 
+              <ng-container matColumnDef="lastActivityAt">
+                <th mat-header-cell *matHeaderCellDef>Dernière connexion</th>
+                <td mat-cell *matCellDef="let u">
+                  {{ u.lastActivityAt | date:'dd/MM/yyyy à HH:mm' }}
+                </td>
+              </ng-container>
+
               <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
               <tr
                 mat-row
@@ -663,6 +670,16 @@
               ></tr>
             </table>
           </div>
+
+          <ng-template #noRecentUsers>
+            <div class="table-empty">
+              <mat-icon>person_off</mat-icon>
+              <div>
+                <strong>Aucune connexion récente</strong>
+                <span>Aucun utilisateur ne s’est connecté sur cette période durant les 7 derniers jours.</span>
+              </div>
+            </div>
+          </ng-template>
         </mat-card>
       </ng-container>
     </div>

@@ -36,7 +36,13 @@ interface AdminMetricsDto {
     admins: number;
     newInRange: number | null;
     activeInRange: number;
-    latest: Array<{ id: number; fullName: string; email: string; role: Role; createdAt?: string }>;
+    latest: Array<{
+      id: number;
+      fullName: string;
+      email: string;
+      role: Role;
+      lastActivityAt: string | null;
+    }>;
     note?: string;
   };
   subscriptions: {
@@ -103,7 +109,7 @@ export class AdminMetricsComponent {
   range: MetricsRange = '1d';
   metrics: AdminMetricsDto | null = null;
 
-  displayedColumns = ['id', 'fullName', 'email', 'role'] as const;
+  displayedColumns = ['id', 'fullName', 'email', 'lastActivityAt', 'role'] as const;
 
   private _newUsersSeries: NewUsersPoint[] = [];
   private _activeUsersSeries: ActiveUsersPoint[] = [];
