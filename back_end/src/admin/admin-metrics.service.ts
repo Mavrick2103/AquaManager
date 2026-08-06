@@ -240,17 +240,14 @@ const subscriptionsTotalActive = premiumActive + proActive;
     }
 
     // -----------------------
-    // Utilisateurs récemment connectés.
-    // La période suit le filtre sélectionné, sans jamais remonter au-delà de 7 jours.
+    // Tous les utilisateurs connectés pendant la période sélectionnée,
+    // triés de la connexion la plus récente à la plus ancienne.
     // -----------------------
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const recentActivityFrom = from && from > sevenDaysAgo ? from : sevenDaysAgo;
     const latest = hasLastActivity
       ? await this.usersRepo.find({
           select: ['id', 'fullName', 'email', 'role', 'lastActivityAt'] as any,
-          where: { lastActivityAt: MoreThanOrEqual(recentActivityFrom) } as any,
+          ...(from ? { where: { lastActivityAt: MoreThanOrEqual(from) } as any } : {}),
           order: { lastActivityAt: 'DESC' } as any,
-          take: 10,
         })
       : [];
 
