@@ -13,6 +13,15 @@ export type AiSuggestedTask = {
   reason: string;
 };
 
+export type AiProductRecommendation = {
+  id: string;
+  name: string;
+  url: string;
+  reason: string;
+  warning: string | null;
+  imageUrl: string | null;
+};
+
 export type AiAquariumAnalysisResponse = {
   model: string;
   plan: string;
@@ -21,6 +30,7 @@ export type AiAquariumAnalysisResponse = {
   remaining: number;
   analysis: string;
   suggestedTasks: AiSuggestedTask[];
+  productRecommendations: AiProductRecommendation[];
 };
 
 @Injectable({

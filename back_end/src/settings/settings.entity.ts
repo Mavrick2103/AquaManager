@@ -25,11 +25,23 @@ export class Settings {
   volumeUnit: 'L'|'GAL';
 
   // ==== Notifications ====
+  @Column({ type: 'boolean', default: false })
+  notificationsEnabled: boolean;
+
   @Column({ type: 'boolean', default: true })
   emailNotifications: boolean;
 
   @Column({ type: 'boolean', default: false })
   pushNotifications: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  taskReminders: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  automaticNotifications: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  newsAndUpdates: boolean;
 
   // ==== Alertes & Seuils ====
   @Column({ type: 'boolean', default: true })

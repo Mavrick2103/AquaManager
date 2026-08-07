@@ -13,8 +13,12 @@ export interface UserSettings {
   defaultView: DefaultView;
   temperatureUnit: TemperatureUnit;
   volumeUnit: VolumeUnit;
+  notificationsEnabled: boolean;
   emailNotifications: boolean;
   pushNotifications: boolean;
+  taskReminders: boolean;
+  automaticNotifications: boolean;
+  newsAndUpdates: boolean;
   alertsEnabled: boolean;
   phMin: number;
   phMax: number;

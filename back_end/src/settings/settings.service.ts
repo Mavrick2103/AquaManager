@@ -21,8 +21,12 @@ export class SettingsService {
         defaultView: 'cards',
         temperatureUnit: 'C',
         volumeUnit: 'L',
+        notificationsEnabled: false,
         emailNotifications: true,
         pushNotifications: false,
+        taskReminders: true,
+        automaticNotifications: true,
+        newsAndUpdates: false,
         alertsEnabled: true,
         phMin: 6.0,
         phMax: 7.5,
@@ -42,6 +46,21 @@ export class SettingsService {
     const s = await this.ensure(userId);
     Object.assign(s, dto);
     return this.repo.save(s);
+  }
+
+  async canNotify(
+    userId: number,
+    category: 'TASK_REMINDER' | 'AUTOMATIC' | 'NEWS_UPDATE',
+    channel: 'EMAIL' | 'PUSH',
+  ): Promise<boolean> {
+    const settings = await this.ensure(userId);
+    if (!settings.notificationsEnabled) return false;
+    if (channel === 'EMAIL' && !settings.emailNotifications) return false;
+    if (channel === 'PUSH' && !settings.pushNotifications) return false;
+
+    if (category === 'TASK_REMINDER') return settings.taskReminders;
+    if (category === 'AUTOMATIC') return settings.automaticNotifications;
+    return settings.newsAndUpdates;
   }
 }
 // En cours de developement

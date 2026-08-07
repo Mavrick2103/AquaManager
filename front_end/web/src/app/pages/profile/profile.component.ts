@@ -21,6 +21,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { AuthService } from '../../core/auth.service';
 import { UserService, UserMe } from '../../core/user.service';
 import { BillingService } from '../../core/billing.service';
+import { SettingsService, UserSettings } from '../../core/settings.service';
 
 type AppRole = 'USER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN';
 type SubStatus = 'none' | 'active' | 'trialing' | 'canceled' | 'past_due' | 'incomplete';
@@ -63,6 +64,7 @@ export class ProfileComponent implements OnInit {
   private users = inject(UserService);
   private auth = inject(AuthService);
   private billing = inject(BillingService);
+  private settingsApi = inject(SettingsService);
   private snack = inject(MatSnackBar);
   private title = inject(Title);
   private meta = inject(Meta);
@@ -72,6 +74,20 @@ export class ProfileComponent implements OnInit {
   form!: FormGroup;
   loading = false;
   billingLoading = false;
+  notificationsLoading = false;
+
+  notificationSettings: Pick<
+    UserSettings,
+    'notificationsEnabled' | 'emailNotifications' | 'pushNotifications' |
+    'taskReminders' | 'automaticNotifications' | 'newsAndUpdates'
+  > = {
+    notificationsEnabled: false,
+    emailNotifications: true,
+    pushNotifications: false,
+    taskReminders: true,
+    automaticNotifications: true,
+    newsAndUpdates: false,
+  };
 
   prefs = {
     theme: 'system' as 'system' | 'light' | 'dark',
@@ -96,10 +112,11 @@ export class ProfileComponent implements OnInit {
       fullName: ['', [Validators.required, Validators.maxLength(80)]],
       email: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
       currentPassword: [''],
-      newPassword: [''],
+      newPassword: ['', [Validators.minLength(6)]],
     });
 
     await this.reloadMe();
+    await this.loadNotificationSettings();
 
     const raw = localStorage.getItem('aquamanager:prefs');
     if (raw) {
@@ -108,6 +125,51 @@ export class ProfileComponent implements OnInit {
       } catch {
         // ignore
       }
+    }
+  }
+
+  private async loadNotificationSettings(): Promise<void> {
+    try {
+      const settings = await this.settingsApi.getMySettings();
+      if (!settings) return;
+      this.notificationSettings = {
+        notificationsEnabled: settings.notificationsEnabled,
+        emailNotifications: settings.emailNotifications,
+        pushNotifications: false,
+        taskReminders: settings.taskReminders,
+        automaticNotifications: settings.automaticNotifications,
+        newsAndUpdates: settings.newsAndUpdates,
+      };
+    } catch {
+      this.snack.open('Impossible de charger les préférences de notifications', 'Fermer', { duration: 3000 });
+    }
+  }
+
+  async saveNotificationSettings(): Promise<void> {
+    if (this.notificationsLoading) return;
+    this.notificationsLoading = true;
+    try {
+      const saved = await this.settingsApi.updateMySettings({
+        ...this.notificationSettings,
+        pushNotifications: false,
+      });
+      this.notificationSettings = {
+        notificationsEnabled: saved.notificationsEnabled,
+        emailNotifications: saved.emailNotifications,
+        pushNotifications: false,
+        taskReminders: saved.taskReminders,
+        automaticNotifications: saved.automaticNotifications,
+        newsAndUpdates: saved.newsAndUpdates,
+      };
+      this.snack.open(
+        saved.notificationsEnabled ? 'Préférences de notifications enregistrées' : 'Notifications désactivées',
+        'OK',
+        { duration: 2200 },
+      );
+    } catch (e: any) {
+      this.snack.open(e?.error?.message || 'Impossible d’enregistrer les préférences', 'Fermer', { duration: 3200 });
+    } finally {
+      this.notificationsLoading = false;
     }
   }
 

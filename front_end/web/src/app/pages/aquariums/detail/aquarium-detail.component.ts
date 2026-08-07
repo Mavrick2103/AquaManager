@@ -908,9 +908,25 @@ onAiChatEnter(event: Event): void {
 
   keyboardEvent.preventDefault();
 
-  if (!this.aiLoading && this.aiChatQuestion.trim()) {
-    void this.analyzeWithAi();
+  if (!this.aiLoading && !this.aiPhotoLoading && (this.aiChatQuestion.trim() || this.aiPhotoFile)) {
+    void this.submitAiRequest();
   }
+}
+
+async submitAiRequest(): Promise<void> {
+  if (this.aiPhotoFile) {
+    this.aiPhotoQuestion = this.aiChatQuestion.trim();
+    await this.analyzePhotoWithAi();
+    return;
+  }
+
+  await this.analyzeWithAi();
+}
+
+removeAiPhoto(): void {
+  this.aiPhotoFile = null;
+  this.aiPhotoPreview = '';
+  this.aiPhotoError = '';
 }
 
 clearAiChat(): void {
@@ -959,6 +975,11 @@ async analyzePhotoWithAi(): Promise<void> {
   this.aiPhotoLoading = true;
   this.aiPhotoError = '';
   this.aiPhotoAnalysis = null;
+  const submittedQuestion = this.aiPhotoQuestion.trim();
+  this.aiChatMessages.push({
+    role: 'user',
+    content: submittedQuestion || 'Analyse cette photo de mon aquarium.',
+  });
 
   try {
     this.aiPhotoAnalysis = await firstValueFrom(
@@ -970,6 +991,15 @@ async analyzePhotoWithAi(): Promise<void> {
       ),
     );
 
+    this.aiAnalysis = this.aiPhotoAnalysis;
+    this.aiChatMessages.push({
+      role: 'assistant',
+      content: this.aiPhotoAnalysis.analysis,
+    });
+    this.aiChatQuestion = '';
+    this.aiPhotoQuestion = '';
+    this.removeAiPhoto();
+
     this.snack.open('Analyse photo IA terminée ✅', 'OK', {
       duration: 2200,
     });
@@ -980,6 +1010,11 @@ async analyzePhotoWithAi(): Promise<void> {
       e?.error?.message ||
       e?.error?.error ||
       "Impossible de lancer l'analyse photo IA pour le moment.";
+
+    this.aiChatMessages.push({
+      role: 'assistant',
+      content: this.aiPhotoError,
+    });
 
     this.snack.open(this.aiPhotoError, 'Fermer', {
       duration: 3500,

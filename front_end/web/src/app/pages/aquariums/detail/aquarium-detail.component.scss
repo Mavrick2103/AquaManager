@@ -2427,15 +2427,7 @@
 ========================================= */
 
 .ai-hub {
-  margin-top: 14px;
-  padding: 18px;
-  border-radius: 22px;
   border: 1px solid rgba(0, 159, 227, 0.14);
-  background:
-    radial-gradient(760px 360px at 0% 0%, rgba(0, 159, 227, 0.12), transparent 58%),
-    radial-gradient(620px 320px at 100% 0%, rgba(57, 181, 74, 0.1), transparent 58%),
-    linear-gradient(180deg, #ffffff, #f8fdff);
-  box-shadow: var(--shadow-md);
 }
 
 .ai-hub__head {
@@ -2469,12 +2461,6 @@
   color: var(--aqua);
   font-size: 0.82rem;
   font-weight: 950;
-
-  mat-icon {
-    width: 19px;
-    height: 19px;
-    font-size: 19px;
-  }
 }
 
 .ai-hub__quota {
@@ -2541,11 +2527,118 @@
   }
 }
 
+/* En-tête IA compact : un seul niveau d'information avant la conversation. */
+.ai-hub {
+  margin-top: 0;
+  padding: 22px;
+  border-radius: 24px;
+  border-color: rgba(8, 127, 140, 0.14);
+  background:
+    radial-gradient(620px 240px at 0% 0%, rgba(8, 127, 140, 0.08), transparent 64%),
+    linear-gradient(180deg, #ffffff, #f8fbfb);
+  box-shadow: 0 18px 46px rgba(29, 68, 72, 0.08);
+}
+
+.ai-hub__head {
+  align-items: center;
+  margin-bottom: 18px;
+
+  h3 {
+    margin: 3px 0 5px;
+    font-size: 1.3rem;
+  }
+}
+
+.ai-hub__identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.ai-hub__brand-icon {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  border-radius: 17px;
+  background: linear-gradient(135deg, #087f8c, #2f9d78);
+  box-shadow: 0 10px 24px rgba(8, 127, 140, 0.2);
+
+  mat-icon {
+    width: 25px;
+    height: 25px;
+    font-size: 25px;
+  }
+}
+
+.ai-hub__eyebrow {
+  color: #087f8c;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ai-hub__quick-label {
+  display: flex;
+  margin: 0 0 9px 2px;
+  align-items: center;
+  gap: 6px;
+  color: #607876;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  mat-icon {
+    width: 17px;
+    height: 17px;
+    color: #d99a21;
+    font-size: 17px;
+  }
+}
+
+.ai-hub__quick-row {
+  margin-bottom: 18px;
+
+  button {
+    min-height: 38px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+  }
+}
+
 .ai-hub__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(330px, 0.85fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
   align-items: start;
+}
+
+.ai-hub__grid > .ai-practices { grid-column: 1 / -1; }
+.ai-hub__grid > .ai-main-card { grid-column: 1 / -1; }
+.ai-hub__grid > .ai-recommendations-row {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.ai-recommendations-row > .product-recommendations,
+.ai-recommendations-row > .ai-task-recommendations {
+  width: auto !important;
+  min-width: 0;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.ai-recommendations-row > .ai-recommendation-block--wide {
+  grid-column: 1 / -1;
 }
 
 .ai-main-card,
@@ -3024,8 +3117,19 @@
     grid-template-columns: 1fr;
   }
 
+  .ai-hub__grid > .ai-main-card,
+  .ai-hub__grid > .ai-recommendations-row,
+  .ai-hub__grid > .ai-side {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
   .ai-side {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .ai-recommendations-row {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -39,11 +39,30 @@
       
 
       <section class="tab-pane">
-        
-        <form [formGroup]="form" class="profile-grid" aria-describedby="profil-help">
+        <header class="profile-overview">
+          <div class="profile-overview__avatar">
+            {{ (me.fullName || me.email || 'U').charAt(0).toUpperCase() }}
+          </div>
+          <div class="profile-overview__identity">
+            <span>Mon compte</span>
+            <h2>{{ me.fullName || 'Utilisateur AquaManager' }}</h2>
+            <p>{{ me.email }}</p>
+          </div>
+          <div class="profile-overview__badges">
+            <span><mat-icon>shield</mat-icon>{{ isAdmin ? 'Administrateur' : isEditorOnly ? 'Éditeur' : 'Utilisateur' }}</span>
+            <span><mat-icon>workspace_premium</mat-icon>{{ subscriptionLabel }}</span>
+          </div>
+        </header>
+
+        <form [formGroup]="form" class="profile-grid profile-editor" aria-describedby="profil-help">
           <p id="profil-help" class="visually-hidden">
             Modifiez vos informations puis cliquez sur Enregistrer.
           </p>
+
+          <div class="profile-editor__heading">
+            <div><mat-icon>person</mat-icon></div>
+            <span><strong>Informations personnelles</strong><small>Modifiez le nom et l’adresse email associés à votre compte.</small></span>
+          </div>
 
           <div class="row">
             <label class="label" for="fullName">
@@ -66,18 +85,37 @@
           </div>
 
           <div class="row multi">
+            <div class="profile-editor__heading profile-editor__heading--password">
+              <div><mat-icon>lock</mat-icon></div>
+              <span><strong>Sécurité du compte</strong><small>Renseignez votre mot de passe actuel uniquement pour le modifier.</small></span>
+            </div>
             <div class="label">
               <mat-icon>password</mat-icon> Mot de passe
             </div>
             <div class="field grid-2">
               <mat-form-field appearance="fill">
                 <mat-label>Mot de passe actuel</mat-label>
-                <input matInput type="password" formControlName="currentPassword" autocomplete="current-password" />
+                <input
+                  matInput
+                  type="password"
+                  formControlName="currentPassword"
+                  autocomplete="new-password"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                />
               </mat-form-field>
 
               <mat-form-field appearance="fill">
                 <mat-label>Nouveau mot de passe</mat-label>
-                <input matInput type="password" formControlName="newPassword" autocomplete="new-password" />
+                <input
+                  matInput
+                  type="password"
+                  formControlName="newPassword"
+                  minlength="6"
+                  autocomplete="new-password"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                />
                 <mat-hint>6 caractères minimum</mat-hint>
               </mat-form-field>
             </div>
@@ -102,48 +140,6 @@
           </div>
         </form>
 
-        <!-- ✅ ABONNEMENT -->
-        <mat-card class="sub-card" aria-label="Gestion abonnement">
-  <div class="sub-head">
-    <div class="sub-title">
-      <mat-icon>workspace_premium</mat-icon>
-      <div>
-        <div class="t">Abonnement</div>
-        <div class="s">
-          Statut :
-          <span class="pill" [ngClass]="isSubscribedActive ? 'pill--ok' : 'pill--off'">
-            {{ isSubscribedActive ? 'Premium actif' : 'Classic' }}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <div class="sub-actions">
-      <!-- ✅ Visible seulement si PAS abonné -->
-      <button *ngIf="showUpgradeButton" mat-flat-button color="primary" >   <!--(click)="goPremium()"-->
-        <mat-icon>lock_open</mat-icon>
-        Passer Premium (bientôt)
-      </button>
-
-      <!-- ✅ Visible seulement si abonné -->
-      <button *ngIf="isSubscribedActive" mat-stroked-button color="primary" (click)="manageSubscription()">
-        <mat-icon>manage_accounts</mat-icon>
-        Gérer mon abonnement
-      </button>
-    </div>
-  </div>
-
-  <div class="sub-foot" *ngIf="isSubscribedActive">
-    <mat-icon>info</mat-icon>
-    <span>La résiliation se fait dans le portail Stripe (bouton “Gérer mon abonnement”).</span>
-  </div>
-
-  <div class="sub-foot" *ngIf="showUpgradeButton">
-    <mat-icon>info</mat-icon>
-    <span>Premium débloque les “Solutions intelligentes” et les objectifs avancés.</span>
-  </div>
-</mat-card>
-
         <mat-card class="danger-card" aria-live="polite">
           <h2>Zone dangereuse</h2>
           <p>
@@ -154,6 +150,141 @@
             Supprimer mon compte
           </button>
         </mat-card>
+      </section>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>workspace_premium</mat-icon><span>Abonnement</span>
+      </ng-template>
+
+      <section class="tab-pane subscription-management">
+        <header class="subscription-management__hero">
+          <div class="subscription-management__icon"><mat-icon>workspace_premium</mat-icon></div>
+          <div>
+            <span>Mon offre AquaManager</span>
+            <h2>Gérer mon abonnement</h2>
+            <p>Consultez votre formule actuelle et accédez aux options de gestion de votre abonnement.</p>
+          </div>
+        </header>
+
+        <mat-card class="sub-card subscription-management__card" aria-label="Gestion abonnement">
+          <div class="sub-head">
+            <div class="sub-title">
+              <mat-icon>verified</mat-icon>
+              <div>
+                <div class="t">Formule actuelle</div>
+                <div class="s">
+                  <span class="pill" [ngClass]="isSubscribedActive ? 'pill--ok' : 'pill--off'">
+                    {{ isSubscribedActive ? plan : 'Classic' }}
+                  </span>
+                  <span *ngIf="isSubscribedActive">Abonnement actif</span>
+                  <span *ngIf="!isSubscribedActive">Offre gratuite</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="sub-actions">
+              <button *ngIf="showUpgradeButton" mat-flat-button color="primary">
+                <mat-icon>lock_open</mat-icon>
+                Passer Premium (bientôt)
+              </button>
+              <button *ngIf="isSubscribedActive" mat-stroked-button color="primary" (click)="manageSubscription()">
+                <mat-icon>manage_accounts</mat-icon>
+                Ouvrir le portail de gestion
+              </button>
+            </div>
+          </div>
+
+          <div class="subscription-management__details">
+            <div><span>Statut</span><strong>{{ isSubscribedActive ? 'Actif' : 'Gratuit' }}</strong></div>
+            <div><span>Formule</span><strong>{{ plan }}</strong></div>
+            <div><span>Prochaine échéance</span><strong>{{ endsAtLabel }}</strong></div>
+          </div>
+
+          <div class="sub-foot" *ngIf="isSubscribedActive">
+            <mat-icon>info</mat-icon>
+            <span>Le paiement, la facturation et la résiliation sont accessibles depuis le portail sécurisé Stripe.</span>
+          </div>
+          <div class="sub-foot" *ngIf="showUpgradeButton">
+            <mat-icon>auto_awesome</mat-icon>
+            <span>Premium débloque l’assistant IA, l’analyse photo et les objectifs avancés.</span>
+          </div>
+        </mat-card>
+      </section>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>notifications</mat-icon><span>Notifications</span>
+      </ng-template>
+
+      <section class="tab-pane notification-settings">
+        <header class="notification-settings__hero">
+          <div class="notification-settings__hero-icon"><mat-icon>notifications_active</mat-icon></div>
+          <div>
+            <span>Vos préférences</span>
+            <h2>Choisissez les notifications utiles</h2>
+            <p>Vous pouvez modifier votre choix à tout moment. Aucune notification n’est envoyée lorsque le consentement général est désactivé.</p>
+          </div>
+        </header>
+
+        <div class="notification-consent" [class.notification-consent--active]="notificationSettings.notificationsEnabled">
+          <div>
+            <mat-icon>{{ notificationSettings.notificationsEnabled ? 'notifications_active' : 'notifications_off' }}</mat-icon>
+            <div>
+              <strong>J’accepte de recevoir des notifications</strong>
+              <span>Active ou coupe immédiatement toutes les notifications AquaManager.</span>
+            </div>
+          </div>
+          <mat-slide-toggle [(ngModel)]="notificationSettings.notificationsEnabled" aria-label="Consentement général aux notifications"></mat-slide-toggle>
+        </div>
+
+        <div class="notification-options" [class.notification-options--disabled]="!notificationSettings.notificationsEnabled">
+          <div class="notification-settings__section-title">
+            <span>Types de notifications</span>
+            <small>Sélectionnez uniquement ce qui vous intéresse.</small>
+          </div>
+
+          <article class="notification-option">
+            <div class="notification-option__icon notification-option__icon--tasks"><mat-icon>event_repeat</mat-icon></div>
+            <div><strong>Rappels d’entretien</strong><p>Tâches planifiées, changements d’eau, nettoyage et entretiens arrivant à échéance.</p></div>
+            <mat-slide-toggle [(ngModel)]="notificationSettings.taskReminders" [disabled]="!notificationSettings.notificationsEnabled"></mat-slide-toggle>
+          </article>
+
+          <article class="notification-option">
+            <div class="notification-option__icon notification-option__icon--automatic"><mat-icon>monitor_heart</mat-icon></div>
+            <div><strong>Notifications automatiques</strong><p>Alertes utiles liées aux mesures, aux paramètres du bac et à son suivi.</p></div>
+            <mat-slide-toggle [(ngModel)]="notificationSettings.automaticNotifications" [disabled]="!notificationSettings.notificationsEnabled"></mat-slide-toggle>
+          </article>
+
+          <article class="notification-option">
+            <div class="notification-option__icon notification-option__icon--news"><mat-icon>campaign</mat-icon></div>
+            <div><strong>Nouveautés et mises à jour</strong><p>Nouvelles fonctionnalités, améliorations importantes et actualités AquaManager.</p></div>
+            <mat-slide-toggle [(ngModel)]="notificationSettings.newsAndUpdates" [disabled]="!notificationSettings.notificationsEnabled"></mat-slide-toggle>
+          </article>
+
+          <div class="notification-settings__section-title notification-settings__section-title--channels">
+            <span>Réception par email</span>
+            <small>Les notifications seront envoyées à l’adresse de votre compte.</small>
+          </div>
+
+          <div class="notification-channels">
+            <label class="notification-channel">
+              <mat-icon>mail</mat-icon>
+              <span><strong>Par email</strong><small>Sur l’adresse de votre compte</small></span>
+              <mat-slide-toggle [(ngModel)]="notificationSettings.emailNotifications" [disabled]="!notificationSettings.notificationsEnabled"></mat-slide-toggle>
+            </label>
+          </div>
+        </div>
+
+        <div class="notification-settings__actions">
+          <button mat-flat-button color="primary" type="button" [disabled]="notificationsLoading" (click)="saveNotificationSettings()">
+            <mat-progress-spinner *ngIf="notificationsLoading" mode="indeterminate" diameter="18"></mat-progress-spinner>
+            <mat-icon *ngIf="!notificationsLoading">save</mat-icon>
+            Enregistrer mes préférences
+          </button>
+        </div>
       </section>
     </mat-tab>
 

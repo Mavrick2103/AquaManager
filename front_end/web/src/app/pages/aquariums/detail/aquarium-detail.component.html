@@ -474,49 +474,25 @@
 
         <ng-container *ngIf="solutionView">
 
-        <section class="sol-hero">
+        <section class="sol-hero" *ngIf="solutionView === 'assistant'">
           <div class="sol-hero__left">
             <div class="sol-hero__eyebrow">
-              <mat-icon>{{ solutionView === 'ai' ? 'auto_awesome' : 'tips_and_updates' }}</mat-icon>
-              {{ solutionView === 'ai' ? 'Assistant IA' : 'Assistant AquaManager' }}
+              <mat-icon>tips_and_updates</mat-icon>
+              Assistant AquaManager
             </div>
 
             <h2 class="sol-hero__title">
-              {{
-                solutionView === 'ai'
-                  ? isPremium
-                    ? 'Pose une question sur ton aquarium'
-                    : 'Découvre l’analyse IA Premium'
-                  : 'Suivi et recommandations de ton aquarium'
-              }}
-              <span
-                class="sol-hero__badge"
-                [class.sol-hero__badge--premium]="isPremium || solutionView === 'ai'"
-              >
-                {{
-                  solutionView === 'ai' && !isPremium
-                    ? 'Premium requis'
-                    : isPremium
-                      ? 'Premium'
-                      : 'Classic'
-                }}
-              </span>
+              Suivi et recommandations de ton aquarium
+              <span class="sol-hero__badge">{{ isPremium ? 'Premium' : 'Classic' }}</span>
             </h2>
 
             <p class="sol-hero__subtitle">
-              {{
-                solutionView === 'ai'
-                  ? isPremium
-                    ? 'Discute avec l’IA, analyse une photo ou utilise une question rapide.'
-                    : 'L’IA Premium fournit des conseils personnalisés et peut suggérer des tâches.'
-                  : 'AquaManager compare ta dernière mesure aux valeurs de référence et propose des actions concrètes.'
-              }}
+              AquaManager compare ta dernière mesure aux valeurs de référence et propose des actions concrètes.
             </p>
 
             <div
               class="sol-hero__benefits"
               aria-label="Fonctions disponibles"
-              *ngIf="solutionView === 'assistant'"
             >
               <span>
                 <mat-icon>rule</mat-icon>
@@ -556,17 +532,15 @@
         >
        <section class="ai-hub" *ngIf="isPremium; else aiPremiumUpsell">
           <div class="ai-hub__head">
-            <div>
-              <div class="ai-hub__eyebrow">
+            <div class="ai-hub__identity">
+              <div class="ai-hub__brand-icon">
                 <mat-icon>auto_awesome</mat-icon>
-                Assistant IA AquaManager
               </div>
-
-              <h3>Analyse intelligente de ce bac</h3>
-
-              <p>
-                Pose une question, lance une analyse rapide ou ajoute une photo. L’IA utilise les informations de cet aquarium et ses dernières mesures.
-              </p>
+              <div>
+                <div class="ai-hub__eyebrow">Assistant personnel</div>
+                <h3>Comment puis-je t’aider avec ton aquarium&nbsp;?</h3>
+                <p>Je m’appuie sur les informations du bac et ses dernières mesures pour te répondre.</p>
+              </div>
             </div>
 
             <div class="ai-hub__quota" *ngIf="aiAnalysis && !aiLoading">
@@ -587,6 +561,10 @@
             </div>
           </div>
 
+          <div class="ai-hub__quick-label">
+            <mat-icon>lightbulb</mat-icon>
+            Questions suggérées
+          </div>
           <div class="ai-hub__quick-row">
             <button
               type="button"
@@ -631,6 +609,18 @@
           </div>
 
           <div class="ai-hub__grid">
+            <div class="ai-practices">
+              <div class="ai-practices__title">
+                <mat-icon>verified</mat-icon>
+                <span><strong>Pour une réponse plus fiable</strong> Quelques bonnes pratiques avant de commencer</span>
+              </div>
+              <div class="ai-practices__items">
+                <span><mat-icon>check</mat-icon>Mesures récentes</span>
+                <span><mat-icon>check</mat-icon>Problème bien décrit</span>
+                <span><mat-icon>check</mat-icon>Photo nette si nécessaire</span>
+              </div>
+            </div>
+
             <mat-card class="ai-main-card">
               <mat-card-content>
                 <div class="ai-card-title-row">
@@ -700,15 +690,46 @@
                   <span>{{ aiError }}</span>
                 </div>
 
-                  <div class="ai-chat-input">
+                <div class="ai-composer-attachment" *ngIf="aiPhotoPreview">
+                  <img [src]="aiPhotoPreview" alt="Photo jointe à la question" />
+                  <div>
+                    <strong>Photo jointe</strong>
+                    <span>{{ aiPhotoFile?.name }}</span>
+                  </div>
                   <mat-form-field appearance="outline">
-                    <mat-label>Ta question</mat-label>
+                    <mat-label>Type de problème</mat-label>
+                    <mat-select [(ngModel)]="aiPhotoProblemType">
+                      <mat-option value="ALGAE">Algue</mat-option>
+                      <mat-option value="FISH_DISEASE">Maladie poisson</mat-option>
+                      <mat-option value="PLANT_PROBLEM">Problème plante</mat-option>
+                      <mat-option value="WATER_TROUBLE">Eau trouble</mat-option>
+                      <mat-option value="OTHER">Autre</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-icon-button type="button" aria-label="Retirer la photo" (click)="removeAiPhoto()">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+
+                <div class="ai-error" *ngIf="aiPhotoError && !aiPhotoLoading">
+                  <mat-icon>error_outline</mat-icon>
+                  <span>{{ aiPhotoError }}</span>
+                </div>
+
+                <div class="ai-chat-input ai-chat-input--unified">
+                  <label class="ai-attach-button" matTooltip="Ajouter une photo">
+                    <input type="file" accept="image/*" (change)="onAiPhotoSelected($event)" />
+                    <mat-icon>add</mat-icon>
+                  </label>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ aiPhotoFile ? 'Décris ce que tu observes' : 'Ta question' }}</mat-label>
                     <textarea
                       matInput
-                      rows="3"
+                      rows="2"
                       maxlength="1000"
                       [(ngModel)]="aiChatQuestion"
-                      placeholder="Exemple : est-ce que je peux ajouter des crevettes ?"
+                      placeholder="Pose ta question ou ajoute une photo…"
                       (keydown.enter)="onAiChatEnter($event)"
                     ></textarea>
                   </mat-form-field>
@@ -717,31 +738,70 @@
                     mat-flat-button
                     color="primary"
                     type="button"
-                    [disabled]="aiLoading || !aiChatQuestion.trim()"
-                    (click)="analyzeWithAi()"
+                    [disabled]="aiLoading || aiPhotoLoading || (!aiChatQuestion.trim() && !aiPhotoFile)"
+                    (click)="submitAiRequest()"
                   >
-                    <mat-icon>{{ aiLoading ? 'hourglass_top' : 'send' }}</mat-icon>
-                    Envoyer
+                    <mat-icon>{{ aiLoading || aiPhotoLoading ? 'hourglass_top' : 'send' }}</mat-icon>
+                    {{ aiPhotoFile ? 'Analyser' : 'Envoyer' }}
                   </button>
                 </div>
 
-                <div class="reco-list" *ngIf="aiAnalysis?.suggestedTasks?.length">
-                  <mat-card class="reco-card" *ngFor="let task of aiAnalysis!.suggestedTasks">
+              </mat-card-content>
+            </mat-card>
+
+            <div
+              class="ai-recommendations-row"
+              *ngIf="aiAnalysis?.productRecommendations?.length || aiAnalysis?.suggestedTasks?.length"
+            >
+              <div
+                class="product-recommendations"
+                *ngIf="aiAnalysis?.productRecommendations?.length"
+                [class.ai-recommendation-block--wide]="!aiAnalysis?.suggestedTasks?.length"
+              >
+                <div class="product-recommendations__context">
+                  <span class="product-recommendations__ai"><mat-icon>shopping_bag</mat-icon>Sélection de produits</span>
+                  <strong>Produits adaptés à votre demande</strong>
+                </div>
+                <div class="product-recommendation" *ngFor="let product of aiAnalysis!.productRecommendations">
+                  <div class="product-recommendation__media">
+                    <img *ngIf="product.imageUrl; else productPlaceholder" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+                    <ng-template #productPlaceholder><mat-icon>shopping_bag</mat-icon></ng-template>
+                  </div>
+                  <div class="product-recommendation__body">
+                    <strong>{{ product.name }}</strong>
+                    <p>{{ product.reason }}</p>
+                    <a class="product-recommendation__button" mat-flat-button [href]="product.url" target="_blank" rel="noopener noreferrer sponsored">
+                      Découvrir le produit <mat-icon>arrow_forward</mat-icon>
+                    </a>
+                  </div>
+                </div>
+                <p class="product-recommendations__notice"><mat-icon>info</mat-icon>Vérifiez la disponibilité, la composition et la compatibilité sur la fiche produit.</p>
+              </div>
+
+              <div
+                class="ai-task-recommendations"
+                *ngIf="aiAnalysis?.suggestedTasks?.length"
+                [class.ai-recommendation-block--wide]="!aiAnalysis?.productRecommendations?.length"
+              >
+                <div class="ai-task-recommendations__head">
+                  <span><mat-icon>task_alt</mat-icon>À faire</span>
+                  <h4>Actions recommandées</h4>
+                </div>
+                <div class="reco-list">
+                    <mat-card class="reco-card" *ngFor="let task of aiAnalysis!.suggestedTasks">
                     <mat-card-content>
                       <h4>{{ task.title }}</h4>
                       <p>{{ task.reason }}</p>
-                      <button mat-flat-button color="primary" type="button"
-                        (click)="addAiSuggestedTask(task)">
-                        <mat-icon>event</mat-icon>
-                        Ajouter au planning
+                      <button mat-flat-button color="primary" type="button" (click)="addAiSuggestedTask(task)">
+                        <mat-icon>event</mat-icon>Ajouter au planning
                       </button>
                     </mat-card-content>
                   </mat-card>
                 </div>
-              </mat-card-content>
-            </mat-card>
+              </div>
+            </div>
 
-            <aside class="ai-side">
+            <!-- Ancienne colonne photo supprimée : l'ajout d'image est intégré à la conversation.
               <mat-card class="ai-side-card ai-side-card--photo">
                 <mat-card-content>
                   <div class="ai-card-title-row ai-card-title-row--compact">
@@ -853,6 +913,27 @@
                         </mat-card-content>
                       </mat-card>
                     </div>
+                    <section class="product-recommendations" *ngIf="aiPhotoAnalysis.productRecommendations?.length">
+                      <div class="product-recommendations__context">
+                        <span class="product-recommendations__ai"><mat-icon>auto_awesome</mat-icon>Suggestion de l’IA</span>
+                        <strong>Recommandations liées à l’analyse de votre photo</strong>
+                        <p>Ces produits correspondent aux éléments relevés pendant l’analyse.</p>
+                      </div>
+                      <article class="product-recommendation" *ngFor="let product of aiPhotoAnalysis.productRecommendations">
+                        <div class="product-recommendation__media">
+                          <img *ngIf="product.imageUrl; else photoProductPlaceholder" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+                          <ng-template #photoProductPlaceholder><mat-icon>shopping_bag</mat-icon></ng-template>
+                        </div>
+                        <div class="product-recommendation__body">
+                          <strong>{{ product.name }}</strong>
+                          <p>{{ product.reason }}</p>
+                          <a class="product-recommendation__button" mat-flat-button [href]="product.url" target="_blank" rel="noopener noreferrer sponsored">
+                            Découvrir le produit <mat-icon>arrow_forward</mat-icon>
+                          </a>
+                        </div>
+                      </article>
+                      <p class="product-recommendations__notice"><mat-icon>info</mat-icon>Vérifiez la disponibilité, la composition et la compatibilité sur la fiche produit.</p>
+                    </section>
                   </div>
                 </mat-card-content>
               </mat-card>
@@ -877,7 +958,7 @@
                   </ul>
                 </mat-card-content>
               </mat-card>
-            </aside>
+            -->
           </div>
         </section>
 

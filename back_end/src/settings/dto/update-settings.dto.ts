@@ -14,10 +14,22 @@ export class UpdateSettingsDto {
   volumeUnit?: 'L'|'GAL';
 
   @IsOptional() @IsBoolean()
+  notificationsEnabled?: boolean;
+
+  @IsOptional() @IsBoolean()
   emailNotifications?: boolean;
 
   @IsOptional() @IsBoolean()
   pushNotifications?: boolean;
+
+  @IsOptional() @IsBoolean()
+  taskReminders?: boolean;
+
+  @IsOptional() @IsBoolean()
+  automaticNotifications?: boolean;
+
+  @IsOptional() @IsBoolean()
+  newsAndUpdates?: boolean;
 
   @IsOptional() @IsBoolean()
   alertsEnabled?: boolean;

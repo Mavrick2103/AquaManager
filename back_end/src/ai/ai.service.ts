@@ -26,11 +26,34 @@ type AiSuggestedTask = {
   reason: string;
 };
 
+type AiProductRecommendation = {
+  id: string;
+  name: string;
+  url: string;
+  reason: string;
+  warning: string | null;
+  imageUrl: string | null;
+};
+
+type CrevettilusCatalogProduct = {
+  id: string;
+  name: string;
+  url: string;
+  categories: string;
+  description: string;
+  inStock: boolean;
+  imageUrl: string | null;
+};
+
 @Injectable()
 export class AiService {
   private readonly openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
+  private crevettilusCatalogCache: {
+    products: CrevettilusCatalogProduct[];
+    expiresAt: number;
+  } | null = null;
 
   constructor(
     @InjectRepository(AiUsage)
@@ -100,10 +123,16 @@ const usedThisMonth = await this.countUsageThisMonth(userId, feature);
 
     const model = this.getModel();
 
+    const question = dto.question || '';
+    const wantsProductRecommendations = this.shouldRecommendProducts(question);
+    const productCatalog = wantsProductRecommendations
+      ? await this.getRelevantCrevettilusProducts(question)
+      : [];
     const prompt = this.buildAquariumAnalysisPrompt(
       aquarium,
       latestMeasurements,
-      dto.question,
+      question,
+      productCatalog,
     );
 
     const response = await this.openai.responses.create({
@@ -143,19 +172,32 @@ Retourne uniquement un objet JSON valide, sans Markdown :
     "suggestedDueAt": "date ISO 8601 ou null",
     "priority": "LOW | MEDIUM | HIGH",
     "reason": "raison fondée sur les données du bac"
+  }],
+  "productRecommendations": [{
+    "id": "identifiant exact du catalogue Le Crevettilus",
+    "reason": "pourquoi ce produit peut être pertinent dans ce cas précis"
   }]
 }
 Propose au maximum 3 tâches, uniquement si elles sont réellement utiles.
+Tu peux aussi proposer jusqu'à 8 références parmi le catalogue Le Crevettilus fourni dans la question. Cela peut inclure des animaux vivants, plantes, engrais, nourritures, traitements, sols ou matériels si cela répond réellement au besoin.
+Pour chaque produit, recopie uniquement son identifiant exact et donne une raison personnalisée et prudente. N'invente aucun produit, prix, disponibilité, dosage ou lien. Vérifie la compatibilité avec le volume, le type d'eau, les habitants et les paramètres connus. Si aucun produit n'est nécessaire, retourne un tableau vide.
+${wantsProductRecommendations
+  ? "L'utilisateur a exprimé un besoin pouvant justifier des références du catalogue. Ne propose néanmoins que des produits réellement utiles."
+  : "L'utilisateur demande une analyse ou des priorités, pas des produits. Retourne impérativement productRecommendations: [] et concentre-toi sur le diagnostic et les actions."}
 La date actuelle est ${new Date().toISOString()}.
 N'invente jamais une mesure absente.
 `.trim(),
       input: prompt,
-      max_output_tokens: 900,
+      max_output_tokens: 1800,
     });
 
     const responseText =
       response.output_text?.trim() || 'Impossible de générer une analyse IA.';
-    const parsed = this.parseStructuredResponse(responseText);
+    const parsed = this.parseStructuredResponse(
+      responseText,
+      productCatalog,
+      question,
+    );
 
     const usage = (response as any).usage;
 
@@ -185,6 +227,7 @@ N'invente jamais une mesure absente.
       remaining: Math.max(quota - usedThisMonth - 1, 0),
       analysis: parsed.analysis,
       suggestedTasks: parsed.suggestedTasks,
+      productRecommendations: parsed.productRecommendations,
     };
   }
 
@@ -204,9 +247,14 @@ N'invente jamais une mesure absente.
   return 1;
 }
 
-  private parseStructuredResponse(responseText: string): {
+  private parseStructuredResponse(
+    responseText: string,
+    catalogProducts: CrevettilusCatalogProduct[] = [],
+    recommendationQuery = '',
+  ): {
     analysis: string;
     suggestedTasks: AiSuggestedTask[];
+    productRecommendations: AiProductRecommendation[];
   } {
     const cleaned = responseText
       .replace(/^```(?:json)?\s*/i, '')
@@ -257,10 +305,135 @@ N'invente jamais une mesure absente.
           };
         });
 
-      return { analysis, suggestedTasks };
+      const dynamicCatalog = new Map(
+        catalogProducts.map((product) => [product.id, product]),
+      );
+      let productRecommendations = (Array.isArray(parsed?.productRecommendations)
+        ? parsed.productRecommendations
+        : [])
+        .slice(0, 8)
+        .map((item: any) => {
+          const product = dynamicCatalog.get(String(item?.id || ''));
+          const reason = typeof item?.reason === 'string' ? item.reason.trim() : '';
+          return product && reason
+            ? {
+                id: product.id,
+                name: product.name,
+                url: product.url,
+                reason: reason.slice(0, 500),
+                warning: 'Vérifier la disponibilité, la compatibilité et le mode d’emploi sur la fiche avant achat ou utilisation.',
+                imageUrl: product.imageUrl,
+              }
+            : null;
+        })
+        .filter((item: AiProductRecommendation | null): item is AiProductRecommendation => !!item);
+
+      if (!productRecommendations.length) {
+        productRecommendations = this.buildFallbackProductRecommendations(
+          recommendationQuery,
+          catalogProducts,
+        );
+      }
+
+      return { analysis, suggestedTasks, productRecommendations };
     } catch {
-      return { analysis: responseText, suggestedTasks: [] };
+      return {
+        analysis: this.extractAnalysisFromPartialJson(responseText),
+        suggestedTasks: [],
+        productRecommendations: this.buildFallbackProductRecommendations(
+          recommendationQuery,
+          catalogProducts,
+        ),
+      };
     }
+  }
+
+  private extractAnalysisFromPartialJson(responseText: string): string {
+    const cleaned = String(responseText || '')
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+    const match = cleaned.match(/"analysis"\s*:\s*("(?:\\.|[^"\\])*")/s);
+    if (match?.[1]) {
+      try {
+        const extracted = JSON.parse(match[1]);
+        if (typeof extracted === 'string' && extracted.trim()) return extracted.trim();
+      } catch {}
+    }
+    return cleaned
+      .replace(/^\s*\{\s*"analysis"\s*:\s*"?/i, '')
+      .split(/"\s*,\s*"suggestedTasks"/i)[0]
+      .replace(/["},\s]+$/, '')
+      .replace(/\\n/g, '\n')
+      .replace(/\\"/g, '"')
+      .trim();
+  }
+
+  private buildFallbackProductRecommendations(
+    query: string,
+    products: CrevettilusCatalogProduct[],
+  ): AiProductRecommendation[] {
+    const normalized = this.normalizeCatalogText(query);
+    const intents: Array<{ pattern: RegExp; keywords: string[]; label: string }> = [
+      {
+        pattern: /\b(nourriture|nourrir|aliment|pellet|stick|repas)\b/,
+        keywords: ['nourriture', 'aliment', 'pellet', 'stick', 'food'],
+        label: 'Cette référence correspond à la demande de nourriture formulée pour les habitants du bac.',
+      },
+      {
+        pattern: /\b(engrais|fertilis|carence|plante)\b/,
+        keywords: ['engrais', 'fertilis', 'plante', 'fer', 'potassium'],
+        label: 'Cette référence correspond au besoin de fertilisation ou d’entretien des plantes évoqué.',
+      },
+      {
+        pattern: /\b(maladie|traitement|parasite|planaire|hydre|scutariella|urgence)\b/,
+        keywords: ['traitement', 'maladie', 'parasite', 'planaire', 'hydre', 'scutariella', 'pharmacie'],
+        label: 'Cette référence peut être pertinente pour le problème sanitaire évoqué, après confirmation des symptômes.',
+      },
+      {
+        pattern: /\b(filtre|filtration|pompe|materiel|epuisette|chauffage)\b/,
+        keywords: ['filtre', 'filtration', 'pompe', 'materiel', 'chauffage'],
+        label: 'Ce matériel correspond au besoin décrit pour l’équipement de l’aquarium.',
+      },
+      {
+        pattern: /\b(crevette|poisson|ecrevisse|escargot|vivant|espece)\b/,
+        keywords: ['crevette', 'poisson', 'ecrevisse', 'escargot'],
+        label: 'Ce vivant fait partie des références susceptibles de correspondre à la population recherchée.',
+      },
+    ];
+    const intent = intents.find((candidate) => candidate.pattern.test(normalized));
+    if (!intent || !products.length) return [];
+
+    const subjectTokens = normalized
+      .split(/\s+/)
+      .filter((token) => token.length >= 4 && !intent.keywords.some((keyword) => token.includes(keyword)));
+
+    return products
+      .map((product) => {
+        const haystack = this.normalizeCatalogText(
+          `${product.name} ${product.categories} ${product.description}`,
+        );
+        const intentScore = intent.keywords.reduce(
+          (score, keyword) => score + (haystack.includes(keyword) ? 5 : 0),
+          0,
+        );
+        const subjectScore = subjectTokens.reduce(
+          (score, token) => score + (haystack.includes(token) ? 4 : 0),
+          0,
+        );
+        return { product, score: intentScore + subjectScore };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(({ product }) => ({
+        id: product.id,
+        name: product.name,
+        url: product.url,
+        reason: intent.label,
+        warning: 'Vérifier la disponibilité, la composition, la compatibilité et le mode d’emploi sur la fiche produit.',
+        imageUrl: product.imageUrl,
+      }));
   }
 
 private async countUsageThisMonth(
@@ -288,6 +461,7 @@ private async countUsageThisMonth(
     aquarium: Aquarium,
     measurements: WaterMeasurement[],
     question?: string,
+    productCatalog: CrevettilusCatalogProduct[] = [],
   ): string {
     const formattedMeasurements = measurements.length
       ? measurements
@@ -330,6 +504,9 @@ ${formattedMeasurements}
 
 Question utilisateur :
 ${question?.trim() || 'Fais une analyse générale de cet aquarium.'}
+
+Catalogue actuel Le Crevettilus pouvant être recommandé :
+${this.formatCatalogForPrompt(productCatalog)}
     `.trim();
   }
 
@@ -403,11 +580,15 @@ ${question?.trim() || 'Fais une analyse générale de cet aquarium.'}
   const imageBase64 = image.buffer.toString('base64');
   const imageDataUrl = `data:${image.mimetype};base64,${imageBase64}`;
 
+  const productCatalog = await this.getRelevantCrevettilusProducts(
+    `${dto.problemType || ''} ${dto.question || ''}`,
+  );
   const prompt = this.buildAquariumPhotoPrompt(
     aquarium,
     latestMeasurements,
     dto.problemType,
     dto.question,
+    productCatalog,
   );
 
   let response;
@@ -462,9 +643,15 @@ Retourne uniquement un objet JSON valide, sans Markdown :
     "suggestedDueAt": "date ISO 8601 ou null",
     "priority": "LOW | MEDIUM | HIGH",
     "reason": "raison fondée sur la photo et les données disponibles"
+  }],
+  "productRecommendations": [{
+    "id": "identifiant exact du catalogue Le Crevettilus",
+    "reason": "pourquoi ce produit peut être pertinent dans ce cas précis"
   }]
 }
 Propose au maximum 3 tâches et seulement si les données les justifient.
+Tu peux proposer jusqu'à 8 références parmi le catalogue Le Crevettilus fourni avec la photo : vivant, plante, engrais, nourriture, traitement, sol ou matériel.
+Ne recommande un produit que si la photo et les informations rendent son usage pertinent. Recopie uniquement son identifiant exact. N'invente aucun produit, prix, disponibilité, dosage ou lien. Sinon retourne un tableau vide.
 La date actuelle est ${new Date().toISOString()}.
       `.trim(),
       input: [
@@ -483,7 +670,7 @@ La date actuelle est ${new Date().toISOString()}.
           ],
         },
       ],
-      max_output_tokens: 1000,
+      max_output_tokens: 1800,
     });
   } catch (e: any) {
     console.error('Erreur OpenAI photo:', e);
@@ -503,7 +690,11 @@ La date actuelle est ${new Date().toISOString()}.
 
   const responseText =
     response.output_text?.trim() || 'Impossible de générer une analyse photo.';
-  const parsed = this.parseStructuredResponse(responseText);
+  const parsed = this.parseStructuredResponse(
+    responseText,
+    productCatalog,
+    `${dto.problemType || ''} ${dto.question || ''}`,
+  );
 
   const usage = (response as any).usage;
 
@@ -533,6 +724,7 @@ La date actuelle est ${new Date().toISOString()}.
     remaining: Math.max(quota - usedThisMonth - 1, 0),
     analysis: parsed.analysis,
     suggestedTasks: parsed.suggestedTasks,
+    productRecommendations: parsed.productRecommendations,
   };
 }
 
@@ -541,6 +733,7 @@ private buildAquariumPhotoPrompt(
   measurements: WaterMeasurement[],
   problemType?: string,
   question?: string,
+  productCatalog: CrevettilusCatalogProduct[] = [],
 ): string {
   const problemLabel = this.getProblemTypeLabel(problemType);
 
@@ -589,12 +782,182 @@ ${formattedMeasurements}
 Question de l'utilisateur :
 ${question?.trim() || 'Analyse cette photo et donne-moi une solution adaptée.'}
 
+Catalogue actuel Le Crevettilus pouvant être recommandé :
+${this.formatCatalogForPrompt(productCatalog)}
+
 Règles :
 - Si tu suspectes une algue, précise le type probable : algues pinceaux, filamenteuses, cyano, diatomées, points verts, eau verte ou autre.
 - Si tu suspectes une maladie de poisson, reste prudent et recommande de vérifier les symptômes et les paramètres.
 - Donne des actions concrètes sans traitement dangereux.
 - Si la photo ne suffit pas, demande les informations manquantes.
   `.trim();
+}
+
+private async getRelevantCrevettilusProducts(
+  query: string,
+): Promise<CrevettilusCatalogProduct[]> {
+  const products = await this.loadCrevettilusCatalog();
+  if (!products.length) return [];
+
+  const normalizedQuery = this.normalizeCatalogText(query);
+  const broadRequest = /\b(tout|tous|catalogue|boutique|produits?|disponible|choix)\b/.test(
+    normalizedQuery,
+  );
+  const stopWords = new Set([
+    'avec', 'avoir', 'cette', 'dans', 'pour', 'quoi', 'quel', 'quelle', 'sans',
+    'sont', 'tous', 'tout', 'une', 'des', 'les', 'mon', 'mes', 'sur', 'site',
+    'produit', 'produits', 'propose', 'proposer', 'peux', 'veux', 'aquarium',
+  ]);
+  const tokens = normalizedQuery
+    .split(/\s+/)
+    .filter((token) => token.length >= 3 && !stopWords.has(token));
+
+  const ranked = products
+    .filter((product) => product.inStock)
+    .map((product) => {
+      const name = this.normalizeCatalogText(product.name);
+      const categories = this.normalizeCatalogText(product.categories);
+      const description = this.normalizeCatalogText(product.description);
+      let score = 0;
+      for (const token of tokens) {
+        if (name.includes(token)) score += 8;
+        if (categories.includes(token)) score += 5;
+        if (description.includes(token)) score += 2;
+      }
+      return { product, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const matched = ranked.filter((item) => item.score > 0);
+  if (matched.length && !broadRequest) {
+    return matched.slice(0, 80).map((item) => item.product);
+  }
+
+  // Pour une demande large, répartit les références entre les catégories
+  // au lieu de ne fournir que les produits les plus récents au modèle.
+  const selected: CrevettilusCatalogProduct[] = [];
+  const categoryCounts = new Map<string, number>();
+  for (const { product } of ranked) {
+    const primaryCategory = product.categories.split(',')[0]?.trim() || 'Autres';
+    const count = categoryCounts.get(primaryCategory) ?? 0;
+    if (count >= 4) continue;
+    selected.push(product);
+    categoryCounts.set(primaryCategory, count + 1);
+    if (selected.length >= 80) break;
+  }
+  return selected;
+}
+
+private shouldRecommendProducts(query: string): boolean {
+  const normalized = this.normalizeCatalogText(query);
+  if (!normalized) return false;
+
+  // Une analyse générale des mesures ou une demande de priorités ne doit pas
+  // devenir une proposition commerciale sans besoin produit exprimé.
+  const productIntent = /\b(produit|produits|boutique|acheter|achat|commander|catalogue|lecrevettilus|crevettilus)\b/;
+  const categoryIntent = /\b(nourriture|nourrir|aliment|alimentation|pellet|stick|engrais|fertilisant|fertilisation|traitement|medicament|conditionneur|bacterie|bacteries|materiel|filtre|filtration|eclairage|lampe|sol|substrat)\b/;
+  const recommendationIntent = /\b(conseille|conseiller|recommande|recommander|utiliser|solution|contre)\b/;
+
+  return productIntent.test(normalized)
+    || categoryIntent.test(normalized)
+    || recommendationIntent.test(normalized);
+}
+
+private async loadCrevettilusCatalog(): Promise<CrevettilusCatalogProduct[]> {
+  if (this.crevettilusCatalogCache?.expiresAt && this.crevettilusCatalogCache.expiresAt > Date.now()) {
+    return this.crevettilusCatalogCache.products;
+  }
+
+  try {
+    const products: CrevettilusCatalogProduct[] = [];
+    for (let page = 1; page <= 10; page++) {
+      const response = await fetch(
+        `https://lecrevettilus.fr/wp-json/wc/store/v1/products?per_page=100&page=${page}`,
+        { signal: AbortSignal.timeout(12_000) },
+      );
+      if (!response.ok) break;
+      const rows = await response.json() as any[];
+      if (!Array.isArray(rows) || !rows.length) break;
+
+      for (const row of rows) {
+        const url = String(row?.permalink || '');
+        if (!this.isAllowedCrevettilusUrl(url)) continue;
+        products.push({
+          id: `wc_${Number(row.id)}`,
+          name: this.cleanCatalogHtml(row.name),
+          url,
+          categories: Array.isArray(row.categories)
+            ? row.categories.map((category: any) => this.cleanCatalogHtml(category?.name)).filter(Boolean).join(', ')
+            : '',
+          description: this.cleanCatalogHtml(row.short_description || row.description).slice(0, 500),
+          inStock: row.is_in_stock !== false,
+          imageUrl: this.getAllowedCrevettilusImage(row.images),
+        });
+      }
+      if (rows.length < 100) break;
+    }
+
+    this.crevettilusCatalogCache = {
+      products,
+      expiresAt: Date.now() + 30 * 60 * 1000,
+    };
+    return products;
+  } catch (error) {
+    console.warn('Catalogue Le Crevettilus indisponible :', error);
+    return this.crevettilusCatalogCache?.products ?? [];
+  }
+}
+
+private formatCatalogForPrompt(products: CrevettilusCatalogProduct[]): string {
+  if (!products.length) return 'Catalogue indisponible : ne recommande aucun produit.';
+  return products
+    .map((product) =>
+      `- ${product.id} | ${product.name} | Catégories : ${product.categories || 'non renseignées'} | ${product.description || 'description non renseignée'}`,
+    )
+    .join('\n');
+}
+
+private cleanCatalogHtml(value: unknown): string {
+  return String(value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&#(\d+);/g, (_match, code) => String.fromCodePoint(Number(code)))
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0?39;|&apos;/gi, "'")
+    .replace(/&ndash;|&#8211;/gi, '–')
+    .replace(/&rsquo;|&#8217;/gi, '’')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+private normalizeCatalogText(value: unknown): string {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+private isAllowedCrevettilusUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && ['lecrevettilus.fr', 'www.lecrevettilus.fr'].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+private getAllowedCrevettilusImage(images: unknown): string | null {
+  if (!Array.isArray(images) || !images.length) return null;
+  for (const image of images) {
+    for (const candidate of [image?.thumbnail, image?.src]) {
+      const value = String(candidate || '');
+      if (this.isAllowedCrevettilusUrl(value)) return value;
+    }
+  }
+  return null;
 }
 
 private getProblemTypeLabel(problemType?: string): string {
