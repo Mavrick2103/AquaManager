@@ -43,6 +43,9 @@ export class Settings {
   @Column({ type: 'boolean', default: false })
   newsAndUpdates: boolean;
 
+  @Column({ type: 'timestamp', nullable: true })
+  lastMeasurementReminderAt: Date | null;
+
   // ==== Alertes & Seuils ====
   @Column({ type: 'boolean', default: true })
   alertsEnabled: boolean;

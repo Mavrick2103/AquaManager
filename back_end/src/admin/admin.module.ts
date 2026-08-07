@@ -17,6 +17,7 @@ import { AquariumPlantCard } from '../catalog/aquarium-card-pivot/aquarium-plant
 import { OperationalEvent } from './entities/operational-event.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { OperationalEventsInterceptor } from './operational-events.interceptor';
+import { Settings } from '../settings/settings.entity';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { OperationalEventsInterceptor } from './operational-events.interceptor';
       AquariumFishCard,
       AquariumPlantCard,
       OperationalEvent,
+      Settings,
     ]),
   ],
   controllers: [AdminMetricsController],

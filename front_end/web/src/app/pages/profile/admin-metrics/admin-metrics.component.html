@@ -168,6 +168,10 @@
               <div><small>Tâches terminées</small><strong>{{ pct(metrics.tasks.doneTotal, metrics.tasks.total) }}</strong><p>{{ metrics.tasks.doneTotal }} réalisées sur {{ metrics.tasks.total }}</p></div>
             </article>
             <article>
+              <span class="operation-icon notifications"><mat-icon>notifications_active</mat-icon></span>
+              <div><small>Consentement notifications</small><strong>{{ pct(metrics.users.notificationConsentCount, metrics.users.total) }}</strong><p>{{ metrics.users.notificationConsentCount }} utilisateur{{ metrics.users.notificationConsentCount > 1 ? 's' : '' }} sur {{ metrics.users.total }}</p></div>
+            </article>
+            <article>
               <span class="operation-icon measures"><mat-icon>science</mat-icon></span>
               <div><small>Mesures par aquarium</small><strong>{{ avg(metrics.measurements.total, metrics.aquariums.total) }}</strong><p>{{ metrics.measurements.total }} relevés enregistrés</p></div>
             </article>

@@ -16,6 +16,7 @@ import { GamificationProfile } from '../gamification/entities/gamification-profi
 import { Article } from '../articles/entities/article.entity';
 import { FishCard } from '../catalog/fish-cards/fish-card.entity';
 import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
+import { Settings } from '../settings/settings.entity';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
       Article,
       FishCard,
       PlantCard,
+      Settings,
     ]),
   ],
   providers: [UsersService],

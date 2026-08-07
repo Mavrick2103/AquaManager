@@ -23,6 +23,7 @@ import { GamificationProfile } from '../gamification/entities/gamification-profi
 import { Article } from '../articles/entities/article.entity';
 import { FishCard } from '../catalog/fish-cards/fish-card.entity';
 import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
+import { Settings } from '../settings/settings.entity';
 
 type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 type NewUsersPoint = { label: string; count: number };
@@ -41,6 +42,7 @@ export class UsersService {
     @InjectRepository(Article) private readonly articleRepo: Repository<Article>,
     @InjectRepository(FishCard) private readonly fishCardRepo: Repository<FishCard>,
     @InjectRepository(PlantCard) private readonly plantCardRepo: Repository<PlantCard>,
+    @InjectRepository(Settings) private readonly settingsRepo: Repository<Settings>,
   ) {}
 
   findById(id: number) {
@@ -478,6 +480,9 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
     const gamificationProfile = await this.gamificationProfileRepo.findOne({
   where: { userId: id },
 });
+    const notificationSettings = await this.settingsRepo.findOne({
+      where: { user: { id } },
+    });
 
     const [editorArticles, editorFishCards, editorPlantCards] = await Promise.all([
       this.articleRepo.find({ where: { authorId: id }, order: { createdAt: 'DESC' } }),
@@ -485,7 +490,13 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
       this.plantCardRepo.find({ where: { createdBy: id }, order: { createdAt: 'DESC' } }),
     ]);
 
-return { user, aquariums, measurements, fish, plants, tasks, gamification: {
+return { user, aquariums, measurements, fish, plants, tasks, notificationSettings: notificationSettings ? {
+    notificationsEnabled: notificationSettings.notificationsEnabled,
+    emailNotifications: notificationSettings.emailNotifications,
+    taskReminders: notificationSettings.taskReminders,
+    automaticNotifications: notificationSettings.automaticNotifications,
+    newsAndUpdates: notificationSettings.newsAndUpdates,
+  } : null, gamification: {
     level: gamificationProfile?.level ?? 1,
     xp: gamificationProfile?.xp ?? 0,
     currentStreak: gamificationProfile?.currentStreak ?? 0,

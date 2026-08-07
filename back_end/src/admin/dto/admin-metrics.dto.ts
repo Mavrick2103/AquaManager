@@ -10,6 +10,7 @@ export interface AdminMetricsDto {
 
     newInRange: number | null;       // null si User.createdAt n'existe pas
     activeInRange: number;
+    notificationConsentCount: number;
 
     latest: Array<{
       id: number;

@@ -119,6 +119,32 @@
       </div>
     </section>
 
+    <section class="notification-details" aria-label="Préférences de notifications">
+      <header>
+        <div><span>Notifications</span><h3>Préférences de l’utilisateur</h3></div>
+        <span class="notification-status" [class.enabled]="data.notificationSettings?.notificationsEnabled">
+          <mat-icon>{{ data.notificationSettings?.notificationsEnabled ? 'notifications_active' : 'notifications_off' }}</mat-icon>
+          {{ data.notificationSettings?.notificationsEnabled ? 'Consentement accordé' : 'Notifications refusées' }}
+        </span>
+      </header>
+
+      <div class="notification-empty" *ngIf="!data.notificationSettings">
+        <mat-icon>info</mat-icon>
+        Cet utilisateur n’a pas encore enregistré ses préférences.
+      </div>
+
+      <div class="notification-preferences" *ngIf="data.notificationSettings as prefs">
+        <div [class.active]="prefs.taskReminders"><mat-icon>event_repeat</mat-icon><span><small>Rappels d’entretien</small><strong>{{ prefs.taskReminders ? 'Acceptés' : 'Refusés' }}</strong></span></div>
+        <div [class.active]="prefs.automaticNotifications"><mat-icon>monitor_heart</mat-icon><span><small>Alertes automatiques</small><strong>{{ prefs.automaticNotifications ? 'Acceptées' : 'Refusées' }}</strong></span></div>
+        <div [class.active]="prefs.newsAndUpdates"><mat-icon>campaign</mat-icon><span><small>Nouveautés du site</small><strong>{{ prefs.newsAndUpdates ? 'Acceptées' : 'Refusées' }}</strong></span></div>
+        <div [class.active]="prefs.emailNotifications"><mat-icon>mail</mat-icon><span><small>Réception par email</small><strong>{{ prefs.emailNotifications ? 'Activée' : 'Désactivée' }}</strong></span></div>
+      </div>
+
+      <p class="notification-details__notice" *ngIf="data.notificationSettings && !data.notificationSettings.notificationsEnabled">
+        Les catégories peuvent être cochées, mais aucun envoi n’est autorisé tant que le consentement général reste désactivé.
+      </p>
+    </section>
+
     <mat-tab-group dynamicHeight class="tabs">
       <!-- AQUARIUMS -->
       <mat-tab>

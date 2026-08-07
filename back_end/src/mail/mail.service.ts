@@ -99,6 +99,32 @@ export class MailService {
     this.logger.log(`Reset password email sent to ${to}`);
   }
 
+  async sendMeasurementReminder(to: string, fullName: string): Promise<void> {
+    const url = `${this.appUrl()}/aquariums`;
+    await this.transporter.sendMail({
+      from: this.from(),
+      to,
+      subject: 'AquaManager — Il est temps de relever les paramètres de ton aquarium',
+      html: `
+        <div style="max-width:600px;margin:auto;padding:28px;font-family:Arial,sans-serif;color:#243c3d;line-height:1.55">
+          <div style="padding:24px;border:1px solid #dcebea;border-radius:18px;background:#f7fbfb">
+            <h2 style="margin:0 0 12px;color:#087f8c">Un petit contrôle de ton aquarium ?</h2>
+            <p>Bonjour ${this.escape(fullName)},</p>
+            <p>Aucune nouvelle mesure n’a été enregistrée depuis au moins deux semaines.</p>
+            <p>Un relevé régulier du pH, de la température et des autres paramètres utiles permet de repérer plus tôt les variations du bac.</p>
+            <p style="margin:22px 0">
+              <a href="${url}" style="display:inline-block;padding:11px 16px;border-radius:11px;background:#087f8c;color:#fff;font-weight:bold;text-decoration:none">
+                Ajouter une nouvelle mesure
+              </a>
+            </p>
+            <p style="margin-bottom:0;color:#667c7b;font-size:13px">Tu reçois ce message parce que tu as accepté les notifications automatiques par email dans AquaManager. Tu peux modifier ce choix depuis ton profil.</p>
+          </div>
+        </div>
+      `,
+    });
+    this.logger.log(`Measurement reminder sent to ${to}`);
+  }
+
   // ============================================================
   // ✅ EMAIL : Formulaire de contact (avec pièces jointes)
   // ============================================================

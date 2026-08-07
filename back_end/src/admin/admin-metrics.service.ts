@@ -12,6 +12,7 @@ import { Article } from '../articles/entities/article.entity';
 import { FishCard } from '../catalog/fish-cards/fish-card.entity';
 import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
 import { OperationalEvent } from './entities/operational-event.entity';
+import { Settings } from '../settings/settings.entity';
 
 export type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 
@@ -64,6 +65,7 @@ export class AdminMetricsService {
     @InjectRepository(FishCard) private readonly fishCardsRepo: Repository<FishCard>,
     @InjectRepository(PlantCard) private readonly plantCardsRepo: Repository<PlantCard>,
     @InjectRepository(OperationalEvent) private readonly operationalEventsRepo: Repository<OperationalEvent>,
+    @InjectRepository(Settings) private readonly settingsRepo: Repository<Settings>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -254,6 +256,10 @@ const subscriptionsTotalActive = premiumActive + proActive;
     // -----------------------
     // Aquariums
     // -----------------------
+    const notificationConsentCount = await this.settingsRepo.count({
+      where: { notificationsEnabled: true },
+    });
+
     const aquariumsTotal = await this.aquariumsRepo.count();
     const aquariumsCreatedInRange = from
       ? await this.aquariumsRepo.count({ where: { createdAt: MoreThanOrEqual(from) } as any })
@@ -323,6 +329,7 @@ const subscriptionsTotalActive = premiumActive + proActive;
         admins,
         newInRange,
         activeInRange,
+        notificationConsentCount,
         latest,
         note: [
           !hasCreatedAt ? "User n'a pas de createdAt : 'nouveaux utilisateurs' indisponible." : null,

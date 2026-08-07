@@ -36,6 +36,7 @@ interface AdminMetricsDto {
     admins: number;
     newInRange: number | null;
     activeInRange: number;
+    notificationConsentCount: number;
     latest: Array<{
       id: number;
       fullName: string;

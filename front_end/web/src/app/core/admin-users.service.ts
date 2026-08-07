@@ -165,6 +165,13 @@ export type AdminUserFull = {
   fish: AdminUserFishRow[];
   plants: AdminUserPlantRow[];
   tasks: AdminUserTask[];
+  notificationSettings?: {
+    notificationsEnabled: boolean;
+    emailNotifications: boolean;
+    taskReminders: boolean;
+    automaticNotifications: boolean;
+    newsAndUpdates: boolean;
+  } | null;
 
   gamification?: {
     level: number;

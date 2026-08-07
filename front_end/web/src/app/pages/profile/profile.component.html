@@ -237,7 +237,11 @@
               <span>Active ou coupe immédiatement toutes les notifications AquaManager.</span>
             </div>
           </div>
-          <mat-slide-toggle [(ngModel)]="notificationSettings.notificationsEnabled" aria-label="Consentement général aux notifications"></mat-slide-toggle>
+          <mat-slide-toggle
+            [ngModel]="notificationSettings.notificationsEnabled"
+            (ngModelChange)="onNotificationConsentChange($event)"
+            aria-label="Consentement général aux notifications"
+          ></mat-slide-toggle>
         </div>
 
         <div class="notification-options" [class.notification-options--disabled]="!notificationSettings.notificationsEnabled">
@@ -266,14 +270,18 @@
 
           <div class="notification-settings__section-title notification-settings__section-title--channels">
             <span>Réception par email</span>
-            <small>Les notifications seront envoyées à l’adresse de votre compte.</small>
+            <small>Canal obligatoire tant qu’aucun autre moyen de contact n’est disponible.</small>
           </div>
 
           <div class="notification-channels">
             <label class="notification-channel">
               <mat-icon>mail</mat-icon>
-              <span><strong>Par email</strong><small>Sur l’adresse de votre compte</small></span>
-              <mat-slide-toggle [(ngModel)]="notificationSettings.emailNotifications" [disabled]="!notificationSettings.notificationsEnabled"></mat-slide-toggle>
+              <span><strong>Par email — obligatoire</strong><small>{{ me.email }}</small></span>
+              <mat-slide-toggle
+                [(ngModel)]="notificationSettings.emailNotifications"
+                [disabled]="true"
+                aria-label="Réception obligatoire par email"
+              ></mat-slide-toggle>
             </label>
           </div>
         </div>

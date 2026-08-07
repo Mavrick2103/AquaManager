@@ -4,11 +4,13 @@ import { Settings } from './settings.entity';
 import { SettingsService } from './settings.service';
 import { SettingsController } from './settings.controller';
 import { User } from '../users/user.entity';
+import { MailModule } from '../mail/mail.module';
+import { MeasurementReminderService } from './measurement-reminder.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Settings, User])],
+  imports: [TypeOrmModule.forFeature([Settings, User]), MailModule],
   controllers: [SettingsController],
-  providers: [SettingsService],
+  providers: [SettingsService, MeasurementReminderService],
   exports: [SettingsService],
 })
 export class SettingsModule {}

@@ -134,7 +134,7 @@ export class ProfileComponent implements OnInit {
       if (!settings) return;
       this.notificationSettings = {
         notificationsEnabled: settings.notificationsEnabled,
-        emailNotifications: settings.emailNotifications,
+        emailNotifications: settings.notificationsEnabled,
         pushNotifications: false,
         taskReminders: settings.taskReminders,
         automaticNotifications: settings.automaticNotifications,
@@ -149,6 +149,9 @@ export class ProfileComponent implements OnInit {
     if (this.notificationsLoading) return;
     this.notificationsLoading = true;
     try {
+      if (this.notificationSettings.notificationsEnabled) {
+        this.notificationSettings.emailNotifications = true;
+      }
       const saved = await this.settingsApi.updateMySettings({
         ...this.notificationSettings,
         pushNotifications: false,
@@ -171,6 +174,11 @@ export class ProfileComponent implements OnInit {
     } finally {
       this.notificationsLoading = false;
     }
+  }
+
+  onNotificationConsentChange(enabled: boolean): void {
+    this.notificationSettings.notificationsEnabled = enabled;
+    this.notificationSettings.emailNotifications = enabled;
   }
 
   private async reloadMe() {

@@ -45,6 +45,7 @@ export class SettingsService {
   async update(userId: number, dto: UpdateSettingsDto) {
     const s = await this.ensure(userId);
     Object.assign(s, dto);
+    s.emailNotifications = s.notificationsEnabled;
     return this.repo.save(s);
   }
 
