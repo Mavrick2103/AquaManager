@@ -39,14 +39,14 @@
       
 
       <section class="tab-pane">
-        <header class="profile-overview">
+        <header class="profile-overview" *ngIf="me as currentUser">
           <div class="profile-overview__avatar">
-            {{ (me.fullName || me.email || 'U').charAt(0).toUpperCase() }}
+            {{ (currentUser.fullName || currentUser.email || 'U').charAt(0).toUpperCase() }}
           </div>
           <div class="profile-overview__identity">
             <span>Mon compte</span>
-            <h2>{{ me.fullName || 'Utilisateur AquaManager' }}</h2>
-            <p>{{ me.email }}</p>
+            <h2>{{ currentUser.fullName || 'Utilisateur AquaManager' }}</h2>
+            <p>{{ currentUser.email }}</p>
           </div>
           <div class="profile-overview__badges">
             <span><mat-icon>shield</mat-icon>{{ isAdmin ? 'Administrateur' : isEditorOnly ? 'Éditeur' : 'Utilisateur' }}</span>
