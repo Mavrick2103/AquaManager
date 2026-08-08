@@ -35,6 +35,7 @@ export class AdminSidebarComponent {
 
   readonly communication: AdminLink[] = [
     { label: 'Communication', description: 'Contenus et réseaux', icon: 'campaign', route: '/admin/marketing', adminOnly: true },
+    { label: 'Emails', description: 'Ciblage et envois manuels', icon: 'forward_to_inbox', route: '/admin/emailing', adminOnly: true },
   ];
 
   visible(links: AdminLink[]): AdminLink[] {

@@ -11,10 +11,16 @@
       <p>{{ headerSub }}</p>
     </div>
 
-    <button mat-flat-button class="refresh" color="primary" type="button" (click)="load()">
-      <mat-icon>refresh</mat-icon>
-      Actualiser
-    </button>
+    <div class="header-actions">
+      <a mat-stroked-button [routerLink]="['/admin/emailing']" [queryParams]="{ userId: userId }">
+        <mat-icon>forward_to_inbox</mat-icon>
+        Envoyer un email
+      </a>
+      <button mat-flat-button class="refresh" color="primary" type="button" (click)="load()">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+    </div>
   </header>
 
   <!-- LOADING / EMPTY -->

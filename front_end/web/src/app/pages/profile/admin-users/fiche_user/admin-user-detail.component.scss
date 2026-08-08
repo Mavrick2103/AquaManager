@@ -482,3 +482,4 @@
 @media(max-width:900px){ .contributions-grid { grid-template-columns:1fr; } }
 @media(max-width:560px){ .details-grid { grid-template-columns:1fr; } }
 @media(max-width:560px){ .notification-details>header { align-items:flex-start;flex-direction:column; }.notification-preferences { grid-template-columns:1fr; } }
+.header-actions { display: flex; align-items: center; gap: 10px; }

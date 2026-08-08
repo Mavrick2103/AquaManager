@@ -125,6 +125,31 @@ export class MailService {
     this.logger.log(`Measurement reminder sent to ${to}`);
   }
 
+  async sendAdminMessage(params: {
+    to: string;
+    fullName: string;
+    subject: string;
+    message: string;
+    actionUrl?: string;
+    actionLabel?: string;
+  }): Promise<void> {
+    const paragraphs = params.message
+      .split(/\r?\n\r?\n/)
+      .map((paragraph) => `<p style="margin:0 0 14px">${this.escape(paragraph).replace(/\r?\n/g, '<br>')}</p>`)
+      .join('');
+    const action = params.actionUrl
+      ? `<p style="margin:24px 0"><a href="${this.escape(params.actionUrl)}" style="display:inline-block;padding:12px 18px;border-radius:11px;background:#087f8c;color:#fff;font-weight:bold;text-decoration:none">${this.escape(params.actionLabel || 'Découvrir')}</a></p>`
+      : '';
+    await this.transporter.sendMail({
+      from: this.from(),
+      to: params.to,
+      subject: params.subject,
+      text: `Bonjour ${params.fullName},\n\n${params.message}${params.actionUrl ? `\n\n${params.actionUrl}` : ''}`,
+      html: `<div style="max-width:620px;margin:auto;padding:28px;font-family:Arial,sans-serif;color:#243c3d;line-height:1.6"><div style="padding:28px;border:1px solid #dcebea;border-radius:18px;background:#fff"><div style="margin-bottom:22px;color:#087f8c;font-size:20px;font-weight:bold">AquaManager</div><p>Bonjour ${this.escape(params.fullName)},</p>${paragraphs}${action}<p style="margin-top:26px;color:#708281;font-size:12px">Message envoyé par l’équipe AquaManager.</p></div></div>`,
+    });
+    this.logger.log(`Admin email sent to user ${params.to}`);
+  }
+
   // ============================================================
   // ✅ EMAIL : Formulaire de contact (avec pièces jointes)
   // ============================================================

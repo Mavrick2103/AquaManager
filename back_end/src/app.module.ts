@@ -24,6 +24,7 @@ import { AiModule } from './ai/ai.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { MarketingModule } from './marketing/marketing.module';
 import { SettingsModule } from './settings/settings.module';
+import { AdminEmailingModule } from './admin-emailing/admin-emailing.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { SettingsModule } from './settings/settings.module';
     AiModule,
     MarketingModule,
     SettingsModule,
+    AdminEmailingModule,
   ],
 })
 export class AppModule {}
