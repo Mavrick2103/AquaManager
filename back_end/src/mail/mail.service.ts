@@ -31,6 +31,9 @@ export class MailService {
       port,
       secure,
       auth: { user, pass },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 30_000,
     });
   }
 
@@ -123,6 +126,33 @@ export class MailService {
       `,
     });
     this.logger.log(`Measurement reminder sent to ${to}`);
+  }
+
+  async sendTaskReminder(
+    to: string,
+    fullName: string,
+    tasks: Array<{ title: string; aquariumName: string; dueAt: Date }>,
+  ): Promise<void> {
+    if (!tasks.length) return;
+    const time = new Intl.DateTimeFormat('fr-FR', {
+      timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit',
+    });
+    const url = `${this.appUrl()}/calendar`;
+    const profileUrl = `${this.appUrl()}/profile`;
+    const lines = tasks.map((task) => `${time.format(task.dueAt)} — ${task.aquariumName} : ${task.title}`);
+    const subject = `AquaManager — ${tasks.length} entretien${tasks.length > 1 ? 's' : ''} prévu${tasks.length > 1 ? 's' : ''} aujourd’hui`;
+    await this.transporter.sendMail({
+      from: this.from(), to, subject,
+      text: `Bonjour ${fullName},\n\nVoici les tâches du jour qui restent à faire (heures de Paris) :\n\n${lines.join('\n')}\n\nOuvrir le calendrier : ${url}\n\nTu peux désactiver les rappels d’entretien depuis ton profil : ${profileUrl}`,
+      html: `<div style="max-width:620px;margin:auto;padding:28px;font-family:Arial,sans-serif;color:#243c3d;line-height:1.6">
+        <h2 style="color:#087f8c">Tes entretiens du jour</h2>
+        <p>Bonjour ${this.escape(fullName)},</p>
+        <p>Voici les tâches du jour qui restent à faire (heures de Paris) :</p>
+        <ul>${lines.map((line) => `<li>${this.escape(line)}</li>`).join('')}</ul>
+        <p><a href="${this.escape(url)}" style="display:inline-block;padding:12px 18px;border-radius:11px;background:#087f8c;color:#fff;text-decoration:none">Ouvrir mon calendrier</a></p>
+        <p style="font-size:13px">Tu reçois ce récapitulatif parce que tu as activé les rappels d’entretien par email. Tu peux les désactiver dans <a href="${this.escape(profileUrl)}">ton profil</a>.</p>
+      </div>`,
+    });
   }
 
   async sendAdminMessage(params: {

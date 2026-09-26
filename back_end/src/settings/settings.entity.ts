@@ -46,6 +46,9 @@ export class Settings {
   @Column({ type: 'timestamp', nullable: true })
   lastMeasurementReminderAt: Date | null;
 
+  @Column({ type: 'date', nullable: true })
+  lastTaskReminderDate: string | null;
+
   // ==== Alertes & Seuils ====
   @Column({ type: 'boolean', default: true })
   alertsEnabled: boolean;

@@ -252,7 +252,7 @@
 
           <article class="notification-option">
             <div class="notification-option__icon notification-option__icon--tasks"><mat-icon>event_repeat</mat-icon></div>
-            <div><strong>Rappels d’entretien</strong><p>Tâches planifiées, changements d’eau, nettoyage et entretiens arrivant à échéance.</p></div>
+            <div><strong>Rappels d’entretien</strong><p>Un email à partir de 9 h (heure de Paris) récapitule les tâches du jour restant à faire. Les tâches ajoutées après l’envoi ne sont pas incluses.</p></div>
             <mat-slide-toggle [(ngModel)]="notificationSettings.taskReminders" [disabled]="!notificationSettings.notificationsEnabled"></mat-slide-toggle>
           </article>
 
