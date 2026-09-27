@@ -11,6 +11,8 @@ export interface UserMe {
   subscriptionPlan?: 'CLASSIC' | 'PREMIUM' | 'PRO';
   subscriptionStatus?: 'none' | 'active' | 'trialing' | 'canceled' | 'past_due' | 'incomplete';
   subscriptionEndsAt?: string | null;
+  billingProvider?: 'paypal' | 'stripe' | null;
+  paypalRenewalActive?: boolean;
 }
 
 export interface UpdateMeDto {

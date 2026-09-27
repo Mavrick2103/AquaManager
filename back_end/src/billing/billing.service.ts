@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, BadRequestException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import Stripe from 'stripe';
 import { UsersService } from '../users/users.service';
 import type { SubscriptionPlan } from '../users/user.entity';
@@ -26,7 +26,19 @@ function unwrapStripeResponse<T>(res: any): T {
 
 @Injectable()
 export class BillingService {
-  private readonly stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+  private stripeClient?: InstanceType<typeof Stripe>;
+  private get stripe(): InstanceType<typeof Stripe> {
+    if (!process.env.STRIPE_SECRET_KEY) throw new ServiceUnavailableException('Stripe non configuré.');
+    return this.stripeClient ??= new Stripe(process.env.STRIPE_SECRET_KEY);
+  }
+
+  async assertNoRecurringSubscription(subscriptionId: string | null) {
+    if (!subscriptionId) return;
+    const sub = unwrapStripeResponse<any>(await this.stripe.subscriptions.retrieve(subscriptionId));
+    if (!['canceled', 'incomplete_expired'].includes(sub.status)) {
+      throw new ConflictException('Résilie ton abonnement Stripe avant de souscrire avec PayPal.');
+    }
+  }
 
   constructor(private readonly usersService: UsersService) {}
 

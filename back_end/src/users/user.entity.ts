@@ -57,6 +57,16 @@ export class User {
   @Index({ unique: true })
   @Column({ type: 'varchar', length: 64, nullable: true })
   stripeSubscriptionId: string | null;
+
+  @Column({ type: 'varchar', length: 12, nullable: true })
+  billingProvider: 'paypal' | 'stripe' | null;
+
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  paypalSubscriptionId: string | null;
+
+  @Column({ default: false })
+  paypalRenewalActive: boolean;
   
   // ✅ utile pour tes metrics + tri par inscription
   @CreateDateColumn()

@@ -23,6 +23,7 @@ export class AdminSidebarComponent {
   @Input() adminAccess = true;
 
   readonly pilotage: AdminLink[] = [
+    { label: 'Abonnements', description: 'PayPal et suivi des paiements', icon: 'credit_card', route: '/admin/subscriptions', adminOnly: true },
     { label: 'Vue d’ensemble', description: 'Activité et alertes', icon: 'space_dashboard', route: '/admin/metrics', adminOnly: true },
     { label: 'Utilisateurs', description: 'Comptes, rôles et accès', icon: 'group', route: '/admin/users', adminOnly: true },
   ];

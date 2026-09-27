@@ -1379,8 +1379,9 @@
               <button mat-raised-button color="primary" type="button"
                 [disabled]="checkoutLoading" (click)="startPremiumCheckout()">
                 <mat-icon>lock_open</mat-icon>
-                {{ checkoutLoading ? 'Redirection…' : 'Passer Premium (bientôt)' }}
+                {{ checkoutLoading ? 'Redirection…' : 'Premium — 3,99 €/mois avec PayPal' }}
               </button>
+              <p>Renouvellement automatique. Résiliation depuis ton profil, avec accès jusqu’à la fin de la période payée. <a routerLink="/terms">Conditions d’utilisation</a>.</p>
             </div>
           </div>
 

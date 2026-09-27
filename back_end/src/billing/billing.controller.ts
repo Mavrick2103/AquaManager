@@ -4,17 +4,20 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../auth/decorators/public.decorator';
 import type { Request } from 'express';
 import { SkipThrottle } from '@nestjs/throttler';
+import { PaypalService } from './paypal/paypal.service';
+import { BillingRateLimit } from '../common/throttling/rate-limit.decorator';
 
 @Controller('billing')
 export class BillingController {
-  constructor(private readonly billing: BillingService) {}
+  constructor(private readonly billing: BillingService, private readonly paypal: PaypalService) {}
 
   // ✅ PROTÉGÉ (normal)
   @UseGuards(JwtAuthGuard)
   @Post('checkout')
+  @BillingRateLimit()
   checkout(@Req() req: any) {
     const userId = Number(req.user?.userId ?? req.user?.id ?? req.user?.sub);
-    return this.billing.createCheckoutSession(userId);
+    return this.paypal.checkout(userId);
   }
 
   // ✅ PROTÉGÉ : ouvre le portail Stripe (résiliation / CB / factures)

@@ -195,6 +195,12 @@ export const routes: Routes = [
   // (Metrics / Users)
   // =========================
   {
+    path: 'admin/subscriptions',
+    loadComponent: () => import('./pages/profile/admin-subscriptions/admin-subscriptions.component').then(m => m.AdminSubscriptionsComponent),
+    data: { title: 'Admin – Abonnements – AquaManager', robots: 'noindex' },
+    canActivate: [AuthGuard, AdminOnlyGuard],
+  },
+  {
     path: 'admin/metrics',
     loadComponent: () =>
       import('./pages/profile/admin-metrics/admin-metrics.component').then(

@@ -45,6 +45,7 @@ export const RegisterRateLimit = () => rateLimit(5, 60 * 60_000);
 export const ForgotPasswordRateLimit = () => rateLimit(3, 60 * 60_000);
 export const ResetPasswordRateLimit = () => rateLimit(5, 60 * 60_000);
 export const ContactRateLimit = () => rateLimit(5, 60 * 60_000);
+export const BillingRateLimit = () => rateLimit(10, 60_000, { tracker: userTracker, category: 'billing' });
 export const PublicAnalyticsRateLimit = () =>
   rateLimit(60, 60_000, { category: 'public-analytics' });
 

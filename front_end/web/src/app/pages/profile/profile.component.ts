@@ -1,8 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
 
 import { MatCardModule } from '@angular/material/card';
@@ -20,7 +20,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 import { AuthService } from '../../core/auth.service';
 import { UserService, UserMe } from '../../core/user.service';
-import { BillingService } from '../../core/billing.service';
+import { BillingService, PaypalBillingStatus } from '../../core/billing.service';
 import { SettingsService, UserSettings } from '../../core/settings.service';
 
 type AppRole = 'USER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN';
@@ -59,11 +59,43 @@ type ExtendedMe = UserMe & {
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private users = inject(UserService);
   private auth = inject(AuthService);
   private billing = inject(BillingService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  paypalState: PaypalBillingStatus | null = null;
+  private paymentCheckTimer?: ReturnType<typeof setTimeout>;
+  private destroyed = false;
+
+  ngOnDestroy(): void {
+    this.destroyed = true;
+    clearTimeout(this.paymentCheckTimer);
+  }
+
+  private watchPaymentConfirmation(remaining = 20): void {
+    clearTimeout(this.paymentCheckTimer);
+    if (this.destroyed || remaining <= 0 || this.paypalState?.provider !== 'paypal'
+        || this.paypalState.premium || !['CREATING', 'APPROVAL_PENDING', 'APPROVED', 'ACTIVE'].includes(this.paypalState.status ?? '')) return;
+    this.paymentCheckTimer = setTimeout(async () => {
+      if (this.destroyed) return;
+      if (!this.billingLoading) {
+        try {
+          const state = await this.billing.refreshPaypal();
+          if (this.destroyed) return;
+          this.paypalState = state;
+          await this.reloadMe();
+          if (this.destroyed) return;
+          if (state.premium) this.showPaymentNotice('Paiement confirmé : ton accès Premium est actif.');
+        } catch {
+          // A temporary provider error is retried without repeated popups.
+        }
+      }
+      this.watchPaymentConfirmation(remaining - 1);
+    }, 15000);
+  }
   private settingsApi = inject(SettingsService);
   private snack = inject(MatSnackBar);
   private title = inject(Title);
@@ -116,6 +148,28 @@ export class ProfileComponent implements OnInit {
     });
 
     await this.reloadMe();
+    const paypalReturn = this.route.snapshot.queryParamMap.get('paypal');
+    try {
+      this.paypalState = await this.billing.paypalStatus();
+      if (paypalReturn === 'return') {
+        this.paypalState = await this.billing.refreshPaypal();
+        await this.reloadMe();
+        this.showPaymentNotice(this.paypalState.premium
+          ? 'Paiement confirmé : ton accès Premium est actif.'
+          : 'PayPal confirme ton paiement. La vérification se poursuit automatiquement ; inutile de payer à nouveau.');
+      } else if (paypalReturn === 'cancel') {
+        this.showPaymentNotice('Paiement interrompu. Tu peux reprendre la souscription depuis ton profil.');
+      }
+    } catch {
+      this.showPaymentNotice('Le statut du paiement est temporairement indisponible. Réessaie dans quelques instants.');
+    } finally {
+      if (paypalReturn) {
+        // Consume the return once so refreshing the profile does not replay the notification.
+        await this.router.navigate([], { relativeTo: this.route, replaceUrl: true,
+          queryParamsHandling: 'merge', queryParams: { paypal: null, subscription_id: null, ba_token: null, token: null } });
+      }
+    }
+    this.watchPaymentConfirmation();
     await this.loadNotificationSettings();
 
     const raw = localStorage.getItem('aquamanager:prefs');
@@ -242,6 +296,7 @@ export class ProfileComponent implements OnInit {
   }
 
   get isPremium(): boolean {
+    if (this.me?.subscriptionEndsAt && new Date(this.me.subscriptionEndsAt).getTime() <= Date.now()) return false;
     // premium seulement si plan Premium/Pro ET status active/trialing
     if (this.plan !== 'PREMIUM' && this.plan !== 'PRO') return false;
     return this.subStatus === 'active' || this.subStatus === 'trialing';
@@ -341,10 +396,11 @@ export class ProfileComponent implements OnInit {
   // Billing actions
   // -------------------------
   async goPremium() {
+    if (this.billingLoading) return;
     this.billingLoading = true;
     try {
       const url = await this.billing.createPremiumCheckout();
-      window.location.href = url; // Stripe Checkout
+      window.location.href = url;
     } catch (e: any) {
       this.snack.open(e?.error?.message || 'Impossible d’ouvrir le paiement', 'Fermer', {
         duration: 3000,
@@ -377,7 +433,11 @@ export class ProfileComponent implements OnInit {
     this.billingLoading = true;
     try {
       // nécessite BillingService.cancelSubscription(cancelAtPeriodEnd: boolean)
-      await this.billing.cancelSubscription(true);
+      if (this.paypalState?.provider === 'paypal') {
+        this.paypalState = await this.billing.cancelPaypal();
+      } else {
+        await this.billing.cancelSubscription(true);
+      }
       this.snack.open('Résiliation demandée ✅', 'OK', { duration: 2000 });
       await this.reloadMe();
     } catch (e: any) {
@@ -391,7 +451,23 @@ export class ProfileComponent implements OnInit {
 
   // -------------------------
   // Account actions
+  async refreshPayment() {
+    if (this.billingLoading) return;
+    this.billingLoading = true;
+    try {
+      this.paypalState = await this.billing.refreshPaypal();
+      await this.reloadMe();
+      this.showPaymentNotice(this.paypalState.premium
+        ? 'Ton accès Premium est actif.' : 'Paiement non confirmé pour le moment. Si tu viens de payer, réessaie dans quelques instants.');
+    } catch (e: any) {
+      this.showPaymentNotice(e?.error?.message || 'Impossible de vérifier le paiement pour le moment.');
+    } finally { this.billingLoading = false; }
+  }
   // -------------------------
+  private showPaymentNotice(message: string): void {
+    this.snack.open(message, 'Fermer', { duration: 6000, horizontalPosition: 'center', verticalPosition: 'top' });
+  }
+
   async deleteAccount() {
     if (!confirm('Cette action est définitive. Supprimer votre compte ?')) return;
     try {

@@ -1,0 +1,51 @@
+<div class="layout">
+  <aside appAdminSidebar></aside>
+  <main class="content">
+    <div class="page">
+      <header class="header"><div><p class="eyebrow">ADMINISTRATION · PAYPAL</p><h1>Abonnements</h1><p>Suivez les paiements et accompagnez vos utilisateurs.</p></div><mat-icon>credit_card</mat-icon></header>
+      <section class="admin-card">
+        <form (ngSubmit)="load(true)" class="filters">
+          <label>Rechercher<input name="search" [(ngModel)]="search" maxlength="160" placeholder="Nom, email ou référence PayPal"></label>
+          <label>Environnement<select name="mode" [(ngModel)]="mode"><option value="all">Tous</option><option value="live">Paiements réels</option><option value="sandbox">Tests Sandbox</option></select></label>
+          <label class="check"><input type="checkbox" name="attention" [(ngModel)]="attention">À vérifier</label>
+          <button mat-flat-button type="submit" [disabled]="loading()">Rechercher</button>
+        </form>
+        <p class="muted">{{ total() }} abonnement(s) · Connexion actuelle : {{ configuredEnvironment() === 'live' ? 'paiements réels' : 'tests Sandbox' }}.</p>
+        <p class="muted">« À vérifier » inclut les paiements en attente, synchronisations anciennes et emails dont l’envoi reste à contrôler.</p>
+        @if (error()) { <p class="alert" role="alert">{{ error() }}</p> }
+        @if (notice()) { <p class="notice" role="status">{{ notice() }}</p> }
+        @if (loading()) { <p role="status">Chargement des abonnements…</p> }
+        <div class="table-scroll"><table><thead><tr><th>Utilisateur</th><th>Environnement</th><th>État PayPal</th><th>Période payée jusqu’au</th><th>Dernière vérification</th><th>Détail</th></tr></thead><tbody>
+          @for (item of items(); track item.id) {
+            <tr><td><strong>{{ item.user?.fullName || 'Compte supprimé' }}</strong><small>{{ item.user?.email }}</small><small>{{ item.current ? 'Abonnement associé au compte' : 'Ancienne tentative / accès distinct' }}</small></td>
+              <td><span class="badge" [class.test]="item.environment === 'sandbox'">{{ item.environment === 'sandbox' ? 'TEST' : 'RÉEL' }}</span></td>
+              <td>{{ label(item.status) }}</td><td>{{ (item.paidUntil | date:'dd/MM/yyyy HH:mm') || 'Aucune période confirmée' }}</td><td>{{ (item.syncedAt | date:'dd/MM/yyyy HH:mm') || 'Jamais' }}</td>
+              <td><button mat-stroked-button [disabled]="refreshing()" (click)="open(item)" [attr.aria-label]="'Voir l’abonnement de ' + item.user?.email">Voir</button></td></tr>
+          } @empty { @if (!loading()) { <tr><td colspan="6">Aucun abonnement PayPal ne correspond à ces filtres.</td></tr> } }
+        </tbody></table></div>
+        <nav class="pagination" aria-label="Pages des abonnements"><button mat-button [disabled]="loading() || page <= 1" (click)="next(-1)">Précédent</button><span>Page {{ page }}</span><button mat-button [disabled]="loading() || page * 25 >= total()" (click)="next(1)">Suivant</button></nav>
+      </section>
+      @if (detailLoading()) { <p role="status">Chargement du détail…</p> }
+      @if (detail(); as selected) {
+        <section class="admin-card details" aria-label="Détail de l’abonnement">
+          <div class="detail-header"><h2>{{ selected.user?.fullName || selected.user?.email }} · {{ label(selected.status) }}</h2><button mat-button [disabled]="refreshing()" (click)="close()">Fermer</button></div>
+          <p class="reference">{{ selected.paypalId || 'Référence non attribuée' }} · {{ selected.environment === 'sandbox' ? 'Compte de test' : 'Paiements réels' }}</p>
+          <p>Accès actuel dans AquaManager : <strong>{{ selected.user?.plan }}</strong> · {{ selected.current ? 'lié à cet abonnement PayPal' : 'distinct de cette tentative PayPal' }}.</p>
+          <div class="actions"><button mat-flat-button [disabled]="!selected.canRefresh || refreshing()" (click)="refresh()">{{ refreshing() ? 'Vérification en cours…' : 'Vérifier auprès de PayPal' }}</button><a mat-button [routerLink]="['/admin/users', selected.userId]">Voir le compte utilisateur</a></div>
+          @if (!selected.canRefresh) { <p class="muted">La vérification nécessite une référence PayPal et une connexion au même environnement.</p> }
+          <h3>Paiements enregistrés ({{ selected.paymentCount }})</h3>
+          <p class="muted">Montant d’origine vérifié : 3,99 €. Les remboursements se gèrent dans PayPal. Les accès offerts se consultent dans la fiche utilisateur.</p>
+          <div class="table-scroll"><table><thead><tr><th>Date / référence</th><th>Montant d’origine</th><th>État</th><th>Email de confirmation</th></tr></thead><tbody>
+            @for (payment of selected.payments; track payment.id) { <tr><td>{{ (payment.paidAt | date:'dd/MM/yyyy HH:mm') || 'Date non disponible' }}<small>{{ payment.id }}</small></td><td>{{ payment.amount ? (payment.amount | currency:'EUR') : 'Non disponible' }}</td><td>{{ payment.reversed ? 'Remboursé en tout ou partie / annulé' : 'Confirmé' }}</td><td>{{ label(payment.emailStatus) }}<small>{{ payment.emailSentAt | date:'dd/MM/yyyy HH:mm' }}</small></td></tr> }
+            @empty { <tr><td colspan="4">Aucun paiement confirmé enregistré.</td></tr> }
+          </tbody></table></div>
+          @if (selected.paymentCount > 100) { <p>Les 100 paiements les plus récents sont affichés.</p> }
+          <p class="muted">« Envoi à vérifier » signifie qu’une tentative a été enregistrée sans confirmation de succès ; cela ne prouve pas que l’email n’a pas été reçu.</p>
+          <h3>Historique des vérifications administrateur</h3>
+          <ul class="history">@for (action of selected.actions; track action.id) { <li>{{ action.createdAt | date:'dd/MM/yyyy HH:mm:ss' }} · Admin #{{ action.actorId }} · {{ label(action.outcome) }}</li> } @empty { <li>Aucune vérification manuelle enregistrée.</li> }</ul>
+          @if (selected.actionCount > 100) { <p>Les 100 dernières actions sont affichées.</p> }
+        </section>
+      }
+    </div>
+  </main>
+</div>

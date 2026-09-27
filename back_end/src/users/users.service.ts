@@ -69,6 +69,9 @@ export class UsersService {
       stripeSubscriptionId: true,
       subscriptionPlan: true,
       subscriptionEndsAt: true,
+      billingProvider: true,
+      paypalSubscriptionId: true,
+      paypalRenewalActive: true,
     } as any,
   });
 }
@@ -204,6 +207,8 @@ async setStripeIds(userId: number, data: { stripeCustomerId?: string | null; str
   }
 
   async deleteById(id: number) {
+    const user = await this.repo.findOne({ where: { id } });
+    if (user?.paypalRenewalActive) throw new ConflictException('Résilie d’abord ton abonnement PayPal depuis ton profil, puis supprime ton compte.');
     await this.repo.delete(id);
   }
 
@@ -253,10 +258,13 @@ async setStripeSubscriptionState(userId: number, patch: {
   subscriptionStatus?: 'none' | 'active' | 'trialing' | 'canceled' | 'past_due' | 'incomplete';
   subscriptionEndsAt?: Date | null;
 }) {
+  const user = await this.repo.findOne({ where: { id: userId } });
+  if (user?.billingProvider === 'paypal') return;
   await this.repo.update(
     { id: userId },
     {
       ...(patch.plan ? { subscriptionPlan: this.normalizePlan(patch.plan) } : {}),
+      billingProvider: 'stripe',
       ...(patch.stripeCustomerId !== undefined ? { stripeCustomerId: patch.stripeCustomerId } : {}),
       ...(patch.stripeSubscriptionId !== undefined ? { stripeSubscriptionId: patch.stripeSubscriptionId } : {}),
       ...(patch.subscriptionStatus ? { subscriptionStatus: patch.subscriptionStatus } : {}),
@@ -539,10 +547,14 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
     }
 
     if (dto.subscriptionPlan !== undefined) {
+      if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour modifier les droits manuellement.');
+      patch.billingProvider = null;
       patch.subscriptionPlan = this.normalizePlan(dto.subscriptionPlan);
     }
 
     if (dto.subscriptionEndsAt !== undefined) {
+      if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour modifier les droits manuellement.');
+      patch.billingProvider = null;
       // string ISO -> Date (ou null si vide)
       const raw = String(dto.subscriptionEndsAt ?? '').trim();
       patch.subscriptionEndsAt = raw ? new Date(raw) : null;
@@ -574,6 +586,7 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
   }
 
   const plan = this.normalizePlan(data.plan);
+  if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour attribuer une offre manuellement.');
 
   if (plan === 'CLASSIC') {
     throw new BadRequestException('Le plan offert doit être PREMIUM ou PRO');
@@ -630,6 +643,7 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
       subscriptionPlan: plan,
       subscriptionStatus: 'active',
       subscriptionEndsAt,
+      billingProvider: null,
     } as Partial<User>,
   );
 
@@ -648,12 +662,14 @@ async adminRevokeSubscription(id: number) {
     throw new NotFoundException('Utilisateur introuvable');
   }
 
+  if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour retirer les droits.');
   await this.repo.update(
     { id },
     {
       subscriptionPlan: 'CLASSIC',
       subscriptionStatus: 'none',
       subscriptionEndsAt: null,
+      billingProvider: null,
       stripeSubscriptionId: null,
     } as Partial<User>,
   );
@@ -666,6 +682,7 @@ async adminRevokeSubscription(id: number) {
 
     const user = await this.repo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
+    if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal de cet utilisateur.');
 
     try {
       await this.repo.delete(id);

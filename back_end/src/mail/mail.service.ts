@@ -49,6 +49,23 @@ export class MailService {
   // ============================================================
   // ✅ EMAIL : Vérification de compte
   // ============================================================
+  async sendPremiumPaymentConfirmation(to: string, fullName: string, paymentId: string, paidUntil: Date, sandbox: boolean): Promise<void> {
+    const date = paidUntil.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+    const notice = sandbox ? 'Paiement de test Sandbox : aucun argent réel n’a été débité.' : 'Ton paiement PayPal de 3,99 € a été confirmé.';
+    const profileUrl = `${this.appUrl()}/profile`;
+    await this.transporter.sendMail({
+      from: this.from(), to,
+      subject: `${sandbox ? '[TEST] ' : ''}AquaManager — Confirmation de ton paiement Premium`,
+      messageId: `<paypal-payment-${sandbox ? 'sandbox' : 'live'}-${paymentId}@aquamanager.fr>`,
+      text: `Bonjour ${fullName},\n\n${notice}\nTon accès Premium est actif jusqu’au ${date}.\nMontant : 3,99 EUR.\nRéférence PayPal : ${paymentId}\n\nConsulte et gère ton abonnement depuis ton profil : ${profileUrl}\n\nL’équipe AquaManager`,
+      html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#26352a">
+        <h2>Ton paiement Premium est confirmé</h2><p>Bonjour ${this.escape(fullName)},</p>
+        <p>${this.escape(notice)}</p><p>Ton accès <strong>Premium</strong> est actif jusqu’au <strong>${date}</strong>.</p>
+        <p>Montant : <strong>3,99 €</strong><br>Référence PayPal : ${this.escape(paymentId)}</p>
+        <p><a href="${this.escape(profileUrl)}">Gérer mon abonnement</a></p><p>L’équipe AquaManager</p></div>`,
+    });
+  }
+
   async sendVerifyEmail(to: string, fullName: string, token: string): Promise<void> {
     const url = `${this.appUrl()}/auth/verification-email?token=${encodeURIComponent(token)}`;
 

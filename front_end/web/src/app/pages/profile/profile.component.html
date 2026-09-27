@@ -185,31 +185,36 @@
             </div>
 
             <div class="sub-actions">
-              <button *ngIf="showUpgradeButton" mat-flat-button color="primary">
+              <button *ngIf="showUpgradeButton && !paypalState?.canCancel && paypalState?.status !== 'APPROVAL_PENDING'" mat-flat-button color="primary" [disabled]="billingLoading || !paypalState?.ready" (click)="goPremium()">
                 <mat-icon>lock_open</mat-icon>
-                Passer Premium (bientôt)
+                {{ billingLoading ? 'Redirection…' : 'Premium — 3,99 €/mois avec PayPal' }}
               </button>
-              <button *ngIf="isSubscribedActive" mat-stroked-button color="primary" (click)="manageSubscription()">
+              <button *ngIf="isSubscribedActive && paypalState?.provider === 'stripe'" mat-stroked-button color="primary" [disabled]="billingLoading" (click)="manageSubscription()">
                 <mat-icon>manage_accounts</mat-icon>
                 Ouvrir le portail de gestion
               </button>
+              <button *ngIf="paypalState?.status === 'APPROVAL_PENDING'" mat-flat-button color="primary" [disabled]="billingLoading || !paypalState?.ready" (click)="goPremium()">Finaliser mon abonnement — 3,99 €/mois</button>
+              <button *ngIf="paypalState?.canCancel" mat-stroked-button color="warn" [disabled]="billingLoading" (click)="cancelSubscription()">Arrêter le renouvellement PayPal</button>
             </div>
           </div>
 
           <div class="subscription-management__details">
             <div><span>Statut</span><strong>{{ isSubscribedActive ? 'Actif' : 'Gratuit' }}</strong></div>
             <div><span>Formule</span><strong>{{ plan }}</strong></div>
-            <div><span>Prochaine échéance</span><strong>{{ endsAtLabel }}</strong></div>
+            <div><span>Accès jusqu’au</span><strong>{{ endsAtLabel }}</strong></div>
+            <div *ngIf="paypalState?.provider === 'paypal'"><span>Renouvellement PayPal</span><strong>{{ paypalState?.status === 'ACTIVE' ? 'Automatique' : paypalState?.status === 'CANCELLED' ? 'Résilié' : paypalState?.status === 'SUSPENDED' ? 'Suspendu' : 'En attente / arrêté' }}</strong></div>
           </div>
 
-          <div class="sub-foot" *ngIf="isSubscribedActive">
+          <div class="sub-foot" *ngIf="isSubscribedActive && paypalState?.provider === 'stripe'">
             <mat-icon>info</mat-icon>
             <span>Le paiement, la facturation et la résiliation sont accessibles depuis le portail sécurisé Stripe.</span>
           </div>
+          <p *ngIf="paypalState?.provider === 'paypal'">Une résiliation arrête les prochains paiements. Ton accès reste disponible jusqu’à la fin de la période payée, sauf remboursement.</p>
           <div class="sub-foot" *ngIf="showUpgradeButton">
             <mat-icon>auto_awesome</mat-icon>
-            <span>Premium débloque l’assistant IA, l’analyse photo et les objectifs avancés.</span>
+            <span>Premium : 3,99 € par mois, renouvellement automatique, résiliable depuis ce profil. Jusqu’à 5 aquariums, 30 analyses IA et 5 analyses photo par mois, avec objectifs avancés. <a routerLink="/terms">Conditions d’utilisation</a>.</span>
           </div>
+          <p *ngIf="showUpgradeButton && paypalState && !paypalState.ready">Les nouvelles souscriptions PayPal ne sont pas encore ouvertes.</p>
         </mat-card>
       </section>
     </mat-tab>
@@ -276,7 +281,7 @@
           <div class="notification-channels">
             <label class="notification-channel">
               <mat-icon>mail</mat-icon>
-              <span><strong>Par email — obligatoire</strong><small>{{ me.email }}</small></span>
+              <span><strong>Par email — obligatoire</strong><small *ngIf="me">{{ me.email }}</small></span>
               <mat-slide-toggle
                 [(ngModel)]="notificationSettings.emailNotifications"
                 [disabled]="true"
@@ -369,6 +374,11 @@
         </div>
 
         <div class="admin-shortcuts" aria-label="Raccourcis d’administration">
+          <a class="admin-shortcut" routerLink="/admin/subscriptions">
+            <span class="admin-shortcut__icon"><mat-icon>credit_card</mat-icon></span>
+            <span class="admin-shortcut__copy"><small>Paiements</small><strong>Abonnements</strong><em>PayPal, confirmations et vérifications</em></span>
+            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
+          </a>
           <a class="admin-shortcut admin-shortcut--primary" routerLink="/admin/metrics">
             <span class="admin-shortcut__icon"><mat-icon>monitoring</mat-icon></span>
             <span class="admin-shortcut__copy"><small>Pilotage</small><strong>Vue d’ensemble</strong><em>Évolution, alertes et activité du site</em></span>

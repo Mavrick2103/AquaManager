@@ -677,9 +677,9 @@ aiChatQuestion = '';
     try {
       const url = await this.billing.createPremiumCheckout();
       window.location.href = url;
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      this.snack.open("Impossible d'ouvrir le paiement Stripe", 'Fermer', {
+      this.snack.open(e?.error?.message || "Impossible d'ouvrir le paiement PayPal", 'Fermer', {
         duration: 3000,
       });
     } finally {
