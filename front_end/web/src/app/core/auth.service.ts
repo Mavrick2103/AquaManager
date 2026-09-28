@@ -55,7 +55,7 @@ export class AuthService {
     });
   }
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string, destination = '/dashboard') {
     const res = await firstValueFrom(
       this.http.post<{ access_token: string }>(
         `${environment.apiUrl}/auth/login`,
@@ -65,8 +65,9 @@ export class AuthService {
     );
 
     this.accessToken = res.access_token;
-    await this.fetchMe();
-    return this.router.navigateByUrl('/dashboard');
+    await this.fetchMe(destination !== '/profile?tab=subscription');
+    // Only the subscription destination is accepted from the public login URL.
+    return this.router.navigateByUrl(destination === '/profile?tab=subscription' ? destination : '/dashboard');
   }
 
   async refreshAccessToken(): Promise<string | null> {
@@ -132,14 +133,14 @@ async resetPassword(token: string, newPassword: string): Promise<{ ok: boolean; 
     );
   }
 
-  async fetchMe() {
+  async fetchMe(offerTour = true) {
     const me = await firstValueFrom(
       this.http.get<Me>(`${environment.apiUrl}/users/me`, {
         headers: this.authHeaders,
       })
     );
     this.me = me;
-    this.siteTour.offerForUser(Number(me.userId));
+    if (offerTour) this.siteTour.offerForUser(Number(me.userId));
     return this.me;
   }
 

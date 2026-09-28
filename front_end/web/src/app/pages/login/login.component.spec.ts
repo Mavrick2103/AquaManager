@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { LoginComponent } from './login.component';
 import { AuthService } from '../../core/auth.service';
@@ -76,6 +76,22 @@ describe('LoginComponent', () => {
 
     expect(component.errorMsg()).toBe('Bad credentials');
     expect(component.loading()).toBeFalse();
+  }));
+
+  it('conserve la destination abonnement après connexion', fakeAsync(() => {
+    spyOnProperty(TestBed.inject(ActivatedRoute).snapshot, 'queryParamMap', 'get').and.returnValue(convertToParamMap({ returnUrl: '/profile?tab=subscription' }));
+    authSpy.login.and.returnValue(Promise.resolve(true));
+    component.form.setValue({ email: 'test@mail.com', password: 'secret123', remember: true });
+    component.submit(); tick();
+    expect(authSpy.login).toHaveBeenCalledWith('test@mail.com', 'secret123', '/profile?tab=subscription');
+  }));
+
+  it('ignore une destination externe', fakeAsync(() => {
+    spyOnProperty(TestBed.inject(ActivatedRoute).snapshot, 'queryParamMap', 'get').and.returnValue(convertToParamMap({ returnUrl: 'https://example.com' }));
+    authSpy.login.and.returnValue(Promise.resolve(true));
+    component.form.setValue({ email: 'test@mail.com', password: 'secret123', remember: true });
+    component.submit(); tick();
+    expect(authSpy.login).toHaveBeenCalledWith('test@mail.com', 'secret123');
   }));
 
   it('emailErr devrait retourner "Email invalide" si mauvais format', () => {

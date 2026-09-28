@@ -65,6 +65,7 @@ export class AdminMarketingComponent implements OnInit {
   @ViewChild('progressFill') private progressFill?: ElementRef<HTMLElement>;
   generationLabel = '';
   private generationTimer: ReturnType<typeof setInterval> | null = null;
+  instagramConnectionMessage: string | null = null;
   instagramConnected = false;
   instagramUsername: string | null = null;
   savingSchedule = false;
@@ -312,11 +313,13 @@ export class AdminMarketingComponent implements OnInit {
   refreshInstagramStatus(): void {
     this.api.instagramStatus().subscribe({
       next: (status) => {
+        this.instagramConnectionMessage = status.error || status.renewalWarning || null;
         this.instagramConnected = status.connected;
         this.instagramUsername = status.username;
         this.cdr.markForCheck();
       },
       error: () => {
+        this.instagramConnectionMessage = 'Impossible de vérifier la connexion Instagram. Réessayez dans un instant.';
         this.instagramConnected = false;
         this.instagramUsername = null;
         this.cdr.markForCheck();

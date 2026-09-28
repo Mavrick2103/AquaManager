@@ -6,3 +6,6 @@ npm-debug.log
 .git
 .gitignore
 .env
+
+.private
+.env.*

@@ -922,3 +922,5 @@
     transition: none !important;
   }
 }
+
+.premium-price { display: flex; align-items: baseline; gap: 8px; margin: 8px 0 16px; color: #173f40; strong { font-size: 2rem; } span { font-size: .95rem; } }

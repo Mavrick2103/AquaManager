@@ -7,9 +7,11 @@ import { Article } from '../articles/entities/article.entity';
 import { User } from '../users/user.entity';
 import { MarketingAgentSettings } from './marketing-agent-settings.entity';
 
+import { InstagramTokenService } from './instagram-token.service';
+
 @Module({
   imports: [TypeOrmModule.forFeature([MarketingPost, Article, User, MarketingAgentSettings])],
   controllers: [MarketingController],
-  providers: [MarketingService],
+  providers: [MarketingService, InstagramTokenService],
 })
 export class MarketingModule {}

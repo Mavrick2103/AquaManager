@@ -16,6 +16,8 @@ import { User } from '../users/user.entity';
 import { MarketingAgentSettings } from './marketing-agent-settings.entity';
 import { UpdateMarketingAgentSettingsDto } from './dto/marketing-post.dto';
 
+import { InstagramTokenService } from './instagram-token.service';
+
 @Injectable()
 export class MarketingService {
   constructor(
@@ -27,6 +29,7 @@ export class MarketingService {
     private readonly users: Repository<User>,
     @InjectRepository(MarketingAgentSettings)
     private readonly agentSettings: Repository<MarketingAgentSettings>,
+    private readonly instagramTokens: InstagramTokenService,
   ) {}
 
   async getAgentSettings() {
@@ -389,7 +392,17 @@ ${previous}
   }
 
   async instagramStatus() {
-    const token = process.env.META_INSTAGRAM_ACCESS_TOKEN?.trim();
+    const renewal = await this.instagramTokens.health();
+    try {
+      return { ...await this.instagramIdentity(), ...renewal };
+    } catch {
+      return { connected: false, username: null, accountId: null,
+        error: 'Connexion Instagram indisponible. Vérifiez le serveur et réessayez.', ...renewal };
+    }
+  }
+
+  private async instagramIdentity() {
+    const token = await this.instagramTokens.accessToken();
     if (!token) {
       return { connected: false, username: null, accountId: null };
     }
@@ -397,7 +410,7 @@ ${previous}
     const version = process.env.META_GRAPH_VERSION?.trim() || 'v25.0';
     const response = await fetch(
       `https://graph.instagram.com/${version}/me?fields=id,username`,
-      { headers: { Authorization: `Bearer ${token}` } },
+      { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000) },
     );
     const data: any = await response.json();
     if (!response.ok) {
@@ -405,7 +418,9 @@ ${previous}
         connected: false,
         username: null,
         accountId: null,
-        error: data?.error?.message || 'Token Instagram invalide ou expiré',
+        error: data?.error?.code === 190
+          ? 'Connexion Instagram expirée ou révoquée : reconnectez le compte.'
+          : 'Instagram refuse la connexion. Vérifiez les autorisations du compte.',
       };
     }
 
@@ -430,7 +445,7 @@ ${previous}
       );
     }
 
-    const token = process.env.META_INSTAGRAM_ACCESS_TOKEN?.trim();
+    const token = await this.instagramTokens.accessToken();
     if (!token) {
       throw new BadRequestException('Connexion Instagram non configurée');
     }

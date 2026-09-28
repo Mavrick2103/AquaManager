@@ -66,6 +66,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private billing = inject(BillingService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  selectedTabIndex = this.route.snapshot.queryParamMap.get('tab') === 'subscription' ? 1 : 0;
   paypalState: PaypalBillingStatus | null = null;
   private paymentCheckTimer?: ReturnType<typeof setTimeout>;
   private destroyed = false;

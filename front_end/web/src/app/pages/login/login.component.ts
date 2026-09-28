@@ -1,7 +1,7 @@
 import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 /* Angular Material */
 import { MatCardModule } from '@angular/material/card';
@@ -28,6 +28,7 @@ import { AuthService } from '../../core/auth.service';
 export class LoginComponent {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private auth = inject(AuthService);
 
   hide = signal(true);
@@ -68,7 +69,12 @@ export class LoginComponent {
     const { email, password } = this.form.value;
     if (!email || !password) return;
 
-    await this.auth.login(email, password);
+    const destination = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (destination === '/profile?tab=subscription') {
+      await this.auth.login(email, password, destination);
+    } else {
+      await this.auth.login(email, password);
+    }
 
   } catch (e: any) {
     this.errorMsg.set(e?.error?.message ?? 'Échec de la connexion');

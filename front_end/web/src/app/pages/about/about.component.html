@@ -145,18 +145,18 @@
         <span class="section-kicker">Une formule adaptée à chaque aquariophile</span>
         <h2>Commencez gratuitement avec Classic</h2>
         <p>
-          AquaManager est accessible gratuitement avec la formule Classic. Les abonnements Premium
-          et Pro sont encore en préparation et seront proposés prochainement.
+          AquaManager est accessible gratuitement avec la formule Classic. Premium est disponible à 3,99 € par mois.
+          La formule Pro est encore en préparation.
         </p>
       </div>
 
       <div class="plans-notice" role="note">
         <span><mat-icon>campaign</mat-icon></span>
         <div>
-          <strong>Premium et Pro arrivent prochainement</strong>
+          <strong>Premium est disponible à 3,99 € par mois</strong>
           <p>
-            Les fonctionnalités sont présentées pour vous donner un aperçu de la suite.
-            Aucun abonnement payant n’est disponible pour le moment.
+            Paiement par PayPal avec renouvellement mensuel automatique. Vous pouvez arrêter le renouvellement
+            depuis votre profil et conserver votre accès jusqu’à la fin de la période payée, sauf remboursement.
           </p>
         </div>
       </div>
@@ -176,16 +176,17 @@
         </article>
 
         <article class="plan-card plan-card--featured">
-          <span class="plan-status">Bientôt disponible</span>
+          <span class="plan-status plan-status--available">Disponible dès maintenant</span>
           <span class="plan-name">Premium</span>
           <h3>Pour aller plus loin</h3>
+          <div class="premium-price"><strong>3,99 €</strong><span>/ mois</span></div>
           <p>L’analyse par IA et davantage de capacité pour suivre jusqu’à cinq aquariums.</p>
           <ul>
             <li><mat-icon>check</mat-icon>Tout le contenu Classic</li>
             <li><mat-icon>check</mat-icon>Analyses IA approfondies</li>
             <li><mat-icon>check</mat-icon>Suggestions de tâches</li>
           </ul>
-          <span class="coming-soon-action"><mat-icon>schedule</mat-icon>Arrive prochainement</span>
+          <a mat-flat-button routerLink="/profile" [queryParams]="{ tab: 'subscription' }">Passer à Premium — 3,99 €/mois</a>
         </article>
 
         <article class="plan-card">

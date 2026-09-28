@@ -47,6 +47,8 @@ services:
 
       # MARKETING / INSTAGRAM
       META_INSTAGRAM_ACCESS_TOKEN: ${META_INSTAGRAM_ACCESS_TOKEN}
+      META_INSTAGRAM_AUTO_REFRESH: ${META_INSTAGRAM_AUTO_REFRESH:-true}
+      META_INSTAGRAM_TOKEN_FILE: /data/instagram-private/token.json
       META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v25.0}
       PUBLIC_MEDIA_URL: ${PUBLIC_MEDIA_URL:-https://aquamanager.fr}
       AQUAMANAGER_BRAND_LOGO_PATH: /app/assets/Logo_AquaManger.png
@@ -90,6 +92,7 @@ services:
     ports:
       - "${API_HOST_PORT:-127.0.0.1:3000}:3000"
     volumes:
+      - instagram_tokens:/data/instagram-private
       - ${UPLOADS_HOST_PATH:-./data/uploads}:/data/uploads
       - ${TMP_HOST_PATH:-./data/tmp}:/app/tmp
       - ./front_end/web/public/Logo_AquaManger.png:/app/assets/Logo_AquaManger.png:ro
@@ -134,6 +137,7 @@ services:
       - certbot_certs:/etc/letsencrypt
 
 volumes:
+  instagram_tokens:
   db_data:
   certbot_www:
   certbot_certs:

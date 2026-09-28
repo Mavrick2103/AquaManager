@@ -83,12 +83,14 @@ export class MarketingService {
     username: string | null;
     accountId: string | null;
     error?: string;
+    renewalWarning?: string | null;
   }> {
     return this.http.get<{
       connected: boolean;
       username: string | null;
       accountId: string | null;
       error?: string;
+    renewalWarning?: string | null;
     }>(`${this.base}/instagram/status`, { withCredentials: true });
   }
 
