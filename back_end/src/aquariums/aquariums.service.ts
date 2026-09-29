@@ -121,46 +121,51 @@ export class AquariumsService {
   async create(userId: number, dto: CreateAquariumDto) {
     if (!Number.isFinite(userId)) throw new BadRequestException('User id invalide');
 
-    const user = await this.users.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('Utilisateur introuvable');
-
-    const effectivePlan = await this.usersService.getEffectivePlan(userId);
-    const limit = effectivePlan === 'CLASSIC' ? 2 : effectivePlan === 'PREMIUM' ? 5 : null;
-
-    if (limit !== null) {
-      const aquariumCount = await this.repo.count({
-        where: { user: { id: userId } },
+    const saved = await this.repo.manager.transaction('READ COMMITTED', async (manager) => {
+      const user = await manager.getRepository(User).findOne({
+        where: { id: userId }, lock: { mode: 'pessimistic_write' },
       });
-      if (aquariumCount >= limit) {
-        throw new ForbiddenException({
-          code: 'AQUARIUM_LIMIT_REACHED',
-          message:
-            effectivePlan === 'CLASSIC'
-              ? 'Le plan Classic permet de créer jusqu’à 2 aquariums.'
-              : 'Le plan Premium permet de créer jusqu’à 5 aquariums.',
-          plan: effectivePlan,
-          limit,
+      if (!user) throw new NotFoundException('Utilisateur introuvable');
+      const aquariums = manager.getRepository(Aquarium);
+
+      const effectivePlan = await this.usersService.getEffectivePlan(userId, user);
+      const limit = effectivePlan === 'CLASSIC' ? 2 : effectivePlan === 'PREMIUM' ? 5 : null;
+
+      if (limit !== null) {
+        const aquariumCount = await aquariums.count({
+          where: { user: { id: userId } },
         });
+        if (aquariumCount >= limit) {
+          throw new ForbiddenException({
+            code: 'AQUARIUM_LIMIT_REACHED',
+            message:
+              effectivePlan === 'CLASSIC'
+                ? 'Le plan Classic permet de créer jusqu’à 2 aquariums.'
+                : 'Le plan Premium permet de créer jusqu’à 5 aquariums.',
+            plan: effectivePlan,
+            limit,
+          });
+        }
       }
-    }
 
-    const volumeL = Math.round((dto.lengthCm * dto.widthCm * dto.heightCm) / 1000);
+      const volumeL = Math.round((dto.lengthCm * dto.widthCm * dto.heightCm) / 1000);
 
-    const startDate =
-      (dto as any).startDate instanceof Date ? (dto as any).startDate : new Date(dto.startDate);
+      const startDate =
+        (dto as any).startDate instanceof Date ? (dto as any).startDate : new Date(dto.startDate);
 
-    const aquarium = this.repo.create({
-      name: dto.name.trim(),
-      lengthCm: dto.lengthCm,
-      widthCm: dto.widthCm,
-      heightCm: dto.heightCm,
-      volumeL,
-      waterType: dto.waterType,
-      startDate,
-      user: { id: userId } as any,
+      const aquarium = aquariums.create({
+        name: dto.name.trim(),
+        lengthCm: dto.lengthCm,
+        widthCm: dto.widthCm,
+        heightCm: dto.heightCm,
+        volumeL,
+        waterType: dto.waterType,
+        startDate,
+        user: { id: userId } as any,
+      });
+
+      return aquariums.save(aquarium);
     });
-
-    const saved = await this.repo.save(aquarium);
     await this.usersService.touchActivity(userId);
 
     return saved;

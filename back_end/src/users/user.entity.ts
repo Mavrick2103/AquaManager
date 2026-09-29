@@ -34,6 +34,12 @@ export class User {
   @Column({ default: 'USER' })
   role: 'USER' | 'ADMIN' | 'EDITOR';
 
+  @Column({ default: 0 })
+  authVersion: number;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  pendingEmail: string | null;
+
   // ===== Subscription (paywall) =====
   @Column({
     type: 'enum',

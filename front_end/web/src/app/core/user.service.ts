@@ -18,6 +18,7 @@ export interface UserMe {
 export interface UpdateMeDto {
   email?: string;
   fullName?: string;
+  currentPassword?: string;
 }
 
 export interface ChangePasswordDto {

@@ -1,6 +1,7 @@
 name: CI - Cypress & Jasmine (frontend)
 
 on:
+  pull_request:
   push:
     branches: [ main ]
 

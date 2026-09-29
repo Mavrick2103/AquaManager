@@ -31,6 +31,21 @@ export class LoginComponent {
   private route = inject(ActivatedRoute);
   private auth = inject(AuthService);
 
+  verificationMessage = signal<string | null>(null);
+  resending = signal(false);
+
+  async resendVerification() {
+    const email = this.form.controls.email;
+    if (email.invalid) { email.markAsTouched(); return; }
+    this.resending.set(true);
+    try {
+      const result = await this.auth.resendVerification(email.value!);
+      this.verificationMessage.set(result.message);
+    } catch {
+      this.verificationMessage.set('Impossible de renvoyer le lien pour le moment. Réessaie plus tard.');
+    } finally { this.resending.set(false); }
+  }
+
   hide = signal(true);
   loading = signal(false);
   errorMsg = signal<string | null>(null);

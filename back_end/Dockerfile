@@ -22,5 +22,8 @@ RUN npm ci --omit=dev
 # Récupérer le build NestJS
 COPY --from=builder /app/dist ./dist
 
+COPY scripts ./scripts
+COPY migrations ./migrations
+
 EXPOSE 3000
 CMD ["node", "dist/src/main.js"]

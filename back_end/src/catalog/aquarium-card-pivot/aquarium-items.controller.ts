@@ -1,5 +1,7 @@
 import {
   Body,
+  Req,
+  NotFoundException,
   Controller,
   Delete,
   Get,
@@ -13,25 +15,35 @@ import { Repository } from 'typeorm';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AquariumFishCard } from './aquarium-fish-card.entity';
 import { AquariumPlantCard } from './aquarium-plant-card.entity';
+import { Aquarium } from '../../aquariums/aquariums.entity';
 import { AddAquariumItemDto } from './dto/add-aquarium-item.dto';
 
 @Controller('aquariums')
 @UseGuards(JwtAuthGuard)
 export class AquariumItemsController {
   constructor(
+    @InjectRepository(Aquarium) private readonly aquariumRepo: Repository<Aquarium>,
     @InjectRepository(AquariumFishCard)
     private readonly fishRepo: Repository<AquariumFishCard>,
     @InjectRepository(AquariumPlantCard)
     private readonly plantRepo: Repository<AquariumPlantCard>,
   ) {}
 
+  private async assertOwner(aquariumId: number, userId: number) {
+    if (!Number.isInteger(aquariumId) || aquariumId <= 0) throw new BadRequestException('Invalid aquariumId');
+    if (!Number.isInteger(userId) || !await this.aquariumRepo.existsBy({ id: aquariumId, user: { id: userId } })) {
+      throw new NotFoundException('Aquarium introuvable');
+    }
+  }
+
   // =========================
   // ===== FISH =====
   // =========================
 
   @Get(':id/fish')
-  async listFish(@Param('id') id: string) {
+  async listFish(@Req() req: { user: { userId: number } }, @Param('id') id: string) {
     const aquariumId = Number(id);
+    await this.assertOwner(aquariumId, req.user.userId);
     if (!aquariumId) throw new BadRequestException('Invalid aquariumId');
 
     const rows = await this.fishRepo.find({
@@ -62,8 +74,9 @@ export class AquariumItemsController {
   }
 
   @Post(':id/fish')
-  async addFish(@Param('id') id: string, @Body() dto: AddAquariumItemDto) {
+  async addFish(@Req() req: { user: { userId: number } }, @Param('id') id: string, @Body() dto: AddAquariumItemDto) {
     const aquariumId = Number(id);
+    await this.assertOwner(aquariumId, req.user.userId);
     if (!aquariumId) throw new BadRequestException('Invalid aquariumId');
 
     const existing = await this.fishRepo.findOne({
@@ -85,8 +98,9 @@ export class AquariumItemsController {
   }
 
   @Delete(':id/fish/:rowId')
-  async removeFish(@Param('id') id: string, @Param('rowId') rowId: string) {
+  async removeFish(@Req() req: { user: { userId: number } }, @Param('id') id: string, @Param('rowId') rowId: string) {
     const aquariumId = Number(id);
+    await this.assertOwner(aquariumId, req.user.userId);
     const rid = Number(rowId);
     if (!aquariumId || !rid) throw new BadRequestException('Invalid ids');
 
@@ -99,8 +113,9 @@ export class AquariumItemsController {
   // =========================
 
   @Get(':id/plants')
-  async listPlants(@Param('id') id: string) {
+  async listPlants(@Req() req: { user: { userId: number } }, @Param('id') id: string) {
     const aquariumId = Number(id);
+    await this.assertOwner(aquariumId, req.user.userId);
     if (!aquariumId) throw new BadRequestException('Invalid aquariumId');
 
     const rows = await this.plantRepo.find({
@@ -123,8 +138,9 @@ export class AquariumItemsController {
   }
 
   @Post(':id/plants')
-  async addPlant(@Param('id') id: string, @Body() dto: AddAquariumItemDto) {
+  async addPlant(@Req() req: { user: { userId: number } }, @Param('id') id: string, @Body() dto: AddAquariumItemDto) {
     const aquariumId = Number(id);
+    await this.assertOwner(aquariumId, req.user.userId);
     if (!aquariumId) throw new BadRequestException('Invalid aquariumId');
 
     const existing = await this.plantRepo.findOne({
@@ -146,8 +162,9 @@ export class AquariumItemsController {
   }
 
   @Delete(':id/plants/:rowId')
-  async removePlant(@Param('id') id: string, @Param('rowId') rowId: string) {
+  async removePlant(@Req() req: { user: { userId: number } }, @Param('id') id: string, @Param('rowId') rowId: string) {
     const aquariumId = Number(id);
+    await this.assertOwner(aquariumId, req.user.userId);
     const rid = Number(rowId);
     if (!aquariumId || !rid) throw new BadRequestException('Invalid ids');
 

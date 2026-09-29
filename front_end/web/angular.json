@@ -41,6 +41,9 @@
           },
           "configurations": {
             "production": {
+              "security": {
+                "allowedHosts": ["aquamanager.fr", "www.aquamanager.fr"]
+              },
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",

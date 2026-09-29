@@ -1,16 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { AuthSessionService, SessionPayload } from './auth-session.service';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 
-interface JwtPayload {
-  sub: number;
-  role: string;
-}
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly config: ConfigService) {
+  constructor(private readonly config: ConfigService, private readonly sessions: AuthSessionService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -18,11 +14,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload) {
-    return {
-      userId: payload.sub,
-      role: (payload.role || 'USER').toUpperCase(),
-    };
+  async validate(payload: SessionPayload) {
+    if (payload.kind !== 'access') throw new UnauthorizedException('Jeton d’accès requis');
+    const user = await this.sessions.validate(payload);
+    return { userId: user.id, role: user.role.toUpperCase() };
   }
 }
-

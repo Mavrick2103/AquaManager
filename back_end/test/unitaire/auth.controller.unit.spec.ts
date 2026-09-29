@@ -12,6 +12,8 @@ describe('AuthController', () => {
   beforeEach(async () => {
     const serviceMock: Partial<jest.Mocked<AuthService>> = {
       login: jest.fn(),
+      refreshTokens: jest.fn(),
+      logout: jest.fn(),
       verifyRefresh: jest.fn(),
       signAccess: jest.fn(),
       signRefresh: jest.fn(),
@@ -60,7 +62,7 @@ describe('AuthController', () => {
         'refresh-token',
         expect.objectContaining({
           httpOnly: true,
-          path: '/api/auth/refresh',
+          path: '/api/auth',
           sameSite: 'strict',
         }),
       );
@@ -74,28 +76,18 @@ describe('AuthController', () => {
       const res = makeRes();
 
       // Payload minimal et permissif : pas d'email, rôle potentiellement en MAJ
-      service.verifyRefresh.mockResolvedValue({ sub: 1, role: 'USER' } as any);
-      service.signAccess.mockResolvedValue('new-access');
-      service.signRefresh.mockResolvedValue('new-refresh');
+      service.refreshTokens.mockResolvedValue({ access: 'new-access', refresh: 'new-refresh' });
 
       const out = await controller.refresh(req, res);
 
-      expect(service.verifyRefresh).toHaveBeenCalledWith('old-refresh');
-
-      // On n'impose plus la présence d'email et on tolère USER/user
-      expect(service.signAccess).toHaveBeenCalledWith(
-        expect.objectContaining({ sub: 1, role: expect.stringMatching(/^user$/i) }),
-      );
-      expect(service.signRefresh).toHaveBeenCalledWith(
-        expect.objectContaining({ sub: 1, role: expect.stringMatching(/^user$/i) }),
-      );
+      expect(service.refreshTokens).toHaveBeenCalledWith('old-refresh');
 
       expect(res.cookie).toHaveBeenCalledWith(
         'refresh_token',
         'new-refresh',
         expect.objectContaining({
           httpOnly: true,
-          path: '/api/auth/refresh',
+          path: '/api/auth',
           sameSite: 'strict',
         }),
       );
@@ -109,14 +101,14 @@ describe('AuthController', () => {
       const out = await controller.refresh(req, res);
 
       expect(out).toEqual({ access_token: null });
-      expect(service.verifyRefresh).not.toHaveBeenCalled();
+      expect(service.refreshTokens).not.toHaveBeenCalled();
     });
 
     it('renvoie access_token:null si verifyRefresh jette', async () => {
       const req = { cookies: { refresh_token: 'bad' } } as any;
       const res = makeRes();
 
-      service.verifyRefresh.mockRejectedValue(new Error('invalid'));
+      service.refreshTokens.mockRejectedValue(new Error('invalid'));
 
       const out = await controller.refresh(req, res);
 
@@ -130,11 +122,11 @@ describe('AuthController', () => {
     it('efface le cookie et renvoie message ok', async () => {
       const res = makeRes();
 
-      const out = await controller.logout(res);
+      const out = await controller.logout(res, { cookies: {} } as any);
 
       expect(res.clearCookie).toHaveBeenCalledWith(
         'refresh_token',
-        expect.objectContaining({ path: '/api/auth/refresh' }),
+        expect.objectContaining({ path: '/api/auth' }),
       );
       expect(out).toEqual({ message: 'ok' });
     });

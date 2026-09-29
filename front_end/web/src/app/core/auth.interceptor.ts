@@ -34,6 +34,10 @@ export class AuthInterceptor implements HttpInterceptor {
         }
 
         return from(this.auth.refreshAccessToken()).pipe(
+          catchError(() => {
+            this.auth.logout();
+            return throwError(() => err);
+          }),
           switchMap((newToken) => {
             if (!newToken) {
               this.auth.logout();
@@ -42,12 +46,11 @@ export class AuthInterceptor implements HttpInterceptor {
             const replay = req.clone({
               setHeaders: { Authorization: `Bearer ${newToken}` },
             });
-            return next.handle(replay);
+            return next.handle(replay).pipe(catchError((replayError: HttpErrorResponse) => {
+              if (replayError.status === 401) this.auth.logout();
+              return throwError(() => replayError);
+            }));
           }),
-          catchError(() => {
-            this.auth.logout();
-            return throwError(() => err);
-          })
         );
       })
     );

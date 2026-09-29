@@ -7,6 +7,7 @@ export interface SeoPage {
   description: string;
   path: string;
   image?: string | null;
+  robots?: string;
   type?: 'website' | 'article';
   structuredData?: Record<string, unknown>;
 }
@@ -25,7 +26,7 @@ export class SeoService {
 
     this.title.setTitle(page.title);
     this.updateName('description', page.description);
-    this.updateName('robots', 'index,follow,max-image-preview:large');
+    this.updateName('robots', page.robots ?? 'index,follow,max-image-preview:large');
     this.updateProperty('og:title', page.title);
     this.updateProperty('og:description', page.description);
     this.updateProperty('og:type', page.type ?? 'website');

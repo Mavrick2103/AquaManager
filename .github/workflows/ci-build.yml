@@ -1,6 +1,7 @@
 name: CI - Build (frontend)
 
 on:
+  pull_request:
   push:
 
 jobs:
@@ -19,7 +20,7 @@ jobs:
       - name: Install deps
         run: |
           cd front_end/web
-          npm install
+          npm ci
 
       - name: Build project
         run: |

@@ -142,10 +142,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
 
     this.form = this.fb.group({
-      fullName: ['', [Validators.required, Validators.maxLength(80)]],
+      fullName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
       email: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
       currentPassword: [''],
-      newPassword: ['', [Validators.minLength(6)]],
+      newPassword: ['', [Validators.minLength(8), Validators.pattern(/^(?=.*[!@#$%^&*(),.?":{}|<>_\-=/+]).+$/)]],
     });
 
     await this.reloadMe();
@@ -365,6 +365,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
       const profileDto: any = {};
       if (v.fullName?.trim() !== this.orig.fullName) profileDto.fullName = v.fullName.trim();
       if (v.email?.trim() !== this.orig.email) profileDto.email = v.email.trim();
+      if (profileDto.email && v.newPassword) {
+        this.snack.open('Modifie ton e-mail et ton mot de passe séparément.', 'OK', { duration: 5000 });
+        return;
+      }
+      if (profileDto.email) profileDto.currentPassword = v.currentPassword || undefined;
 
       if (Object.keys(profileDto).length) {
         const updated = await this.users.updateMe(profileDto);
@@ -380,9 +385,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
         });
         this.currPwdCtrl.setValue('');
         this.newPwdCtrl.setValue('');
+        await this.auth.logout();
+        this.snack.open('Mot de passe modifié. Reconnecte-toi avec le nouveau mot de passe.', 'OK', { duration: 6000 });
+        return;
       }
 
-      this.snack.open('Modifications enregistrées ✅', 'OK', { duration: 1800 });
+      this.emailCtrl.setValue(this.orig.email);
+      this.snack.open(profileDto.email ? 'Un lien de confirmation a été envoyé à la nouvelle adresse. Ton adresse actuelle reste active.' : 'Modifications enregistrées ✅', 'OK', { duration: 6000 });
       this.form.markAsPristine();
     } catch (e: any) {
       this.snack.open(e?.error?.message || 'Échec de l’enregistrement', 'Fermer', {

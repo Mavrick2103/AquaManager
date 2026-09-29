@@ -61,6 +61,10 @@ describe('Aquariums (tests fonctionnels)', () => {
       getEffectivePlan: jest.fn().mockResolvedValue('CLASSIC'),
     };
 
+    Object.assign(aquariumRepoMock, { manager: { transaction: jest.fn(async (_isolation, work) => work({
+      getRepository: (entity: unknown) => entity === User ? usersRepoMock : aquariumRepoMock,
+    })) } });
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AquariumsController],
       providers: [
@@ -99,7 +103,7 @@ describe('Aquariums (tests fonctionnels)', () => {
 
     const created = await controller.create(req, dto as any);
 
-    expect(usersRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(usersRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 }, lock: { mode: 'pessimistic_write' } });
     expect(repo.create).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'Proxima 175',

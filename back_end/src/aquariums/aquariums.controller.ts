@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { AquariumsService } from './aquariums.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UpdateAquariumDto } from './dto/update-aquarium.dto';
 import { CreateAquariumDto } from './dto/create-aquarium.dto';
 
 @Controller('aquariums')
@@ -35,7 +36,7 @@ export class AquariumsController {
   update(
     @Request() req,
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: Partial<CreateAquariumDto>,
+    @Body() dto: UpdateAquariumDto,
   ) {
     return this.service.update(req.user.userId, id, dto);
   }

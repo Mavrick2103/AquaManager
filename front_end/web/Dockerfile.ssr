@@ -16,6 +16,7 @@ ENV NODE_ENV=production
 ENV PORT=4000
 
 COPY --from=builder /app/dist/web ./dist/web
+COPY scripts/check-ssr.cjs ./scripts/check-ssr.cjs
 
 EXPOSE 4000
 CMD ["node", "dist/web/server/server.mjs"]

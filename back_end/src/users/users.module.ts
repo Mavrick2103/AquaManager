@@ -1,3 +1,4 @@
+import { MailModule } from '../mail/mail.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -20,6 +21,7 @@ import { Settings } from '../settings/settings.entity';
 
 @Module({
   imports: [
+    MailModule,
     TypeOrmModule.forFeature([
       User,
       Aquarium,

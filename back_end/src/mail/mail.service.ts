@@ -230,19 +230,19 @@ ${params.message}
 
     const files = params.attachments ?? [];
 
-    // ✅ Convertit les fichiers uploadés en pièces jointes Nodemailer
-    const attachments = await Promise.all(
-      files.map(async (f) => {
-        const content = await readFile(f.path);
-        return {
-          filename: f.originalname,
-          content,
-          contentType: f.mimetype,
-        };
-      })
-    );
-
     try {
+      // Contact uploads stay in memory, including when DTO validation rejects them.
+      const attachments = await Promise.all(
+        files.map(async (f) => {
+          const content = f.buffer ?? await readFile(f.path);
+          return {
+            filename: f.originalname,
+            content,
+            contentType: f.mimetype,
+          };
+        })
+      );
+
       await this.transporter.sendMail({
         from: this.from(),
         to,                          // ✅ ton email de réception
@@ -255,7 +255,7 @@ ${params.message}
       this.logger.log(`Contact email sent from ${params.fromEmail} (${label})`);
     } finally {
       // ✅ Nettoyage des fichiers temporaires (même si erreur)
-      await Promise.allSettled(files.map((f) => unlink(f.path)));
+      await Promise.allSettled(files.filter(f => f.path).map((f) => unlink(f.path)));
     }
   }
 

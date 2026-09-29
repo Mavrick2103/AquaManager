@@ -111,9 +111,9 @@ export class BillingService {
       throw new NotFoundException("Aucun abonnement Stripe à résilier.");
     }
 
-    const updatedRes = await this.stripe.subscriptions.update(state.stripeSubscriptionId, {
-      cancel_at_period_end: cancelAtPeriodEnd,
-    });
+    const updatedRes = cancelAtPeriodEnd
+      ? await this.stripe.subscriptions.update(state.stripeSubscriptionId, { cancel_at_period_end: true })
+      : await this.stripe.subscriptions.cancel(state.stripeSubscriptionId);
 
     const sub = unwrapStripeResponse<any>(updatedRes);
 

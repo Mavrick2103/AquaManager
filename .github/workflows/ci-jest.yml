@@ -1,6 +1,7 @@
 name: CI - Jest (backend)
 
 on:
+  pull_request:
   push:
 
 jobs:
@@ -19,7 +20,7 @@ jobs:
       - name: Install backend deps
         run: |
           cd back_end
-          npm install
+          npm ci
 
       - name: Run Jest tests
         run: |

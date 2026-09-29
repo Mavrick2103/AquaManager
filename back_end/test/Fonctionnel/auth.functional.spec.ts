@@ -1,3 +1,4 @@
+import { AuthSessionService } from '../../src/auth/auth-session.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -34,7 +35,7 @@ describe('Auth (tests fonctionnels)', () => {
       create: jest.fn(),
 
       // ✅ nouvelles méthodes
-      setEmailVerifyToken: jest.fn().mockResolvedValue(undefined),
+      setEmailVerifyToken: jest.fn().mockResolvedValue(true),
       verifyEmailByTokenHash: jest.fn().mockResolvedValue(null),
 
       setPasswordResetToken: jest.fn().mockResolvedValue(null),
@@ -43,6 +44,7 @@ describe('Auth (tests fonctionnels)', () => {
 
     const jwtMock: Partial<jest.Mocked<JwtService>> = {
       signAsync: jest.fn(),
+      decode: jest.fn().mockReturnValue({ exp: Math.floor(Date.now()/1000) + 86400 }),
       verifyAsync: jest.fn(),
     };
 
@@ -59,6 +61,10 @@ describe('Auth (tests fonctionnels)', () => {
       controllers: [AuthController],
       providers: [
         AuthService,
+        { provide: AuthSessionService, useValue: {
+          create: jest.fn(), rotate: jest.fn(), revoke: jest.fn(),
+          validate: jest.fn().mockResolvedValue({ id: 1, role: 'USER', authVersion: 0, emailVerifiedAt: new Date() }),
+        } },
         { provide: UsersService, useValue: usersMock },
         { provide: JwtService, useValue: jwtMock },
         { provide: ConfigService, useValue: configMock },
@@ -89,7 +95,7 @@ describe('Auth (tests fonctionnels)', () => {
       return call === 1 ? 'ACCESS_TOKEN' : 'REFRESH_TOKEN';
     });
 
-    const res: any = { cookie: jest.fn() };
+    const res: any = { cookie: jest.fn(), clearCookie: jest.fn() };
     const body = { email: 'test@mail.com', password: 'secret123' };
 
     const result = await controller.login(body as any, res);
@@ -103,7 +109,7 @@ describe('Auth (tests fonctionnels)', () => {
       'REFRESH_TOKEN',
       expect.objectContaining({
         httpOnly: true,
-        path: '/api/auth/refresh',
+        path: '/api/auth',
       }),
     );
 
@@ -112,7 +118,7 @@ describe('Auth (tests fonctionnels)', () => {
 
   it('login() -> Unauthorized si email inconnu', async () => {
     users.findByEmailWithPassword.mockResolvedValue(null as any);
-    const res: any = { cookie: jest.fn() };
+    const res: any = { cookie: jest.fn(), clearCookie: jest.fn() };
 
     await expect(
       controller.login({ email: 'unknown@mail.com', password: 'secret' } as any, res),
@@ -130,7 +136,7 @@ describe('Auth (tests fonctionnels)', () => {
       emailVerifiedAt: null,
     } as any);
 
-    const res: any = { cookie: jest.fn() };
+    const res: any = { cookie: jest.fn(), clearCookie: jest.fn() };
 
     await expect(
       controller.login({ email: 'test@mail.com', password: 'secret123' } as any, res),
@@ -148,7 +154,7 @@ describe('Auth (tests fonctionnels)', () => {
       emailVerifiedAt: new Date(),
     } as any);
 
-    const res: any = { cookie: jest.fn() };
+    const res: any = { cookie: jest.fn(), clearCookie: jest.fn() };
 
     await expect(
       controller.login({ email: 'test@mail.com', password: 'wrong' } as any, res),
@@ -159,7 +165,7 @@ describe('Auth (tests fonctionnels)', () => {
 
   it('refresh() -> renvoie access_token null si pas de cookie', async () => {
     const req: any = { cookies: {} };
-    const res: any = { cookie: jest.fn() };
+    const res: any = { cookie: jest.fn(), clearCookie: jest.fn() };
 
     const result = await controller.refresh(req, res);
     expect(result).toEqual({ access_token: null });
@@ -167,7 +173,7 @@ describe('Auth (tests fonctionnels)', () => {
 
   it('refresh() -> renvoie access_token null si verifyRefresh échoue', async () => {
     const req: any = { cookies: { refresh_token: 'BAD_TOKEN' } };
-    const res: any = { cookie: jest.fn() };
+    const res: any = { cookie: jest.fn(), clearCookie: jest.fn() };
 
     jest.spyOn(auth, 'verifyRefresh').mockRejectedValue(new Error('invalid'));
 
@@ -180,7 +186,7 @@ describe('Auth (tests fonctionnels)', () => {
 
   it('refresh() -> génère un nouvel access token + refresh token et met à jour le cookie', async () => {
     const req: any = { cookies: { refresh_token: 'OLD_REFRESH' } };
-    const res: any = { cookie: jest.fn() };
+    const res: any = { cookie: jest.fn(), clearCookie: jest.fn() };
 
     jest.spyOn(auth, 'verifyRefresh').mockResolvedValue({ sub: 1, role: 'USER' } as any);
 
@@ -196,7 +202,7 @@ describe('Auth (tests fonctionnels)', () => {
     expect(res.cookie).toHaveBeenCalledWith(
       'refresh_token',
       'NEW_REFRESH',
-      expect.objectContaining({ httpOnly: true, path: '/api/auth/refresh' }),
+      expect.objectContaining({ httpOnly: true, path: '/api/auth' }),
     );
     expect(result).toEqual({ access_token: 'NEW_ACCESS' });
   });
@@ -204,9 +210,9 @@ describe('Auth (tests fonctionnels)', () => {
   it('logout() -> clear le cookie refresh', async () => {
     const res: any = { clearCookie: jest.fn() };
 
-    const result = await controller.logout(res);
+    const result = await controller.logout(res, { cookies: {} } as any);
 
-    expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', { path: '/api/auth/refresh' });
+    expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', { path: '/api/auth' });
     expect(result).toEqual({ message: 'ok' });
   });
 

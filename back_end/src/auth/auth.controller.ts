@@ -23,7 +23,7 @@ const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true as const,
   secure: isProd,
   sameSite: 'strict' as const,
-  path: '/api/auth/refresh',
+  path: '/api/auth',
   maxAge: 1000 * 60 * 60 * 24 * 15,
 };
 
@@ -36,6 +36,7 @@ export class AuthController {
   @LoginRateLimit()
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { access, refresh } = await this.auth.login(dto.email, dto.password);
+    res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
     res.cookie('refresh_token', refresh, REFRESH_COOKIE_OPTIONS);
     return { access_token: access };
   }
@@ -50,11 +51,7 @@ export class AuthController {
     if (!refresh) return { access_token: null };
 
     try {
-      const payload = await this.auth.verifyRefresh(refresh);
-
-      const access = await this.auth.signAccess({ sub: payload.sub, role: payload.role });
-      const newRefresh = await this.auth.signRefresh({ sub: payload.sub, role: payload.role });
-
+      const { access, refresh: newRefresh } = await this.auth.refreshTokens(refresh);
       res.cookie('refresh_token', newRefresh, REFRESH_COOKIE_OPTIONS);
       return { access_token: access };
     } catch {
@@ -64,9 +61,18 @@ export class AuthController {
 
   @Public()
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Res({ passthrough: true }) res: Response, @Req() req: Request) {
+    await this.auth.logout(req.cookies?.['refresh_token']);
     res.clearCookie('refresh_token', { path: REFRESH_COOKIE_OPTIONS.path });
+    res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
     return { message: 'ok' };
+  }
+
+  @Public()
+  @Post('resend-verification')
+  @ForgotPasswordRateLimit()
+  resendVerification(@Body() dto: ForgotPasswordDto) {
+    return this.auth.resendVerification(dto.email);
   }
 
   @Public()
@@ -85,6 +91,7 @@ async verifyEmail(
   const result = await this.auth.verifyEmail(dto.token);
 
   if (result.ok && result.refresh) {
+    res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
     res.cookie('refresh_token', result.refresh, REFRESH_COOKIE_OPTIONS);
   }
 

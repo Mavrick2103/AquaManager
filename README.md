@@ -1,98 +1,68 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# AquaManager
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Application de suivi d'aquariums : paramètres d'eau, poissons et plantes,
+calendrier d'entretien, recommandations et rappels. Elle comprend des catalogues
+publics, des articles, des abonnements, un espace d'administration et des fonctions IA.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Organisation
 
-## Description
+- front_end/web : Angular 20, Material, Chart.js et rendu serveur des pages publiques.
+- back_end : API NestJS 11, TypeORM et MySQL 8.
+- back_end/test : tests unitaires et tests HTTP de sécurité.
+- back_end/migrations : ancien historique SQL manuel et nouvelles migrations suivies dans managed.
+- docker-compose.yml : MySQL, API, frontend Nginx, SSR et Certbot.
+- .github/workflows : tests, builds et déploiement manuel.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Développement
 
-## Project setup
+Prérequis : Node.js compatible avec les packages du projet (la CI utilise Node 20),
+npm et MySQL 8. Installer les dépendances séparément :
 
-```bash
-$ npm install
+```sh
+npm ci --prefix back_end
+npm ci --prefix front_end/web
 ```
 
-## Compile and run the project
+Créer back_end/.env.development en utilisant .env.example comme référence.
+Renseigner au minimum DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME et JWT_SECRET
+(secret aléatoire privé d'au moins 16 caractères). Configurer APP_URL et SMTP pour
+l'inscription et les confirmations d'e-mail. Les identifiants Stripe, PayPal,
+OpenAI et Instagram sont nécessaires uniquement pour leurs fonctionnalités.
+Ne jamais commiter les fichiers d'environnement privés.
 
-```bash
-# development
-$ npm run start
+Pour une base locale neuve et jetable, NODE_ENV=development et TYPEORM_SYNC=true
+permettent à TypeORM de créer les tables. Désactiver la synchronisation sur une
+base contenant des données à préserver. Voir back_end/DEPLOYMENT.md pour les
+migrations d'une base existante et les limites d'installation en production.
 
-# watch mode
-$ npm run start:dev
+Lancer dans deux terminaux :
 
-# production mode
-$ npm run start:prod
+```sh
+npm run start:dev --prefix back_end
+npm start --prefix front_end/web
 ```
 
-## Run tests
+Le frontend de développement est sur http://localhost:4200 et l'API sous
+http://localhost:3000/api. Docker/Nginx utilise les domaines et certificats de
+production ; sa configuration n'est pas un démarrage local autonome sans préparation.
 
-```bash
-# unit tests
-$ npm run test
+## Vérifications
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```sh
+npm test --prefix back_end -- --silent
+npm run build --prefix back_end
+npm run test:ci --prefix front_end/web
+npm run build --prefix front_end/web
 ```
 
-## Deployment
+Les tests frontend nécessitent Chrome/Chromium. Cypress dispose d'un script
+cypress:run et d'un workflow dédié. Les tests HTTP de sécurité couvrent les guards,
+les sessions et les DTO avec un stockage SQLite en mémoire.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Déploiement
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Consulter [la procédure de déploiement et de migration](back_end/DEPLOYMENT.md).
+Le workflow CD reste manuel : tests, build, sauvegarde, migrations, redémarrage
+et contrôle HTTP. La mise à jour des sessions nécessite une reconnexion générale.
+Le contrôle de production doit inclure une recette MySQL/SMTP et une restauration
+de sauvegarde ; les tests locaux seuls ne valident pas ces services externes.

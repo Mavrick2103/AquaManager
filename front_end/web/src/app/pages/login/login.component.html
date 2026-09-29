@@ -55,6 +55,9 @@
 
         <a mat-button routerLink="/auth/forgot-password">Mot de passe oublié ?</a>
 
+        <button mat-button type="button" (click)="resendVerification()" [disabled]="resending()">Renvoyer le lien de vérification</button>
+        <p role="status" *ngIf="verificationMessage()">{{ verificationMessage() }}</p>
+
         <div class="row">
           <!-- réservé -->
         </div>

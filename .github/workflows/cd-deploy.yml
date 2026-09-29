@@ -4,8 +4,33 @@ on:
   workflow_dispatch:   # Déploiement manuel uniquement
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: browser-actions/setup-chrome@v1
+      - name: Validate backend
+        working-directory: back_end
+        run: |
+          npm ci
+          npm test -- --silent
+          npm run build
+      - name: Validate frontend
+        working-directory: front_end/web
+        run: |
+          npm ci
+          npm run test:ci
+          npm run build
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    concurrency:
+      group: aquamanager-production
+      cancel-in-progress: false
 
     steps:
       - name: Checkout du dépôt
@@ -19,25 +44,40 @@ jobs:
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Déploiement sur le serveur
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
         run: |
           echo "[CD] Connexion au serveur..."
           ssh \
             -o StrictHostKeyChecking=no \
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=20 \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "bash -s -- $DEPLOY_SHA" << 'EOF'
           set -euo pipefail
           cd /home/ubuntu/apps/AquaManager
 
-          echo "[CD] Récupération du dernier code (git pull)..."
-          git pull origin main
+          echo "[CD] Déploiement du commit validé..."
+          test -z "$(git status --porcelain)" || { echo 'Checkout serveur modifié : intervention requise.'; exit 1; }
+          git fetch origin
+          git switch --detach "$1"
 
           echo "[CD] Reconstruction et redémarrage des conteneurs Docker..."
           docker compose build api
           docker compose build frontend
           docker compose build ssr
+
+          echo "[CD] Sauvegarde avant migration..."
+          mkdir -p backup/db
+          umask 077
+          docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -uroot --single-transaction --no-tablespaces "$MYSQL_DATABASE"' > "backup/db/pre-migration-$(date -u +%Y%m%dT%H%M%SZ).sql"
+          docker compose run --rm --no-deps api npm run migrate
+
           docker compose up -d --no-build
           docker compose ps
+
+          echo "[CD] Vérification HTTP de l’API..."
+          docker compose exec -T api node scripts/readiness.cjs
+          docker compose exec -T ssr node scripts/check-ssr.cjs
 
           echo "[CD] Nettoyage des anciennes images inutilisées..."
           docker image prune -f || true

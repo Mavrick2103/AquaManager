@@ -1,3 +1,6 @@
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthSession } from './auth-session.entity';
+import { AuthSessionService } from './auth-session.service';
 // src/auth/auth.module.ts
 
 import { Module } from '@nestjs/common';
@@ -17,6 +20,7 @@ import { PlanGuard } from './guards/plan.guard';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([AuthSession]),
     // IMPORTANT: sans forRoot(), ConfigService peut ne pas charger ton .env => JWT_SECRET undefined => 401 partout
     ConfigModule.forRoot({
       isGlobal: true,
@@ -38,6 +42,7 @@ import { PlanGuard } from './guards/plan.guard';
   controllers: [AuthController],
   providers: [
     AuthService,
+    AuthSessionService,
     JwtStrategy,
 
     // Guards globaux (si tu les gardes ici, tu n'as plus besoin de @UseGuards partout)

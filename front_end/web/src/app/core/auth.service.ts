@@ -6,14 +6,16 @@ import { environment } from '../../environments/environment';
 import { SiteTourService } from './site-tour.service';
 
 export type Me = {
-  userId: number;
+  id: number;
   email: string;
-  role: 'USER' | 'ADMIN';
+  role: 'USER' | 'EDITOR' | 'ADMIN';
   fullName?: string;
 };
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private refreshInFlight: Promise<string | null> | null = null;
+  private sessionEpoch = 0;
   private accessToken: string | null = null;
   me: Me | null = null;
 
@@ -70,7 +72,19 @@ export class AuthService {
     return this.router.navigateByUrl(destination === '/profile?tab=subscription' ? destination : '/dashboard');
   }
 
-  async refreshAccessToken(): Promise<string | null> {
+  refreshAccessToken(): Promise<string | null> {
+    if (!this.refreshInFlight) {
+      const epoch = this.sessionEpoch;
+      const run = () => epoch === this.sessionEpoch ? this.performRefresh(epoch) : Promise.resolve(null);
+      const request = typeof navigator !== 'undefined' && navigator.locks
+        ? navigator.locks.request('aquamanager-refresh', run)
+        : run();
+      this.refreshInFlight = Promise.resolve(request).finally(() => { this.refreshInFlight = null; });
+    }
+    return this.refreshInFlight;
+  }
+
+  private async performRefresh(epoch: number): Promise<string | null> {
     try {
       const res = await firstValueFrom(
         this.http.post<{ access_token: string | null }>(
@@ -80,6 +94,7 @@ export class AuthService {
         )
       );
 
+      if (epoch !== this.sessionEpoch) return null;
       if (!res.access_token) {
         this.accessToken = null;
         this.me = null;
@@ -124,6 +139,12 @@ async resetPassword(token: string, newPassword: string): Promise<{ ok: boolean; 
 }
 
 
+  async resendVerification(email: string) {
+    return firstValueFrom(this.http.post<{ message: string }>(
+      environment.apiUrl + '/auth/resend-verification', { email },
+    ));
+  }
+
   async register(payload: { fullName: string; email: string; password: string }) {
     return await firstValueFrom(
       this.http.post<{ message: string }>(
@@ -140,11 +161,12 @@ async resetPassword(token: string, newPassword: string): Promise<{ ok: boolean; 
       })
     );
     this.me = me;
-    if (offerTour) this.siteTour.offerForUser(Number(me.userId));
+    if (offerTour) this.siteTour.offerForUser(Number(me.id));
     return this.me;
   }
 
   async logout() {
+    this.sessionEpoch++;
     this.accessToken = null;
     this.me = null;
 

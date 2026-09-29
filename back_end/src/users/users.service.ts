@@ -1,5 +1,8 @@
+import { MailService } from '../mail/mail.service';
+import { createHash, randomBytes } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, MoreThan, Repository } from 'typeorm';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import * as argon2 from 'argon2';
 import {
   Injectable,
@@ -31,6 +34,7 @@ type NewUsersPoint = { label: string; count: number };
 @Injectable()
 export class UsersService {
   constructor(
+    private readonly mail: MailService,
     @InjectRepository(User) private readonly repo: Repository<User>,
     @InjectRepository(Aquarium) private readonly aqRepo: Repository<Aquarium>,
     @InjectRepository(WaterMeasurement) private readonly wmRepo: Repository<WaterMeasurement>,
@@ -89,8 +93,8 @@ async setStripeIds(userId: number, data: { stripeCustomerId?: string | null; str
   /**
    * Retourne le plan "effectif" (si expiré => CLASSIC).
    */
-  async getEffectivePlan(userId: number): Promise<SubscriptionPlan> {
-  const u = await this.repo.findOne({
+  async getEffectivePlan(userId: number, lockedUser?: User): Promise<SubscriptionPlan> {
+  const u = lockedUser ?? await this.repo.findOne({
     where: { id: userId },
     select: {
       id: true,
@@ -150,7 +154,17 @@ async setStripeIds(userId: number, data: { stripeCustomerId?: string | null; str
     if (dto.email !== undefined && dto.email !== user.email) {
       const exists = await this.repo.exist({ where: { email: dto.email } });
       if (exists) throw new ConflictException('Email déjà utilisé');
-      patch.email = dto.email;
+      const credentials = await this.findByEmailWithPassword(user.email);
+      if (!dto.currentPassword || !credentials || !await argon2.verify(credentials.password, dto.currentPassword)) {
+        throw new BadRequestException('Mot de passe actuel requis pour changer d’adresse e-mail');
+      }
+      const token = randomBytes(32).toString('hex');
+      patch.pendingEmail = dto.email;
+      patch.emailVerifyTokenHash = createHash('sha256').update(token).digest('hex');
+      patch.emailVerifyExpiresAt = new Date(Date.now() + 86400000);
+      await this.repo.update({ id: userId }, patch);
+      await this.mail.sendVerifyEmail(dto.email, user.fullName, token);
+      return this.findById(userId);
     }
 
     if (Object.keys(patch).length === 0) return user;
@@ -172,7 +186,7 @@ async setStripeIds(userId: number, data: { stripeCustomerId?: string | null; str
     if (!ok) return false;
 
     const passwordHash = await argon2.hash(newPassword);
-    await this.repo.update({ id: userId }, { password: passwordHash });
+    await this.repo.update({ id: userId }, { password: passwordHash, authVersion: () => 'authVersion + 1', pendingEmail: null, emailVerifyTokenHash: null, emailVerifyExpiresAt: null, resetPasswordTokenHash: null, resetPasswordExpiresAt: null });
     return true;
   }
 
@@ -208,19 +222,26 @@ async setStripeIds(userId: number, data: { stripeCustomerId?: string | null; str
 
   async deleteById(id: number) {
     const user = await this.repo.findOne({ where: { id } });
+    this.assertNoLiveStripeSubscription(user);
     if (user?.paypalRenewalActive) throw new ConflictException('Résilie d’abord ton abonnement PayPal depuis ton profil, puis supprime ton compte.');
     await this.repo.delete(id);
   }
 
+  private assertNoLiveStripeSubscription(user: User | null) {
+    if (user?.stripeSubscriptionId && !['canceled', 'incomplete_expired'].includes(user.subscriptionStatus)) {
+      throw new ConflictException('Résilie l’abonnement Stripe et attends la confirmation de sa fin avant de supprimer le compte ou de modifier ses droits.');
+    }
+  }
+
   async setEmailVerifyToken(userId: number, tokenHash: string, expiresAt: Date) {
-    await this.repo.update(
-      { id: userId },
+    const result = await this.repo.update(
+      { id: userId, emailVerifiedAt: IsNull() },
       {
         emailVerifyTokenHash: tokenHash,
         emailVerifyExpiresAt: expiresAt,
-        emailVerifiedAt: null,
       },
     );
+    return result.affected === 1;
   }
 
   async verifyEmailByTokenHash(tokenHash: string) {
@@ -236,17 +257,22 @@ async setStripeIds(userId: number, data: { stripeCustomerId?: string | null; str
     if (!user.emailVerifyExpiresAt) return null;
     if (user.emailVerifyExpiresAt.getTime() < Date.now()) return null;
 
-    if (user.emailVerifiedAt) return user;
-
-    await this.repo.update(
-      { id: user.id },
+    if (user.emailVerifiedAt && !user.pendingEmail) return null;
+    if (user.pendingEmail && await this.repo.existsBy({ email: user.pendingEmail })) {
+      throw new ConflictException('Email déjà utilisé');
+    }
+    const result = await this.repo.update(
+      { id: user.id, emailVerifyTokenHash: tokenHash, emailVerifyExpiresAt: MoreThan(new Date()) },
       {
+        ...(user.pendingEmail ? { email: user.pendingEmail, authVersion: () => 'authVersion + 1', resetPasswordTokenHash: null, resetPasswordExpiresAt: null } : {}),
+        pendingEmail: null,
         emailVerifiedAt: new Date(),
         emailVerifyTokenHash: null,
         emailVerifyExpiresAt: null,
       },
     );
 
+    if (result.affected !== 1) return null;
     return this.findById(user.id);
   }
 
@@ -310,15 +336,20 @@ async findUserIdByStripeSubscriptionId(stripeSubscriptionId: string): Promise<nu
 
     const hashed = await argon2.hash(newPassword);
 
-    await this.repo.update(
-      { id: user.id },
+    const result = await this.repo.update(
+      { id: user.id, resetPasswordTokenHash: tokenHash, resetPasswordExpiresAt: MoreThan(new Date()) },
       {
         password: hashed,
+        authVersion: () => 'authVersion + 1',
+        pendingEmail: null,
+        emailVerifyTokenHash: null,
+        emailVerifyExpiresAt: null,
         resetPasswordTokenHash: null,
         resetPasswordExpiresAt: null,
       },
     );
 
+    if (result.affected !== 1) return null;
     return this.findById(user.id);
   }
 
@@ -523,7 +554,7 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
     const user = await this.repo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
 
-    const patch: Partial<User> = {};
+    const patch: QueryDeepPartialEntity<User> = {};
 
     if (dto.fullName !== undefined) {
       const name = String(dto.fullName ?? '').trim();
@@ -539,6 +570,13 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
         const exists = await this.repo.exist({ where: { email } });
         if (exists) throw new ConflictException('Email déjà utilisé');
         patch.email = email;
+        patch.emailVerifiedAt = null;
+        patch.pendingEmail = null;
+        patch.emailVerifyTokenHash = null;
+        patch.emailVerifyExpiresAt = null;
+        patch.authVersion = () => 'authVersion + 1';
+        patch.resetPasswordTokenHash = null;
+        patch.resetPasswordExpiresAt = null;
       }
     }
 
@@ -547,12 +585,14 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
     }
 
     if (dto.subscriptionPlan !== undefined) {
+      this.assertNoLiveStripeSubscription(user);
       if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour modifier les droits manuellement.');
       patch.billingProvider = null;
       patch.subscriptionPlan = this.normalizePlan(dto.subscriptionPlan);
     }
 
     if (dto.subscriptionEndsAt !== undefined) {
+      this.assertNoLiveStripeSubscription(user);
       if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour modifier les droits manuellement.');
       patch.billingProvider = null;
       // string ISO -> Date (ou null si vide)
@@ -586,6 +626,7 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
   }
 
   const plan = this.normalizePlan(data.plan);
+  this.assertNoLiveStripeSubscription(user);
   if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour attribuer une offre manuellement.');
 
   if (plan === 'CLASSIC') {
@@ -662,6 +703,8 @@ async adminRevokeSubscription(id: number) {
     throw new NotFoundException('Utilisateur introuvable');
   }
 
+  this.assertNoLiveStripeSubscription(user);
+
   if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour retirer les droits.');
   await this.repo.update(
     { id },
@@ -682,6 +725,7 @@ async adminRevokeSubscription(id: number) {
 
     const user = await this.repo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
+    this.assertNoLiveStripeSubscription(user);
     if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal de cet utilisateur.');
 
     try {

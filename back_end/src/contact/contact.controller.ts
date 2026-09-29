@@ -7,8 +7,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
 import { ContactDto } from './contact.dto';
 import { MailService } from '../mail/mail.service';
 import { Public } from '../auth/decorators/public.decorator';
@@ -42,19 +41,16 @@ export class ContactController {
         }
         cb(null, true);
       },
-      storage: diskStorage({
-        destination: '/tmp/contact',
-        filename: (_req, file, cb) => {
-          const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-          cb(null, `${Date.now()}_${Math.random().toString(16).slice(2)}${extname(safe)}`);
-        },
-      }),
+      storage: memoryStorage(),
     })
   )
   async send(
     @Body() dto: ContactDto,
     @UploadedFiles() files: Express.Multer.File[]
   ): Promise<{ ok: true }> {
+    if ((files ?? []).reduce((total, file) => total + file.size, 0) > MAX_FILE_SIZE) {
+      throw new BadRequestException('La taille totale des pièces jointes ne doit pas dépasser 10 Mo.');
+    }
     await this.mail.sendContactMessage({
       category: dto.category,
       subject: dto.subject,

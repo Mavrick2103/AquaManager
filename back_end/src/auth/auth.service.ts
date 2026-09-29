@@ -1,14 +1,15 @@
+import { AuthSessionService, SessionPayload } from './auth-session.service';
+import { User } from '../users/user.entity';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes, createHash, randomUUID } from 'crypto';
 
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { MailService } from '../mail/mail.service';
 
-type JwtPayload = { sub: number; role: string };
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly mail: MailService,
+    private readonly sessions: AuthSessionService,
   ) {}
 
   async login(email: string, password: string) {
@@ -33,15 +35,7 @@ export class AuthService {
     const ok = await argon2.verify(user.password, password);
     if (!ok) throw new UnauthorizedException('Email ou mot de passe invalide');
 
-    const payload: JwtPayload = {
-      sub: user.id,
-      role: (user.role ?? 'USER').toUpperCase(),
-    };
-
-    const access = await this.signAccess(payload);
-    const refresh = await this.signRefresh(payload);
-
-    return { access, refresh };
+    return this.issueTokens(user);
   }
 
   async register(dto: CreateUserDto) {
@@ -53,9 +47,12 @@ export class AuthService {
 
     await this.users.setEmailVerifyToken(user.id, tokenHash, expiresAt);
 
-    // Si l’email plante, tu peux choisir: soit throw, soit log + continuer.
-    // Pour éviter les comptes bloqués sans mail, je préfère FAIL (throw).
-    await this.mail.sendVerifyEmail(user.email, user.fullName, token);
+    // A failed delivery can be retried through resend-verification.
+    try {
+      await this.mail.sendVerifyEmail(user.email, user.fullName, token);
+    } catch {
+      this.logger.warn('Envoi de vérification échoué ; le compte peut demander un nouveau lien.');
+    }
 
     return {
       id: user.id,
@@ -78,13 +75,7 @@ export class AuthService {
     };
   }
 
-  const payload: JwtPayload = {
-    sub: user.id,
-    role: (user.role ?? 'USER').toUpperCase(),
-  };
-
-  const access = await this.signAccess(payload);
-  const refresh = await this.signRefresh(payload);
+  const { access, refresh } = await this.issueTokens(user);
 
   return {
     ok: true,
@@ -114,18 +105,62 @@ export class AuthService {
     return { ok: true, message: 'Mot de passe mis à jour' };
   }
 
-  signAccess(payload: JwtPayload) {
+  async resendVerification(email: string) {
+    const user = await this.users.findByEmailWithPassword(email);
+    if (user && !user.emailVerifiedAt) {
+      const token = randomBytes(32).toString('hex');
+      const updated = await this.users.setEmailVerifyToken(user.id, this.sha256(token), new Date(Date.now() + 86400000));
+      try { if (updated) await this.mail.sendVerifyEmail(user.email, user.fullName, token); }
+      catch { this.logger.warn('Renvoi de vérification échoué.'); }
+    }
+    return { ok: true, message: 'Si un compte attend une vérification, un nouveau lien a été envoyé.' };
+  }
+
+  private async issueTokens(user: User) {
+    const payload: SessionPayload = { sub: user.id, role: user.role.toUpperCase(), sid: randomUUID(), version: user.authVersion ?? 0 };
+    const access = await this.signAccess(payload);
+    const refresh = await this.signRefresh(payload);
+    await this.sessions.create(payload, refresh, this.refreshExpiry(refresh));
+    return { access, refresh };
+  }
+
+  signAccess(payload: SessionPayload) {
     const expiresIn = this.config.get<string>('JWT_EXPIRES') || '15m';
-    return this.jwt.signAsync(payload, { expiresIn });
+    return this.jwt.signAsync({ ...payload, kind: 'access' }, { expiresIn });
   }
 
-  signRefresh(payload: JwtPayload) {
+  signRefresh(payload: SessionPayload) {
     const expiresIn = this.config.get<string>('JWT_REFRESH_EXPIRES') || '15d';
-    return this.jwt.signAsync(payload, { expiresIn });
+    return this.jwt.signAsync({ ...payload, kind: 'refresh', jti: randomUUID() }, { expiresIn });
   }
 
-  verifyRefresh(token: string) {
-    return this.jwt.verifyAsync<JwtPayload>(token);
+  async verifyRefresh(token: string) {
+    const payload = await this.jwt.verifyAsync<SessionPayload>(token);
+    if (payload.kind !== 'refresh') throw new UnauthorizedException('Jeton de renouvellement requis');
+    return payload;
+  }
+
+  async refreshTokens(token: string) {
+    const payload = await this.verifyRefresh(token);
+    const user = await this.sessions.validate(payload);
+    const next: SessionPayload = { sub: user.id, role: user.role.toUpperCase(), sid: payload.sid, version: user.authVersion };
+    const access = await this.signAccess(next);
+    const refresh = await this.signRefresh(next);
+    await this.sessions.rotate(next, token, refresh, this.refreshExpiry(refresh));
+    return { access, refresh };
+  }
+
+  async logout(token?: string) {
+    if (!token) return;
+    let payload: SessionPayload;
+    try { payload = await this.verifyRefresh(token); } catch { return; }
+    await this.sessions.revoke(payload);
+  }
+
+  private refreshExpiry(token: string): Date {
+    const decoded = this.jwt.decode<{ exp: number }>(token);
+    if (!Number.isFinite(decoded?.exp)) throw new Error('Missing refresh expiration');
+    return new Date(decoded.exp * 1000);
   }
 
   private sha256(input: string) {

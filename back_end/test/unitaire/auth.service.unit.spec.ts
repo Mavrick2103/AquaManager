@@ -1,3 +1,4 @@
+import { AuthSessionService } from '../../src/auth/auth-session.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -26,7 +27,7 @@ describe('AuthService', () => {
       create: jest.fn(),
 
       // ✅ nouvelles méthodes
-      setEmailVerifyToken: jest.fn().mockResolvedValue(undefined),
+      setEmailVerifyToken: jest.fn().mockResolvedValue(true),
       verifyEmailByTokenHash: jest.fn().mockResolvedValue(null),
 
       setPasswordResetToken: jest.fn().mockResolvedValue(null),
@@ -35,6 +36,7 @@ describe('AuthService', () => {
 
     const jwtMock: Partial<jest.Mocked<JwtService>> = {
       signAsync: jest.fn(),
+      decode: jest.fn().mockReturnValue({ exp: Math.floor(Date.now()/1000) + 86400 }),
       verifyAsync: jest.fn(),
     };
 
@@ -49,6 +51,10 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
+        { provide: AuthSessionService, useValue: {
+          create: jest.fn(), rotate: jest.fn(), revoke: jest.fn(),
+          validate: jest.fn().mockResolvedValue({ id: 1, role: 'USER', authVersion: 0, emailVerifiedAt: new Date() }),
+        } },
         { provide: UsersService, useValue: usersMock },
         { provide: JwtService, useValue: jwtMock },
         { provide: ConfigService, useValue: configMock },
@@ -121,6 +127,30 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
+    it('does not send a replacement link if activation won the race', async () => {
+      users.findByEmailWithPassword.mockResolvedValue({ id: 1, email: 'test@example.com', emailVerifiedAt: null } as any);
+      users.setEmailVerifyToken.mockResolvedValue(false);
+      await service.resendVerification('test@example.com');
+      expect(mail.sendVerifyEmail).not.toHaveBeenCalled();
+    });
+    it('preserves a recoverable registration when SMTP fails', async () => {
+      users.create.mockResolvedValue({ id: 1, fullName: 'Test', email: 'test@example.com' } as any);
+      mail.sendVerifyEmail.mockRejectedValueOnce(new Error('SMTP unavailable'));
+      await expect(service.register({ email: 'test@example.com', password: 'password', fullName: 'Test' })).resolves.toMatchObject({ id: 1 });
+    });
+
+    it('resends verification only for unverified users without revealing existence', async () => {
+      users.findByEmailWithPassword.mockResolvedValue({ id: 1, fullName: 'Test', email: 'test@example.com', emailVerifiedAt: null } as any);
+      const sent = await service.resendVerification('test@example.com');
+      expect(users.setEmailVerifyToken).toHaveBeenCalledWith(1, expect.any(String), expect.any(Date));
+      expect(mail.sendVerifyEmail).toHaveBeenCalledTimes(1);
+      users.findByEmailWithPassword.mockResolvedValue(null);
+      expect(await service.resendVerification('missing@example.com')).toEqual(sent);
+      users.findByEmailWithPassword.mockResolvedValue({ id: 1, emailVerifiedAt: new Date() } as any);
+      expect(await service.resendVerification('test@example.com')).toEqual(sent);
+      expect(mail.sendVerifyEmail).toHaveBeenCalledTimes(1);
+    });
+
     it('crée user + set token + envoie mail', async () => {
       users.create.mockResolvedValue({
         id: 1,

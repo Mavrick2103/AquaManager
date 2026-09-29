@@ -37,6 +37,10 @@ describe('AquariumsService (unit)', () => {
       getEffectivePlan: jest.fn().mockResolvedValue('CLASSIC'),
     };
 
+    Object.assign(aquariumRepoMock, { manager: { transaction: jest.fn(async (_isolation, work) => work({
+      getRepository: (entity: unknown) => entity === User ? usersRepoMock : aquariumRepoMock,
+    })) } });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AquariumsService,
