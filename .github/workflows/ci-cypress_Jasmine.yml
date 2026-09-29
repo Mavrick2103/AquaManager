@@ -34,11 +34,32 @@ jobs:
       - name: Start Angular dev server
         working-directory: front_end/web
         run: |
-          npm run start -- --host 0.0.0.0 --port 4200 &
-          sleep 25
+          npm run start -- --host 127.0.0.1 --port 4200 > angular-e2e.log 2>&1 &
+          ready=0
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --max-time 5 http://127.0.0.1:4200/login > /dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat angular-e2e.log
+            exit 1
+          fi
 
       - name: Run Cypress tests
         working-directory: front_end/web
         run: npm run cypress:run
         env:
           CYPRESS_baseUrl: http://127.0.0.1:4200
+
+      - name: Upload Cypress diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-diagnostics
+          path: |
+            front_end/web/angular-e2e.log
+            front_end/web/cypress/screenshots
+          if-no-files-found: ignore

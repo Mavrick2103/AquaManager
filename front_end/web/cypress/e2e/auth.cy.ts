@@ -9,7 +9,7 @@ describe('Authentification', () => {
 
     cy.intercept('GET', '**/api/users/me', {
       statusCode: 200,
-      body: { userId: 1, email: 'test@aquamanager.com', role: 'USER' },
+      body: { id: 1, email: 'test@aquamanager.com', role: 'USER' },
     }).as('me');
 
     cy.intercept('POST', '**/api/auth/refresh', {

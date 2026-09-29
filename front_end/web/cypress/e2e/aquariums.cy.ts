@@ -17,7 +17,7 @@ const rx = {
 function stubSessionBasics() {
   cy.intercept('POST', rx.login,   { statusCode: 200, body: { access_token: 'TEST_TOKEN' } }).as('login');
   cy.intercept('POST', rx.refresh, { statusCode: 200, body: { access_token: 'TEST_TOKEN' } }).as('refresh');
-  cy.intercept('GET',  rx.me,      { statusCode: 200, body: { userId: 1, email: 'test@aquamanager.com', role: 'USER' } }).as('me');
+  cy.intercept('GET',  rx.me,      { statusCode: 200, body: { id: 1, email: 'test@aquamanager.com', role: 'USER' } }).as('me');
 }
 
 function uiLogin() {
