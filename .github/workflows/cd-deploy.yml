@@ -61,7 +61,7 @@ jobs:
           git fetch origin
           git switch --detach "$1"
 
-          echo "[CD] Reconstruction et redémarrage des conteneurs Docker..."
+          echo "[CD] Reconstruction des images Docker..."
           docker compose build api
           docker compose build frontend
           docker compose build ssr
@@ -72,7 +72,8 @@ jobs:
           docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -uroot --single-transaction --no-tablespaces "$MYSQL_DATABASE"' > "backup/db/pre-migration-$(date -u +%Y%m%dT%H%M%SZ).sql"
           docker compose run --rm --no-deps api npm run migrate
 
-          docker compose up -d --no-build
+          echo "[CD] Recréation des services applicatifs avec les images reconstruites..."
+          docker compose up -d --no-build --no-deps --force-recreate api ssr frontend
           docker compose ps
 
           echo "[CD] Vérification HTTP de l’API..."
