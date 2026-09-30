@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, LessThan, IsNull, Brackets, DataSource } from 'typeorm';
+import { Repository, MoreThanOrEqual, LessThan, IsNull, Not, Brackets, DataSource } from 'typeorm';
 import { readdir, stat, statfs } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -69,7 +69,7 @@ export class AdminMetricsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  private async getInfrastructureHealth() {
+  async getInfrastructureHealth() {
     let mysql: 'ok' | 'error' = 'ok';
     try {
       await this.dataSource.query('SELECT 1');
@@ -93,8 +93,11 @@ export class AdminMetricsService {
       status: 'unknown', lastAt: null, ageHours: null,
     };
     try {
-      const files = (await readdir(backupDir)).filter((name) => name.endsWith('.sql.gz'));
-      const dated = await Promise.all(files.map(async (name) => ({ name, modifiedAt: (await stat(join(backupDir, name))).mtime })));
+      const files = (await readdir(backupDir)).filter((name) => /\.sql(?:\.gz)?$/.test(name));
+      const dated = (await Promise.all(files.map(async (name) => {
+        const file = await stat(join(backupDir, name));
+        return { modifiedAt: file.mtime, valid: file.isFile() && file.size > 0 };
+      }))).filter(file => file.valid);
       dated.sort((a, b) => b.modifiedAt.getTime() - a.modifiedAt.getTime());
       if (dated[0]) {
         const ageHours = Math.round(((Date.now() - dated[0].modifiedAt.getTime()) / 3_600_000) * 10) / 10;
@@ -104,7 +107,7 @@ export class AdminMetricsService {
       }
     } catch {}
 
-    return { mysql, disk, backup };
+    return { mysql, disk, backup, uptimeSeconds: Math.floor(process.uptime()), memoryBytes: process.memoryUsage().rss };
   }
 
   private async getOperationalAlerts(from: Date | null) {
@@ -127,11 +130,12 @@ export class AdminMetricsService {
       trackingAvailable: true,
       apiErrors: counts.get('API_ERROR') ?? 0,
       stripeFailures: counts.get('STRIPE_FAILURE') ?? 0,
+      paypalFailures: counts.get('PAYPAL_FAILURE') ?? 0,
       emailFailures: counts.get('EMAIL_FAILURE') ?? 0,
       recent: recent.map((event) => ({ type: event.type, route: event.route, statusCode: event.statusCode, createdAt: event.createdAt })),
     };
     } catch {
-      return { trackingAvailable: false, apiErrors: 0, stripeFailures: 0, emailFailures: 0, recent: [] };
+      return { trackingAvailable: false, apiErrors: 0, stripeFailures: 0, paypalFailures: 0, emailFailures: 0, recent: [] };
     }
   }
 
@@ -152,7 +156,7 @@ export class AdminMetricsService {
       queryOne(`SELECT COUNT(*) events, COUNT(DISTINCT visitorKey) users FROM feature_usage_events${from ? " WHERE createdAt >= ? AND feature IN ('FISH_CARD_VIEW', 'PLANT_CARD_VIEW')" : " WHERE feature IN ('FISH_CARD_VIEW', 'PLANT_CARD_VIEW')"}`),
     ]);
 
-    const normalize = (row: any) => ({ events: Number(row.events ?? 0), users: Number(row.users ?? 0) });
+    const normalize = (row: any) => ({ available: row.events !== undefined, events: Number(row.events ?? 0), users: Number(row.users ?? 0) });
     return {
       assistant: { ...normalize(assistant), detail: "ouvertures volontaires de l'assistant" },
       ai: normalize(ai), protocols: normalize(protocols), calendar: normalize(calendar),
@@ -232,7 +236,7 @@ const subscriptionsTotalActive = premiumActive + proActive;
     let activeInRange = 0;
 
     if (!from) {
-      activeInRange = usersTotal;
+      activeInRange = hasLastActivity ? await this.usersRepo.count({ where: { lastActivityAt: Not(IsNull()) } }) : 0;
     } else if (!hasLastActivity) {
       activeInRange = 0;
     } else {
@@ -250,8 +254,17 @@ const subscriptionsTotalActive = premiumActive + proActive;
           select: ['id', 'fullName', 'email', 'role', 'lastActivityAt'] as any,
           ...(from ? { where: { lastActivityAt: MoreThanOrEqual(from) } as any } : {}),
           order: { lastActivityAt: 'DESC' } as any,
+          take: 10,
         })
       : [];
+
+    const recentRegistrations = await this.usersRepo.find({
+      select: ['id', 'fullName', 'email', 'createdAt', 'emailVerifiedAt', 'subscriptionPlan', 'subscriptionStatus', 'subscriptionEndsAt'],
+      ...(from ? { where: { createdAt: MoreThanOrEqual(from) } } : {}),
+      order: { createdAt: 'DESC', id: 'DESC' }, take: 10,
+    });
+    const expiringSoon = await activeSubscriptionQb.clone()
+      .andWhere('u.subscriptionEndsAt <= :soon', { soon: new Date(Date.now() + 7 * 86400000) }).getCount();
 
     // -----------------------
     // Aquariums
@@ -331,6 +344,7 @@ const subscriptionsTotalActive = premiumActive + proActive;
         activeInRange,
         notificationConsentCount,
         latest,
+        recentRegistrations,
         note: [
           !hasCreatedAt ? "User n'a pas de createdAt : 'nouveaux utilisateurs' indisponible." : null,
           !this.hasUserLastActivityAt()
@@ -344,6 +358,7 @@ const subscriptionsTotalActive = premiumActive + proActive;
   premiumActive,
   proActive,
   totalActive: subscriptionsTotalActive,
+  expiringSoon,
 },
       aquariums: {
         total: aquariumsTotal,
@@ -432,6 +447,12 @@ const subscriptionsTotalActive = premiumActive + proActive;
     const now = new Date();
     const cfg = this.buildSeriesConfig(range, now);
     const hasCreatedAt = this.hasUserCreatedAt();
+
+    // Sliding periods include both partial boundary buckets, matching the total.
+    if (range === '1d') cfg.buckets = 25;
+    if (range === '7d') cfg.buckets = 8;
+    if (range === '30d') cfg.buckets = 31;
+    if (range === '365d') cfg.buckets = (now.getFullYear() - cfg.start.getFullYear()) * 12 + now.getMonth() - cfg.start.getMonth() + 1;
 
     if (!hasCreatedAt) return [];
 

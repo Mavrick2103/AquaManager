@@ -1,3 +1,4 @@
+@use '../../../../shared/admin-sidebar/admin-workspace' as adminShell;
 /* ✅ même style que tes pages admin (card + glow + responsive clean) */
 
 :host {
@@ -146,3 +147,6 @@ button[mat-flat-button] {
   .span2 { grid-column: span 1; }
   .actions button { width: 100%; justify-content: center; }
 }
+
+@include adminShell.shell;
+.wrap { margin:0 auto!important; width:100%; max-width:1440px; border-radius:12px; box-shadow:none; }

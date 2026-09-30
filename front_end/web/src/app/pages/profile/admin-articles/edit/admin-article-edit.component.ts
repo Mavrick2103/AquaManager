@@ -1,3 +1,4 @@
+import { AdminSidebarComponent } from '../../../../shared/admin-sidebar/admin-sidebar.component';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -26,7 +27,7 @@ type AppRole = 'USER' | 'EDITOR' | 'ADMIN' | 'SUPERADMIN';
 @Component({
   selector: 'app-admin-article-edit',
   standalone: true,
-  imports: [
+  imports: [AdminSidebarComponent,
     CommonModule,
     RouterModule,
     ReactiveFormsModule,

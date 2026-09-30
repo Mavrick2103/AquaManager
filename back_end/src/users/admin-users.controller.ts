@@ -7,47 +7,65 @@ import {
   Query,
   UseGuards,
   Body,
-} from '@nestjs/common';
+} from "@nestjs/common";
 
-import { UsersService } from './users.service';
-import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
-import { AdminGrantSubscriptionDto } from './dto/admin-grant-subscription.dto';
+import { UsersService } from "./users.service";
+import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
+import { AdminGrantSubscriptionDto } from "./dto/admin-grant-subscription.dto";
 
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { Roles } from "../auth/decorators/roles.decorator";
+import { AdminUserDossierService } from "./admin-user-dossier.service";
 
-@Controller('admin/users')
+@Controller("admin/users")
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN')
+@Roles("ADMIN")
 export class AdminUsersController {
-  constructor(private readonly users: UsersService) {}
+  constructor(
+    private readonly users: UsersService,
+    private readonly dossier: AdminUserDossierService,
+  ) {}
+
+  @Get(":id/dossier")
+  dossierOverview(@Param("id") id: string) {
+    return this.dossier.overview(Number(id));
+  }
+
+  @Get(":id/records/:section")
+  dossierRecords(
+    @Param("id") id: string,
+    @Param("section") section: string,
+    @Query() query: { page?: string; aquariumId?: string },
+  ) {
+    return this.dossier.records(Number(id), section, query);
+  }
 
   // ✅ Liste + search + tri du plus récent au plus ancien
   @Get()
-  list(@Query('search') search?: string) {
+  list(@Query("search") search?: string) {
     return this.users.adminList(search);
   }
 
-  @Get(':id')
-  one(@Param('id') id: string) {
+  @Get(":id")
+  one(@Param("id") id: string) {
     return this.users.adminGetOne(Number(id));
   }
 
-  @Get(':id/full')
-  full(@Param('id') id: string) {
+  @Get(":id/full")
+  full(@Param("id") id: string) {
     return this.users.adminGetFull(Number(id));
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
+  @Patch(":id")
+  update(@Param("id") id: string, @Body() dto: AdminUpdateUserDto) {
     return this.users.adminUpdate(Number(id), dto);
   }
 
   // ✅ Offrir Premium / Pro pendant une durée
-  @Patch(':id/grant-subscription')
+  @Patch(":id/grant-subscription")
   grantSubscription(
-    @Param('id') id: string,
+    @Param("id") id: string,
     @Body() dto: AdminGrantSubscriptionDto,
   ) {
     return this.users.adminGrantSubscription(Number(id), {
@@ -57,13 +75,13 @@ export class AdminUsersController {
   }
 
   // ✅ Retirer l'abonnement offert
-  @Patch(':id/revoke-subscription')
-  revokeSubscription(@Param('id') id: string) {
+  @Patch(":id/revoke-subscription")
+  revokeSubscription(@Param("id") id: string) {
     return this.users.adminRevokeSubscription(Number(id));
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
+  @Delete(":id")
+  remove(@Param("id") id: string) {
     return this.users.adminDelete(Number(id));
   }
 }

@@ -9,15 +9,29 @@ import { PaypalApiService } from './paypal-api.service';
 export class PaypalAdminService {
   constructor(private readonly db: DataSource, private readonly paypal: PaypalService, private readonly api: PaypalApiService) {}
 
-  async list(search = '', page = 1, environment = 'all', attention = false) {
-    if (!Number.isInteger(page) || page < 1 || page > 100000 || search.length > 160
-        || !['all', 'sandbox', 'live'].includes(environment)) throw new BadRequestException('Filtres invalides.');
+  async list(search = '', page = 1, environment = 'all', attention = false, status = 'all') {
+    if (typeof search !== 'string' || !Number.isInteger(page) || page < 1 || page > 100000 || search.length > 160
+        || !['all', 'sandbox', 'live'].includes(environment)
+        || !['all', 'CREATING', 'APPROVAL_PENDING', 'APPROVED', 'ACTIVE', 'SUSPENDED', 'CANCELLED', 'EXPIRED'].includes(status)) throw new BadRequestException('Filtres invalides.');
     const qb = this.db.getRepository(PaypalSubscription).createQueryBuilder('s')
       .leftJoinAndSelect('s.user', 'u')
       .select(['s.id', 's.userId', 's.paypalId', 's.environment', 's.status', 's.paidUntil', 's.syncedAt', 's.createdAt',
         'u.id', 'u.email', 'u.fullName', 'u.subscriptionPlan', 'u.subscriptionStatus', 'u.subscriptionEndsAt', 'u.billingProvider', 'u.paypalSubscriptionId']);
     if (search.trim()) qb.andWhere('(u.email LIKE :search OR u.fullName LIKE :search OR s.paypalId LIKE :search)', { search: `%${search.trim()}%` });
     if (environment !== 'all') qb.andWhere('s.environment = :environment', { environment });
+    // Overview follows the environment and search, before status/attention pagination.
+    const statusRows = await qb.clone().select('s.status', 'status').addSelect('COUNT(*)', 'count')
+      .groupBy('s.status').getRawMany<{status:string; count:string}>();
+    const counts = new Map(statusRows.map(row => [row.status, Number(row.count)]));
+    const overview = {
+      total: statusRows.reduce((total, row) => total + Number(row.count), 0),
+      active: counts.get('ACTIVE') ?? 0,
+      pending: ['CREATING','APPROVAL_PENDING','APPROVED'].reduce((total, state) => total + (counts.get(state) ?? 0), 0),
+      cancelled: counts.get('CANCELLED') ?? 0,
+      suspended: counts.get('SUSPENDED') ?? 0,
+      expired: counts.get('EXPIRED') ?? 0,
+    };
+    if (status !== 'all') qb.andWhere('s.status = :status', { status });
     const stale = new Date(Date.now() - 10 * 60_000);
     if (attention) qb.andWhere(`(s.status IN ('CREATING','APPROVAL_PENDING','APPROVED','SUSPENDED')
       OR (s.status = 'ACTIVE' AND (s.paidUntil IS NULL OR s.paidUntil <= :now))
@@ -25,7 +39,7 @@ export class PaypalAdminService {
       OR EXISTS (SELECT 1 FROM paypal_payments p WHERE p.subscriptionKey = s.id AND p.reversed = 0 AND p.confirmationEmailAttemptedAt IS NOT NULL AND p.confirmationEmailSentAt IS NULL)
       OR EXISTS (SELECT 1 FROM paypal_admin_actions a WHERE a.subscriptionKey = s.id AND a.outcome = 'FAILED' AND a.id = (SELECT MAX(b.id) FROM paypal_admin_actions b WHERE b.subscriptionKey = s.id)))`, { now: new Date(), stale });
     const [rows, total] = await qb.orderBy('s.createdAt', 'DESC').addOrderBy('s.id', 'DESC').skip((page - 1) * 25).take(25).getManyAndCount();
-    return { items: rows.map(s => this.summary(s)), total, page, pageSize: 25, configuredEnvironment: this.api.environment };
+    return { items: rows.map(s => this.summary(s)), total, overview, page, pageSize: 25, configuredEnvironment: this.api.environment };
   }
 
   private summary(s: PaypalSubscription) {

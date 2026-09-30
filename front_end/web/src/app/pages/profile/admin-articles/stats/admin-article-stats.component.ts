@@ -1,3 +1,5 @@
+import { AdminSidebarComponent } from '../../../../shared/admin-sidebar/admin-sidebar.component';
+import { UserService } from '../../../../core/user.service';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -25,7 +27,7 @@ type DailyRow = {
 @Component({
   selector: 'app-admin-article-stats',
   standalone: true,
-  imports: [
+  imports: [AdminSidebarComponent,
     CommonModule,
     RouterModule,
     MatCardModule,
@@ -113,13 +115,16 @@ export class AdminArticleStatsComponent implements OnInit {
   };
 
   constructor(
+    private readonly users: UserService,
     private readonly route: ActivatedRoute,
     private readonly api: AdminArticlesService,
     private readonly cdr: ChangeDetectorRef,
     private readonly location: Location,
   ) {}
 
+  adminAccess = false;
   ngOnInit(): void {
+    void this.users.getMe().then(user => { this.adminAccess = user.role === 'ADMIN'; this.cdr.markForCheck(); }).catch(() => {});
     this.articleId = Number(this.route.snapshot.paramMap.get('id') || 0);
     this.refresh();
   }

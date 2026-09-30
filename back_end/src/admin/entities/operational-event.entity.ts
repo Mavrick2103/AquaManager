@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
-export type OperationalEventType = 'API_ERROR' | 'STRIPE_FAILURE' | 'EMAIL_FAILURE';
+export type OperationalEventType = 'API_ERROR' | 'STRIPE_FAILURE' | 'PAYPAL_FAILURE' | 'EMAIL_FAILURE';
 
 @Entity('operational_events')
 @Index(['type', 'createdAt'])

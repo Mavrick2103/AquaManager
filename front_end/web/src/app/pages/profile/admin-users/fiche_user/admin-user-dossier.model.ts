@@ -1,0 +1,352 @@
+export type DossierRecord = Record<string, any>;
+export type DossierField = {
+  key: string;
+  label: string;
+  kind?: 'date' | 'boolean' | 'text' | 'object';
+  unit?: string;
+};
+export type DossierSection = {
+  key: string;
+  label: string;
+  icon: string;
+  aquarium?: boolean;
+  fields: DossierField[];
+};
+const f = (
+  key: string,
+  label: string,
+  kind?: DossierField['kind'],
+  unit?: string,
+): DossierField => ({ key, label, kind, unit });
+const created = f('createdAt', 'Création', 'date');
+export const DOSSIER_GROUPS = [
+  { key: 'overview', label: 'Vue d’ensemble', icon: 'person_outline', sections: [] as string[] },
+  {
+    key: 'aquariums',
+    label: 'Aquariums',
+    icon: 'water',
+    sections: ['aquariums', 'fish', 'plants', 'targets', 'health'],
+  },
+  {
+    key: 'tracking',
+    label: 'Suivi & IA',
+    icon: 'monitoring',
+    sections: ['measurements', 'tasks', 'ai', 'recommendations'],
+  },
+  {
+    key: 'billing',
+    label: 'Abonnement',
+    icon: 'credit_card',
+    sections: ['subscriptions', 'payments', 'billingActions'],
+  },
+  {
+    key: 'activity',
+    label: 'Activité & contributions',
+    icon: 'history',
+    sections: ['activity', 'achievements', 'missions', 'articles', 'fishCards', 'plantCards'],
+  },
+];
+export const DOSSIER_SECTIONS: DossierSection[] = [
+  {
+    key: 'aquariums',
+    label: 'Aquariums',
+    icon: 'water',
+    fields: [
+      f('waterType', 'Type d’eau'),
+      f('volumeL', 'Volume', undefined, 'L'),
+      f('lengthCm', 'Longueur', undefined, 'cm'),
+      f('widthCm', 'Largeur', undefined, 'cm'),
+      f('heightCm', 'Hauteur', undefined, 'cm'),
+      f('startDate', 'Mise en eau', 'date'),
+      created,
+      f('archivedAt', 'Masqué depuis', 'date'),
+      f('archiveExpiresAt', 'Suppression prévue', 'date'),
+    ],
+  },
+  {
+    key: 'measurements',
+    label: 'Mesures',
+    icon: 'science',
+    aquarium: true,
+    fields: [
+      f('measuredAt', 'Mesuré le', 'date'),
+      ...[
+        'ph',
+        'temp',
+        'kh',
+        'gh',
+        'no2',
+        'no3',
+        'po4',
+        'fe',
+        'k',
+        'sio2',
+        'nh3',
+        'dkh',
+        'salinity',
+        'ca',
+        'mg',
+      ].map((key) =>
+        f(
+          key,
+          (
+            {
+              ph: 'pH',
+              temp: 'Température',
+              kh: 'KH',
+              gh: 'GH',
+              no2: 'NO₂',
+              no3: 'NO₃',
+              po4: 'PO₄',
+              fe: 'Fer',
+              k: 'Potassium',
+              sio2: 'Silicates',
+              nh3: 'NH₃',
+              dkh: 'dKH',
+              salinity: 'Salinité',
+              ca: 'Calcium',
+              mg: 'Magnésium',
+            } as Record<string, string>
+          )[key],
+          undefined,
+          key === 'temp' ? '°C' : undefined,
+        ),
+      ),
+      f('comment', 'Commentaire', 'text'),
+      created,
+    ],
+  },
+  {
+    key: 'tasks',
+    label: 'Tâches',
+    icon: 'task_alt',
+    aquarium: true,
+    fields: [
+      f('type', 'Type'),
+      f('status', 'État'),
+      f('dueAt', 'Échéance', 'date'),
+      f('description', 'Description', 'text'),
+      f('isRepeat', 'Récurrente', 'boolean'),
+      f('repeatMode', 'Répétition'),
+      f('repeatEveryWeeks', 'Intervalle en semaines'),
+      f('repeatDays', 'Jours de répétition', 'object'),
+      f('repeatEndAt', 'Fin des répétitions', 'date'),
+      f('completedOccurrences', 'Occurrences réalisées', 'object'),
+      f('fertilizers', 'Fertilisants', 'object'),
+      created,
+    ],
+  },
+  {
+    key: 'fish',
+    label: 'Poissons',
+    icon: 'set_meal',
+    aquarium: true,
+    fields: [
+      f('scientificName', 'Nom scientifique'),
+      f('count', 'Quantité'),
+      f('fishCardId', 'Fiche poisson'),
+      created,
+    ],
+  },
+  {
+    key: 'plants',
+    label: 'Plantes',
+    icon: 'eco',
+    aquarium: true,
+    fields: [
+      f('scientificName', 'Nom scientifique'),
+      f('count', 'Quantité'),
+      f('plantCardId', 'Fiche plante'),
+      created,
+    ],
+  },
+  {
+    key: 'targets',
+    label: 'Objectifs',
+    icon: 'tune',
+    aquarium: true,
+    fields: [
+      f('profileKey', 'Profil de paramètres'),
+      f('targets', 'Valeurs cibles', 'object'),
+      f('updatedAt', 'Dernière modification', 'date'),
+    ],
+  },
+  {
+    key: 'health',
+    label: 'Scores',
+    icon: 'favorite_border',
+    aquarium: true,
+    fields: [
+      f('score', 'Score', undefined, '/ 100'),
+      f('status', 'État'),
+      f('mode', 'Type de score'),
+      f('computedAt', 'Calculé le', 'date'),
+      f('detailsJson', 'Détail du calcul', 'object'),
+    ],
+  },
+  {
+    key: 'ai',
+    label: 'Analyses IA',
+    icon: 'auto_awesome',
+    aquarium: true,
+    fields: [
+      f('feature', 'Fonctionnalité'),
+      f('plan', 'Formule'),
+      f('model', 'Modèle'),
+      f('inputTokens', 'Tokens en entrée'),
+      f('outputTokens', 'Tokens en sortie'),
+      f('totalTokens', 'Total des tokens'),
+      f('responseText', 'Réponse enregistrée', 'text'),
+      created,
+    ],
+  },
+  {
+    key: 'recommendations',
+    label: 'Recommandations',
+    icon: 'tips_and_updates',
+    aquarium: true,
+    fields: [
+      f('severity', 'Priorité'),
+      f('status', 'Décision'),
+      f('message', 'Conseil', 'text'),
+      f('measurementId', 'Mesure associée'),
+      f('actionType', 'Action proposée'),
+      f('actionPayload', 'Détails de l’action', 'object'),
+      f('decidedAt', 'Décision le', 'date'),
+      created,
+    ],
+  },
+  {
+    key: 'subscriptions',
+    label: 'Souscriptions PayPal',
+    icon: 'credit_card',
+    fields: [
+      f('paypalId', 'Référence PayPal'),
+      f('environment', 'Environnement'),
+      f('status', 'État PayPal'),
+      f('paidUntil', 'Période payée jusqu’au', 'date'),
+      f('syncedAt', 'Dernière synchronisation', 'date'),
+      created,
+    ],
+  },
+  {
+    key: 'payments',
+    label: 'Paiements',
+    icon: 'receipt_long',
+    fields: [
+      f('paypalId', 'Souscription PayPal'),
+      f('environment', 'Environnement'),
+      f('paidAt', 'Date de paiement', 'date'),
+      f('periodEnd', 'Période couverte jusqu’au', 'date'),
+      f('reversed', 'Annulé / remboursé en tout ou partie', 'boolean'),
+      f('confirmationEmailAttemptedAt', 'Tentative d’email de confirmation', 'date'),
+      f('confirmationEmailSentAt', 'Email de confirmation envoyé', 'date'),
+    ],
+  },
+  {
+    key: 'billingActions',
+    label: 'Vérifications admin',
+    icon: 'fact_check',
+    fields: [
+      f('paypalId', 'Souscription PayPal'),
+      f('environment', 'Environnement'),
+      f('actorId', 'Administrateur'),
+      f('outcome', 'Résultat'),
+      created,
+    ],
+  },
+  {
+    key: 'activity',
+    label: 'Événements',
+    icon: 'history',
+    fields: [
+      f('feature', 'Fonctionnalité utilisée'),
+      f('aquariumId', 'Aquarium'),
+      f('resourceId', 'Ressource consultée'),
+      created,
+    ],
+  },
+  {
+    key: 'achievements',
+    label: 'Badges',
+    icon: 'military_tech',
+    fields: [
+      f('description', 'Description', 'text'),
+      f('achievementKey', 'Code du badge'),
+      f('unlockedAt', 'Obtenu le', 'date'),
+    ],
+  },
+  {
+    key: 'missions',
+    label: 'Missions',
+    icon: 'flag',
+    fields: [
+      f('description', 'Objectif', 'text'),
+      f('status', 'État'),
+      f('progress', 'Progression'),
+      f('target', 'Cible'),
+      f('xpReward', 'XP à gagner'),
+      f('weekStart', 'Début', 'date'),
+      f('weekEnd', 'Fin', 'date'),
+      f('completedAt', 'Terminée le', 'date'),
+    ],
+  },
+  {
+    key: 'articles',
+    label: 'Articles',
+    icon: 'article',
+    fields: [
+      f('status', 'Publication'),
+      f('excerpt', 'Résumé', 'text'),
+      f('content', 'Contenu enregistré', 'text'),
+      f('viewsCount', 'Vues'),
+      f('publishedAt', 'Publié le', 'date'),
+      f('reviewedById', 'Modérateur'),
+      f('reviewedAt', 'Examiné le', 'date'),
+      f('rejectReason', 'Motif de refus', 'text'),
+      created,
+      f('updatedAt', 'Dernière modification', 'date'),
+    ],
+  },
+  {
+    key: 'fishCards',
+    label: 'Fiches poissons',
+    icon: 'set_meal',
+    fields: [f('scientificName', 'Nom scientifique'), f('status', 'Modération'), created],
+  },
+  {
+    key: 'plantCards',
+    label: 'Fiches plantes',
+    icon: 'eco',
+    fields: [f('scientificName', 'Nom scientifique'), f('status', 'Modération'), created],
+  },
+];
+export const SETTING_FIELDS: DossierField[] = [
+  f('theme', 'Thème'),
+  f('defaultView', 'Vue préférée'),
+  f('temperatureUnit', 'Température'),
+  f('volumeUnit', 'Volume'),
+  f('notificationsEnabled', 'Notifications générales', 'boolean'),
+  f('emailNotifications', 'Notifications email', 'boolean'),
+  f('pushNotifications', 'Notifications push', 'boolean'),
+  f('taskReminders', 'Rappels de tâches', 'boolean'),
+  f('automaticNotifications', 'Rappels automatiques', 'boolean'),
+  f('newsAndUpdates', 'Actualités et nouveautés', 'boolean'),
+  f('alertsEnabled', 'Alertes', 'boolean'),
+  f('phMin', 'pH minimum'),
+  f('phMax', 'pH maximum'),
+  f('tempMin', 'Température minimum'),
+  f('tempMax', 'Température maximum'),
+  f('lastMeasurementReminderAt', 'Dernier rappel de mesure', 'date'),
+  f('lastTaskReminderDate', 'Dernier rappel de tâches', 'date'),
+];
+export const PROGRESS_FIELDS: DossierField[] = [
+  f('level', 'Niveau'),
+  f('xp', 'XP'),
+  f('currentStreak', 'Série actuelle', undefined, 'jours'),
+  f('bestStreak', 'Meilleure série', undefined, 'jours'),
+  f('lastActivityDate', 'Dernière activité de progression', 'date'),
+  f('recentBadgeKey', 'Dernier badge'),
+  f('createdAt', 'Création du profil', 'date'),
+  f('updatedAt', 'Mise à jour', 'date'),
+];

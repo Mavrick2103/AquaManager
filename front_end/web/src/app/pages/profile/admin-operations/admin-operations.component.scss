@@ -1,0 +1,27 @@
+@use '../../../shared/admin-sidebar/admin-workspace' as admin;
+@include admin.console;
+.filters {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f6f8fa;
+  border-radius: 8px;
+}
+.route-filter {
+  flex: 1;
+  min-width: 160px;
+}
+pre {
+  overflow: auto;
+  padding: 18px;
+  border-radius: 8px;
+  background: #142d39;
+  color: #d9e5ea;
+  font-size: 12px;
+  line-height: 2;
+}
+td code {
+  overflow-wrap: anywhere;
+}
+.stat > strong {
+  font-size: 24px;
+}

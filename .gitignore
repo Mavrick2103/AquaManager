@@ -38,3 +38,7 @@ logs
 
 # Private Instagram token store
 .private/
+
+# Cypress generated artifacts
+front_end/web/cypress/screenshots/
+front_end/web/cypress/videos/

@@ -1,0 +1,167 @@
+<div class="admin-layout">
+  <aside appAdminSidebar></aside>
+  <main class="content">
+    <div class="page">
+      <header class="page-heading">
+        <div>
+          <p class="eyebrow">Administration / Technique</p>
+          <h1>Serveur & journaux</h1>
+          <p>État de l’API et incidents applicatifs enregistrés.</p>
+        </div>
+        <button (click)="refresh()" [disabled]="loading || healthLoading">
+          <mat-icon>refresh</mat-icon>Actualiser
+        </button>
+      </header>
+      @if (healthLoading) {
+        <p role="status" class="notice">Vérification de l’état du serveur…</p>
+      }
+      @if (healthError) {
+        <p role="alert" class="error-message">
+          {{ healthError }} <button (click)="loadHealth()">Réessayer</button>
+        </p>
+      }
+      @if (health; as h) {
+        <section class="stats" aria-label="État du serveur">
+          <article class="stat">
+            <span>Base de données</span
+            ><strong>{{ h.mysql === 'ok' ? 'Accessible' : 'Erreur' }}</strong
+            ><small>Connexion MySQL testée à l’instant</small>
+          </article>
+          <article class="stat">
+            <span>Stockage accessible à l’API</span
+            ><strong>{{ h.disk.usedPercent === null ? '—' : h.disk.usedPercent + ' %' }}</strong
+            ><span class="badge" [class.warning]="h.disk.status !== 'ok'">{{
+              status(h.disk.status)
+            }}</span>
+            <p class="muted">
+              {{
+                h.disk.freeBytes === null
+                  ? 'Espace libre non disponible'
+                  : (h.disk.freeBytes / 1073741824 | number: '1.1-1') + ' Go libres'
+              }}
+            </p>
+          </article>
+          <article class="stat">
+            <span>Dernier fichier de sauvegarde</span><strong>{{ status(h.backup.status) }}</strong
+            ><small>{{
+              (h.backup.lastAt | date: 'dd/MM/yyyy HH:mm') || 'Aucun fichier lisible confirmé'
+            }}</small>
+          </article>
+          <article class="stat">
+            <span>Processus API</span
+            ><strong>{{ h.uptimeSeconds / 3600 | number: '1.1-1' }} h</strong
+            ><small
+              >Depuis le démarrage · {{ h.memoryBytes / 1048576 | number: '1.0-0' }} Mo de
+              mémoire</small
+            >
+          </article>
+        </section>
+        <p class="muted">
+          Vérifié le {{ h.generatedAt | date: 'dd/MM/yyyy à HH:mm:ss' }}. Le contrôle des
+          sauvegardes détecte les fichiers SQL non vides accessibles à l’API ; il ne vérifie pas
+          leur restauration.
+        </p>
+      }
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Journal des incidents</h2>
+            <p class="muted">
+              Erreurs HTTP 5xx captées par l’application, de la plus récente à la plus ancienne.
+            </p>
+          </div>
+        </div>
+        <form class="filters" (ngSubmit)="load(true)">
+          <label
+            >Période<select name="range" [(ngModel)]="range">
+              <option value="1d">24 heures</option>
+              <option value="7d">7 jours</option>
+              <option value="30d">30 jours</option>
+              <option value="90d">90 jours</option>
+            </select></label
+          >
+          <label
+            >Catégorie<select name="type" [(ngModel)]="type">
+              <option value="all">Toutes les catégories</option>
+              <option value="API_ERROR">API</option>
+              <option value="PAYPAL_FAILURE">Parcours PayPal</option>
+              <option value="STRIPE_FAILURE">Parcours Stripe</option>
+              <option value="EMAIL_FAILURE">Parcours email</option>
+            </select></label
+          >
+          <label class="route-filter"
+            >Route<input
+              name="route"
+              [(ngModel)]="route"
+              maxlength="180"
+              placeholder="Ex. /aquariums" /></label
+          ><button type="submit" [disabled]="loading">Appliquer</button>
+        </form>
+        @if (loading) {
+          <p role="status" class="notice">Chargement du journal…</p>
+        }
+        @if (error) {
+          <p role="alert" class="error-message">{{ error }}</p>
+        }
+        @if (logs; as l) {
+          <p class="muted">
+            {{ l.total }} incident(s) correspondant aux filtres · actualisé à
+            {{ l.generatedAt | date: 'HH:mm:ss' }}
+          </p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Catégorie</th>
+                  <th>Code HTTP</th>
+                  <th>Route</th>
+                  <th>Référence</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (event of l.items; track event.id) {
+                  <tr>
+                    <td>{{ event.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td>{{ labels[event.type] || event.type }}</td>
+                    <td>
+                      <span class="badge error">{{ event.statusCode }}</span>
+                    </td>
+                    <td>
+                      <code>{{ event.route }}</code>
+                    </td>
+                    <td>#{{ event.id }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty">Aucun incident enregistré pour ces filtres.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <nav class="pagination" aria-label="Pages du journal">
+            <button [disabled]="loading || page === 1" (click)="next(-1)">Précédent</button
+            ><span>Page {{ page }}</span
+            ><button [disabled]="loading || page * 25 >= l.total" (click)="next(1)">Suivant</button>
+          </nav>
+        }
+      </section>
+      <div class="notice">
+        Les catégories indiquent le parcours où une erreur s’est produite, sans prouver une panne du
+        prestataire. Ce journal ne couvre pas les erreurs du navigateur, Nginx, les tâches
+        planifiées ni toutes les erreurs de paiement.
+      </div>
+      <section class="panel">
+        <div class="panel-head"><h2>Journaux complets du serveur</h2></div>
+        <p class="muted">
+          Pour investiguer un incident, exécutez ces commandes sur le VPS, depuis le dossier
+          AquaManager. Les journaux Docker ne sont pas exposés dans le navigateur.
+        </p>
+        <pre><code>docker compose logs --since=1h --tail=200 api
+docker compose logs --since=1h --tail=200 frontend ssr
+docker compose ps</code></pre>
+      </section>
+    </div>
+  </main>
+</div>

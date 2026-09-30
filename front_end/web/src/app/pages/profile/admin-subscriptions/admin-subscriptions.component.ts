@@ -19,6 +19,7 @@ interface Detail extends Subscription {
   paymentCount: number; actionCount: number;
   actions: { id: number; actorId: number; outcome: string; createdAt: string }[];
 }
+interface SubscriptionOverview { total: number; active: number; pending: number; cancelled: number; suspended: number; expired: number; }
 @Component({
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, MatButtonModule, MatIconModule, AdminSidebarComponent],
@@ -30,17 +31,20 @@ export class AdminSubscriptionsComponent implements OnInit {
   items = signal<Subscription[]>([]); detail = signal<Detail | null>(null);
   loading = signal(false); detailLoading = signal(false); refreshing = signal(false);
   error = signal(''); notice = signal(''); total = signal(0); configuredEnvironment = signal('');
-  search = ''; mode = 'all'; attention = false; page = 1;
+  overview = signal<SubscriptionOverview | null>(null);
+  search = ''; mode = 'live'; status = 'all'; attention = false; page = 1;
   private selection = 0;
   ngOnInit() { void this.load(); }
   async load(reset = false) {
     if (this.loading()) return;
     if (reset) this.page = 1;
     this.loading.set(true); this.error.set('');
+    this.items.set([]); this.overview.set(null); this.total.set(0); this.configuredEnvironment.set('');
     try {
-      const data = await firstValueFrom(this.http.get<{ items: Subscription[]; total: number; configuredEnvironment: string }>(this.base,
-        { params: { search: this.search, environment: this.mode, attention: String(this.attention), page: this.page } }));
+      const data = await firstValueFrom(this.http.get<{ items: Subscription[]; total: number; overview: SubscriptionOverview; configuredEnvironment: string }>(this.base,
+        { params: { search: this.search, environment: this.mode, status: this.status, attention: String(this.attention), page: this.page } }));
       this.items.set(data.items); this.total.set(data.total); this.configuredEnvironment.set(data.configuredEnvironment);
+      this.overview.set(data.overview);
     } catch { this.error.set('Impossible de charger les abonnements. Réessaie dans un instant.'); }
     finally { this.loading.set(false); }
   }

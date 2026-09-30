@@ -1,3 +1,4 @@
+@use '../../../shared/admin-sidebar/admin-workspace' as adminShell;
 :host { display:block; min-height:100%; color:#173c3d; background:#f3f7f6; }
 * { box-sizing:border-box; }
 .admin-layout { display:flex; min-height:calc(100vh - 64px); }
@@ -182,3 +183,7 @@ h1 em { color:#0b8a80; font-style:normal; }
   .admin-layout { flex-direction:column; }
   .admin-sidebar { position:relative; height:auto; }
 }
+
+@include adminShell.shell;
+
+.agent-studio { padding:0; max-width:1440px; } .agent-header h1 { font-size:30px; letter-spacing:-1px; }

@@ -1,5 +1,5 @@
 @use '../../../shared/admin-sidebar/admin-workspace' as admin;
-@include admin.workspace;
+@include admin.console;
 :host { display:block; min-height:100vh; }
 .layout { display:grid; grid-template-columns:260px minmax(0,1fr); min-height:100vh; }
 .header, .detail-header { display:flex; align-items:center; justify-content:space-between; gap:16px; }
@@ -22,3 +22,6 @@ small { display:block; color:#5b706f; margin-top:5px; overflow-wrap:anywhere; }
 .reference { overflow-wrap:anywhere; color:#5b706f; }.history { padding-left:20px; line-height:2; }
 .alert,.notice { padding:14px; border-radius:10px; }.alert { background:#fff0eb; color:#923c23; }.notice { background:#e6f6ed; color:#226445; }
 @media(max-width:1050px) { .layout { grid-template-columns:1fr; } aside { display:block; } }
+
+.admin-card { padding:22px; background:white; border:1px solid #dde5e9; border-radius:10px; }
+@media(max-width:550px) { .admin-card { padding:14px; } .detail-header { flex-wrap:wrap; } }

@@ -1,53 +1,40 @@
-<a class="admin-brand" routerLink="/admin/metrics" aria-label="Accueil de l’administration">
-  <span class="admin-brand__mark"><mat-icon>water</mat-icon></span>
-  <span><strong>AquaManager</strong><small>Centre d’administration</small></span>
-</a>
-
-<div class="admin-context">
-  <span class="admin-context__pulse" aria-hidden="true"></span>
-  <span><strong>Espace sécurisé</strong><small>Gestion du site</small></span>
+<div class="brand-row">
+  <a class="admin-brand" [routerLink]="adminAccess ? '/admin/metrics' : '/admin/articles'">
+    <mat-icon>water</mat-icon><span><strong>AquaManager</strong><small>Administration</small></span>
+  </a>
+  <button
+    class="menu-toggle"
+    type="button"
+    (click)="expanded = !expanded"
+    [attr.aria-expanded]="expanded"
+    aria-controls="admin-navigation"
+    aria-label="Menu d’administration"
+  >
+    <mat-icon>{{ expanded ? 'close' : 'menu' }}</mat-icon>
+  </button>
 </div>
-
-<nav class="admin-nav" aria-label="Navigation de l’administration">
-  @if (visible(pilotage).length) {
-    <section>
-      <p>Pilotage</p>
-      @for (item of visible(pilotage); track item.route) {
-        <a [routerLink]="item.route" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: item.route === '/admin/metrics' }">
-          <mat-icon>{{ item.icon }}</mat-icon>
-          <span><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span>
-          <mat-icon class="admin-nav__arrow">chevron_right</mat-icon>
-        </a>
+<div id="admin-navigation" [class.expanded]="expanded">
+  <nav aria-label="Navigation de l’administration">
+    @for (group of groups; track group.label) {
+      @if (!group.adminOnly || adminAccess) {
+        <section>
+          <p>{{ group.label }}</p>
+          @for (item of group.links; track item.route) {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="is-active"
+              ariaCurrentWhenActive="page"
+              (click)="expanded = false"
+              ><mat-icon>{{ item.icon }}</mat-icon
+              ><span>{{ item.label }}</span></a
+            >
+          }
+        </section>
       }
-    </section>
-  }
-
-  <section>
-    <p>Contenus</p>
-    @for (item of content; track item.route) {
-      <a [routerLink]="item.route" routerLinkActive="is-active">
-        <mat-icon>{{ item.icon }}</mat-icon>
-        <span><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span>
-        <mat-icon class="admin-nav__arrow">chevron_right</mat-icon>
-      </a>
     }
-  </section>
-
-  @if (visible(communication).length) {
-    <section>
-      <p>Rayonnement</p>
-      @for (item of visible(communication); track item.route) {
-        <a [routerLink]="item.route" routerLinkActive="is-active">
-          <mat-icon>{{ item.icon }}</mat-icon>
-          <span><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span>
-          <mat-icon class="admin-nav__arrow">chevron_right</mat-icon>
-        </a>
-      }
-    </section>
-  }
-</nav>
-
-<footer class="admin-sidebar-footer">
-  <a mat-button routerLink="/dashboard"><mat-icon>dashboard</mat-icon>Voir l’application</a>
-  <a mat-button routerLink="/profile"><mat-icon>account_circle</mat-icon>Mon profil</a>
-</footer>
+  </nav>
+  <footer>
+    <a routerLink="/dashboard"><mat-icon>arrow_back</mat-icon>Retour à l’application</a
+    ><a routerLink="/profile"><mat-icon>account_circle</mat-icon>Mon profil</a>
+  </footer>
+</div>

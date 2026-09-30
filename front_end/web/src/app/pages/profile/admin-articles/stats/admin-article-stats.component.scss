@@ -1,3 +1,4 @@
+@use '../../../../shared/admin-sidebar/admin-workspace' as adminShell;
 .wrap {
   border-radius: 18px;
   padding: 14px;
@@ -189,3 +190,6 @@
     min-height: 260px;
   }
 }
+
+@include adminShell.shell;
+.wrap { margin:0 auto!important; width:100%; max-width:1440px; border-radius:12px; box-shadow:none; }

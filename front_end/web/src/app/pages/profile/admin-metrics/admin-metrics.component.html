@@ -1,691 +1,230 @@
-<!-- admin-metrics.component.html -->
 <div class="admin-layout">
-  <aside appAdminSidebar class="sidebar" [adminAccess]="true"></aside>
-
-  <!-- CONTENT -->
+  <aside appAdminSidebar></aside>
   <main class="content">
     <div class="page">
-      <mat-toolbar class="toolbar admin-page-hero hero-dashboard" role="banner">
-        <div class="brand">
-          <div class="brand-icon" aria-hidden="true">
-            <mat-icon>query_stats</mat-icon>
-          </div>
-          <div class="brand-text">
-            <div class="brand-title">Pilotage AquaManager</div>
-            <div class="brand-sub" *ngIf="metrics">
-              {{ rangeLabel() }} • Généré le {{ metrics.generatedAt | date:'medium' }}
-            </div>
-          </div>
+      <header class="page-heading">
+        <div>
+          <p class="eyebrow">Administration / Pilotage</p>
+          <h1>Vue d’ensemble</h1>
+          <p>Les chiffres essentiels et les actions à suivre.</p>
         </div>
-
-        <span class="spacer"></span>
-
-        <div class="range-wrap" aria-label="Période">
-          <!-- ✅ onRangeChange au lieu de click sur chaque bouton -->
-          <mat-button-toggle-group class="range" [value]="range" (change)="onRangeChange($event)">
-            <mat-button-toggle value="1d">24h</mat-button-toggle>
-            <mat-button-toggle value="7d">7j</mat-button-toggle>
-            <mat-button-toggle value="30d">30j</mat-button-toggle>
-            <mat-button-toggle value="365d">1 an</mat-button-toggle>
-            <mat-button-toggle value="all">Total</mat-button-toggle>
-          </mat-button-toggle-group>
+        <div class="actions">
+          <label
+            >Période<select [(ngModel)]="range" (ngModelChange)="load()">
+              <option value="1d">Dernières 24 heures</option>
+              <option value="7d">7 derniers jours</option>
+              <option value="30d">30 derniers jours</option>
+              <option value="365d">12 derniers mois</option>
+              <option value="all">Depuis le début</option>
+            </select></label
+          ><button (click)="load()" [disabled]="loading">
+            <mat-icon>refresh</mat-icon>Actualiser
+          </button>
         </div>
-        <button
-          mat-stroked-button
-          class="refresh-button"
-          type="button"
-          (click)="load()"
-          [disabled]="loading"
-          aria-label="Actualiser les données du tableau de bord"
-        >
-          <mat-icon [class.spinning]="loading">refresh</mat-icon>
-          Actualiser
-        </button>
-      </mat-toolbar>
-
-      <div class="state" *ngIf="loading">
-        <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
-        <span>Chargement…</span>
-      </div>
-
-      <div class="state error" *ngIf="error">
-        <mat-icon>error</mat-icon>
-        <span>{{ error }}</span>
-      </div>
-
-      <ng-container *ngIf="metrics && !loading">
-        <section class="command-center" aria-labelledby="command-center-title">
-          <div class="command-summary">
-            <div class="summary-icon" [class.clear]="totalAttention() === 0">
-              <mat-icon>{{ totalAttention() === 0 ? 'verified' : 'notifications_active' }}</mat-icon>
-            </div>
-            <div class="summary-copy">
-              <span class="eyebrow">Centre de pilotage</span>
-              <h1 id="command-center-title">
-                {{ totalAttention() === 0 ? 'Tout est sous contrôle' : totalAttention() + ' actions à examiner' }}
-              </h1>
-              <p>
-                {{ totalAttention() === 0
-                  ? 'Aucune validation ni alerte prioritaire actuellement.'
-                  : 'Commencez par les validations et les comptes qui demandent votre attention.' }}
-              </p>
-            </div>
-            <a mat-flat-button color="primary" routerLink="/admin/users">
-              <mat-icon>manage_accounts</mat-icon>
-              Gérer les utilisateurs
-            </a>
-          </div>
-
-          <div class="action-grid">
-            <a class="action-card" routerLink="/admin/articles">
-              <span class="action-icon articles"><mat-icon>article</mat-icon></span>
-              <span class="action-copy">
-                <strong>{{ metrics.moderation.pendingArticles }}</strong>
-                <span>articles à valider</span>
-              </span>
-              <mat-icon class="action-arrow">arrow_forward</mat-icon>
-            </a>
-
-            <a class="action-card" routerLink="/admin/species/fish">
-              <span class="action-icon fish"><mat-icon>set_meal</mat-icon></span>
-              <span class="action-copy">
-                <strong>{{ metrics.moderation.pendingFishCards }}</strong>
-                <span>fiches poissons en attente</span>
-              </span>
-              <mat-icon class="action-arrow">arrow_forward</mat-icon>
-            </a>
-
-            <a class="action-card" routerLink="/admin/species/plant">
-              <span class="action-icon plants"><mat-icon>eco</mat-icon></span>
-              <span class="action-copy">
-                <strong>{{ metrics.moderation.pendingPlantCards }}</strong>
-                <span>fiches plantes en attente</span>
-              </span>
-              <mat-icon class="action-arrow">arrow_forward</mat-icon>
-            </a>
-
-            <a class="action-card" routerLink="/admin/users" [queryParams]="{ filter: 'unverified' }">
-              <span class="action-icon users"><mat-icon>person_off</mat-icon></span>
-              <span class="action-copy">
-                <strong>{{ metrics.attention.unverifiedUsers }}</strong>
-                <span>comptes non vérifiés</span>
-              </span>
-              <mat-icon class="action-arrow">arrow_forward</mat-icon>
-            </a>
-          </div>
-
-          <div class="health-strip" aria-label="État du site">
-            <div class="health-item">
-              <mat-icon>check_circle</mat-icon>
-              <span><strong>API opérationnelle</strong><small>Données chargées correctement</small></span>
-            </div>
-            <div class="health-item">
-              <mat-icon>library_books</mat-icon>
-              <span><strong>{{ metrics.content.publishedArticles }}</strong><small>articles publiés</small></span>
-            </div>
-            <div class="health-item">
-              <mat-icon>pets</mat-icon>
-              <span>
-                <strong>{{ metrics.content.approvedFishCards + metrics.content.approvedPlantCards }}</strong>
-                <small>fiches espèces actives</small>
-              </span>
-            </div>
-            <div class="health-item" [class.warning]="metrics.attention.overdueTasks > 0">
-              <mat-icon>{{ metrics.attention.overdueTasks > 0 ? 'event_busy' : 'event_available' }}</mat-icon>
-              <span>
-                <strong>{{ metrics.attention.overdueTasks }}</strong>
-                <small>tâches utilisateur en retard</small>
-              </span>
-            </div>
-          </div>
+      </header>
+      @if (loading) {
+        <p role="status" class="notice">Chargement des indicateurs…</p>
+      }
+      @if (error) {
+        <p role="alert" class="error-message">{{ error }}</p>
+      }
+      @if (metrics; as m) {
+        <section class="stats" aria-label="Indicateurs clés">
+          <article class="stat">
+            <span>Nouveaux inscrits</span><strong>{{ m.users.newInRange ?? '—' }}</strong
+            ><small>Sur la période · {{ m.users.total }} comptes au total</small>
+          </article>
+          <article class="stat">
+            <span>Utilisateurs actifs</span><strong>{{ m.users.activeInRange }}</strong
+            ><small>Dernière activité sur la période</small>
+          </article>
+          <article class="stat accent">
+            <span>Accès Premium / Pro actifs</span><strong>{{ m.subscriptions.totalActive }}</strong
+            ><small>Actuellement · accès offerts inclus</small>
+          </article>
+          <article class="stat">
+            <span>Échéances dans les 7 jours</span
+            ><strong>{{ m.subscriptions.expiringSoon }}</strong
+            ><small>Fin de période d’accès, renouvellements inclus</small>
+          </article>
         </section>
-
-        <section class="operations-board" aria-labelledby="operations-title">
-          <header>
-            <div>
-              <span class="eyebrow">Indicateurs de décision</span>
-              <h2 id="operations-title">Comprendre l’utilisation du site</h2>
-              <p>Des ratios directement exploitables, calculés à partir des données de la période choisie.</p>
-            </div>
-            <span class="period-badge"><mat-icon>date_range</mat-icon>{{ rangeLabel() }}</span>
-          </header>
-
-          <div class="operations-grid">
-            <article>
-              <span class="operation-icon"><mat-icon>person_check</mat-icon></span>
-              <div><small>Utilisateurs actifs</small><strong>{{ pct(metrics.users.activeInRange, metrics.users.total) }}</strong><p>{{ metrics.users.activeInRange }} actifs sur {{ metrics.users.total }} comptes</p></div>
-            </article>
-            <article>
-              <span class="operation-icon subscription"><mat-icon>workspace_premium</mat-icon></span>
-              <div><small>Conversion abonnement</small><strong>{{ pct(metrics.subscriptions.totalActive, metrics.users.total) }}</strong><p>{{ metrics.subscriptions.totalActive }} abonnements actifs</p></div>
-            </article>
-            <article>
-              <span class="operation-icon aquarium"><mat-icon>waves</mat-icon></span>
-              <div><small>Aquariums par utilisateur</small><strong>{{ avg(metrics.aquariums.total, metrics.users.total) }}</strong><p>{{ metrics.aquariums.total }} aquariums enregistrés</p></div>
-            </article>
-            <article>
-              <span class="operation-icon tasks"><mat-icon>task_alt</mat-icon></span>
-              <div><small>Tâches terminées</small><strong>{{ pct(metrics.tasks.doneTotal, metrics.tasks.total) }}</strong><p>{{ metrics.tasks.doneTotal }} réalisées sur {{ metrics.tasks.total }}</p></div>
-            </article>
-            <article>
-              <span class="operation-icon notifications"><mat-icon>notifications_active</mat-icon></span>
-              <div><small>Consentement notifications</small><strong>{{ pct(metrics.users.notificationConsentCount, metrics.users.total) }}</strong><p>{{ metrics.users.notificationConsentCount }} utilisateur{{ metrics.users.notificationConsentCount > 1 ? 's' : '' }} sur {{ metrics.users.total }}</p></div>
-            </article>
-            <article>
-              <span class="operation-icon measures"><mat-icon>science</mat-icon></span>
-              <div><small>Mesures par aquarium</small><strong>{{ avg(metrics.measurements.total, metrics.aquariums.total) }}</strong><p>{{ metrics.measurements.total }} relevés enregistrés</p></div>
-            </article>
-            <article [class.needs-attention]="metrics.moderation.totalPending > 0">
-              <span class="operation-icon moderation"><mat-icon>fact_check</mat-icon></span>
-              <div><small>File de modération</small><strong>{{ metrics.moderation.totalPending }}</strong><p>{{ metrics.moderation.totalPending ? 'éléments attendent une décision' : 'aucun contenu en attente' }}</p></div>
-            </article>
-          </div>
-        </section>
-
-        <section class="visual-grid" aria-label="Vue synthétique de l'évolution de l'application">
-          <mat-card class="chart-card activity-chart-card">
-            <div class="chart-head">
-              <div class="chart-head-text">
-                <span class="eyebrow">Volume d'utilisation</span>
-                <h2>Activité sur la période</h2>
-                <p>Compare les principales actions réalisées pendant {{ rangeLabel() }}.</p>
-              </div>
-              <mat-icon aria-hidden="true">bar_chart</mat-icon>
-            </div>
-            <div class="activity-chart" role="img" aria-label="Histogramme de l'activité sur la période">
-              <div class="activity-bar-item" *ngFor="let item of activityBars()">
-                <strong>{{ item.value }}</strong>
-                <div class="activity-bar-track"><span class="activity-bar-fill" [ngClass]="item.tone" [style.height.%]="activityBarHeight(item.value)"></span></div>
-                <div class="activity-bar-label"><mat-icon>{{ item.icon }}</mat-icon><span>{{ item.label }}</span></div>
-              </div>
-            </div>
-          </mat-card>
-
-          <mat-card class="chart-card plan-chart-card">
-            <div class="chart-head">
-              <div class="chart-head-text">
-                <span class="eyebrow">Adoption des offres</span>
-                <h2>Répartition des comptes</h2>
-                <p>Plans actifs parmi les {{ metrics.users.total }} utilisateurs.</p>
-              </div>
-              <mat-icon aria-hidden="true">donut_large</mat-icon>
-            </div>
-            <div class="plan-chart-body">
-              <div class="plan-donut" [style.background]="planDonutStyle()" role="img" aria-label="Camembert des abonnements">
-                <div class="plan-donut-center"><strong>{{ metrics.users.total }}</strong><span>comptes</span></div>
-              </div>
-              <div class="plan-legend">
-                <div class="plan-legend-row classic"><span class="plan-color"></span><div><strong>Classic</strong><small>{{ classicAccounts() }} comptes</small></div><b>{{ planPercent(classicAccounts()) }}%</b></div>
-                <div class="plan-legend-row premium"><span class="plan-color"></span><div><strong>Premium</strong><small>{{ metrics.subscriptions.premiumActive }} actifs</small></div><b>{{ planPercent(metrics.subscriptions.premiumActive) }}%</b></div>
-                <div class="plan-legend-row pro"><span class="plan-color"></span><div><strong>Pro</strong><small>{{ metrics.subscriptions.proActive }} actifs</small></div><b>{{ planPercent(metrics.subscriptions.proActive) }}%</b></div>
-              </div>
-            </div>
-          </mat-card>
-        </section>
-
-        <mat-card class="chart-card subscription-chart-card">
-          <div class="chart-head">
-            <div class="chart-head-text">
-              <span class="eyebrow">Cohortes d'abonnés</span>
-              <h2>Abonnés par date d'inscription</h2>
-              <p>Comptes Premium et Pro actifs, regroupés selon leur date d'inscription.</p>
-            </div>
-            <mat-icon aria-hidden="true">stacked_bar_chart</mat-icon>
-          </div>
-          <div class="subscription-chart" *ngIf="hasSubscriptionsSeries(); else noSubscriptionSeries">
-            <div class="subscription-bars" role="img" aria-label="Histogramme des abonnements Premium et Pro">
-              <div class="subscription-bar-group" *ngFor="let point of subscriptionsSeries()" [matTooltip]="point.label + ' : ' + point.premium + ' Premium, ' + point.pro + ' Pro'">
-                <strong>{{ point.total }}</strong>
-                <div class="subscription-bars-stack"><span class="subscription-bar premium" [style.height.%]="subscriptionBarHeight(point.premium)"></span><span class="subscription-bar pro" [style.height.%]="subscriptionBarHeight(point.pro)"></span></div>
-                <span class="subscription-label">{{ point.label }}</span>
-              </div>
-            </div>
-            <div class="subscription-legend"><span><i class="legend-dot premium"></i>Premium</span><span><i class="legend-dot pro"></i>Pro</span></div>
-          </div>
-          <ng-template #noSubscriptionSeries><div class="chart-empty"><mat-icon>workspace_premium</mat-icon><div><div class="chart-empty-title">Aucune donnée d'abonnement</div><div class="chart-empty-sub">Aucun abonnement actif sur cette période.</div></div></div></ng-template>
-        </mat-card>
-
-        <section class="monitoring-grid" aria-label="Supervision technique et usage des fonctionnalités">
-          <mat-card class="monitor-card technical-card">
-            <div class="monitor-head">
-              <div><span class="eyebrow">Supervision</span><h2>État technique</h2><p>Contrôles en direct et incidents sur {{ rangeLabel() }}.</p></div>
-              <mat-icon>monitor_heart</mat-icon>
-            </div>
-            <div class="technical-status-grid">
-              <article [attr.data-status]="metrics.operations.infrastructure.mysql">
-                <span class="status-icon"><mat-icon>database</mat-icon></span>
-                <div><small>Base de données</small><strong>{{ metrics.operations.infrastructure.mysql === 'ok' ? 'MySQL opérationnel' : 'MySQL indisponible' }}</strong></div>
-              </article>
-              <article [attr.data-status]="metrics.operations.infrastructure.disk.status">
-                <span class="status-icon"><mat-icon>hard_drive</mat-icon></span>
-                <div><small>Espace disque</small><strong>{{ metrics.operations.infrastructure.disk.usedPercent === null ? 'Non disponible' : metrics.operations.infrastructure.disk.usedPercent + '% utilisé' }}</strong><span>{{ formatBytes(metrics.operations.infrastructure.disk.freeBytes) }} libres</span></div>
-              </article>
-              <article [attr.data-status]="metrics.operations.infrastructure.backup.status">
-                <span class="status-icon"><mat-icon>backup</mat-icon></span>
-                <div><small>Dernière sauvegarde</small><strong>{{ metrics.operations.infrastructure.backup.lastAt ? (metrics.operations.infrastructure.backup.lastAt | date:'short') : 'Non détectée' }}</strong><span *ngIf="metrics.operations.infrastructure.backup.ageHours !== null">il y a {{ metrics.operations.infrastructure.backup.ageHours }} h</span></div>
-              </article>
-            </div>
-            <div class="incident-grid">
-              <div><span class="incident-value">{{ metrics.operations.alerts.apiErrors }}</span><span>erreurs API</span></div>
-              <div><span class="incident-value">{{ metrics.operations.alerts.stripeFailures }}</span><span>échecs Stripe</span></div>
-              <div><span class="incident-value">{{ metrics.operations.alerts.emailFailures }}</span><span>échecs email</span></div>
-            </div>
-            <p class="tracking-notice" *ngIf="!metrics.operations.alerts.trackingAvailable"><mat-icon>info</mat-icon>Le suivi des incidents démarrera après l'installation de la migration.</p>
-            <div class="recent-incidents" *ngIf="metrics.operations.alerts.recent.length">
-              <div class="recent-title">Derniers incidents</div>
-              <div class="incident-row" *ngFor="let incident of metrics.operations.alerts.recent">
-                <span class="incident-code">{{ incident.statusCode }}</span><code>{{ incident.route }}</code><time>{{ incident.createdAt | date:'short' }}</time>
-              </div>
-            </div>
-          </mat-card>
-
-          <mat-card class="monitor-card features-card">
-            <div class="monitor-head">
-              <div><span class="eyebrow">Adoption</span><h2>Fonctionnalités utilisées</h2><p>Actions enregistrées et utilisateurs concernés.</p></div>
-              <mat-icon>analytics</mat-icon>
-            </div>
-            <div class="feature-list">
-              <article *ngFor="let feature of featureRows()">
-                <span class="feature-icon"><mat-icon>{{ feature.icon }}</mat-icon></span>
-                <div class="feature-data">
-                  <div class="feature-line"><strong>{{ feature.label }}</strong><span>{{ feature.events }} actions</span></div>
-                  <div class="feature-track"><span [style.width.%]="featureWidth(feature.events)"></span></div>
-                  <small>{{ feature.users }} utilisateur{{ feature.users > 1 ? 's' : '' }} concerné{{ feature.users > 1 ? 's' : '' }}</small>
-                </div>
-              </article>
-            </div>
-          </mat-card>
-        </section>
-
-        <section class="grid">
-  <!-- USERS -->
-  <mat-card class="kpi kpi-users">
-    <div class="kpi-top">
-      <div class="kpi-icon" aria-hidden="true">
-        <mat-icon>group</mat-icon>
-      </div>
-
-      <div class="kpi-meta">
-        <div class="kpi-label">Utilisateurs</div>
-        <div class="kpi-value">{{ metrics.users.total }}</div>
-      </div>
-    </div>
-
-    <mat-divider></mat-divider>
-
-    <div class="kpi-rows">
-      <div class="row">
-        <span>Nouveaux sur la période</span>
-        <b>{{ kpi(metrics.users.newInRange) }}</b>
-      </div>
-
-      <div class="row">
-        <span>Actifs sur la période</span>
-        <b>{{ metrics.users.activeInRange }}</b>
-      </div>
-
-      <div class="row">
-        <span>Taux d’activité</span>
-        <b>{{ pct(metrics.users.activeInRange, metrics.users.total) }}</b>
-      </div>
-
-      <div class="row">
-        <span>Admins (total)</span>
-        <b>{{ metrics.users.admins }}</b>
-      </div>
-    </div>
-
-    <div class="note" *ngIf="metrics.users.note">
-      <mat-icon aria-hidden="true">info</mat-icon>
-      <span>{{ metrics.users.note }}</span>
-    </div>
-  </mat-card>
-
-  <!-- SUBSCRIPTIONS -->
-  <mat-card class="kpi kpi-subscriptions">
-    <div class="kpi-top">
-      <div class="kpi-icon" aria-hidden="true">
-        <mat-icon>workspace_premium</mat-icon>
-      </div>
-
-      <div class="kpi-meta">
-        <div class="kpi-label">Abonnements actifs</div>
-        <div class="kpi-value">{{ metrics.subscriptions.totalActive }}</div>
-      </div>
-    </div>
-
-    <mat-divider></mat-divider>
-
-    <div class="kpi-rows">
-      <div class="row">
-        <span>Premium actifs</span>
-        <b>{{ metrics.subscriptions.premiumActive }}</b>
-      </div>
-
-      <div class="row">
-        <span>Pro actifs</span>
-        <b>{{ metrics.subscriptions.proActive }}</b>
-      </div>
-
-      <div class="row">
-        <span>Taux d’abonnement</span>
-        <b>{{ pct(metrics.subscriptions.totalActive, metrics.users.total) }}</b>
-      </div>
-    </div>
-  </mat-card>
-
-  <!-- AQUARIUMS -->
-  <mat-card class="kpi kpi-aqua">
-    <div class="kpi-top">
-      <div class="kpi-icon" aria-hidden="true">
-        <mat-icon>waves</mat-icon>
-      </div>
-
-      <div class="kpi-meta">
-        <div class="kpi-label">Aquariums</div>
-        <div class="kpi-value">{{ metrics.aquariums.total }}</div>
-      </div>
-    </div>
-
-    <mat-divider></mat-divider>
-
-    <div class="kpi-rows">
-      <div class="row">
-        <span>Créés sur la période</span>
-        <b>{{ metrics.aquariums.createdInRange }}</b>
-      </div>
-    </div>
-  </mat-card>
-
-  <!-- MEASUREMENTS -->
-  <mat-card class="kpi kpi-measures">
-    <div class="kpi-top">
-      <div class="kpi-icon" aria-hidden="true">
-        <mat-icon>science</mat-icon>
-      </div>
-
-      <div class="kpi-meta">
-        <div class="kpi-label">Mesures</div>
-        <div class="kpi-value">{{ metrics.measurements.total }}</div>
-      </div>
-    </div>
-
-    <mat-divider></mat-divider>
-
-    <div class="kpi-rows">
-      <div class="row">
-        <span>Ajoutées sur la période</span>
-        <b>{{ metrics.measurements.createdInRange }}</b>
-      </div>
-
-      <div class="row">
-        <span>Moyenne / aquarium</span>
-        <b>{{ avg(metrics.measurements.total, metrics.aquariums.total, 1) }}</b>
-      </div>
-    </div>
-  </mat-card>
-
-  <!-- TASKS -->
-  <mat-card class="kpi kpi-tasks">
-    <div class="kpi-top">
-      <div class="kpi-icon" aria-hidden="true">
-        <mat-icon>checklist</mat-icon>
-      </div>
-
-      <div class="kpi-meta">
-        <div class="kpi-label">Tâches</div>
-        <div class="kpi-value">{{ metrics.tasks.total }}</div>
-      </div>
-    </div>
-
-    <mat-divider></mat-divider>
-
-    <div class="kpi-rows">
-      <div class="row">
-        <span>Créées sur la période</span>
-        <b>{{ metrics.tasks.createdInRange }}</b>
-      </div>
-    </div>
-  </mat-card>
-</section>
-
-        <!-- ✅ GRAPH : nouveaux utilisateurs -->
-        <mat-card class="chart-card">
-          <div class="chart-head">
-            <div class="chart-head-text">
-              <h2>Nouveaux utilisateurs</h2>
-              <p>Évolution sur {{ rangeLabel() }}.</p>
-            </div>
-            <mat-icon aria-hidden="true">show_chart</mat-icon>
-          </div>
-
-          <div class="chart-wrap" *ngIf="hasNewUsersSeries(); else noSeries">
-            <div
-              class="chart-line"
-              role="img"
-              aria-label="Graphique (courbe) des nouveaux utilisateurs"
-              (mousemove)="onChartMove($event)"
-              (mouseleave)="onChartLeave()"
-            >
-              <svg class="chart-svg" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
-                <g class="grid">
-                  <line x1="0" y1="52" x2="1000" y2="52"></line>
-                  <line x1="0" y1="104" x2="1000" y2="104"></line>
-                  <line x1="0" y1="156" x2="1000" y2="156"></line>
-                  <line x1="0" y1="208" x2="1000" y2="208"></line>
-                </g>
-
-                <path class="area" [attr.d]="lineAreaPath()"></path>
-                <path class="line" [attr.d]="linePath()"></path>
-
-                <g class="points">
-                  <circle
-                    *ngFor="let pt of linePoints(); let i = index"
-                    class="pt"
-                    [class.active]="i === hoverIndex"
-                    [attr.cx]="pt.x"
-                    [attr.cy]="pt.y"
-                    (mouseenter)="setHoverIndex(i)"
-                  ></circle>
-                </g>
-
-                <line
-                  *ngIf="hoverIndex !== null && safePoint(hoverIndex)"
-                  class="cursor"
-                  [attr.x1]="safePoint(hoverIndex)!.x"
-                  [attr.x2]="safePoint(hoverIndex)!.x"
-                  y1="0"
-                  y2="260"
-                ></line>
-              </svg>
-
-              <div
-                class="tip"
-                *ngIf="hoverIndex !== null && newUsersSeries()[hoverIndex]"
-                [style.left.px]="tipLeft"
-                [style.top.px]="tipTop"
-              >
-                <div class="tip-title">{{ newUsersSeries()[hoverIndex].label }}</div>
-                <div class="tip-value">{{ newUsersSeries()[hoverIndex].count }} inscrit(s)</div>
-              </div>
-
-              <div class="xlabels" aria-hidden="true">
-                <span
-                  *ngFor="let p of newUsersSeries(); let i = index"
-                  class="xl"
-                  [class.show]="i === 0 || i === newUsersSeries().length - 1 || i % 6 === 0"
-                >
-                  {{ p.label }}
-                </span>
-              </div>
-            </div>
-
-            <div class="chart-hint" *ngIf="seriesHint()">
-              <mat-icon aria-hidden="true">info</mat-icon>
-              <span>{{ seriesHint() }}</span>
-            </div>
-          </div>
-
-          <ng-template #noSeries>
-            <div class="chart-empty">
-              <mat-icon>insights</mat-icon>
+        <div class="columns">
+          <section class="panel">
+            <div class="panel-head">
               <div>
-                <div class="chart-empty-title">Pas de données de série</div>
-                <div class="chart-empty-sub">evolution inscriptions</div>
+                <h2>Évolution des inscriptions</h2>
+                <p class="muted">Comptes créés sur la période sélectionnée</p>
               </div>
+              <a class="button" routerLink="/admin/users">Voir les utilisateurs</a>
             </div>
-          </ng-template>
-        </mat-card>
-        <!-- ✅ GRAPH : utilisateurs actifs -->
-<mat-card class="chart-card">
-  <div class="chart-head">
-    <div class="chart-head-text">
-      <h2>Utilisateurs actifs</h2>
-      <p>Utilisateurs ayant créé une tâche ou une mesure sur {{ rangeLabel() }}.</p>
-    </div>
-    <mat-icon aria-hidden="true">insights</mat-icon>
-  </div>
-
-  <div class="chart-wrap" *ngIf="hasActiveUsersSeries(); else noActiveSeries">
-    <div
-      class="chart-line"
-      role="img"
-      aria-label="Graphique (courbe) des utilisateurs actifs"
-      (mousemove)="onActiveChartMove($event)"
-      (mouseleave)="onActiveChartLeave()"
-    >
-      <svg class="chart-svg" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
-        <g class="grid">
-          <line x1="0" y1="52" x2="1000" y2="52"></line>
-          <line x1="0" y1="104" x2="1000" y2="104"></line>
-          <line x1="0" y1="156" x2="1000" y2="156"></line>
-          <line x1="0" y1="208" x2="1000" y2="208"></line>
-        </g>
-
-        <path class="area" [attr.d]="activeLineAreaPath()"></path>
-        <path class="line" [attr.d]="activeLinePath()"></path>
-
-        <g class="points">
-          <circle
-            *ngFor="let pt of activeLinePoints(); let i = index"
-            class="pt"
-            [class.active]="i === activeHoverIndex"
-            [attr.cx]="pt.x"
-            [attr.cy]="pt.y"
-            (mouseenter)="setActiveHoverIndex(i)"
-          ></circle>
-        </g>
-
-        <line
-          *ngIf="activeHoverIndex !== null && safeActivePoint(activeHoverIndex)"
-          class="cursor"
-          [attr.x1]="safeActivePoint(activeHoverIndex)!.x"
-          [attr.x2]="safeActivePoint(activeHoverIndex)!.x"
-          y1="0"
-          y2="260"
-        ></line>
-      </svg>
-
-      <div
-        class="tip"
-        *ngIf="activeHoverIndex !== null && activeUsersSeries()[activeHoverIndex]"
-        [style.left.px]="activeTipLeft"
-        [style.top.px]="activeTipTop"
-      >
-        <div class="tip-title">{{ activeUsersSeries()[activeHoverIndex].label }}</div>
-        <div class="tip-value">{{ activeUsersSeries()[activeHoverIndex].count }} actif(s)</div>
-      </div>
-
-      <div class="xlabels" aria-hidden="true">
-        <span
-          *ngFor="let p of activeUsersSeries(); let i = index"
-          class="xl"
-          [class.show]="i === 0 || i === activeUsersSeries().length - 1 || i % 6 === 0"
-        >
-          {{ p.label }}
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <ng-template #noActiveSeries>
-    <div class="chart-empty">
-      <mat-icon>insights</mat-icon>
-      <div>
-        <div class="chart-empty-title">Pas de données d’activité</div>
-        <div class="chart-empty-sub">Aucun événement sur la période.</div>
-      </div>
-    </div>
-  </ng-template>
-</mat-card>
-
-
-        <mat-card class="table-card">
-          <div class="table-head">
-            <div class="table-head-text">
-              <h2>Dernières connexions</h2>
-              <p>Tous les utilisateurs connectés sur {{ rangeLabel() | lowercase }}, du plus récent au plus ancien.</p>
+            @if (series === null) {
+              <p class="empty">Courbe indisponible. Les autres indicateurs restent consultables.</p>
+            } @else {
+              <div class="chart" role="list" aria-label="Inscriptions par intervalle">
+                @for (p of series; track $index) {
+                  <div
+                    class="chart-column"
+                    role="listitem"
+                    [attr.aria-label]="p.label + ' : ' + p.count + ' inscriptions'"
+                    [title]="p.label + ' : ' + p.count"
+                  >
+                    <span class="bar-area"
+                      ><i [style.height.%]="(p.count / maxCount) * 100"></i
+                      ><b>{{ p.count || '' }}</b></span
+                    ><small>{{ p.label }}</small>
+                  </div>
+                }
+              </div>
+              <p class="muted">
+                Chaque barre représente un intervalle ; les intervalles de début et de fin peuvent
+                être partiels.
+              </p>
+            }
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Points de suivi</h2>
+              <span class="badge">Situation actuelle</span>
             </div>
-            <mat-icon aria-hidden="true">manage_accounts</mat-icon>
+            <a class="followup" routerLink="/admin/users" [queryParams]="{ filter: 'unverified' }"
+              ><span
+                ><strong>Emails non vérifiés</strong
+                ><small>Comptes en attente de confirmation</small></span
+              ><b>{{ m.attention.unverifiedUsers }}</b
+              ><mat-icon>chevron_right</mat-icon></a
+            >
+            <a class="followup" routerLink="/admin/articles"
+              ><span><strong>Articles à modérer</strong><small>Publications en attente</small></span
+              ><b>{{ m.moderation.pendingArticles }}</b
+              ><mat-icon>chevron_right</mat-icon></a
+            >
+            <a class="followup" routerLink="/admin/species/fish"
+              ><span><strong>Fiches poissons</strong><small>À valider</small></span
+              ><b>{{ m.moderation.pendingFishCards }}</b
+              ><mat-icon>chevron_right</mat-icon></a
+            >
+            <a class="followup" routerLink="/admin/species/plant"
+              ><span><strong>Fiches plantes</strong><small>À valider</small></span
+              ><b>{{ m.moderation.pendingPlantCards }}</b
+              ><mat-icon>chevron_right</mat-icon></a
+            >
+            <a class="followup" routerLink="/admin/operations"
+              ><span
+                ><strong>Incidents enregistrés</strong
+                ><small>Sur la période sélectionnée</small></span
+              ><b>{{ m.operations.alerts.trackingAvailable ? incidentCount : '—' }}</b
+              ><mat-icon>chevron_right</mat-icon></a
+            >
+          </section>
+        </div>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Derniers inscrits</h2>
+              <p class="muted">Les 10 inscriptions les plus récentes de la période</p>
+            </div>
+            <a class="button" routerLink="/admin/users">Tous les comptes</a>
           </div>
-
-          <div class="table-wrap" *ngIf="metrics.users.latest.length; else noRecentUsers">
-            <table mat-table [dataSource]="metrics.users.latest" class="mat-elevation-z0">
-              <ng-container matColumnDef="id">
-                <th mat-header-cell *matHeaderCellDef>ID</th>
-                <td mat-cell *matCellDef="let u">{{ u.id }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="fullName">
-                <th mat-header-cell *matHeaderCellDef>Nom</th>
-                <td mat-cell *matCellDef="let u">{{ u.fullName }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="email">
-                <th mat-header-cell *matHeaderCellDef>Email</th>
-                <td mat-cell *matCellDef="let u">{{ u.email }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="role">
-                <th mat-header-cell *matHeaderCellDef>Rôle</th>
-                <td mat-cell *matCellDef="let u">
-                  <mat-chip-set>
-                    <mat-chip class="chip" [ngClass]="roleClass(u.role)">
-                      {{ roleLabel(u.role) }}
-                    </mat-chip>
-                  </mat-chip-set>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="lastActivityAt">
-                <th mat-header-cell *matHeaderCellDef>Dernière connexion</th>
-                <td mat-cell *matCellDef="let u">
-                  {{ u.lastActivityAt | date:'dd/MM/yyyy à HH:mm' }}
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-              <tr
-                mat-row
-                class="clickable-row"
-                *matRowDef="let row; columns: displayedColumns"
-                [routerLink]="['/admin/users', row.id]"
-                [attr.aria-label]="'Ouvrir le profil de ' + row.fullName"
-              ></tr>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Utilisateur</th>
+                  <th>Inscription</th>
+                  <th>Email</th>
+                  <th>Accès actuel</th>
+                  <th>Compte</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (user of m.users.recentRegistrations; track user.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ user.fullName || 'Sans nom' }}</strong
+                      ><small>{{ user.email }}</small>
+                    </td>
+                    <td>{{ user.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td>
+                      <span class="badge" [class.warning]="!user.emailVerifiedAt">{{
+                        user.emailVerifiedAt ? 'Vérifié' : 'À confirmer'
+                      }}</span>
+                    </td>
+                    <td>{{ plan(user) }}</td>
+                    <td>
+                      <a
+                        [routerLink]="['/admin/users', user.id]"
+                        [attr.aria-label]="'Ouvrir le compte de ' + user.fullName"
+                        >Ouvrir</a
+                      >
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty">Aucune inscription sur cette période.</td>
+                  </tr>
+                }
+              </tbody>
             </table>
           </div>
-
-          <ng-template #noRecentUsers>
-            <div class="table-empty">
-              <mat-icon>person_off</mat-icon>
+        </section>
+        <div class="columns">
+          <section class="panel">
+            <div class="panel-head">
               <div>
-                <strong>Aucune connexion récente</strong>
-                <span>Aucun utilisateur ne s’est connecté pendant la période sélectionnée.</span>
+                <h2>Abonnements & paiements</h2>
+                <p class="muted">Les droits d’accès et les paiements sont suivis séparément.</p>
               </div>
             </div>
-          </ng-template>
-        </mat-card>
-      </ng-container>
+            <div class="plan-split">
+              <div>
+                <b>{{ m.subscriptions.premiumActive }}</b
+                ><span>Premium actifs</span>
+              </div>
+              <div>
+                <b>{{ m.subscriptions.proActive }}</b
+                ><span>Pro actifs</span>
+              </div>
+            </div>
+            <p class="muted">
+              Consultez les paiements confirmés, résiliations et vérifications PayPal dans l’espace
+              abonnements.
+            </p>
+            <a class="button" routerLink="/admin/subscriptions"
+              >Suivre les abonnements <mat-icon>arrow_forward</mat-icon></a
+            >
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Usage de l’application</h2>
+              <span class="badge">Sur la période</span>
+            </div>
+            <div class="usage-grid">
+              <div>
+                <b>{{ m.aquariums.createdInRange }}</b
+                ><span>Aquariums créés</span>
+              </div>
+              <div>
+                <b>{{ m.measurements.createdInRange }}</b
+                ><span>Mesures ajoutées</span>
+              </div>
+              <div>
+                <b>{{ m.tasks.createdInRange }}</b
+                ><span>Tâches créées</span>
+              </div>
+              <div>
+                <b>{{
+                  m.featureUsage['ai'].available === false ? '—' : m.featureUsage['ai'].events
+                }}</b
+                ><span>Utilisations IA enregistrées</span>
+              </div>
+            </div>
+          </section>
+        </div>
+        <p class="muted">
+          Actualisé le {{ m.generatedAt | date: 'dd/MM/yyyy à HH:mm:ss' }} · Les accès actifs et
+          points de modération sont calculés à l’instant présent.
+        </p>
+      }
     </div>
   </main>
 </div>

@@ -1,261 +1,454 @@
 <div class="admin-layout">
   <aside appAdminSidebar class="sidebar" [adminAccess]="true"></aside>
-
-  <!-- CONTENT -->
   <main class="content">
-    <mat-card class="admin-card" role="main">
-      <header class="admin-header admin-page-hero hero-users">
-        <div class="hero-symbol"><mat-icon>group</mat-icon></div>
-        <div class="titles">
-          <span class="hero-kicker">Comptes et accès</span>
-          <h2>Gestion des utilisateurs</h2>
-          <p class="subtitle">Contrôlez les rôles, les abonnements, la vérification et l’activité des comptes.</p>
-        </div>
-
-        <div class="header-actions">
-          <button
-            mat-stroked-button
-            type="button"
-            class="refresh-btn"
-            [disabled]="loading"
-            (click)="reload()"
-          >
-            <mat-icon>refresh</mat-icon>
-            Actualiser les comptes
-          </button>
-        </div>
-      </header>
-
-      <section class="user-overview" aria-label="Résumé des utilisateurs">
-        <article>
-          <span class="overview-icon"><mat-icon>groups</mat-icon></span>
-          <span><small>Comptes</small><strong>{{ users.length }}</strong><em>utilisateurs inscrits</em></span>
-        </article>
-        <article>
-          <span class="overview-icon verified"><mat-icon>mark_email_read</mat-icon></span>
-          <span><small>Vérifiés</small><strong>{{ verifiedUsersCount }}</strong><em>emails confirmés</em></span>
-        </article>
-        <article>
-          <span class="overview-icon premium"><mat-icon>workspace_premium</mat-icon></span>
-          <span><small>Abonnés</small><strong>{{ subscribedUsersCount }}</strong><em>Premium ou Pro</em></span>
-        </article>
-        <article>
-          <span class="overview-icon roles"><mat-icon>shield_person</mat-icon></span>
-          <span><small>Équipe</small><strong>{{ privilegedUsersCount }}</strong><em>admins et éditeurs</em></span>
-        </article>
-      </section>
-
-      <section class="admin-tools">
-        <mat-form-field appearance="fill" class="search">
-          <mat-label>Rechercher un utilisateur</mat-label>
-
-          <mat-icon matPrefix>search</mat-icon>
-
-          <input
-            matInput
-            [formControl]="searchCtrl"
-            placeholder="ID, nom ou email"
-          />
-
-          <button
-            *ngIf="searchCtrl.value"
-            matSuffix
-            mat-icon-button
-            type="button"
-            (click)="clearSearch()"
-            aria-label="Effacer"
-          >
-            <mat-icon>close</mat-icon>
-          </button>
-        </mat-form-field>
-
-        <mat-form-field appearance="fill" class="sort-select">
-  <mat-label>Trier par</mat-label>
-
-  <mat-select [formControl]="sortCtrl">
-    <mat-option value="createdAt_desc">
-      Inscription récente
-    </mat-option>
-
-    <mat-option value="level_desc">
-      Niveau : du plus grand au plus petit
-    </mat-option>
-
-    <mat-option value="activityDays_desc">
-      Jours d’activité du mois
-    </mat-option>
-
-    <mat-option value="lastActivity_desc">
-      Dernière activité récente
-    </mat-option>
-  </mat-select>
-</mat-form-field>
-
-        <div class="filters">
-          <mat-slide-toggle [formControl]="activeOnlyCtrl">
-            Actifs uniquement
-          </mat-slide-toggle>
-
-          <mat-slide-toggle [formControl]="subscribedOnlyCtrl">
-            Abonnés uniquement
-          </mat-slide-toggle>
-
-          <mat-slide-toggle [formControl]="unverifiedOnlyCtrl">
-            Non vérifiés uniquement
-          </mat-slide-toggle>
-
-          <mat-slide-toggle [formControl]="adminOnlyCtrl">
-            Admin uniquement
-          </mat-slide-toggle>
-
-          <mat-slide-toggle [formControl]="editorOnlyCtrl">
-            Éditeurs uniquement
-          </mat-slide-toggle>
-
-          <button
-            mat-button
-            type="button"
-            class="reset-btn"
-            [disabled]="!searchCtrl.value && !activeOnlyCtrl.value && !subscribedOnlyCtrl.value && !unverifiedOnlyCtrl.value && !adminOnlyCtrl.value && !editorOnlyCtrl.value && sortCtrl.value === 'createdAt_desc'"
-            (click)="resetFilters()"
-          >
-            <mat-icon>restart_alt</mat-icon>
-            Réinitialiser
-          </button>
-        </div>
-      </section>
-
-      <div class="result-info" *ngIf="!loading">
-        <span>
-          {{ filteredUsers.length }} utilisateur{{ filteredUsers.length > 1 ? 's' : '' }} affiché{{ filteredUsers.length > 1 ? 's' : '' }}
-        </span>
-
-        <span *ngIf="searchCtrl.value || activeOnlyCtrl.value || subscribedOnlyCtrl.value || unverifiedOnlyCtrl.value || adminOnlyCtrl.value || editorOnlyCtrl.value || sortCtrl.value !== 'createdAt_desc'">
-          Filtre ou tri actif
-        </span>
-      </div>
-
-      <mat-divider class="divider"></mat-divider>
-
-      <!-- LOADING -->
-      <div *ngIf="loading" class="loading">
-        <mat-progress-spinner mode="indeterminate" diameter="20"></mat-progress-spinner>
-        <span>Chargement...</span>
-      </div>
-
-      <!-- EMPTY -->
-      <div *ngIf="!loading && (!filteredUsers || filteredUsers.length === 0)" class="empty">
-        <mat-icon>group_off</mat-icon>
-
+    <div class="users-page">
+      <header class="users-heading">
         <div>
-          <p class="empty-title">Aucun utilisateur</p>
-          <p class="empty-sub">Essaie une autre recherche / filtre.</p>
+          <p class="eyebrow">Administration / Comptes et accès</p>
+          <h1>Utilisateurs</h1>
+          <p>Retrouvez un compte, vérifiez ses accès et accompagnez vos utilisateurs.</p>
         </div>
-      </div>
-
-      <!-- DESKTOP / TABLETTE -->
-      <div class="table-wrap table-desktop" *ngIf="!loading && filteredUsers?.length">
-        <table mat-table [dataSource]="filteredUsers" class="users-table" [trackBy]="trackById">
-          <!-- ID -->
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef>ID</th>
-
-            <td mat-cell *matCellDef="let u" class="mono id-cell">
-              {{ u.id }}
-            </td>
-          </ng-container>
-
-          <!-- createdAt -->
-          <ng-container matColumnDef="createdAt">
-            <th mat-header-cell *matHeaderCellDef>Inscription</th>
-
-            <td mat-cell *matCellDef="let u">
-              {{ formatDate(u.createdAt) }}
-            </td>
-          </ng-container>
-
-          <!-- fullName -->
-          <ng-container matColumnDef="fullName">
-            <th mat-header-cell *matHeaderCellDef>Nom</th>
-
-            <td mat-cell *matCellDef="let u">
-              <div class="name-cell">
-                <mat-icon class="avatar">person</mat-icon>
-                <span class="name">{{ u.fullName || '—' }}</span>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- email -->
-          <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef>Email</th>
-
-            <td mat-cell *matCellDef="let u" class="mono email-cell" [matTooltip]="u.email">
-              {{ u.email }}
-            </td>
-          </ng-container>
-
-          <!-- role -->
-          <ng-container matColumnDef="role">
-            <th mat-header-cell *matHeaderCellDef>Rôle</th>
-
-            <td mat-cell *matCellDef="let u" (click)="$event.stopPropagation()">
-              <div class="role-cell" [class.saving]="isSaving(u)">
+        <button mat-stroked-button type="button" [disabled]="loading" (click)="reload()">
+          <mat-icon>refresh</mat-icon>Actualiser
+        </button>
+      </header>
+      @if (loadError) {
+        <p class="load-error" role="alert">{{ loadError }}</p>
+      }
+      <section class="user-overview" aria-label="Résumé des comptes correspondant à la recherche">
+        <article>
+          <span class="overview-icon"><mat-icon>group</mat-icon></span
+          ><span
+            ><small>Comptes</small><strong>{{ loading || loadError ? '—' : users.length }}</strong
+            ><em>dans la recherche</em></span
+          >
+        </article>
+        <article>
+          <span class="overview-icon verified"><mat-icon>mark_email_read</mat-icon></span
+          ><span
+            ><small>Emails vérifiés</small
+            ><strong>{{ loading || loadError ? '—' : verifiedUsersCount }}</strong
+            ><em>adresse confirmée</em></span
+          >
+        </article>
+        <article>
+          <span class="overview-icon premium"><mat-icon>workspace_premium</mat-icon></span
+          ><span
+            ><small>Premium / Pro actifs</small
+            ><strong>{{ loading || loadError ? '—' : subscribedUsersCount }}</strong
+            ><em>accès offerts inclus</em></span
+          >
+        </article>
+        <article>
+          <span class="overview-icon roles"><mat-icon>shield_person</mat-icon></span
+          ><span
+            ><small>Équipe</small
+            ><strong>{{ loading || loadError ? '—' : privilegedUsersCount }}</strong
+            ><em>administrateurs et éditeurs</em></span
+          >
+        </article>
+      </section>
+      <section class="directory-panel" aria-label="Annuaire des utilisateurs">
+        <div class="directory-toolbar">
+          <label class="account-search"
+            ><span class="field-label">Rechercher un compte</span
+            ><span class="search-input"
+              ><mat-icon>search</mat-icon
+              ><input
+                type="search"
+                [formControl]="searchCtrl"
+                placeholder="Nom, adresse email ou identifiant"
+                autocomplete="off"
+                maxlength="160"
+              />
+              @if (searchCtrl.value) {
+                <button type="button" (click)="clearSearch()" aria-label="Effacer la recherche">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </span></label
+          >
+          <label class="account-sort"
+            ><span class="field-label">Trier par</span
+            ><select [formControl]="sortCtrl">
+              <option value="createdAt_desc">Inscription la plus récente</option>
+              <option value="lastActivity_desc">Dernière activité</option>
+              <option value="level_desc">Niveau décroissant</option>
+              <option value="activityDays_desc">Jours d’activité ce mois</option>
+            </select></label
+          >
+        </div>
+        <div class="filter-panel">
+          <div class="filter-heading">
+            <span><mat-icon>tune</mat-icon>Affiner les résultats</span
+            ><button
+              type="button"
+              class="clear-filters"
+              [disabled]="!hasFilters && sortCtrl.value === 'createdAt_desc'"
+              (click)="resetFilters()"
+            >
+              <mat-icon>restart_alt</mat-icon>Réinitialiser
+            </button>
+          </div>
+          <div class="filter-grid">
+            <label
+              ><span class="field-label">Inscription</span
+              ><select data-testid="registration-filter" [formControl]="registrationDaysCtrl">
+                <option [ngValue]="0">Toutes les dates</option>
+                <option [ngValue]="1">Dernières 24 heures</option>
+                <option [ngValue]="7">7 derniers jours</option>
+                <option [ngValue]="30">30 derniers jours</option>
+              </select></label
+            >
+            <label
+              ><span class="field-label">Rôle</span
+              ><select data-testid="role-filter" [formControl]="roleFilter">
+                <option value="all">Tous les rôles</option>
+                <option value="USER">Utilisateur</option>
+                <option value="EDITOR">Éditeur</option>
+                <option value="ADMIN">Administrateur</option>
+              </select></label
+            >
+            <label
+              ><span class="field-label">Abonnement</span
+              ><select data-testid="plan-filter" [formControl]="planFilter">
+                <option value="all">Tous les accès</option>
+                <option value="active">Premium / Pro actif</option>
+                <option value="classic">Sans Premium / Pro actif</option>
+              </select></label
+            >
+            <label
+              ><span class="field-label">Adresse email</span
+              ><select data-testid="verification-filter" [formControl]="verificationFilter">
+                <option value="all">Tous les états</option>
+                <option value="verified">Vérifiée</option>
+                <option value="pending">À confirmer</option>
+              </select></label
+            >
+            <label
+              ><span class="field-label">Activité · 30 jours</span
+              ><select data-testid="activity-filter" [formControl]="activityFilter">
+                <option value="all">Tous les comptes</option>
+                <option value="active">Actifs</option>
+                <option value="inactive">Inactifs / jamais connectés</option>
+              </select></label
+            >
+          </div>
+          @if (hasFilters) {
+            <div class="filter-chips" aria-label="Filtres appliqués">
+              @for (filter of activeFilters; track filter.key) {
                 <button
                   type="button"
-                  class="role-badge"
-                  [class.admin]="u.role === 'ADMIN'"
-                  [class.editor]="u.role === 'EDITOR'"
-                  [matMenuTriggerFor]="roleMenu"
-                  (click)="$event.stopPropagation()"
-                  [disabled]="isSaving(u) || isSavingSubscription(u)"
-                  aria-label="Changer le rôle"
+                  [attr.aria-label]="'Retirer le filtre ' + filter.label"
+                  (click)="filter.clear()"
                 >
-                  <mat-icon class="role-badge-ic">
-                    {{
-                      u.role === 'ADMIN'
-                        ? 'verified_user'
-                        : u.role === 'EDITOR'
-                          ? 'edit'
-                          : 'person'
-                    }}
-                  </mat-icon>
-
-                  {{ u.role }}
-
-                  <mat-icon class="chev">expand_more</mat-icon>
+                  <span>{{ filter.label }}</span
+                  ><mat-icon>close</mat-icon>
                 </button>
+              }
+            </div>
+          }
+        </div>
+        <div class="directory-results" aria-live="polite">
+          <div>
+            <h2>Annuaire</h2>
+            @if (!loading && !loadError) {
+              <span class="result-count"
+                >{{ filteredUsers.length }} résultat{{ filteredUsers.length > 1 ? 's' : '' }}</span
+              >
+            }
+          </div>
+          <span class="results-hint">{{
+            hasFilters ? 'Filtres appliqués automatiquement' : 'Tous les comptes de la recherche'
+          }}</span>
+        </div>
+        <!-- LOADING -->
+        <div *ngIf="loading" class="loading">
+          <mat-progress-spinner mode="indeterminate" diameter="20"></mat-progress-spinner>
+          <span>Chargement...</span>
+        </div>
 
-                <mat-menu #roleMenu="matMenu" class="role-menu">
-                  <button
-                    mat-menu-item
-                    type="button"
-                    *ngFor="let r of roleOptions"
-                    (click)="setRole(u, r.value)"
+        <!-- EMPTY -->
+        <div
+          *ngIf="!loading && !loadError && (!filteredUsers || filteredUsers.length === 0)"
+          class="empty"
+        >
+          <mat-icon>group_off</mat-icon>
+
+          <div>
+            <p class="empty-title">Aucun utilisateur</p>
+            <p class="empty-sub">
+              Modifiez vos filtres ou effacez la recherche pour retrouver des comptes.
+            </p>
+          </div>
+        </div>
+
+        <!-- DESKTOP / TABLETTE -->
+        <div class="table-wrap table-desktop" *ngIf="!loading && filteredUsers?.length">
+          <table mat-table [dataSource]="filteredUsers" class="users-table" [trackBy]="trackById">
+            <!-- ID -->
+            <ng-container matColumnDef="id">
+              <th mat-header-cell *matHeaderCellDef>ID</th>
+
+              <td mat-cell *matCellDef="let u" class="mono id-cell">
+                {{ u.id }}
+              </td>
+            </ng-container>
+
+            <!-- createdAt -->
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>Inscription</th>
+
+              <td mat-cell *matCellDef="let u">
+                {{ formatDate(u.createdAt) }}
+              </td>
+            </ng-container>
+
+            <!-- fullName -->
+            <ng-container matColumnDef="fullName">
+              <th mat-header-cell *matHeaderCellDef>Utilisateur</th>
+
+              <td mat-cell *matCellDef="let u">
+                <div class="name-cell">
+                  <mat-icon class="avatar">person</mat-icon>
+                  <span class="account-identity"
+                    ><a
+                      class="name"
+                      [routerLink]="['/admin/users', u.id]"
+                      (click)="$event.stopPropagation()"
+                      >{{ u.fullName || 'Sans nom' }}</a
+                    ><small>{{ u.email }}</small
+                    ><span class="email-state" [class.pending]="!u.emailVerifiedAt"
+                      >{{ u.emailVerifiedAt ? 'Email vérifié' : 'Email à confirmer' }} · #{{
+                        u.id
+                      }}</span
+                    ></span
                   >
-                    <mat-icon>{{ r.icon }}</mat-icon>
-                    <span>{{ r.label }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- email -->
+            <ng-container matColumnDef="email">
+              <th mat-header-cell *matHeaderCellDef>Email</th>
+
+              <td mat-cell *matCellDef="let u" class="mono email-cell" [matTooltip]="u.email">
+                {{ u.email }}
+              </td>
+            </ng-container>
+
+            <!-- role -->
+            <ng-container matColumnDef="role">
+              <th mat-header-cell *matHeaderCellDef>Rôle</th>
+
+              <td mat-cell *matCellDef="let u" (click)="$event.stopPropagation()">
+                <div class="role-cell" [class.saving]="isSaving(u)">
+                  <button
+                    type="button"
+                    class="role-badge"
+                    [class.admin]="u.role === 'ADMIN'"
+                    [class.editor]="u.role === 'EDITOR'"
+                    [matMenuTriggerFor]="roleMenu"
+                    (click)="$event.stopPropagation()"
+                    [disabled]="isSaving(u) || isSavingSubscription(u)"
+                    aria-label="Changer le rôle"
+                  >
+                    <mat-icon class="role-badge-ic">
+                      {{
+                        u.role === 'ADMIN'
+                          ? 'verified_user'
+                          : u.role === 'EDITOR'
+                            ? 'edit'
+                            : 'person'
+                      }}
+                    </mat-icon>
+
+                    {{ u.role }}
+
+                    <mat-icon class="chev">expand_more</mat-icon>
                   </button>
-                </mat-menu>
 
-                <span class="saving-indicator" *ngIf="isSaving(u)">
-                  <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+                  <mat-menu #roleMenu="matMenu" class="role-menu">
+                    <button
+                      mat-menu-item
+                      type="button"
+                      *ngFor="let r of roleOptions"
+                      (click)="setRole(u, r.value)"
+                    >
+                      <mat-icon>{{ r.icon }}</mat-icon>
+                      <span>{{ r.label }}</span>
+                    </button>
+                  </mat-menu>
+
+                  <span class="saving-indicator" *ngIf="isSaving(u)">
+                    <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+                  </span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- subscription -->
+            <ng-container matColumnDef="subscription">
+              <th mat-header-cell *matHeaderCellDef>Abonnement</th>
+
+              <td mat-cell *matCellDef="let u" (click)="$event.stopPropagation()">
+                <div class="subscription-cell" [class.saving]="isSavingSubscription(u)">
+                  <button
+                    type="button"
+                    class="subscription-badge"
+                    [ngClass]="subscriptionClass(u)"
+                    [matMenuTriggerFor]="subscriptionMenu"
+                    (click)="$event.stopPropagation()"
+                    [disabled]="isSaving(u) || isSavingSubscription(u)"
+                    aria-label="Changer l’abonnement"
+                  >
+                    <mat-icon>
+                      {{
+                        u.subscriptionPlan === 'PRO'
+                          ? 'workspace_premium'
+                          : u.subscriptionPlan === 'PREMIUM'
+                            ? 'star'
+                            : 'lock'
+                      }}
+                    </mat-icon>
+
+                    {{ subscriptionLabel(u) }}
+
+                    <mat-icon class="chev">expand_more</mat-icon>
+                  </button>
+
+                  <mat-menu #subscriptionMenu="matMenu" class="subscription-menu">
+                    <button
+                      mat-menu-item
+                      type="button"
+                      *ngFor="let option of grantOptions"
+                      (click)="grantSubscription(u, option.plan, option.duration)"
+                    >
+                      <mat-icon>{{ option.icon }}</mat-icon>
+                      <span>{{ option.label }}</span>
+                    </button>
+
+                    <ng-container *ngIf="hasPaidPlan(u)">
+                      <mat-divider></mat-divider>
+
+                      <button
+                        mat-menu-item
+                        type="button"
+                        class="danger-menu-item"
+                        (click)="revokeSubscription(u)"
+                      >
+                        <mat-icon>block</mat-icon>
+                        <span>Retirer l’accès premium</span>
+                      </button>
+                    </ng-container>
+                  </mat-menu>
+
+                  <div class="subscription-meta">
+                    {{ subscriptionEndLabel(u) }}
+                  </div>
+
+                  <span class="saving-indicator" *ngIf="isSavingSubscription(u)">
+                    <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+                  </span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- status -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Activité</th>
+
+              <td mat-cell *matCellDef="let u">
+                <span
+                  class="status-pill"
+                  [class.active]="isActive(u)"
+                  [class.inactive]="!isActive(u)"
+                  [matTooltip]="'Dernière activité : ' + lastSeenLabel(u)"
+                >
+                  <mat-icon>{{ isActive(u) ? 'circle' : 'do_not_disturb_on' }}</mat-icon>
+                  {{ isActive(u) ? 'Actif' : 'Inactif' }}
                 </span>
+              </td>
+            </ng-container>
+
+            <!-- actions -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+
+              <td mat-cell *matCellDef="let u" class="actions" (click)="$event.stopPropagation()">
+                <button
+                  mat-icon-button
+                  aria-label="Supprimer ce compte"
+                  matTooltip="Supprimer ce compte"
+                  color="warn"
+                  type="button"
+                  (click)="deleteUser(u)"
+                  [disabled]="isSaving(u) || isSavingSubscription(u)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="clickable-row"
+              (click)="openUser(row)"
+            ></tr>
+          </table>
+        </div>
+
+        <!-- MOBILE : CARDS -->
+        <div class="users-cards" *ngIf="!loading && filteredUsers?.length">
+          <article
+            class="user-card"
+            *ngFor="let u of filteredUsers; trackBy: trackById"
+            (click)="openUser(u)"
+          >
+            <div class="uc-top">
+              <div class="uc-left">
+                <div class="uc-title">
+                  <mat-icon class="uc-avatar">person</mat-icon>
+
+                  <div class="uc-name">
+                    <a
+                      class="uc-fullName"
+                      [routerLink]="['/admin/users', u.id]"
+                      (click)="$event.stopPropagation()"
+                      >{{ u.fullName || 'Sans nom' }}</a
+                    >
+                    <div class="uc-email mono" [title]="u.email">{{ u.email }}</div>
+                  </div>
+                </div>
+
+                <div class="uc-meta">
+                  <span class="uc-chip mono">ID #{{ u.id }}</span>
+                  <span class="uc-chip">Inscrit : {{ formatDate(u.createdAt) }}</span>
+                </div>
               </div>
-            </td>
-          </ng-container>
 
-          <!-- subscription -->
-          <ng-container matColumnDef="subscription">
-            <th mat-header-cell *matHeaderCellDef>Abonnement</th>
+              <span
+                class="status-pill"
+                [class.active]="isActive(u)"
+                [class.inactive]="!isActive(u)"
+                (click)="$event.stopPropagation()"
+                [matTooltip]="'Dernière activité : ' + lastSeenLabel(u)"
+              >
+                <mat-icon>{{ isActive(u) ? 'circle' : 'do_not_disturb_on' }}</mat-icon>
+                {{ isActive(u) ? 'Actif' : 'Inactif' }}
+              </span>
+            </div>
 
-            <td mat-cell *matCellDef="let u" (click)="$event.stopPropagation()">
+            <div class="uc-subscription" (click)="$event.stopPropagation()">
               <div class="subscription-cell" [class.saving]="isSavingSubscription(u)">
                 <button
                   type="button"
                   class="subscription-badge"
                   [ngClass]="subscriptionClass(u)"
-                  [matMenuTriggerFor]="subscriptionMenu"
+                  [matMenuTriggerFor]="subscriptionMenuMobile"
                   (click)="$event.stopPropagation()"
                   [disabled]="isSaving(u) || isSavingSubscription(u)"
                   aria-label="Changer l’abonnement"
@@ -275,7 +468,7 @@
                   <mat-icon class="chev">expand_more</mat-icon>
                 </button>
 
-                <mat-menu #subscriptionMenu="matMenu" class="subscription-menu">
+                <mat-menu #subscriptionMenuMobile="matMenu" class="subscription-menu">
                   <button
                     mat-menu-item
                     type="button"
@@ -309,211 +502,63 @@
                   <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
                 </span>
               </div>
-            </td>
-          </ng-container>
+            </div>
 
-          <!-- status -->
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Statut</th>
+            <div class="uc-bottom" (click)="$event.stopPropagation()">
+              <div class="role-cell" [class.saving]="isSaving(u)">
+                <button
+                  type="button"
+                  class="role-badge"
+                  [class.admin]="u.role === 'ADMIN'"
+                  [class.editor]="u.role === 'EDITOR'"
+                  [matMenuTriggerFor]="roleMenuMobile"
+                  (click)="$event.stopPropagation()"
+                  [disabled]="isSaving(u) || isSavingSubscription(u)"
+                  aria-label="Changer le rôle"
+                >
+                  <mat-icon class="role-badge-ic">
+                    {{
+                      u.role === 'ADMIN' ? 'verified_user' : u.role === 'EDITOR' ? 'edit' : 'person'
+                    }}
+                  </mat-icon>
 
-            <td mat-cell *matCellDef="let u">
-              <span
-                class="status-pill"
-                [class.active]="isActive(u)"
-                [class.inactive]="!isActive(u)"
-                [matTooltip]="'Dernière activité : ' + lastSeenLabel(u)"
-              >
-                <mat-icon>{{ isActive(u) ? 'circle' : 'do_not_disturb_on' }}</mat-icon>
-                {{ isActive(u) ? 'Actif' : 'Inactif' }}
-              </span>
-            </td>
-          </ng-container>
+                  {{ u.role }}
 
-          <!-- actions -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Actions</th>
+                  <mat-icon class="chev">expand_more</mat-icon>
+                </button>
 
-            <td mat-cell *matCellDef="let u" class="actions" (click)="$event.stopPropagation()">
+                <mat-menu #roleMenuMobile="matMenu" class="role-menu">
+                  <button
+                    mat-menu-item
+                    type="button"
+                    *ngFor="let r of roleOptions"
+                    (click)="setRole(u, r.value)"
+                  >
+                    <mat-icon>{{ r.icon }}</mat-icon>
+                    <span>{{ r.label }}</span>
+                  </button>
+                </mat-menu>
+
+                <span class="saving-indicator" *ngIf="isSaving(u)">
+                  <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+                </span>
+              </div>
+
               <button
                 mat-stroked-button
                 color="warn"
+                class="uc-delete"
                 type="button"
-                (click)="deleteUser(u)"
+                (click)="$event.stopPropagation(); deleteUser(u)"
                 [disabled]="isSaving(u) || isSavingSubscription(u)"
               >
                 <mat-icon>delete</mat-icon>
                 Supprimer
               </button>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            class="clickable-row"
-            (click)="openUser(row)"
-          ></tr>
-        </table>
-      </div>
-
-      <!-- MOBILE : CARDS -->
-      <div class="users-cards" *ngIf="!loading && filteredUsers?.length">
-        <article
-          class="user-card"
-          *ngFor="let u of filteredUsers; trackBy: trackById"
-          (click)="openUser(u)"
-        >
-          <div class="uc-top">
-            <div class="uc-left">
-              <div class="uc-title">
-                <mat-icon class="uc-avatar">person</mat-icon>
-
-                <div class="uc-name">
-                  <div class="uc-fullName">{{ u.fullName || '—' }}</div>
-                  <div class="uc-email mono" [title]="u.email">{{ u.email }}</div>
-                </div>
-              </div>
-
-              <div class="uc-meta">
-                <span class="uc-chip mono">ID #{{ u.id }}</span>
-                <span class="uc-chip">Inscrit : {{ formatDate(u.createdAt) }}</span>
-              </div>
             </div>
-
-            <span
-              class="status-pill"
-              [class.active]="isActive(u)"
-              [class.inactive]="!isActive(u)"
-              (click)="$event.stopPropagation()"
-              [matTooltip]="'Dernière activité : ' + lastSeenLabel(u)"
-            >
-              <mat-icon>{{ isActive(u) ? 'circle' : 'do_not_disturb_on' }}</mat-icon>
-              {{ isActive(u) ? 'Actif' : 'Inactif' }}
-            </span>
-          </div>
-
-          <div class="uc-subscription" (click)="$event.stopPropagation()">
-            <div class="subscription-cell" [class.saving]="isSavingSubscription(u)">
-              <button
-                type="button"
-                class="subscription-badge"
-                [ngClass]="subscriptionClass(u)"
-                [matMenuTriggerFor]="subscriptionMenuMobile"
-                (click)="$event.stopPropagation()"
-                [disabled]="isSaving(u) || isSavingSubscription(u)"
-                aria-label="Changer l’abonnement"
-              >
-                <mat-icon>
-                  {{
-                    u.subscriptionPlan === 'PRO'
-                      ? 'workspace_premium'
-                      : u.subscriptionPlan === 'PREMIUM'
-                        ? 'star'
-                        : 'lock'
-                  }}
-                </mat-icon>
-
-                {{ subscriptionLabel(u) }}
-
-                <mat-icon class="chev">expand_more</mat-icon>
-              </button>
-
-              <mat-menu #subscriptionMenuMobile="matMenu" class="subscription-menu">
-                <button
-                  mat-menu-item
-                  type="button"
-                  *ngFor="let option of grantOptions"
-                  (click)="grantSubscription(u, option.plan, option.duration)"
-                >
-                  <mat-icon>{{ option.icon }}</mat-icon>
-                  <span>{{ option.label }}</span>
-                </button>
-
-                <ng-container *ngIf="hasPaidPlan(u)">
-                  <mat-divider></mat-divider>
-
-                  <button
-                    mat-menu-item
-                    type="button"
-                    class="danger-menu-item"
-                    (click)="revokeSubscription(u)"
-                  >
-                    <mat-icon>block</mat-icon>
-                    <span>Retirer l’accès premium</span>
-                  </button>
-                </ng-container>
-              </mat-menu>
-
-              <div class="subscription-meta">
-                {{ subscriptionEndLabel(u) }}
-              </div>
-
-              <span class="saving-indicator" *ngIf="isSavingSubscription(u)">
-                <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
-              </span>
-            </div>
-          </div>
-
-          <div class="uc-bottom" (click)="$event.stopPropagation()">
-            <div class="role-cell" [class.saving]="isSaving(u)">
-              <button
-                type="button"
-                class="role-badge"
-                [class.admin]="u.role === 'ADMIN'"
-                [class.editor]="u.role === 'EDITOR'"
-                [matMenuTriggerFor]="roleMenuMobile"
-                (click)="$event.stopPropagation()"
-                [disabled]="isSaving(u) || isSavingSubscription(u)"
-                aria-label="Changer le rôle"
-              >
-                <mat-icon class="role-badge-ic">
-                  {{
-                    u.role === 'ADMIN'
-                      ? 'verified_user'
-                      : u.role === 'EDITOR'
-                        ? 'edit'
-                        : 'person'
-                  }}
-                </mat-icon>
-
-                {{ u.role }}
-
-                <mat-icon class="chev">expand_more</mat-icon>
-              </button>
-
-              <mat-menu #roleMenuMobile="matMenu" class="role-menu">
-                <button
-                  mat-menu-item
-                  type="button"
-                  *ngFor="let r of roleOptions"
-                  (click)="setRole(u, r.value)"
-                >
-                  <mat-icon>{{ r.icon }}</mat-icon>
-                  <span>{{ r.label }}</span>
-                </button>
-              </mat-menu>
-
-              <span class="saving-indicator" *ngIf="isSaving(u)">
-                <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
-              </span>
-            </div>
-
-            <button
-              mat-stroked-button
-              color="warn"
-              class="uc-delete"
-              type="button"
-              (click)="$event.stopPropagation(); deleteUser(u)"
-              [disabled]="isSaving(u) || isSavingSubscription(u)"
-            >
-              <mat-icon>delete</mat-icon>
-              Supprimer
-            </button>
-          </div>
-        </article>
-      </div>
-    </mat-card>
+          </article>
+        </div>
+      </section>
+    </div>
   </main>
 </div>

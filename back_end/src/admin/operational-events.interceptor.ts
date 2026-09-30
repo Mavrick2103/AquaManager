@@ -19,7 +19,8 @@ export class OperationalEventsInterceptor implements NestInterceptor {
         const statusCode = Number(error?.getStatus?.() ?? error?.status ?? 500);
         if (statusCode >= 500) {
           const request = context.switchToHttp().getRequest();
-          const path = String(request?.route?.path ?? request?.path ?? 'unknown').slice(0, 180);
+          // Only the route template: never persist a URL, a token or a query string.
+          const path = String(request?.route?.path ?? 'unknown').split('?')[0].slice(0, 180);
           void this.record(this.eventType(path), path, statusCode);
         }
         return throwError(() => error);
@@ -28,6 +29,7 @@ export class OperationalEventsInterceptor implements NestInterceptor {
   }
 
   private eventType(path: string): OperationalEventType {
+    if (path.includes('/paypal') || path.includes('/admin/subscriptions')) return 'PAYPAL_FAILURE';
     if (path.includes('/billing')) return 'STRIPE_FAILURE';
     if (path.includes('/contact') || path.includes('/register') || path.includes('/forgot-password') || path.includes('/resend-verification')) {
       return 'EMAIL_FAILURE';

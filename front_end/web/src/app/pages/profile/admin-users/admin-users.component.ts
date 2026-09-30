@@ -1,6 +1,6 @@
 import { CommonModule, Location } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
@@ -14,7 +14,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatListModule } from '@angular/material/list';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 
@@ -49,7 +49,7 @@ type UserSortMode = 'createdAt_desc' | 'level_desc' | 'activityDays_desc' | 'las
     MatTableModule,
     MatTooltipModule,
     MatListModule,
-    MatSlideToggleModule,
+
     MatSelectModule,
     MatMenuModule,
   ],
@@ -58,6 +58,9 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   loading = false;
+  loadError = '';
+  registrationDaysCtrl = new FormControl<number>(0, { nonNullable: true });
+  private loadSequence = 0;
 
   users: AdminUser[] = [];
   filteredUsers: AdminUser[] = [];
@@ -67,7 +70,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   get subscribedUsersCount(): number {
-    return this.users.filter((user) => user.subscriptionPlan === 'PREMIUM' || user.subscriptionPlan === 'PRO').length;
+    return this.users.filter((user) => this.isSubscribed(user)).length;
   }
 
   get privilegedUsersCount(): number {
@@ -75,23 +78,74 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   searchCtrl = new FormControl<string>('', { nonNullable: true });
-  activeOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
-  adminOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
-  editorOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
   sortCtrl = new FormControl<UserSortMode>('createdAt_desc', { nonNullable: true });
-  subscribedOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
-  unverifiedOnlyCtrl = new FormControl<boolean>(false, { nonNullable: true });
 
-  displayedColumns = [
-    'id',
-    'createdAt',
-    'fullName',
-    'email',
-    'role',
-    'subscription',
-    'status',
-    'actions',
-  ];
+  roleFilter = new FormControl('all', { nonNullable: true });
+  planFilter = new FormControl('all', { nonNullable: true });
+  verificationFilter = new FormControl('all', { nonNullable: true });
+  activityFilter = new FormControl('all', { nonNullable: true });
+
+  get activeFilters(): Array<{ key: string; label: string; clear: () => void }> {
+    const filters: Array<{ key: string; label: string; clear: () => void }> = [];
+    if (this.searchCtrl.value.trim())
+      filters.push({
+        key: 'search',
+        label: 'Recherche : ' + this.searchCtrl.value.trim(),
+        clear: () => this.clearSearch(),
+      });
+    if (this.registrationDaysCtrl.value)
+      filters.push({
+        key: 'registration',
+        label:
+          'Inscription : ' +
+          (this.registrationDaysCtrl.value === 1
+            ? '24 heures'
+            : this.registrationDaysCtrl.value + ' jours'),
+        clear: () => this.registrationDaysCtrl.setValue(0),
+      });
+    const entries: Array<{key:string; control:FormControl<string>; labels:Record<string,string>}> = [
+      {
+        key: 'role',
+        control: this.roleFilter,
+        labels: {
+          USER: 'Rôle : utilisateur',
+          EDITOR: 'Rôle : éditeur',
+          ADMIN: 'Rôle : administrateur',
+        },
+      },
+      {
+        key: 'plan',
+        control: this.planFilter,
+        labels: { active: 'Accès Premium / Pro actif', classic: 'Sans Premium / Pro actif' },
+      },
+      {
+        key: 'verification',
+        control: this.verificationFilter,
+        labels: { verified: 'Email vérifié', pending: 'Email à confirmer' },
+      },
+      {
+        key: 'activity',
+        control: this.activityFilter,
+        labels: {
+          active: 'Actif depuis moins de 30 jours',
+          inactive: 'Inactif depuis 30 jours ou jamais connecté',
+        },
+      },
+    ];
+    for (const entry of entries)
+      if (entry.control.value !== 'all')
+        filters.push({
+          key: entry.key,
+          label: entry.labels[entry.control.value],
+          clear: () => entry.control.setValue('all'),
+        });
+    return filters;
+  }
+  get hasFilters(): boolean {
+    return this.activeFilters.length > 0;
+  }
+
+  displayedColumns = ['fullName', 'createdAt', 'role', 'subscription', 'status', 'actions'];
 
   private readonly ACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -129,52 +183,25 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-  this.unverifiedOnlyCtrl.setValue(
-    this.route.snapshot.queryParamMap.get('filter') === 'unverified',
-    { emitEvent: false },
-  );
-  this.reload();
-
-  this.searchCtrl.valueChanges
-    .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.destroy$))
-    .subscribe(() => this.reload());
-
-  this.activeOnlyCtrl.valueChanges
-    .pipe(takeUntil(this.destroy$))
-    .subscribe(() => this.applyFilters());
-
-  this.adminOnlyCtrl.valueChanges
-    .pipe(takeUntil(this.destroy$))
-    .subscribe((enabled) => {
-      if (enabled) {
-        this.editorOnlyCtrl.setValue(false, { emitEvent: false });
-      }
-
-      this.applyFilters();
-    });
-
-  this.editorOnlyCtrl.valueChanges
-    .pipe(takeUntil(this.destroy$))
-    .subscribe((enabled) => {
-      if (enabled) {
-        this.adminOnlyCtrl.setValue(false, { emitEvent: false });
-      }
-
-      this.applyFilters();
-    });
-
-  this.subscribedOnlyCtrl.valueChanges
-    .pipe(takeUntil(this.destroy$))
-    .subscribe(() => this.applyFilters());
-
-  this.unverifiedOnlyCtrl.valueChanges
-    .pipe(takeUntil(this.destroy$))
-    .subscribe(() => this.applyFilters());
-
-  this.sortCtrl.valueChanges
-    .pipe(takeUntil(this.destroy$))
-    .subscribe(() => this.applyFilters());
-}
+    this.verificationFilter.setValue(
+      this.route.snapshot.queryParamMap.get('filter') === 'unverified' ? 'pending' : 'all',
+      { emitEvent: false },
+    );
+    this.reload();
+    this.searchCtrl.valueChanges
+      .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => this.reload());
+    for (const control of ([
+      this.registrationDaysCtrl,
+      this.roleFilter,
+      this.planFilter,
+      this.verificationFilter,
+      this.activityFilter,
+      this.sortCtrl,
+    ] as AbstractControl[])) {
+      control.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.applyFilters());
+    }
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -194,16 +221,20 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   resetFilters(): void {
-  this.searchCtrl.setValue('', { emitEvent: false });
-  this.activeOnlyCtrl.setValue(false, { emitEvent: false });
-  this.adminOnlyCtrl.setValue(false, { emitEvent: false });
-  this.editorOnlyCtrl.setValue(false, { emitEvent: false });
-  this.subscribedOnlyCtrl.setValue(false, { emitEvent: false });
-  this.unverifiedOnlyCtrl.setValue(false, { emitEvent: false });
-  this.sortCtrl.setValue('createdAt_desc', { emitEvent: false });
-
-  this.reload();
-}
+    const hadSearch = !!this.searchCtrl.value.trim();
+    this.searchCtrl.setValue('', { emitEvent: false });
+    this.registrationDaysCtrl.setValue(0, { emitEvent: false });
+    for (const control of [
+      this.roleFilter,
+      this.planFilter,
+      this.verificationFilter,
+      this.activityFilter,
+    ])
+      control.setValue('all', { emitEvent: false });
+    this.sortCtrl.setValue('createdAt_desc', { emitEvent: false });
+    if (hadSearch) this.reload();
+    else this.applyFilters();
+  }
 
   openUser(u: AdminUser): void {
     if (this.isSaving(u) || this.isSavingSubscription(u)) return;
@@ -211,12 +242,15 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   reload(): void {
+    const sequence = ++this.loadSequence;
+    this.loadError = '';
     const search = this.searchCtrl.value.trim() || undefined;
 
     this.loading = true;
 
     this.api.list(search).subscribe({
       next: (rows) => {
+        if (sequence !== this.loadSequence) return;
         this.users = [...(rows ?? [])].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
@@ -225,6 +259,8 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       error: (error) => {
+        if (sequence !== this.loadSequence) return;
+        this.loadError = 'Impossible de charger les comptes. Réessayez avec le bouton Actualiser.';
         console.error('Erreur chargement utilisateurs admin', error);
         this.users = [];
         this.filteredUsers = [];
@@ -234,75 +270,75 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
-  const activeOnly = this.activeOnlyCtrl.value;
-  const adminOnly = this.adminOnlyCtrl.value;
-  const editorOnly = this.editorOnlyCtrl.value;
-  const subscribedOnly = this.subscribedOnlyCtrl.value;
-  const unverifiedOnly = this.unverifiedOnlyCtrl.value;
-  const sortMode = this.sortCtrl.value;
+    const sortMode = this.sortCtrl.value;
+    let rows = this.users.filter((u) => {
+      if (
+        this.registrationDaysCtrl.value &&
+        Date.parse(u.createdAt) < Date.now() - this.registrationDaysCtrl.value * 86400000
+      )
+        return false;
+      if (this.roleFilter.value !== 'all' && u.role !== this.roleFilter.value) return false;
+      if (this.planFilter.value === 'active' && !this.isSubscribed(u)) return false;
+      if (this.planFilter.value === 'classic' && this.isSubscribed(u)) return false;
+      if (this.verificationFilter.value === 'verified' && !u.emailVerifiedAt) return false;
+      if (this.verificationFilter.value === 'pending' && u.emailVerifiedAt) return false;
+      if (this.activityFilter.value === 'active' && !this.isActive(u)) return false;
+      if (this.activityFilter.value === 'inactive' && this.isActive(u)) return false;
+      return true;
+    });
 
-  let rows = this.users.filter((u) => {
-    if (activeOnly && !this.isActive(u)) return false;
-    if (adminOnly && u.role !== 'ADMIN') return false;
-    if (editorOnly && u.role !== 'EDITOR') return false;
-    if (subscribedOnly && !this.isSubscribed(u)) return false;
-    if (unverifiedOnly && Boolean(u.emailVerifiedAt)) return false;
+    rows = [...rows].sort((a, b) => {
+      if (sortMode === 'level_desc') {
+        return this.userLevel(b) - this.userLevel(a);
+      }
 
-    return true;
-  });
+      if (sortMode === 'activityDays_desc') {
+        return this.userActivityDaysMonth(b) - this.userActivityDaysMonth(a);
+      }
 
-  rows = [...rows].sort((a, b) => {
-    if (sortMode === 'level_desc') {
-      return this.userLevel(b) - this.userLevel(a);
-    }
+      if (sortMode === 'lastActivity_desc') {
+        return this.userLastActivityTime(b) - this.userLastActivityTime(a);
+      }
 
-    if (sortMode === 'activityDays_desc') {
-      return this.userActivityDaysMonth(b) - this.userActivityDaysMonth(a);
-    }
+      return this.userCreatedTime(b) - this.userCreatedTime(a);
+    });
 
-    if (sortMode === 'lastActivity_desc') {
-      return this.userLastActivityTime(b) - this.userLastActivityTime(a);
-    }
+    this.filteredUsers = rows;
+  }
 
-    return this.userCreatedTime(b) - this.userCreatedTime(a);
-  });
+  userLevel(u: AdminUser): number {
+    return Number(
+      (u as any).level ??
+        (u as any).gamification?.level ??
+        (u as any).gamificationProfile?.level ??
+        (u as any).profile?.level ??
+        0,
+    );
+  }
 
-  this.filteredUsers = rows;
-}
+  userActivityDaysMonth(u: AdminUser): number {
+    return Number(
+      (u as any).currentStreak ??
+        (u as any).gamification?.currentStreak ??
+        (u as any).gamificationProfile?.currentStreak ??
+        (u as any).profile?.currentStreak ??
+        0,
+    );
+  }
 
-userLevel(u: AdminUser): number {
-  return Number(
-    (u as any).level ??
-    (u as any).gamification?.level ??
-    (u as any).gamificationProfile?.level ??
-    (u as any).profile?.level ??
-    0
-  );
-}
+  userLastActivityTime(u: AdminUser): number {
+    if (!u.lastActivityAt) return 0;
 
-userActivityDaysMonth(u: AdminUser): number {
-  return Number(
-    (u as any).currentStreak ??
-    (u as any).gamification?.currentStreak ??
-    (u as any).gamificationProfile?.currentStreak ??
-    (u as any).profile?.currentStreak ??
-    0
-  );
-}
+    const d = new Date(u.lastActivityAt).getTime();
+    return Number.isFinite(d) ? d : 0;
+  }
 
-userLastActivityTime(u: AdminUser): number {
-  if (!u.lastActivityAt) return 0;
+  userCreatedTime(u: AdminUser): number {
+    if (!u.createdAt) return 0;
 
-  const d = new Date(u.lastActivityAt).getTime();
-  return Number.isFinite(d) ? d : 0;
-}
-
-userCreatedTime(u: AdminUser): number {
-  if (!u.createdAt) return 0;
-
-  const d = new Date(u.createdAt).getTime();
-  return Number.isFinite(d) ? d : 0;
-}
+    const d = new Date(u.createdAt).getTime();
+    return Number.isFinite(d) ? d : 0;
+  }
 
   formatDate(value: string | Date | null | undefined): string {
     if (!value) return '—';
@@ -361,16 +397,12 @@ userCreatedTime(u: AdminUser): number {
 
     this.saving.add(u.id);
 
-    this.users = this.users.map((x) =>
-      x.id === u.id ? { ...x, role: nextRole } : x,
-    );
+    this.users = this.users.map((x) => (x.id === u.id ? { ...x, role: nextRole } : x));
     this.applyFilters();
 
     this.api.update(u.id, { role: nextRole }).subscribe({
       next: (updated) => {
-        this.users = this.users.map((x) =>
-          x.id === u.id ? { ...x, ...updated } : x,
-        );
+        this.users = this.users.map((x) => (x.id === u.id ? { ...x, ...updated } : x));
 
         this.applyFilters();
         this.saving.delete(u.id);
@@ -378,9 +410,7 @@ userCreatedTime(u: AdminUser): number {
       error: (error) => {
         console.error('Erreur modification rôle utilisateur', error);
 
-        this.users = this.users.map((x) =>
-          x.id === u.id ? { ...x, role: prevRole } : x,
-        );
+        this.users = this.users.map((x) => (x.id === u.id ? { ...x, role: prevRole } : x));
 
         this.applyFilters();
         this.saving.delete(u.id);
@@ -399,9 +429,7 @@ userCreatedTime(u: AdminUser): number {
 
     this.api.grantSubscription(u.id, { plan, duration }).subscribe({
       next: (updated) => {
-        this.users = this.users.map((x) =>
-          x.id === u.id ? { ...x, ...updated } : x,
-        );
+        this.users = this.users.map((x) => (x.id === u.id ? { ...x, ...updated } : x));
 
         this.applyFilters();
         this.savingSubscription.delete(u.id);
@@ -423,9 +451,7 @@ userCreatedTime(u: AdminUser): number {
 
     this.api.revokeSubscription(u.id).subscribe({
       next: (updated) => {
-        this.users = this.users.map((x) =>
-          x.id === u.id ? { ...x, ...updated } : x,
-        );
+        this.users = this.users.map((x) => (x.id === u.id ? { ...x, ...updated } : x));
 
         this.applyFilters();
         this.savingSubscription.delete(u.id);
@@ -476,30 +502,30 @@ userCreatedTime(u: AdminUser): number {
   }
 
   isSubscribed(u: AdminUser): boolean {
-  const plan = u.subscriptionPlan ?? 'CLASSIC';
+    const plan = u.subscriptionPlan ?? 'CLASSIC';
 
-  if (plan !== 'PREMIUM' && plan !== 'PRO') {
-    return false;
+    if (plan !== 'PREMIUM' && plan !== 'PRO') {
+      return false;
+    }
+
+    const status = u.subscriptionStatus ?? 'none';
+
+    if (status !== 'active' && status !== 'trialing') {
+      return false;
+    }
+
+    if (!u.subscriptionEndsAt) {
+      return true; // abonnement à vie / sans expiration
+    }
+
+    const end = new Date(u.subscriptionEndsAt).getTime();
+
+    if (!Number.isFinite(end)) {
+      return false;
+    }
+
+    return end > Date.now();
   }
-
-  const status = u.subscriptionStatus ?? 'none';
-
-  if (status !== 'active' && status !== 'trialing') {
-    return false;
-  }
-
-  if (!u.subscriptionEndsAt) {
-    return true; // abonnement à vie / sans expiration
-  }
-
-  const end = new Date(u.subscriptionEndsAt).getTime();
-
-  if (!Number.isFinite(end)) {
-    return false;
-  }
-
-  return end > Date.now();
-}
 
   deleteUser(u: AdminUser): void {
     if (this.isSaving(u) || this.isSavingSubscription(u)) return;

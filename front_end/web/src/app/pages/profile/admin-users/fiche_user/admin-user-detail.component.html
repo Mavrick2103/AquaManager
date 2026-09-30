@@ -1,527 +1,408 @@
-<mat-card class="wrap">
-  <!-- HEADER -->
-  <header class="top">
-    <button mat-stroked-button class="back" type="button" (click)="back()">
-      <mat-icon>arrow_back</mat-icon>
-      Retour
-    </button>
-
-    <div class="title">
-      <h2>{{ headerTitle }}</h2>
-      <p>{{ headerSub }}</p>
-    </div>
-
-    <div class="header-actions">
-      <a mat-stroked-button [routerLink]="['/admin/emailing']" [queryParams]="{ userId: userId }">
-        <mat-icon>forward_to_inbox</mat-icon>
-        Envoyer un email
-      </a>
-      <button mat-flat-button class="refresh" color="primary" type="button" (click)="load()">
-        <mat-icon>refresh</mat-icon>
-        Actualiser
-      </button>
-    </div>
-  </header>
-
-  <!-- LOADING / EMPTY -->
-  <div class="loading" *ngIf="loading">
-    <mat-progress-spinner mode="indeterminate" diameter="22"></mat-progress-spinner>
-    <span>Chargement…</span>
-  </div>
-
-  <div class="empty" *ngIf="!loading && !data">
-    <mat-icon>error_outline</mat-icon>
-    <div>
-      <div class="empty-title">Impossible de charger la fiche utilisateur</div>
-      <div class="empty-sub">Vérifie l’API /admin/users/{{ userId }}/full et ton token admin.</div>
-    </div>
-  </div>
-
-  <!-- CONTENT -->
-  <ng-container *ngIf="!loading && data">
-    <!-- SUMMARY CARDS -->
-    <section class="summary">
-      <div class="pill">
-        <mat-icon>person</mat-icon>
-        <div class="pill-text">
-          <div class="pill-title">Utilisateur</div>
-          <div class="pill-value mono">#{{ data.user.id }}</div>
+<div class="admin-layout">
+  <aside appAdminSidebar></aside>
+  <main class="content">
+    <div class="page">
+      <a class="back-link" routerLink="/admin/users"
+        ><mat-icon>arrow_back</mat-icon>Annuaire des utilisateurs</a
+      >
+      @if (loading) {
+        <div class="state" role="status">
+          <mat-icon>hourglass_top</mat-icon>
+          <h2>Chargement du dossier…</h2>
+          <p>Compte, données associées et historiques.</p>
         </div>
-      </div>
-
-      <div class="pill level">
-        <mat-icon>military_tech</mat-icon>
-        <div class="pill-text">
-          <div class="pill-title">Niveau</div>
-          <div class="pill-value">
-            {{ data.gamification?.level ?? '—' }}
-            <span class="xp" *ngIf="data.gamification?.xp !== undefined">
-              — {{ data.gamification?.xp }} XP
-            </span>
+      }
+      @if (error) {
+        <div class="state error-state" role="alert">
+          <mat-icon>person_off</mat-icon>
+          <h2>Fiche indisponible</h2>
+          <p>{{ error }}</p>
+          <button (click)="load()">Réessayer</button>
+        </div>
+      }
+      @if (data; as d) {
+        <header class="profile-header">
+          <div class="profile-identity">
+            <span class="avatar">{{ initials }}</span>
+            <div>
+              <p class="eyebrow">Dossier utilisateur · #{{ userId }}</p>
+              <h1>{{ d.user['fullName'] || 'Compte sans nom' }}</h1>
+              <p class="email">{{ d.user['email'] }}</p>
+              <div class="badges">
+                <span class="badge">{{ label(d.user['role']) }}</span
+                ><span class="badge" [class.warning]="!d.user['emailVerifiedAt']">{{
+                  d.user['emailVerifiedAt'] ? 'Email vérifié' : 'Email à confirmer'
+                }}</span
+                ><span class="badge plan">{{ label(effectivePlan) }}</span>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div class="pill activity">
-  <mat-icon>calendar_month</mat-icon>
-  <div class="pill-text">
-    <div class="pill-title">Activité ce mois</div>
-    <div class="pill-value">
-  {{ userCurrentStreak }} jour{{ userCurrentStreak > 1 ? 's' : '' }} de suivi
-</div>
-  </div>
-</div>
-
-      <div class="pill">
-        <mat-icon>mail</mat-icon>
-        <div class="pill-text">
-          <div class="pill-title">Email</div>
-          <div class="pill-value mono clamp">{{ data.user.email }}</div>
-        </div>
-      </div>
-
-      <div class="pill">
-        <mat-icon>event</mat-icon>
-        <div class="pill-text">
-          <div class="pill-title">Inscription</div>
-          <div class="pill-value">{{ formatDate(data.user.createdAt) }}</div>
-        </div>
-      </div>
-
-      <div class="pill" [class.admin]="data.user.role === 'ADMIN'">
-        <mat-icon>{{ data.user.role === 'ADMIN' ? 'admin_panel_settings' : 'person' }}</mat-icon>
-        <div class="pill-text">
-          <div class="pill-title">Rôle</div>
-          <div class="pill-value">{{ data.user.role }}</div>
-        </div>
-      </div>
-
-      <div class="pill subscription">
-        <mat-icon>workspace_premium</mat-icon>
-        <div class="pill-text"><div class="pill-title">Abonnement</div><div class="pill-value">{{ data.user.subscriptionPlan || 'CLASSIC' }}</div></div>
-      </div>
-
-      <div class="pill" [class.verified]="data.user.emailVerifiedAt">
-        <mat-icon>{{ data.user.emailVerifiedAt ? 'verified' : 'mark_email_unread' }}</mat-icon>
-        <div class="pill-text"><div class="pill-title">Email vérifié</div><div class="pill-value">{{ data.user.emailVerifiedAt ? 'Oui' : 'Non' }}</div></div>
-      </div>
-    </section>
-
-    <section class="account-details" aria-label="Informations complètes du compte">
-      <header><div><span>Compte</span><h3>Informations et activité</h3></div><mat-icon>manage_accounts</mat-icon></header>
-      <div class="details-grid">
-        <div><small>Nom complet</small><strong>{{ data.user.fullName || '—' }}</strong></div>
-        <div><small>Adresse email</small><strong class="mono">{{ data.user.email }}</strong></div>
-        <div><small>Rôle</small><strong>{{ data.user.role }}</strong></div>
-        <div><small>Identifiant</small><strong class="mono">#{{ data.user.id }}</strong></div>
-        <div><small>Inscription</small><strong>{{ formatDateTime(data.user.createdAt) }}</strong></div>
-        <div><small>Dernière activité</small><strong>{{ formatDateTime(data.user.lastActivityAt) }}</strong></div>
-        <div><small>Email vérifié le</small><strong>{{ formatDateTime(data.user.emailVerifiedAt) }}</strong></div>
-        <div><small>Abonnement</small><strong>{{ subscriptionLabel() }}</strong></div>
-        <div><small>Fin d’abonnement</small><strong>{{ formatDateTime(data.user.subscriptionEndsAt) }}</strong></div>
-        <div><small>Niveau</small><strong>{{ data.gamification?.level ?? 1 }}</strong></div>
-        <div><small>Expérience</small><strong>{{ data.gamification?.xp ?? 0 }} XP</strong></div>
-        <div><small>Série actuelle / record</small><strong>{{ data.gamification?.currentStreak ?? 0 }} / {{ data.gamification?.bestStreak ?? 0 }} jours</strong></div>
-      </div>
-    </section>
-
-    <section class="notification-details" aria-label="Préférences de notifications">
-      <header>
-        <div><span>Notifications</span><h3>Préférences de l’utilisateur</h3></div>
-        <span class="notification-status" [class.enabled]="data.notificationSettings?.notificationsEnabled">
-          <mat-icon>{{ data.notificationSettings?.notificationsEnabled ? 'notifications_active' : 'notifications_off' }}</mat-icon>
-          {{ data.notificationSettings?.notificationsEnabled ? 'Consentement accordé' : 'Notifications refusées' }}
-        </span>
-      </header>
-
-      <div class="notification-empty" *ngIf="!data.notificationSettings">
-        <mat-icon>info</mat-icon>
-        Cet utilisateur n’a pas encore enregistré ses préférences.
-      </div>
-
-      <div class="notification-preferences" *ngIf="data.notificationSettings as prefs">
-        <div [class.active]="prefs.taskReminders"><mat-icon>event_repeat</mat-icon><span><small>Rappels d’entretien</small><strong>{{ prefs.taskReminders ? 'Acceptés' : 'Refusés' }}</strong></span></div>
-        <div [class.active]="prefs.automaticNotifications"><mat-icon>monitor_heart</mat-icon><span><small>Alertes automatiques</small><strong>{{ prefs.automaticNotifications ? 'Acceptées' : 'Refusées' }}</strong></span></div>
-        <div [class.active]="prefs.newsAndUpdates"><mat-icon>campaign</mat-icon><span><small>Nouveautés du site</small><strong>{{ prefs.newsAndUpdates ? 'Acceptées' : 'Refusées' }}</strong></span></div>
-        <div [class.active]="prefs.emailNotifications"><mat-icon>mail</mat-icon><span><small>Réception par email</small><strong>{{ prefs.emailNotifications ? 'Activée' : 'Désactivée' }}</strong></span></div>
-      </div>
-
-      <p class="notification-details__notice" *ngIf="data.notificationSettings && !data.notificationSettings.notificationsEnabled">
-        Les catégories peuvent être cochées, mais aucun envoi n’est autorisé tant que le consentement général reste désactivé.
-      </p>
-    </section>
-
-    <mat-tab-group dynamicHeight class="tabs">
-      <!-- AQUARIUMS -->
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <span class="tab-label">
-            <mat-icon>water</mat-icon>
-            Aquariums
-            <span class="badge">{{ data.aquariums.length }}</span>
-          </span>
-        </ng-template>
-
-        <div class="tab">
-          <ng-container *ngIf="data.aquariums.length; else noAq">
-            <!-- DESKTOP TABLE -->
-            <div class="table-wrap desktop-only">
-              <table mat-table [dataSource]="data.aquariums" class="table">
-                <ng-container matColumnDef="id">
-                  <th mat-header-cell *matHeaderCellDef>ID</th>
-                  <td mat-cell *matCellDef="let a" class="mono">{{ a.id }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="name">
-                  <th mat-header-cell *matHeaderCellDef>Nom</th>
-                  <td mat-cell *matCellDef="let a">{{ a.name }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="waterType">
-                  <th mat-header-cell *matHeaderCellDef>Type</th>
-                  <td mat-cell *matCellDef="let a">
-                    <span
-                      class="chip"
-                      [class.douce]="a.waterType === 'EAU_DOUCE'"
-                      [class.mer]="a.waterType === 'EAU_DE_MER'"
-                    >
-                      {{ a.waterType === 'EAU_DE_MER' ? 'Eau de mer' : 'Eau douce' }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="dimensions"><th mat-header-cell *matHeaderCellDef>Dimensions</th><td mat-cell *matCellDef="let a">{{ a.lengthCm ?? '—' }} × {{ a.widthCm ?? '—' }} × {{ a.heightCm ?? '—' }} cm</td></ng-container>
-                <ng-container matColumnDef="volume"><th mat-header-cell *matHeaderCellDef>Volume</th><td mat-cell *matCellDef="let a">{{ a.volumeL ?? '—' }} L</td></ng-container>
-                <ng-container matColumnDef="startDate"><th mat-header-cell *matHeaderCellDef>Mise en eau</th><td mat-cell *matCellDef="let a">{{ formatDate(a.startDate) }}</td></ng-container>
-                <ng-container matColumnDef="createdAt"><th mat-header-cell *matHeaderCellDef>Création</th><td mat-cell *matCellDef="let a">{{ formatDateTime(a.createdAt) }}</td></ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="aquariumsCols"></tr>
-                <tr mat-row *matRowDef="let row; columns: aquariumsCols"></tr>
-              </table>
-            </div>
-
-            <!-- MOBILE CARDS -->
-            <div class="cards mobile-only">
-              <div class="card" *ngFor="let a of data.aquariums">
-                <div class="card-top">
-                  <div class="card-left">
-                    <div class="line1">{{ a.name || '—' }}</div>
-                    <div class="line2 mono">Aquarium #{{ a.id }}</div>
-                  </div>
-
-                  <span
-                    class="chip"
-                    [class.douce]="a.waterType === 'EAU_DOUCE'"
-                    [class.mer]="a.waterType === 'EAU_DE_MER'"
-                  >
-                    {{ a.waterType === 'EAU_DE_MER' ? 'Mer' : 'Douce' }}
-                  </span>
-                </div>
-
-                <div class="kv">
-                  <div class="kv-row" *ngIf="a.volumeL">
-                    <span>Volume</span>
-                    <b>{{ a.volumeL }} L</b>
-                  </div>
-                  <div class="kv-row" *ngIf="a.startDate || a.createdAt">
-                    <span>Créé</span>
-                    <b>{{ formatDate(a.startDate || a.createdAt) }}</b>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </ng-container>
-
-          <ng-template #noAq>
-            <div class="hint-block">
-              <mat-icon>info</mat-icon>
-              <span>Aucun aquarium.</span>
-            </div>
-          </ng-template>
-        </div>
-      </mat-tab>
-
-      <!-- MESURES -->
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <span class="tab-label">
-            <mat-icon>show_chart</mat-icon>
-            Mesures
-            <span class="badge">{{ data.measurements.length }}</span>
-          </span>
-        </ng-template>
-
-        <div class="tab">
-          <ng-container *ngIf="data.measurements.length; else noMeas">
-            <!-- DESKTOP TABLE -->
-            <div class="table-wrap desktop-only">
-              <table mat-table [dataSource]="data.measurements" class="table wide">
-                <ng-container matColumnDef="date">
-                  <th mat-header-cell *matHeaderCellDef>Date</th>
-                  <td mat-cell *matCellDef="let m">{{ formatDate(m.measuredAt) }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="aquariumId">
-                  <th mat-header-cell *matHeaderCellDef>Aquarium</th>
-                  <td mat-cell *matCellDef="let m" class="mono">#{{ m.aquariumId }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="ph">
-                  <th mat-header-cell *matHeaderCellDef>pH</th>
-                  <td mat-cell *matCellDef="let m">{{ m.ph ?? '—' }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="temp">
-                  <th mat-header-cell *matHeaderCellDef>Temp</th>
-                  <td mat-cell *matCellDef="let m">{{ m.temp ?? '—' }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="no2">
-                  <th mat-header-cell *matHeaderCellDef>NO₂</th>
-                  <td mat-cell *matCellDef="let m">{{ m.no2 ?? '—' }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="no3">
-                  <th mat-header-cell *matHeaderCellDef>NO₃</th>
-                  <td mat-cell *matCellDef="let m">{{ m.no3 ?? '—' }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="kh"><th mat-header-cell *matHeaderCellDef>KH</th><td mat-cell *matCellDef="let m">{{ m.kh ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="gh"><th mat-header-cell *matHeaderCellDef>GH</th><td mat-cell *matCellDef="let m">{{ m.gh ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="po4"><th mat-header-cell *matHeaderCellDef>PO₄</th><td mat-cell *matCellDef="let m">{{ m.po4 ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="fe"><th mat-header-cell *matHeaderCellDef>Fe</th><td mat-cell *matCellDef="let m">{{ m.fe ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="k"><th mat-header-cell *matHeaderCellDef>K</th><td mat-cell *matCellDef="let m">{{ m.k ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="sio2"><th mat-header-cell *matHeaderCellDef>SiO₂</th><td mat-cell *matCellDef="let m">{{ m.sio2 ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="nh3"><th mat-header-cell *matHeaderCellDef>NH₃</th><td mat-cell *matCellDef="let m">{{ m.nh3 ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="dkh"><th mat-header-cell *matHeaderCellDef>dKH</th><td mat-cell *matCellDef="let m">{{ m.dkh ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="salinity"><th mat-header-cell *matHeaderCellDef>Salinité</th><td mat-cell *matCellDef="let m">{{ m.salinity ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="ca"><th mat-header-cell *matHeaderCellDef>Ca</th><td mat-cell *matCellDef="let m">{{ m.ca ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="mg"><th mat-header-cell *matHeaderCellDef>Mg</th><td mat-cell *matCellDef="let m">{{ m.mg ?? '—' }}</td></ng-container>
-                <ng-container matColumnDef="comment"><th mat-header-cell *matHeaderCellDef>Commentaire</th><td mat-cell *matCellDef="let m">{{ m.comment || '—' }}</td></ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="measuresCols"></tr>
-                <tr mat-row *matRowDef="let row; columns: measuresCols"></tr>
-              </table>
-            </div>
-
-            <!-- MOBILE CARDS -->
-            <div class="cards mobile-only">
-              <div class="card" *ngFor="let m of data.measurements">
-                <div class="card-top">
-                  <div class="card-left">
-                    <div class="line1">{{ formatDate(m.measuredAt) }}</div>
-                    <div class="line2 mono">Aquarium #{{ m.aquariumId }}</div>
-                  </div>
-                  <span class="badge small">Mesure</span>
-                </div>
-
-                <div class="grid4">
-                  <div class="metric"><span>pH</span><b>{{ m.ph ?? '—' }}</b></div>
-                  <div class="metric"><span>Temp</span><b>{{ m.temp ?? '—' }}</b></div>
-                  <div class="metric"><span>NO₂</span><b>{{ m.no2 ?? '—' }}</b></div>
-                  <div class="metric"><span>NO₃</span><b>{{ m.no3 ?? '—' }}</b></div>
-                  <div class="metric"><span>KH</span><b>{{ m.kh ?? '—' }}</b></div><div class="metric"><span>GH</span><b>{{ m.gh ?? '—' }}</b></div>
-                  <div class="metric"><span>PO₄</span><b>{{ m.po4 ?? '—' }}</b></div><div class="metric"><span>Fe</span><b>{{ m.fe ?? '—' }}</b></div>
-                  <div class="metric"><span>K</span><b>{{ m.k ?? '—' }}</b></div><div class="metric"><span>SiO₂</span><b>{{ m.sio2 ?? '—' }}</b></div>
-                  <div class="metric"><span>NH₃</span><b>{{ m.nh3 ?? '—' }}</b></div><div class="metric"><span>dKH</span><b>{{ m.dkh ?? '—' }}</b></div>
-                  <div class="metric"><span>Salinité</span><b>{{ m.salinity ?? '—' }}</b></div><div class="metric"><span>Ca</span><b>{{ m.ca ?? '—' }}</b></div><div class="metric"><span>Mg</span><b>{{ m.mg ?? '—' }}</b></div>
-                </div>
-                <p class="measurement-comment" *ngIf="m.comment">{{ m.comment }}</p>
-              </div>
-            </div>
-          </ng-container>
-
-          <ng-template #noMeas>
-            <div class="hint-block">
-              <mat-icon>info</mat-icon>
-              <span>Aucune mesure.</span>
-            </div>
-          </ng-template>
-        </div>
-      </mat-tab>
-
-      <!-- VIVANTS / PLANTES -->
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <span class="tab-label">
-            <mat-icon>pets</mat-icon>
-            Vivants / Plantes
-          </span>
-        </ng-template>
-
-        <div class="tab">
-          <div class="split">
-            <section class="box">
-              <div class="box-head">
-                <h3>Poissons / Vivants</h3>
-                <span class="badge">{{ data.fish.length }}</span>
-              </div>
-
-              <div *ngIf="data.fish.length; else noFish" class="list">
-                <div class="item" *ngFor="let f of data.fish">
-                  <div class="left">
-                    <div class="name">{{ f.fishCard.commonName || '—' }}</div>
-                    <div class="meta">{{ f.fishCard.scientificName || 'Nom scientifique non renseigné' }}</div>
-                    <div class="meta mono">Aquarium #{{ f.aquariumId }} · fiche #{{ f.fishCard.id }}</div>
-                  </div>
-                  <div class="right">
-                    <span class="qty">x{{ f.count }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <ng-template #noFish>
-                <div class="hint-block">
-                  <mat-icon>info</mat-icon>
-                  <span>Aucun vivant.</span>
-                </div>
-              </ng-template>
-            </section>
-
-            <section class="box">
-              <div class="box-head">
-                <h3>Plantes</h3>
-                <span class="badge">{{ data.plants.length }}</span>
-              </div>
-
-              <div *ngIf="data.plants.length; else noPlants" class="list">
-                <div class="item" *ngFor="let p of data.plants">
-                  <div class="left">
-                    <div class="name">{{ p.plantCard.commonName || '—' }}</div>
-                    <div class="meta">{{ p.plantCard.scientificName || 'Nom scientifique non renseigné' }}</div>
-                    <div class="meta mono">Aquarium #{{ p.aquariumId }} · fiche #{{ p.plantCard.id }}</div>
-                  </div>
-                  <div class="right">
-                    <span class="qty">x{{ p.count }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <ng-template #noPlants>
-                <div class="hint-block">
-                  <mat-icon>info</mat-icon>
-                  <span>Aucune plante.</span>
-                </div>
-              </ng-template>
-            </section>
+          <div class="profile-actions">
+            <button (click)="load()"><mat-icon>refresh</mat-icon>Actualiser</button
+            ><a
+              class="button primary"
+              routerLink="/admin/emailing"
+              [queryParams]="{ userId: userId }"
+              ><mat-icon>mail_outline</mat-icon>Préparer un email</a
+            >
           </div>
-        </div>
-      </mat-tab>
-
-      <!-- TACHES -->
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <span class="tab-label">
-            <mat-icon>checklist</mat-icon>
-            Tâches
-            <span class="badge">{{ data.tasks.length }}</span>
-          </span>
-        </ng-template>
-
-        <div class="tab">
-          <ng-container *ngIf="data.tasks.length; else noTasks">
-            <!-- DESKTOP TABLE -->
-            <div class="table-wrap desktop-only">
-              <table mat-table [dataSource]="data.tasks" class="table wide">
-                <ng-container matColumnDef="id">
-                  <th mat-header-cell *matHeaderCellDef>ID</th>
-                  <td mat-cell *matCellDef="let t" class="mono">{{ t.id }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="title">
-                  <th mat-header-cell *matHeaderCellDef>Titre</th>
-                  <td mat-cell *matCellDef="let t">{{ t.title }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="status">
-                  <th mat-header-cell *matHeaderCellDef>Statut</th>
-                  <td mat-cell *matCellDef="let t">
-                    <span class="status" [class.done]="t.status === 'DONE'">
-                      {{ t.status || '—' }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="dueAt">
-                  <th mat-header-cell *matHeaderCellDef>Échéance</th>
-                  <td mat-cell *matCellDef="let t">{{ formatDate(t.dueAt) }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="aquariumId">
-                  <th mat-header-cell *matHeaderCellDef>Aquarium</th>
-                  <td mat-cell *matCellDef="let t" class="mono">
-                    {{ t.aquariumId ?? t.aquarium?.id ?? '—' }}
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="type"><th mat-header-cell *matHeaderCellDef>Type</th><td mat-cell *matCellDef="let t">{{ t.type || '—' }}</td></ng-container>
-                <ng-container matColumnDef="repeat"><th mat-header-cell *matHeaderCellDef>Répétition</th><td mat-cell *matCellDef="let t">{{ repeatLabel(t) }}</td></ng-container>
-                <ng-container matColumnDef="createdAt"><th mat-header-cell *matHeaderCellDef>Création</th><td mat-cell *matCellDef="let t">{{ formatDateTime(t.createdAt) }}</td></ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="tasksCols"></tr>
-                <tr mat-row *matRowDef="let row; columns: tasksCols"></tr>
-              </table>
-            </div>
-
-            <!-- MOBILE CARDS -->
-            <div class="cards mobile-only">
-              <div class="card" *ngFor="let t of data.tasks">
-                <div class="card-top">
-                  <div class="card-left">
-                    <div class="line1">{{ t.title || '—' }}</div>
-                    <div class="line2 mono">
-                      #{{ t.id }} • Aquarium {{ t.aquariumId ?? t.aquarium?.id ?? '—' }}
+        </header>
+        <section class="stats" aria-label="Données associées au compte">
+          <button class="stat" (click)="selectGroup('aquariums')">
+            <span>Aquariums</span><strong>{{ d.counts['aquariums'] }}</strong
+            ><small
+              >{{ d.archivedAquariums }} masqué{{ d.archivedAquariums > 1 ? 's' : '' }} après
+              expiration</small
+            ><mat-icon>water</mat-icon>
+          </button>
+          <button class="stat" (click)="selectGroup('tracking'); selectSection('measurements')">
+            <span>Mesures enregistrées</span><strong>{{ d.counts['measurements'] }}</strong
+            ><small>Historique complet consultable</small><mat-icon>science</mat-icon>
+          </button>
+          <button class="stat" (click)="selectGroup('tracking'); selectSection('tasks')">
+            <span>Tâches</span><strong>{{ d.counts['tasks'] }}</strong
+            ><small>Planifiées et terminées</small><mat-icon>task_alt</mat-icon>
+          </button>
+          <button class="stat" (click)="selectGroup('tracking'); selectSection('ai')">
+            <span>Analyses IA</span><strong>{{ d.counts['ai'] }}</strong
+            ><small>Réponses enregistrées</small><mat-icon>auto_awesome</mat-icon>
+          </button>
+        </section>
+        <nav class="dossier-navigation" aria-label="Rubriques du dossier">
+          @for (g of groups; track g.key) {
+            <button
+              [class.selected]="group === g.key"
+              [attr.aria-pressed]="group === g.key"
+              (click)="selectGroup(g.key)"
+            >
+              <mat-icon>{{ g.icon }}</mat-icon
+              >{{ g.label }}
+            </button>
+          }
+        </nav>
+        @if (group === 'overview') {
+          <div class="overview-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Identité & accès</p>
+                  <h2>Le compte</h2>
+                </div>
+                <mat-icon>badge</mat-icon>
+              </div>
+              <dl class="info-grid">
+                <div>
+                  <dt>Nom complet</dt>
+                  <dd>{{ d.user['fullName'] || 'Non renseigné' }}</dd>
+                </div>
+                <div>
+                  <dt>Identifiant</dt>
+                  <dd>#{{ userId }}</dd>
+                </div>
+                <div>
+                  <dt>Adresse email</dt>
+                  <dd>{{ d.user['email'] }}</dd>
+                </div>
+                <div>
+                  <dt>Nouvelle adresse en attente</dt>
+                  <dd>{{ d.user['pendingEmail'] || 'Aucun changement en attente' }}</dd>
+                </div>
+                <div>
+                  <dt>Inscription</dt>
+                  <dd>{{ date(d.user['createdAt']) }}</dd>
+                </div>
+                <div>
+                  <dt>Email confirmé le</dt>
+                  <dd>{{ date(d.user['emailVerifiedAt']) }}</dd>
+                </div>
+                <div>
+                  <dt>Dernière activité</dt>
+                  <dd>{{ date(d.user['lastActivityAt']) }}</dd>
+                </div>
+                <div>
+                  <dt>Sessions non expirées</dt>
+                  <dd>
+                    {{ d.activeSessions
+                    }}<small>Ne signifie pas que l’utilisateur est en ligne.</small>
+                  </dd>
+                </div>
+              </dl>
+            </section>
+            <section class="panel subscription-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Abonnement</p>
+                  <h2>Accès {{ label(effectivePlan) }}</h2>
+                  @if (d.user['role'] === 'ADMIN') {
+                    <p class="note">
+                      Accès Pro accordé par le rôle administrateur, indépendamment de l’abonnement
+                      payé.
+                    </p>
+                  }
+                </div>
+                <mat-icon>workspace_premium</mat-icon>
+              </div>
+              <dl class="info-grid">
+                <div>
+                  <dt>Formule enregistrée</dt>
+                  <dd>{{ label(d.user['subscriptionPlan']) }}</dd>
+                </div>
+                <div>
+                  <dt>État enregistré</dt>
+                  <dd>{{ label(d.user['subscriptionStatus']) }}</dd>
+                </div>
+                <div>
+                  <dt>Fin de période</dt>
+                  <dd>
+                    {{
+                      d.user['subscriptionEndsAt']
+                        ? date(d.user['subscriptionEndsAt'])
+                        : 'Aucune échéance enregistrée'
+                    }}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Prestataire</dt>
+                  <dd>{{ d.user['billingProvider'] || 'Aucun prestataire associé' }}</dd>
+                </div>
+                @if (d.user['billingProvider'] === 'paypal') {
+                  <div>
+                    <dt>Renouvellement PayPal</dt>
+                    <dd>{{ d.user['paypalRenewalActive'] ? 'Activé' : 'Désactivé' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Référence PayPal</dt>
+                    <dd>{{ d.user['paypalSubscriptionId'] || 'Non renseignée' }}</dd>
+                  </div>
+                }
+                @if (d.user['stripeSubscriptionId']) {
+                  <div>
+                    <dt>Souscription Stripe</dt>
+                    <dd>{{ d.user['stripeSubscriptionId'] }}</dd>
+                  </div>
+                  <div>
+                    <dt>Client Stripe</dt>
+                    <dd>{{ d.user['stripeCustomerId'] || 'Non renseigné' }}</dd>
+                  </div>
+                }
+              </dl>
+              <button class="text-button" (click)="selectGroup('billing')">
+                Consulter les souscriptions et paiements <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Préférences</p>
+                  <h2>Réglages & notifications</h2>
+                </div>
+                <mat-icon>settings</mat-icon>
+              </div>
+              @if (d.settings) {
+                <dl class="info-grid">
+                  @for (field of settingsFields; track field.key) {
+                    <div>
+                      <dt>{{ field.label }}</dt>
+                      <dd>{{ value(d.settings, field) }}</dd>
                     </div>
-                  </div>
-                  <span class="status" [class.done]="t.status === 'DONE'">
-                    {{ t.status || '—' }}
-                  </span>
+                  }
+                </dl>
+                @if (!d.settings['notificationsEnabled']) {
+                  <p class="note">
+                    Les notifications générales sont désactivées, même si certaines préférences
+                    individuelles sont cochées.
+                  </p>
+                }
+              } @else {
+                <p class="empty">Aucun réglage personnalisé enregistré.</p>
+              }
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Progression</p>
+                  <h2>Expérience & régularité</h2>
                 </div>
-
-                <div class="kv">
-                  <div class="kv-row"><span>Type</span><b>{{ t.type || '—' }}</b></div>
-                  <div class="kv-row">
-                    <span>Échéance</span>
-                    <b>{{ formatDate(t.dueAt) }}</b>
-                  </div>
-                  <div class="kv-row"><span>Répétition</span><b>{{ repeatLabel(t) }}</b></div>
-                  <div class="kv-row"><span>Créée le</span><b>{{ formatDateTime(t.createdAt) }}</b></div>
-                </div>
-                <p class="task-description" *ngIf="t.description">{{ t.description }}</p>
+                <mat-icon>emoji_events</mat-icon>
               </div>
-            </div>
-          </ng-container>
-
-          <ng-template #noTasks>
-            <div class="hint-block">
-              <mat-icon>info</mat-icon>
-              <span>Aucune tâche.</span>
-            </div>
-          </ng-template>
-        </div>
-      </mat-tab>
-
-      <mat-tab *ngIf="data.editor">
-        <ng-template mat-tab-label>
-          <span class="tab-label"><mat-icon>edit_square</mat-icon>Contributions<span class="badge">{{ data.editor.articles.length + data.editor.fishCards.length + data.editor.plantCards.length }}</span></span>
-        </ng-template>
-        <div class="tab">
-          <div class="contributions-grid">
-            <section class="box"><div class="box-head"><h3>Articles</h3><span class="badge">{{ data.editor.articles.length }}</span></div>
-              <div class="list" *ngIf="data.editor.articles.length; else noArticles"><div class="item" *ngFor="let article of data.editor.articles"><div><div class="name">{{ article.title }}</div><div class="meta">#{{ article.id }} · {{ formatDateTime(article.createdAt) }}</div></div><span class="status">{{ article.status }}</span></div></div>
-              <ng-template #noArticles><div class="hint-block"><mat-icon>info</mat-icon>Aucun article créé.</div></ng-template>
-            </section>
-            <section class="box"><div class="box-head"><h3>Fiches poissons</h3><span class="badge">{{ data.editor.fishCards.length }}</span></div>
-              <div class="list" *ngIf="data.editor.fishCards.length; else noEditorFish"><div class="item" *ngFor="let card of data.editor.fishCards"><div><div class="name">{{ card.commonName }}</div><div class="meta">#{{ card.id }} · {{ formatDateTime(card.createdAt) }}</div></div><span class="status">{{ card.status }}</span></div></div>
-              <ng-template #noEditorFish><div class="hint-block"><mat-icon>info</mat-icon>Aucune fiche créée.</div></ng-template>
-            </section>
-            <section class="box"><div class="box-head"><h3>Fiches plantes</h3><span class="badge">{{ data.editor.plantCards.length }}</span></div>
-              <div class="list" *ngIf="data.editor.plantCards.length; else noEditorPlants"><div class="item" *ngFor="let card of data.editor.plantCards"><div><div class="name">{{ card.commonName }}</div><div class="meta">#{{ card.id }} · {{ formatDateTime(card.createdAt) }}</div></div><span class="status">{{ card.status }}</span></div></div>
-              <ng-template #noEditorPlants><div class="hint-block"><mat-icon>info</mat-icon>Aucune fiche créée.</div></ng-template>
+              @if (d.progress) {
+                <dl class="info-grid">
+                  @for (field of progressFields; track field.key) {
+                    <div>
+                      <dt>{{ field.label }}</dt>
+                      <dd>{{ value(d.progress, field) }}</dd>
+                    </div>
+                  }
+                </dl>
+              } @else {
+                <p class="empty">Aucun profil de progression enregistré.</p>
+              }
+              <div class="quick-links">
+                <button (click)="selectGroup('activity'); selectSection('achievements')">
+                  {{ d.counts['achievements'] }} badges</button
+                ><button (click)="selectGroup('activity'); selectSection('missions')">
+                  {{ d.counts['missions'] }} missions
+                </button>
+              </div>
+              <p class="note">
+                La progression provient des données enregistrées. Les échéances de tâches ne sont
+                pas comptées comme des connexions.
+              </p>
             </section>
           </div>
-        </div>
-      </mat-tab>
-    </mat-tab-group>
-  </ng-container>
-</mat-card>
+        } @else {
+          <section class="records-panel">
+            <nav class="section-navigation" aria-label="Données de la rubrique">
+              @for (s of sectionOptions; track s.key) {
+                <button
+                  [class.selected]="section === s.key"
+                  [attr.aria-pressed]="section === s.key"
+                  (click)="selectSection(s.key)"
+                >
+                  {{ s.label }}<span>{{ d.counts[s.key] }}</span>
+                </button>
+              }
+            </nav>
+            <div class="records-heading">
+              <div>
+                <h2>{{ current.label }}</h2>
+                <p>Du plus récent au plus ancien · 25 éléments par page.</p>
+              </div>
+              @if (aquariumId) {
+                <button class="filter-chip" (click)="clearAquarium()">
+                  Aquarium #{{ aquariumId }} <mat-icon>close</mat-icon>
+                </button>
+              }
+            </div>
+            @if (group === 'billing') {
+              <p class="note">
+                Historique PayPal enregistré, paiements réels et Sandbox identifiés séparément. Les
+                montants et le détail Stripe se vérifient auprès du prestataire. Un accès offert
+                n’est pas un paiement.
+              </p>
+            }
+            @if (section === 'activity') {
+              <p class="note">
+                Événements fonctionnels enregistrés par l’application : ce n’est pas un historique
+                exhaustif des connexions ou des clics.
+              </p>
+            }
+            @if (section === 'aquariums' && d.archivedAquariums) {
+              <p class="note">
+                Les aquariums masqués restent consultables ici par l’administrateur. Leur date de
+                suppression prévue est indiquée dans chaque fiche.
+              </p>
+            }
+            @if (recordsLoading) {
+              <p class="empty" role="status">Chargement de {{ current.label.toLowerCase() }}…</p>
+            }
+            @if (recordsError) {
+              <p class="error-message" role="alert">
+                {{ recordsError }} <button (click)="loadRecords()">Réessayer</button>
+              </p>
+            }
+            @if (records; as r) {
+              <div class="record-list">
+                @for (row of r.items; track row['id']) {
+                  <details class="record" [open]="section === 'aquariums'">
+                    <summary>
+                      <span class="record-icon"
+                        ><mat-icon>{{ current.icon }}</mat-icon></span
+                      ><span class="record-title"
+                        ><strong>{{ title(row) }}</strong
+                        ><small>
+                          @if (row['aquariumName']) {
+                            {{ row['aquariumName'] }} ·
+                          }
+                          #{{ row['id'] }} ·
+                          {{
+                            date(
+                              row['measuredAt'] ||
+                                row['dueAt'] ||
+                                row['paidAt'] ||
+                                row['computedAt'] ||
+                                row['unlockedAt'] ||
+                                row['createdAt'] ||
+                                row['weekStart']
+                            )
+                          }}</small
+                        ></span
+                      ><span class="record-tags">
+                        @if (row['environment']) {
+                          <span class="badge" [class.warning]="row['environment'] === 'sandbox'">{{
+                            label(row['environment'])
+                          }}</span>
+                        }
+                        @if (row['status']) {
+                          <span class="badge neutral">{{ label(row['status']) }}</span>
+                        }
+                        @if (row['archivedAt'] || row['aquariumArchivedAt']) {
+                          <span class="badge warning">Aquarium masqué</span>
+                        }</span
+                      ><mat-icon class="chevron">expand_more</mat-icon>
+                    </summary>
+                    <div class="record-body">
+                      <dl class="info-grid record-fields">
+                        @for (field of current.fields; track field.key) {
+                          <div
+                            [class.wide-field]="field.kind === 'text' || field.kind === 'object'"
+                          >
+                            <dt>{{ field.label }}</dt>
+                            <dd
+                              [class.long-text]="field.kind === 'text' || field.kind === 'object'"
+                            >
+                              {{ value(row, field) }}
+                            </dd>
+                          </div>
+                        }
+                      </dl>
+                      @if (section === 'aquariums') {
+                        <button class="text-button" (click)="inspectAquarium(row['id'])">
+                          Voir les mesures de ce bac <mat-icon>arrow_forward</mat-icon>
+                        </button>
+                      }
+                      @if (section === 'articles') {
+                        <a class="button" [routerLink]="['/admin/articles', row['id'], 'edit']"
+                          >Ouvrir l’article</a
+                        >
+                      }
+                    </div>
+                  </details>
+                } @empty {
+                  <div class="state small">
+                    <mat-icon>folder_open</mat-icon>
+                    <h3>Aucun élément enregistré</h3>
+                    <p>
+                      {{
+                        aquariumId
+                          ? 'Aucune donnée pour cet aquarium dans cette rubrique.'
+                          : 'Ce compte ne possède pas encore de données dans cette rubrique.'
+                      }}
+                    </p>
+                  </div>
+                }
+              </div>
+              <nav class="pagination" aria-label="Pagination des données utilisateur">
+                <span
+                  >{{ r.total }} élément{{ r.total > 1 ? 's' : '' }} · page {{ page }} /
+                  {{ totalPages }}</span
+                >
+                <div>
+                  <button [disabled]="page <= 1 || recordsLoading" (click)="next(-1)">
+                    <mat-icon>chevron_left</mat-icon>Précédent</button
+                  ><button [disabled]="page * 25 >= r.total || recordsLoading" (click)="next(1)">
+                    Suivant<mat-icon>chevron_right</mat-icon>
+                  </button>
+                </div>
+              </nav>
+            }
+          </section>
+        }
+        <p class="footnote">
+          Dossier actualisé le {{ date(d.generatedAt) }} · Consultation réservée aux
+          administrateurs. Les mots de passe et jetons de connexion ne sont jamais affichés.
+        </p>
+      }
+    </div>
+  </main>
+</div>

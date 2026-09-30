@@ -18,6 +18,7 @@ import { OperationalEvent } from './entities/operational-event.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { OperationalEventsInterceptor } from './operational-events.interceptor';
 import { Settings } from '../settings/settings.entity';
+import { AdminOperationsService } from './admin-operations.service';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { Settings } from '../settings/settings.entity';
   controllers: [AdminMetricsController],
   providers: [
     AdminMetricsService,
+    AdminOperationsService,
     { provide: APP_INTERCEPTOR, useClass: OperationalEventsInterceptor },
   ],
 })

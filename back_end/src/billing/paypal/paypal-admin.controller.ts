@@ -11,8 +11,8 @@ import { PaypalAdminService } from './paypal-admin.service';
 export class PaypalAdminController {
   constructor(private readonly service: PaypalAdminService) {}
   @Get()
-  list(@Query('search') search = '', @Query('page') page = '1', @Query('environment') environment = 'all', @Query('attention') attention = 'false') {
-    return this.service.list(search, Number(page), environment, attention === 'true');
+  list(@Query('search') search = '', @Query('page') page = '1', @Query('environment') environment = 'all', @Query('attention') attention = 'false', @Query('status') status = 'all') {
+    return this.service.list(search, Number(page), environment, attention === 'true', status);
   }
   @Get(':id')
   detail(@Param('id', new ParseUUIDPipe()) id: string) { return this.service.detail(id); }

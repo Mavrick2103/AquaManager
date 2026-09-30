@@ -7,6 +7,13 @@ import { EditorOrAdminGuard } from './core/editor-or-admin.guard';
 import { AdminOnlyGuard } from './core/admin-only.guard';
 
 export const routes: Routes = [
+  { path: 'admin', pathMatch: 'full', redirectTo: 'admin/metrics' },
+  {
+    path: 'admin/operations',
+    loadComponent: () => import('./pages/profile/admin-operations/admin-operations.component').then(m => m.AdminOperationsComponent),
+    canActivate: [AuthGuard, AdminOnlyGuard],
+    data: { title: 'Serveur & journaux – AquaManager', robots: 'noindex' },
+  },
   // =========================
   // ✅ PUBLIC (sans AuthGuard)
   // =========================

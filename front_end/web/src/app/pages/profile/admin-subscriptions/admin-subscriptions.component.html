@@ -2,26 +2,29 @@
   <aside appAdminSidebar></aside>
   <main class="content">
     <div class="page">
-      <header class="header"><div><p class="eyebrow">ADMINISTRATION · PAYPAL</p><h1>Abonnements</h1><p>Suivez les paiements et accompagnez vos utilisateurs.</p></div><mat-icon>credit_card</mat-icon></header>
+      <header class="page-heading"><div><p class="eyebrow">Administration / Paiements</p><h1>Abonnements</h1><p>Suivez les souscriptions PayPal, les périodes payées et les résiliations.</p></div><button mat-stroked-button (click)="load()" [disabled]="loading()"><mat-icon>refresh</mat-icon>Actualiser</button></header>
+@if (overview(); as o) { <section class="stats" aria-label="Résumé PayPal"><article class="stat"><span>Souscriptions enregistrées</span><strong>{{ o.total }}</strong><small>Tentatives incluses</small></article><article class="stat accent"><span>État PayPal actif</span><strong>{{ o.active }}</strong><small>Dernier état synchronisé</small></article><article class="stat"><span>En attente</span><strong>{{ o.pending }}</strong><small>Création, validation ou paiement</small></article><article class="stat"><span>Résiliées</span><strong>{{ o.cancelled }}</strong><small>{{ o.suspended }} suspendues · {{ o.expired }} expirées</small></article></section> }
+<p class="notice">Les indicateurs suivent la recherche et l’environnement sélectionnés, avant les filtres « État » et « À vérifier ». Un état PayPal actif ne garantit pas à lui seul une période payée. Les accès offerts se consultent dans Utilisateurs.</p>
       <section class="admin-card">
         <form (ngSubmit)="load(true)" class="filters">
           <label>Rechercher<input name="search" [(ngModel)]="search" maxlength="160" placeholder="Nom, email ou référence PayPal"></label>
           <label>Environnement<select name="mode" [(ngModel)]="mode"><option value="all">Tous</option><option value="live">Paiements réels</option><option value="sandbox">Tests Sandbox</option></select></label>
+          <label>État<select name="status" [(ngModel)]="status"><option value="all">Tous les états</option><option value="ACTIVE">Actif</option><option value="CANCELLED">Résilié</option><option value="APPROVAL_PENDING">Validation attendue</option><option value="APPROVED">Paiement attendu</option><option value="SUSPENDED">Suspendu</option><option value="EXPIRED">Expiré</option><option value="CREATING">Création en cours</option></select></label>
           <label class="check"><input type="checkbox" name="attention" [(ngModel)]="attention">À vérifier</label>
           <button mat-flat-button type="submit" [disabled]="loading()">Rechercher</button>
         </form>
-        <p class="muted">{{ total() }} abonnement(s) · Connexion actuelle : {{ configuredEnvironment() === 'live' ? 'paiements réels' : 'tests Sandbox' }}.</p>
+        <p class="muted">{{ total() }} abonnement(s) · Connexion actuelle : {{ configuredEnvironment() === 'live' ? 'paiements réels' : configuredEnvironment() === 'sandbox' ? 'tests Sandbox' : 'non disponible' }}.</p>
         <p class="muted">« À vérifier » inclut les paiements en attente, synchronisations anciennes et emails dont l’envoi reste à contrôler.</p>
         @if (error()) { <p class="alert" role="alert">{{ error() }}</p> }
         @if (notice()) { <p class="notice" role="status">{{ notice() }}</p> }
         @if (loading()) { <p role="status">Chargement des abonnements…</p> }
-        <div class="table-scroll"><table><thead><tr><th>Utilisateur</th><th>Environnement</th><th>État PayPal</th><th>Période payée jusqu’au</th><th>Dernière vérification</th><th>Détail</th></tr></thead><tbody>
+        <div class="table-scroll"><table><thead><tr><th>Utilisateur</th><th>Environnement</th><th>État / inscription PayPal</th><th>Période payée jusqu’au</th><th>Dernière vérification</th><th>Détail</th></tr></thead><tbody>
           @for (item of items(); track item.id) {
             <tr><td><strong>{{ item.user?.fullName || 'Compte supprimé' }}</strong><small>{{ item.user?.email }}</small><small>{{ item.current ? 'Abonnement associé au compte' : 'Ancienne tentative / accès distinct' }}</small></td>
               <td><span class="badge" [class.test]="item.environment === 'sandbox'">{{ item.environment === 'sandbox' ? 'TEST' : 'RÉEL' }}</span></td>
-              <td>{{ label(item.status) }}</td><td>{{ (item.paidUntil | date:'dd/MM/yyyy HH:mm') || 'Aucune période confirmée' }}</td><td>{{ (item.syncedAt | date:'dd/MM/yyyy HH:mm') || 'Jamais' }}</td>
+              <td><span class="badge" [class.test]="item.status !== 'ACTIVE'">{{ label(item.status) }}</span><small>{{ item.createdAt | date:'dd/MM/yyyy HH:mm' }}</small></td><td>{{ (item.paidUntil | date:'dd/MM/yyyy HH:mm') || 'Aucune période confirmée' }}</td><td>{{ (item.syncedAt | date:'dd/MM/yyyy HH:mm') || 'Jamais' }}</td>
               <td><button mat-stroked-button [disabled]="refreshing()" (click)="open(item)" [attr.aria-label]="'Voir l’abonnement de ' + item.user?.email">Voir</button></td></tr>
-          } @empty { @if (!loading()) { <tr><td colspan="6">Aucun abonnement PayPal ne correspond à ces filtres.</td></tr> } }
+          } @empty { @if (!loading() && !error()) { <tr><td colspan="6">Aucun abonnement PayPal ne correspond à ces filtres.</td></tr> } }
         </tbody></table></div>
         <nav class="pagination" aria-label="Pages des abonnements"><button mat-button [disabled]="loading() || page <= 1" (click)="next(-1)">Précédent</button><span>Page {{ page }}</span><button mat-button [disabled]="loading() || page * 25 >= total()" (click)="next(1)">Suivant</button></nav>
       </section>
