@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 
 import { WaterMeasurement } from './water-measurement.entity';
 import { Aquarium } from '../aquariums/aquariums.entity';
@@ -26,7 +26,7 @@ export class WaterMeasurementService {
   // Vérification de l'appartenance de l'aquarium au user
   private async ensureOwnership(userId: number, aquariumId: number): Promise<Aquarium> {
     const aquarium = await this.aquas.findOne({
-      where: { id: aquariumId, user: { id: userId } },
+      where: { id: aquariumId, archivedAt: IsNull(), user: { id: userId } },
       relations: ['user'],
     });
 

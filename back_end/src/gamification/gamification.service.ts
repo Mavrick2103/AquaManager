@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 
 import { Aquarium } from '../aquariums/aquariums.entity';
 import { AquariumHealthScore } from './entities/aquarium-health-score.entity';
@@ -38,7 +38,7 @@ export class GamificationService {
       : 0;
 
     const aquariums = await this.aquariumRepo.find({
-      where: { user: { id: userId } as any },
+      where: { archivedAt: IsNull(), user: { id: userId } as any },
       order: { createdAt: 'DESC' as any },
     });
 

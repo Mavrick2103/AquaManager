@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 
 import { Aquarium } from '../../aquariums/aquariums.entity';
 import { WaterMeasurement } from '../../water-measurement/water-measurement.entity';
@@ -34,7 +34,7 @@ export class AquariumScoreService {
 
   async recomputeForAquarium(userId: number, aquariumId: number): Promise<AquariumHealthScore> {
     const aquarium = await this.aquariumRepo.findOne({
-      where: { id: aquariumId, user: { id: userId } as any },
+      where: { id: aquariumId, archivedAt: IsNull(), user: { id: userId } as any },
       relations: ['user'],
     });
 
@@ -69,6 +69,9 @@ export class AquariumScoreService {
   }
 
   async getOrCompute(userId: number, aquariumId: number): Promise<AquariumHealthScore> {
+    if (!await this.aquariumRepo.existsBy({ id: aquariumId, user: { id: userId }, archivedAt: IsNull() })) {
+      throw new NotFoundException('Aquarium introuvable');
+    }
     const existing = await this.scoreRepo.findOne({ where: { userId, aquariumId } });
     if (!existing) return this.recomputeForAquarium(userId, aquariumId);
 
@@ -78,7 +81,7 @@ export class AquariumScoreService {
 
   async recomputeAllForUser(userId: number): Promise<AquariumHealthScore[]> {
     const aquariums = await this.aquariumRepo.find({
-      where: { user: { id: userId } as any },
+      where: { archivedAt: IsNull(), user: { id: userId } as any },
       order: { createdAt: 'DESC' as any },
     });
 

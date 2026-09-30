@@ -28,6 +28,7 @@ export class RecommendationService {
     if (!Number.isInteger(aquariumId) || aquariumId <= 0) {
       throw new BadRequestException('Aquarium invalide');
     }
+    await this.aquariumTargetsService.resolveTargetMapForUser(userId, aquariumId);
     await this.featureUsageRepo.save(
       this.featureUsageRepo.create({ userId, aquariumId, feature: 'ASSISTANT_OPEN' }),
     );
@@ -165,19 +166,18 @@ export class RecommendationService {
   }
 
   async listPending(userId: number, aquariumId?: number) {
-    return this.repo.find({
-      where: {
-        userId,
-        status: RecommendationStatus.PENDING,
-        ...(aquariumId ? { aquariumId } : {}),
-      } as any,
-      order: { createdAt: 'DESC' },
-    });
+    const query = this.repo.createQueryBuilder('r')
+      .innerJoin('aquariums', 'a', 'a.id = r.aquariumId AND a.userId = :userId AND a.archivedAt IS NULL', { userId })
+      .where('r.userId = :userId AND r.status = :status', { userId, status: RecommendationStatus.PENDING })
+      .orderBy('r.createdAt', 'DESC');
+    if (aquariumId) query.andWhere('r.aquariumId = :aquariumId', { aquariumId });
+    return query.getMany();
   }
 
   async accept(userId: number, id: number, overrideDueAt?: string) {
   const reco = await this.repo.findOne({ where: { id } });
   if (!reco || reco.userId !== userId) throw new NotFoundException('Recommandation introuvable');
+  await this.aquariumTargetsService.resolveTargetMapForUser(userId, reco.aquariumId);
   if (reco.status !== RecommendationStatus.PENDING)
     throw new BadRequestException('Recommandation déjà traitée');
 
@@ -209,6 +209,7 @@ export class RecommendationService {
   async reject(userId: number, id: number) {
     const reco = await this.repo.findOne({ where: { id } });
     if (!reco || reco.userId !== userId) throw new NotFoundException('Recommandation introuvable');
+    await this.aquariumTargetsService.resolveTargetMapForUser(userId, reco.aquariumId);
     if (reco.status !== RecommendationStatus.PENDING)
       throw new BadRequestException('Recommandation déjà traitée');
 

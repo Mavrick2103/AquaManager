@@ -6,11 +6,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 
 import { SeoService } from '../../core/seo.service';
+import { PremiumLaunchComponent } from '../../shared/premium-launch/premium-launch.component';
 
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatIconModule, MatButtonModule],
+  imports: [CommonModule, RouterLink, MatIconModule, MatButtonModule, PremiumLaunchComponent],
   templateUrl: './about.component.html',
   styleUrl: './about.component.scss',
 })

@@ -1,3 +1,4 @@
+import { IsNull } from 'typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
@@ -128,7 +129,7 @@ describe('Aquariums (tests fonctionnels)', () => {
     const mine = await controller.findMine(req);
 
     expect(repo.find).toHaveBeenCalledWith({
-      where: { user: { id: 1 } },
+      where: { archivedAt: IsNull(), user: { id: 1 } },
       order: { createdAt: 'DESC' },
     });
 
@@ -167,7 +168,7 @@ describe('Aquariums (tests fonctionnels)', () => {
     const res = await controller.findMine(req);
 
     expect(repo.find).toHaveBeenCalledWith({
-      where: { user: { id: 1 } },
+      where: { archivedAt: IsNull(), user: { id: 1 } },
       order: { createdAt: 'DESC' },
     });
     expect(usersService.touchActivity).toHaveBeenCalledWith(1);
@@ -185,7 +186,7 @@ describe('Aquariums (tests fonctionnels)', () => {
     const res = await controller.findOne(req, 7);
 
     expect(repo.findOne).toHaveBeenCalledWith({
-      where: { id: 7, user: { id: 1 } },
+      where: { id: 7, archivedAt: IsNull(), user: { id: 1 } },
       relations: { user: true },
     });
     expect(usersService.touchActivity).toHaveBeenCalledWith(1);
@@ -244,7 +245,7 @@ describe('Aquariums (tests fonctionnels)', () => {
     const res = await controller.remove(req, 9);
 
     expect(repo.findOne).toHaveBeenCalledWith({
-      where: { id: 9, user: { id: 1 } },
+      where: { id: 9, archivedAt: IsNull(), user: { id: 1 } },
       relations: { user: true },
     });
     expect(usersService.touchActivity).toHaveBeenCalledWith(1);

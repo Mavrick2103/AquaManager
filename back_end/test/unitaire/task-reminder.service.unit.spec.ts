@@ -1,3 +1,4 @@
+import { IsNull } from 'typeorm';
 import { TaskReminderService } from '../../src/settings/task-reminder.service';
 import { Settings } from '../../src/settings/settings.entity';
 import { RepeatMode, TaskStatus } from '../../src/tasks/task.entity';
@@ -28,7 +29,7 @@ describe('Task reminders', () => {
       manager: { getRepository: (entity) => entity === Settings ? settingsRepo : taskRepo },
     };
     mail = { sendTaskReminder: jest.fn().mockResolvedValue(undefined) };
-    service = new TaskReminderService({ createQueryRunner: () => runner } as any, mail);
+    service = new TaskReminderService({ createQueryRunner: () => runner } as any, mail, { reconcile: jest.fn().mockResolvedValue(undefined) } as any);
     jest.spyOn((service as any).logger, 'error').mockImplementation(() => undefined);
   });
 
@@ -40,7 +41,7 @@ describe('Task reminders', () => {
     expect(mail.sendTaskReminder).toHaveBeenCalledTimes(1);
     expect(mail.sendTaskReminder.mock.calls[0][2].map((t) => t.title)).toEqual(['Changer l’eau', 'Taille']);
     expect(settingsRepo.update).toHaveBeenCalledWith(2, { lastTaskReminderDate: '2026-09-25' });
-    expect(taskRepo.find.mock.calls[0][0].where).toEqual({ user: { id: 7 }, aquarium: { user: { id: 7 } } });
+    expect(taskRepo.find.mock.calls[0][0].where).toEqual({ user: { id: 7 }, aquarium: { user: { id: 7 }, archivedAt: IsNull() } });
   });
 
   it('requires all preferences and verified email, and rechecks consent before sending', async () => {

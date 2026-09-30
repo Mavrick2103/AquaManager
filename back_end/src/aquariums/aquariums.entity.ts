@@ -25,6 +25,12 @@ export class Aquarium {
   @CreateDateColumn()
   createdAt: Date;
 
+  @Column({ type: 'datetime', nullable: true })
+  archivedAt: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  archiveExpiresAt: Date | null;
+
   @ManyToOne(() => User, (user) => user.aquariums, { onDelete: 'CASCADE' })
   user: User;
 }

@@ -1,3 +1,4 @@
+import { IsNull } from 'typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
@@ -140,7 +141,7 @@ describe('Tasks (tests fonctionnels)', () => {
     expect(qb.leftJoinAndSelect).toHaveBeenCalledWith('t.aquarium', 'a');
     expect(qb.where).toHaveBeenCalledWith('u.id = :userId', { userId: 1 });
     expect(qb.orderBy).toHaveBeenCalledWith('t.dueAt', 'ASC');
-    expect(qb.andWhere).not.toHaveBeenCalled();
+    expect(qb.andWhere).toHaveBeenCalledWith('a.archivedAt IS NULL');
 
     // ✅ On valide la forme de réponse mappée (pas l’entité brute)
     expect(res).toEqual([
@@ -212,7 +213,7 @@ describe('Tasks (tests fonctionnels)', () => {
     const res = await controller.create(req, dto as any);
 
     expect(aqRepo.findOne).toHaveBeenCalledWith({
-      where: { id: 5, user: { id: 1 } },
+      where: { id: 5, archivedAt: IsNull(), user: { id: 1 } },
       relations: { user: true },
       select: { id: true } as any,
     });
@@ -325,7 +326,7 @@ describe('Tasks (tests fonctionnels)', () => {
     const res = await controller.update(req, '8', { aquariumId: 6 } as any);
 
     expect(aqRepo.findOne).toHaveBeenCalledWith({
-      where: { id: 6, user: { id: 1 } },
+      where: { id: 6, archivedAt: IsNull(), user: { id: 1 } },
       relations: { user: true },
       select: { id: true } as any,
     });
@@ -363,7 +364,7 @@ describe('Tasks (tests fonctionnels)', () => {
 
     expect(repo.findOne).toHaveBeenCalledWith({
       where: { id: 12 },
-      relations: { user: true },
+      relations: { user: true, aquarium: true },
     });
 
     expect(usersService.touchActivity).toHaveBeenCalledWith(1);

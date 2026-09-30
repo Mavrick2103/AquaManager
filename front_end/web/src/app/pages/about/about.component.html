@@ -42,6 +42,8 @@
       </div>
     </section>
 
+    <app-premium-launch></app-premium-launch>
+
     <section class="trust-strip" aria-label="Fonctions principales">
       <div><strong>1 espace</strong><span>pour tout centraliser</span></div>
       <div><strong>12+ paramètres</strong><span>d’eau disponibles</span></div>
@@ -153,7 +155,8 @@
       <div class="plans-notice" role="note">
         <span><mat-icon>campaign</mat-icon></span>
         <div>
-          <strong>Premium est disponible à 3,99 € par mois</strong>
+          <strong>Offre de lancement Premium : 3,99 € par mois</strong>
+          <p>Prix de base : <s>7,99 € par mois</s>.</p>
           <p>
             Paiement par PayPal avec renouvellement mensuel automatique. Vous pouvez arrêter le renouvellement
             depuis votre profil et conserver votre accès jusqu’à la fin de la période payée, sauf remboursement.
@@ -176,15 +179,16 @@
         </article>
 
         <article class="plan-card plan-card--featured">
-          <span class="plan-status plan-status--available">Disponible dès maintenant</span>
+          <span class="plan-status plan-status--available">Offre de lancement</span>
           <span class="plan-name">Premium</span>
           <h3>Pour aller plus loin</h3>
-          <div class="premium-price"><strong>3,99 €</strong><span>/ mois</span></div>
-          <p>L’analyse par IA et davantage de capacité pour suivre jusqu’à cinq aquariums.</p>
+          <div class="premium-price"><s aria-label="Prix de base : 7,99 euros par mois">7,99 €</s><strong>3,99 €</strong><span>/ mois au lancement</span></div>
+          <p>Suivez jusqu’à cinq aquariums et demandez un bilan à l’IA à partir des caractéristiques de votre bac et de ses 30 dernières mesures.</p>
           <ul>
             <li><mat-icon>check</mat-icon>Tout le contenu Classic</li>
-            <li><mat-icon>check</mat-icon>Analyses IA approfondies</li>
-            <li><mat-icon>check</mat-icon>Suggestions de tâches</li>
+            <li><mat-icon>check</mat-icon>30 analyses IA par mois et suggestions de tâches</li>
+            <li><mat-icon>check</mat-icon>5 analyses photo par mois</li>
+            <li><mat-icon>check</mat-icon>Objectifs d’eau personnalisés</li>
           </ul>
           <a mat-flat-button routerLink="/profile" [queryParams]="{ tab: 'subscription' }">Passer à Premium — 3,99 €/mois</a>
         </article>

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 
 import { Aquarium } from '../aquariums/aquariums.entity';
 import { AquariumTargets, TargetMap } from './aquarium-targets.entity';
@@ -38,7 +38,7 @@ export class AquariumTargetsService {
 
   private async ensureOwnership(userId: number, aquariumId: number): Promise<void> {
     const owned = await this.aquariumsRepo.exist({
-      where: { id: aquariumId, user: { id: userId } },
+      where: { id: aquariumId, archivedAt: IsNull(), user: { id: userId } },
     });
     if (!owned) throw new NotFoundException('Aquarium introuvable');
   }

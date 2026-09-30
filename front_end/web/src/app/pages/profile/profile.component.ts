@@ -438,7 +438,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // ⚠️ Optionnel : uniquement si tu as vraiment implémenté un endpoint cancel côté API
   // Sinon, garde la résiliation dans le portal (recommandé).
   async cancelSubscription() {
-    if (!confirm('Confirmer la résiliation ? (fin de période)')) return;
+    if (!confirm('Confirmer la résiliation à la fin de la période payée ? Vos deux premiers aquariums resteront accessibles. Les autres seront masqués et conservés un an, puis supprimés définitivement sans réabonnement.')) return;
 
     this.billingLoading = true;
     try {

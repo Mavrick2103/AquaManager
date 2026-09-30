@@ -23,6 +23,15 @@
 
 <ng-container *ngIf="!loading; else loadingTpl">
   <main class="aquariums-main">
+    <section class="retention-notice" *ngIf="retention && retention.archivedCount > 0" aria-label="Aquariums conservés temporairement">
+      <mat-icon aria-hidden="true">inventory_2</mat-icon>
+      <div>
+        <h2>{{ retention.archivedCount }} aquarium{{ retention.archivedCount > 1 ? 's' : '' }} masqué{{ retention.archivedCount > 1 ? 's' : '' }}</h2>
+        <p>Après la fin de Premium, vos deux premiers aquariums créés restent accessibles. Les autres sont conservés pendant un an, avec leurs données.</p>
+        <p *ngIf="retention.nextDeletionAt">Première suppression définitive prévue le <strong>{{ retention.nextDeletionAt | date:'dd/MM/yyyy' }}</strong>. Réabonnez-vous avant cette date pour les retrouver. Une nouvelle expiration de Premium fera démarrer un nouveau délai d’un an.</p>
+        <a routerLink="/profile" [queryParams]="{ tab: 'subscription' }">Réactiver Premium</a>
+      </div>
+    </section>
     <section class="overview-strip" data-tour="aquariums-summary" aria-label="Résumé des aquariums">
       <div class="overview-strip__stat">
         <span class="overview-strip__icon"><mat-icon>water</mat-icon></span>

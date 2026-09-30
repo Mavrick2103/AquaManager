@@ -102,7 +102,7 @@ describe('WaterMeasurementService (unit)', () => {
       const res = await service.listForAquarium(userId, aquariumId);
 
       expect(aquas.findOne).toHaveBeenCalledWith({
-        where: { id: aquariumId, user: { id: userId } },
+        where: { id: aquariumId, user: { id: userId }, archivedAt: IsNull() },
         relations: ['user'],
       });
 
@@ -237,3 +237,4 @@ describe('WaterMeasurementService (unit)', () => {
     });
   });
 });
+import { IsNull } from 'typeorm';

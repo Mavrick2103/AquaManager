@@ -96,3 +96,44 @@ Historique de la première passe (avant la correction complémentaire) :
 - Le conteneur de test a été supprimé. Aucune migration ni aucun déploiement n'a
   été exécuté sur la base réelle ou le serveur de production.
 - Les trois avertissements de budget SCSS préexistants restent présents.
+
+
+## Conservation des aquariums après Premium — 30 septembre 2026
+
+Migration requise avant le redémarrage de la nouvelle API :
+`202609300001-aquarium-retention.cjs` ajoute `aquariums.archivedAt` et
+`aquariums.archiveExpiresAt`. Le processus habituel reste : sauvegarde SQL,
+construction des images, `docker compose run --rm --no-deps api npm run migrate`,
+puis redémarrage des services et contrôles de disponibilité.
+
+À la fin des droits payés, seuls les deux premiers bacs créés restent actifs
+(ordre createdAt puis id). Les autres sont masqués et conservés dans la base,
+avec leurs mesures, tâches, population et objectifs. Un réabonnement les
+réactive dans la limite de la formule et annule leur échéance de conservation.
+Une nouvelle expiration démarre un nouveau délai d'un an. Supprimer un bac
+visible en Classic ne débloque pas un bac archivé.
+
+La synchronisation intervient avant les requêtes authentifiées et pour les
+rappels. Le nettoyage horaire, à la minute 10, contrôle à nouveau les droits
+sous verrou de la ligne utilisateur et supprime les archives échues ainsi que
+leurs données associées. Ce stockage temporaire n'est pas un fichier de
+sauvegarde indépendant. Les anciennes sauvegardes SQL relèvent de leur propre
+politique de rétention.
+
+Les comptes déjà au-delà du quota lors de l'introduction de cette règle ont
+un an à partir de leur premier archivage, sans suppression rétroactive.
+En cas d'arrêt prolongé du service avant un premier archivage, ce délai de
+grâce s'applique aussi. Une échéance existante n'est pas prolongée par les
+connexions de l'utilisateur.
+
+Vérifications : tests de cycle de vie avec base SQLite réelle et
+`node scripts/verify-local-retention.cjs` sur MySQL local. Ce dernier refuse
+une base hors loopback, ne crée que ses propres données jetables, teste les
+accès aux bacs masqués, la concurrence, le réabonnement et la purge, puis
+nettoie ses fixtures. Aucun appel PayPal, SMTP ou IA n'est effectué.
+
+Validation locale finale de cette fonctionnalité : 278 tests backend (31 suites),
+43 tests Angular, 5 tests Cypress du parcours Aquariums, builds backend/frontend
+et contrôle MySQL de rétention réussis. Migration exécutée puis rejouée sans
+doublon sur la base locale. Les trois avertissements de budget SCSS préexistants
+sont inchangés. Aucune opération en production.

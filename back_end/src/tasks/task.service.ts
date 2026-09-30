@@ -7,7 +7,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 
 import { Aquarium } from '../aquariums/aquariums.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -283,6 +283,7 @@ private readonly gamificationService: GamificationService,  ) {}
       .leftJoinAndSelect('t.aquarium', 'a')
       .leftJoinAndSelect('t.fertilizers', 'f')
       .where('u.id = :userId', { userId })
+      .andWhere('a.archivedAt IS NULL')
       .orderBy('t.dueAt', 'ASC');
 
     let start: Date | undefined;
@@ -315,7 +316,7 @@ private readonly gamificationService: GamificationService,  ) {}
   // =========================
   async create(userId: number, dto: CreateTaskDto) {
     const aquarium = await this.aqRepo.findOne({
-      where: { id: dto.aquariumId, user: { id: userId } },
+      where: { id: dto.aquariumId, archivedAt: IsNull(), user: { id: userId } },
       relations: { user: true },
       select: { id: true } as any,
     });
@@ -389,7 +390,7 @@ private readonly gamificationService: GamificationService,  ) {}
       where: { id },
       relations: { user: true, aquarium: true, fertilizers: true },
     });
-    if (!task || task.user.id !== userId) throw new NotFoundException();
+    if (!task || task.user.id !== userId || task.aquarium?.archivedAt) throw new NotFoundException();
 
     let occurrenceStatusHandled = false;
     if (reference.occurrenceAt && dto.status !== undefined) {
@@ -425,7 +426,7 @@ private readonly gamificationService: GamificationService,  ) {}
 
     if (dto.aquariumId !== undefined) {
       const aq = await this.aqRepo.findOne({
-        where: { id: dto.aquariumId, user: { id: userId } },
+        where: { id: dto.aquariumId, archivedAt: IsNull(), user: { id: userId } },
         relations: { user: true },
         select: { id: true } as any,
       });
@@ -508,9 +509,9 @@ private readonly gamificationService: GamificationService,  ) {}
 
     const task = await this.repo.findOne({
       where: { id },
-      relations: { user: true },
+      relations: { user: true, aquarium: true },
     });
-    if (!task || task.user.id !== userId) throw new NotFoundException();
+    if (!task || task.user.id !== userId || task.aquarium?.archivedAt) throw new NotFoundException();
 
     await this.repo.delete(id);
     await this.usersService.touchActivity(userId);

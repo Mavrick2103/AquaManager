@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 
 import { Aquarium } from './aquariums.entity';
 import { CreateAquariumDto } from './dto/create-aquarium.dto';
@@ -21,11 +21,19 @@ export class AquariumsService {
   ) {}
 
   // tous les aquariums d’un utilisateur
+  async retentionStatus(userId: number) {
+    const archived = await this.repo.find({
+      where: { user: { id: userId }, archivedAt: Not(IsNull()) },
+      select: { archiveExpiresAt: true }, order: { archiveExpiresAt: 'ASC' },
+    });
+    return { archivedCount: archived.length, nextDeletionAt: archived[0]?.archiveExpiresAt ?? null };
+  }
+
   async findMine(userId: number) {
     if (!Number.isFinite(userId)) throw new BadRequestException('User id invalide');
 
     const rows = await this.repo.find({
-      where: { user: { id: userId } },
+      where: { archivedAt: IsNull(), user: { id: userId } },
       order: { createdAt: 'DESC' },
     });
 
@@ -97,7 +105,7 @@ export class AquariumsService {
               AND t.status = 'PENDING'
           ) AS activeProtocolCount
         FROM aquariums a
-        WHERE a.userId = ?
+        WHERE a.userId = ? AND a.archivedAt IS NULL
         ORDER BY a.createdAt DESC
       `,
       [userId],
@@ -133,7 +141,7 @@ export class AquariumsService {
 
       if (limit !== null) {
         const aquariumCount = await aquariums.count({
-          where: { user: { id: userId } },
+          where: { archivedAt: IsNull(), user: { id: userId } },
         });
         if (aquariumCount >= limit) {
           throw new ForbiddenException({
@@ -176,7 +184,7 @@ export class AquariumsService {
     if (!Number.isFinite(id)) throw new BadRequestException('Aquarium id invalide');
 
     const a = await this.repo.findOne({
-      where: { id, user: { id: userId } },
+      where: { id, archivedAt: IsNull(), user: { id: userId } },
       relations: { user: true },
     });
     if (!a) throw new NotFoundException('Aquarium introuvable');

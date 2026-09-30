@@ -15,6 +15,7 @@ const rx = {
 };
 
 function stubSessionBasics() {
+  cy.intercept('GET', '**/api/aquariums/retention-status', { body: { archivedCount: 0, nextDeletionAt: null } });
   cy.intercept('POST', rx.login,   { statusCode: 200, body: { access_token: 'TEST_TOKEN' } }).as('login');
   cy.intercept('POST', rx.refresh, { statusCode: 200, body: { access_token: 'TEST_TOKEN' } }).as('refresh');
   cy.intercept('GET',  rx.me,      { statusCode: 200, body: { id: 1, email: 'test@aquamanager.com', role: 'USER' } }).as('me');
@@ -35,6 +36,26 @@ function uiLogin() {
 describe('Flow complet AquaManager (création + suppression)', () => {
   beforeEach(() => {
     uiLogin();
+  });
+
+  it('explique la conservation des bacs masqués sans les afficher', () => {
+    cy.intercept('GET', rx.aqOverview, { body: [1, 2].map(id => ({
+      id, name: `Bac conservé ${id}`, lengthCm: 60, widthCm: 30, heightCm: 30,
+      volumeL: 54, waterType: 'EAU_DOUCE', startDate: '2026-01-01', createdAt: '2026-01-01',
+      fishCount: 0, plantCount: 0, activeProtocolCount: 0, overdueTaskCount: 0,
+      nextTaskAt: null, nextTaskTitle: null, lastMeasuredAt: null,
+    })) });
+    cy.intercept('GET', '**/api/aquariums/retention-status', {
+      body: { archivedCount: 3, nextDeletionAt: '2027-10-01T12:00:00.000Z' },
+    });
+    cy.visit('/aquariums');
+    cy.get('.aquarium-card').should('have.length', 2);
+    cy.get('.retention-notice').should('contain.text', '3 aquariums masqués')
+      .and('contain.text', '01/10/2027').and('contain.text', 'suppression définitive');
+    cy.get('.retention-notice a').should('have.attr', 'href', '/profile?tab=subscription');
+    cy.viewport(390, 844);
+    cy.get('.retention-notice').should('be.visible');
+    cy.document().then(doc => expect(doc.documentElement.scrollWidth).to.be.at.most(390));
   });
 
   it('crée un aquarium avec succès', () => {

@@ -1,3 +1,4 @@
+import { IsNull } from 'typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -64,7 +65,7 @@ describe('AquariumsService (unit)', () => {
     const res = await service.findMine(1);
 
     expect(repo.find).toHaveBeenCalledWith({
-      where: { user: { id: 1 } },
+      where: { archivedAt: IsNull(), user: { id: 1 } },
       order: { createdAt: 'DESC' },
     });
     expect(usersService.touchActivity).toHaveBeenCalledWith(1);
@@ -85,7 +86,7 @@ describe('AquariumsService (unit)', () => {
     const ok = await service.findOne(1, 5);
 
     expect(repo.findOne).toHaveBeenCalledWith({
-      where: { id: 5, user: { id: 1 } },
+      where: { id: 5, archivedAt: IsNull(), user: { id: 1 } },
       relations: { user: true },
     });
     expect(usersService.touchActivity).toHaveBeenCalledWith(1);

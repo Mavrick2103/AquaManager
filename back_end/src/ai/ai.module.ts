@@ -8,10 +8,11 @@ import { AiUsage } from './entities/ai-usage.entity';
 import { Aquarium } from '../aquariums/aquariums.entity';
 import { WaterMeasurement } from '../water-measurement/water-measurement.entity';
 import { UsersModule } from '../users/users.module';
+import { Task } from '../tasks/task.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AiUsage, Aquarium, WaterMeasurement]),
+    TypeOrmModule.forFeature([AiUsage, Aquarium, WaterMeasurement, Task]),
     UsersModule,
   ],
   controllers: [AiController],

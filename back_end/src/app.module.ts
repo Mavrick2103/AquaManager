@@ -8,6 +8,7 @@ import { typeOrmConfig } from './config/typeorm.config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { AquariumsModule } from './aquariums/aquariums.module';
+import { AquariumRetentionModule } from './aquariums/aquarium-retention.module';
 import { WaterMeasurementModule } from './water-measurement/water-measurement.module';
 import { TaskModule } from './tasks/task.module';
 import { AdminModule } from './admin/admin.module';
@@ -62,6 +63,7 @@ import { AdminEmailingModule } from './admin-emailing/admin-emailing.module';
     ]),
     UsersModule,
     AquariumsModule,
+    AquariumRetentionModule,
     AuthModule,
     WaterMeasurementModule,
     TaskModule,

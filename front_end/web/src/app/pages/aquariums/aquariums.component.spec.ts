@@ -15,10 +15,11 @@ describe('AquariumsComponent', () => {
   let userServiceSpy: jasmine.SpyObj<UserService>;
 
   beforeEach(async () => {
-    aquariumsServiceSpy = jasmine.createSpyObj<AquariumsService>('AquariumsService', ['overview']);
+    aquariumsServiceSpy = jasmine.createSpyObj<AquariumsService>('AquariumsService', ['overview', 'retentionStatus']);
     dialogSpy = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
     userServiceSpy = jasmine.createSpyObj<UserService>('UserService', ['getMe']);
     aquariumsServiceSpy.overview.and.returnValue(of([]));
+    aquariumsServiceSpy.retentionStatus.and.returnValue(of({ archivedCount: 0, nextDeletionAt: null }));
     userServiceSpy.getMe.and.resolveTo({
       id: 1,
       email: 'user@example.com',

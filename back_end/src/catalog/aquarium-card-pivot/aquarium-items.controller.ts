@@ -11,7 +11,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AquariumFishCard } from './aquarium-fish-card.entity';
 import { AquariumPlantCard } from './aquarium-plant-card.entity';
@@ -31,7 +31,7 @@ export class AquariumItemsController {
 
   private async assertOwner(aquariumId: number, userId: number) {
     if (!Number.isInteger(aquariumId) || aquariumId <= 0) throw new BadRequestException('Invalid aquariumId');
-    if (!Number.isInteger(userId) || !await this.aquariumRepo.existsBy({ id: aquariumId, user: { id: userId } })) {
+    if (!Number.isInteger(userId) || !await this.aquariumRepo.existsBy({ id: aquariumId, archivedAt: IsNull(), user: { id: userId } })) {
       throw new NotFoundException('Aquarium introuvable');
     }
   }

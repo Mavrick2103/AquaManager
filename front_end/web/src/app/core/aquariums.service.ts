@@ -50,6 +50,10 @@ export class AquariumsService {
     return this.http.get<AquariumOverview[]>(`${this.base}/overview`);
   }
 
+  retentionStatus(): Observable<{ archivedCount: number; nextDeletionAt: string | null }> {
+    return this.http.get<{ archivedCount: number; nextDeletionAt: string | null }>(`${this.base}/retention-status`);
+  }
+
   getById(id: number): Observable<Aquarium> {
     return this.http.get<Aquarium>(`${this.base}/${id}`);
   }

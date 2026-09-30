@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { MailService } from '../mail/mail.service';
 import { Settings } from './settings.entity';
+import { AquariumRetentionService } from '../aquariums/aquarium-retention.service';
 
 type ReminderCandidate = {
   settingsId: number;
@@ -22,10 +23,12 @@ export class MeasurementReminderService {
     private readonly dataSource: DataSource,
     @InjectRepository(Settings) private readonly settingsRepo: Repository<Settings>,
     private readonly mail: MailService,
+    private readonly retention: AquariumRetentionService,
   ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_9AM, { timeZone: 'Europe/Paris' })
   async sendInactiveMeasurementReminders(): Promise<void> {
+    await this.retention.sweep();
     const candidates = await this.dataSource.query(`
       SELECT
         s.id AS settingsId,
@@ -36,7 +39,7 @@ export class MeasurementReminderService {
         s.lastMeasurementReminderAt AS lastReminderAt
       FROM settings s
       INNER JOIN users u ON u.id = s.userId
-      INNER JOIN aquariums a ON a.userId = u.id
+      INNER JOIN aquariums a ON a.userId = u.id AND a.archivedAt IS NULL
       LEFT JOIN water_measurements wm ON wm.aquariumId = a.id
       WHERE s.notificationsEnabled = 1
         AND s.emailNotifications = 1

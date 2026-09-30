@@ -211,9 +211,10 @@
             <span>Le paiement, la facturation et la résiliation sont accessibles depuis le portail sécurisé Stripe.</span>
           </div>
           <p *ngIf="paypalState?.provider === 'paypal'">Une résiliation arrête les prochains paiements. Ton accès reste disponible jusqu’à la fin de la période payée, sauf remboursement.</p>
+          <p>À la fin de Premium, seuls vos deux premiers aquariums créés restent accessibles. Les autres sont masqués et conservés pendant un an, puis supprimés définitivement avec leurs données sans réabonnement. Un réabonnement les réactive ; une nouvelle expiration de Premium démarre un nouveau délai d’un an.</p>
           <div class="sub-foot" *ngIf="showUpgradeButton">
             <mat-icon>auto_awesome</mat-icon>
-            <span>Premium : 3,99 € par mois, renouvellement automatique, résiliable depuis ce profil. Jusqu’à 5 aquariums, 30 analyses IA et 5 analyses photo par mois, avec objectifs avancés. <a routerLink="/terms">Conditions d’utilisation</a>.</span>
+            <span><strong>Offre de lancement Premium : 3,99 € par mois.</strong> Prix de base : <s>7,99 € par mois</s>. Jusqu’à 5 aquariums, 30 analyses IA et 5 analyses photo par mois, et des objectifs d’eau personnalisés. L’IA s’appuie sur les caractéristiques de votre aquarium et ses 30 dernières mesures pour dresser un bilan et proposer des tâches adaptées. L’analyse prend aussi en compte jusqu’à 50 tâches passées, en distinguant les tâches réalisées de celles en attente. Renouvellement automatique, résiliable depuis ce profil. <a routerLink="/terms">Conditions d’utilisation</a>.</span>
           </div>
           <p *ngIf="showUpgradeButton && paypalState && !paypalState.ready">Les nouvelles souscriptions PayPal ne sont pas encore ouvertes.</p>
         </mat-card>

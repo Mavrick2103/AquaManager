@@ -670,3 +670,11 @@
     justify-content: center;
   }
 }
+:host .retention-notice {
+  display: flex; gap: 16px; margin-bottom: 24px; padding: 20px;
+  border: 1px solid #b9dcd4; border-radius: 16px; background: #edf9f4; color: #173c3d;
+  mat-icon { flex-shrink: 0; }
+  h2 { margin: 0 0 8px; font-size: 1.15rem; }
+  p { margin: 8px 0; line-height: 1.6; }
+  a { color: #155e56; font-weight: 700; text-underline-offset: 3px; }
+}

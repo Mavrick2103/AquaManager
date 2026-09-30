@@ -1,0 +1,27 @@
+<section class="launch" aria-label="Offre de lancement AquaManager Premium">
+  <div class="launch__intro">
+    <span class="launch__badge"><mat-icon aria-hidden="true">auto_awesome</mat-icon> Offre de lancement</span>
+    <h2>Plus de repères pour prendre soin de vos aquariums</h2>
+    <p>Passez à Premium pour suivre davantage de bacs, mieux comprendre vos observations et préparer vos prochaines actions.</p>
+  </div>
+
+  <div class="launch__offer">
+    <span class="launch__name">AquaManager Premium</span>
+    <p class="launch__price"><s aria-label="Prix de base : 7,99 euros par mois">7,99 €</s><strong>3,99 €</strong><span>/ mois au lancement</span></p>
+    <p class="launch__saving">4 € économisés par mois</p>
+    <a class="launch__cta" routerLink="/profile" [queryParams]="{ tab: 'subscription' }">
+      Découvrir Premium <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+    </a>
+  </div>
+
+  <ul class="launch__benefits">
+    <li><mat-icon aria-hidden="true">water_drop</mat-icon><div><strong>Jusqu’à 5 aquariums</strong><span>Au lieu de 2 en Classic : réunissez le suivi de vos différents bacs.</span></div></li>
+    <li><mat-icon aria-hidden="true">insights</mat-icon><div><strong>30 analyses IA / mois</strong><span>Demandez un bilan de votre aquarium à partir de ses caractéristiques et de ses 30 dernières mesures, avec des suggestions de tâches adaptées.</span></div></li>
+    <li><mat-icon aria-hidden="true">photo_camera</mat-icon><div><strong>5 analyses photo / mois</strong><span>Explorez ce que vous observez : algues, plantes ou aspect de l’eau.</span></div></li>
+    <li><mat-icon aria-hidden="true">tune</mat-icon><div><strong>Des objectifs personnalisés</strong><span>Adaptez les valeurs cibles des paramètres d’eau à votre aquarium.</span></div></li>
+  </ul>
+
+  <p class="launch__context"><strong>Une IA reliée aux données de votre aquarium.</strong> Faites le point sur vos paramètres, les points à surveiller et les prochaines actions à envisager. L’analyse prend aussi en compte jusqu’à 50 tâches passées, en distinguant les tâches réalisées de celles en attente.</p>
+  <p class="launch__terms">Toutes les fonctionnalités Classic sont incluses. Paiement par PayPal avec renouvellement mensuel automatique. Résiliation depuis votre profil ; accès conservé jusqu’à la fin de la période payée, sauf remboursement. <a routerLink="/terms">Voir les conditions</a>.</p>
+  <p class="launch__terms">À la fin de Premium, les deux premiers aquariums créés restent accessibles. Les autres sont masqués et conservés un an avant suppression définitive. Un réabonnement les réactive ; le délai d’un an repart à la prochaine expiration de Premium.</p>
+</section>

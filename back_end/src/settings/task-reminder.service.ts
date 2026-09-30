@@ -5,13 +5,15 @@ import { MailService } from '../mail/mail.service';
 import { Task } from '../tasks/task.entity';
 import { parisDate, pendingOccurrencesForDay, REMINDER_TIME_ZONE } from '../tasks/task-reminder-occurrences';
 import { Settings } from './settings.entity';
+import { AquariumRetentionService } from '../aquariums/aquarium-retention.service';
 
 @Injectable()
 export class TaskReminderService {
   private readonly logger = new Logger(TaskReminderService.name);
   private running = false;
 
-  constructor(private readonly dataSource: DataSource, private readonly mail: MailService) {}
+  constructor(private readonly dataSource: DataSource, private readonly mail: MailService,
+    private readonly retention: AquariumRetentionService) {}
 
   // Retry within the day after an outage or SMTP failure. Never send before 09:00 Paris.
   @Cron('*/15 * * * *', { timeZone: REMINDER_TIME_ZONE })
@@ -47,8 +49,9 @@ export class TaskReminderService {
             where: { id: candidate.id, ...preferences }, relations: { user: true },
           });
           if (!settings || settings.lastTaskReminderDate === day || !settings.user.email?.trim()) continue;
+          await this.retention.reconcile(settings.user.id);
           const tasks = await taskRepo.find({
-            where: { user: { id: settings.user.id }, aquarium: { user: { id: settings.user.id } } },
+            where: { user: { id: settings.user.id }, aquarium: { user: { id: settings.user.id }, archivedAt: IsNull() } },
             relations: { aquarium: true },
           });
           const reminders = tasks.flatMap((task) => pendingOccurrencesForDay(task, now).map((dueAt) => ({

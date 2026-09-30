@@ -40,6 +40,7 @@ import { TutorialDataService } from '../../core/tutorial-data.service';
 })
 export class AquariumsComponent implements OnInit {
   items: AquariumOverview[] = [];
+  retention: { archivedCount: number; nextDeletionAt: string | null } | null = null;
   loading = false;
   effectivePlan: 'CLASSIC' | 'PREMIUM' | 'PRO' = 'CLASSIC';
   activeFilter: 'ALL' | 'ATTENTION' | 'STABLE' = 'ALL';
@@ -59,11 +60,13 @@ export class AquariumsComponent implements OnInit {
   async load() {
     this.loading = true;
     try {
-      const [items, me] = await Promise.all([
+      const [items, me, retention] = await Promise.all([
         firstValueFrom(this.api.overview()),
         this.users.getMe(),
+        firstValueFrom(this.api.retentionStatus()),
       ]);
       this.items = items;
+      this.retention = retention;
       this.effectivePlan = this.resolveEffectivePlan(me);
     } finally {
       this.loading = false;

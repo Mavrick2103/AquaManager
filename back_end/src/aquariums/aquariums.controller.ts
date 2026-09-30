@@ -22,6 +22,11 @@ export class AquariumsController {
     return this.service.getOverview(req.user.userId);
   }
 
+  @Get('retention-status')
+  retentionStatus(@Request() req) {
+    return this.service.retentionStatus(req.user.userId);
+  }
+
   @Post()
   create(@Request() req, @Body() dto: CreateAquariumDto) {
     return this.service.create(req.user.userId, dto);
