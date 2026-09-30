@@ -181,6 +181,8 @@ export class AdminArticlesPageComponent implements OnInit {
       });
   }
 
+  resetFilters(): void { this.search = ''; this.statusFilter = ''; this.themeFilter = null; this.refresh(); }
+
   onSearchChange(ev: Event): void {
     this.search = (ev.target as HTMLInputElement).value ?? '';
     this.applyClientFilter();

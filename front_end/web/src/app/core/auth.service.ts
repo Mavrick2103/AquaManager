@@ -145,7 +145,7 @@ async resetPassword(token: string, newPassword: string): Promise<{ ok: boolean; 
     ));
   }
 
-  async register(payload: { fullName: string; email: string; password: string }) {
+  async register(payload: { fullName: string; email: string; password: string; notificationPreferences?: { taskReminders: boolean; automaticNotifications: boolean; newsAndUpdates: boolean } }) {
     return await firstValueFrom(
       this.http.post<{ message: string }>(
         `${environment.apiUrl}/auth/register`,

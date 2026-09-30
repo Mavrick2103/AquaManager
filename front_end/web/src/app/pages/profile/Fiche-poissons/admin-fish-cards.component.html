@@ -8,12 +8,12 @@
         <div class="hero-symbol"><mat-icon>set_meal</mat-icon></div>
         <div class="titles">
           <span class="hero-kicker">Catalogue aquatique</span>
-          <div class="title">Fiches poissons</div>
+          <h1>Poissons</h1>
           <div class="subtitle">Gérez les espèces, leurs paramètres de maintenance et leur publication.</div>
         </div>
         <div class="hero-actions">
-          <span class="access-badge"><mat-icon>verified_user</mat-icon>{{ isAdmin ? 'Administrateur' : 'Éditeur' }}</span>
-          <button mat-flat-button type="button" (click)="tabIndex = 1"><mat-icon>add</mat-icon>Nouvelle fiche</button>
+          <button mat-stroked-button type="button" (click)="refresh()" [disabled]="loading"><mat-icon>refresh</mat-icon>Actualiser</button>
+          <button mat-flat-button type="button" (click)="newCard()"><mat-icon>add</mat-icon>Nouvelle fiche</button>
         </div>
       </header>
 
@@ -28,50 +28,13 @@
           <!-- ================= LISTE ================= -->
           <mat-tab label="Liste">
             <div class="tab-page">
-              <div class="toolbar toolbar--sticky">
-                <div class="left">
-                  <div class="mode">
-                    {{ isAdmin ? 'Toutes les fiches' : 'Mes fiches' }}
-                  </div>
-                  <div class="muted small">Dernières créations en premier</div>
-                </div>
-
-                <div class="toolbar-actions">
-                  <mat-form-field class="search" appearance="outline">
-                    <mat-label>Rechercher (tous critères)</mat-label>
-                    <input matInput [value]="search" (input)="onSearchChange($event)" />
-                    <mat-icon matSuffix>search</mat-icon>
-                  </mat-form-field>
-
-                  <!-- ✅ ADMIN ONLY : filtre "En attente" -->
-                  <button
-                    *ngIf="isAdmin"
-                    type="button"
-                    mat-stroked-button
-                    color="primary"
-                    (click)="togglePendingOnly()"
-                    [disabled]="loading"
-                    [class.active]="showPendingOnly"
-                    aria-label="Filtrer les fiches en attente"
-                  >
-                    <mat-icon>hourglass_top</mat-icon>
-                    {{ showPendingOnly ? 'En attente : ON' : 'En attente' }}
-                  </button>
-
-                  <button mat-flat-button color="primary" type="button" (click)="newCard()">
-                    <mat-icon>add</mat-icon>
-                    Nouvelle fiche
-                  </button>
-
-                  <button mat-stroked-button type="button" (click)="refresh()" [disabled]="loading">
-                    <mat-icon>refresh</mat-icon>
-                    Rafraîchir
-                  </button>
-                </div>
-              </div>
-
+<div class="catalog-filters">
+ <label class="search-control"><span>Rechercher une espèce</span><div><mat-icon>search</mat-icon><input type="search" [value]="search" (input)="onSearchChange($event)" placeholder="Nom, famille, caractéristiques…" /></div></label>
+ <label><span>Statut de publication</span><select [value]="statusFilter" (change)="onCatalogStatus($event)"><option value="">Tous les statuts</option><option value="APPROVED">Publiées</option><option value="PENDING">En attente</option><option value="REJECTED">Refusées</option></select></label>
+ <button mat-stroked-button type="button" (click)="resetFilters()" [disabled]="!search && !statusFilter"><mat-icon>restart_alt</mat-icon>Réinitialiser</button>
+ </div>
               <div class="meta">
-                <div class="count">{{ filtered.length }} fiche(s)</div>
+                <div class="count">{{ filtered.length }} fiche(s) affichée(s) <span class="muted">· {{ isAdmin ? "Catalogue complet" : "Vos contributions" }}</span></div>
                 <div class="hint" *ngIf="loading">Chargement...</div>
               </div>
 
@@ -85,9 +48,9 @@
                   <div class="card-top">
                     <div class="thumb" [class.no]="!r.imageUrl">
                       <ng-container *ngIf="imageSrc(r.imageUrl) as src; else noThumb">
-                        <img [src]="src" (error)="onImgError()" />
+                        <img [src]="src" [alt]="r.commonName" loading="lazy" (error)="onImgError()" />
                       </ng-container>
-                      <ng-template #noThumb>IMG</ng-template>
+                      <ng-template #noThumb><mat-icon>set_meal</mat-icon></ng-template>
                     </div>
 
                     <div class="head">
@@ -97,8 +60,8 @@
                       </div>
 
                       <div class="sub">
-                        <span class="pill">{{ r.waterType }}</span>
-                        <span class="pill" *ngIf="r.status">{{ badgeLabel(r.status) }}</span>
+                        <span class="pill">{{ r.waterType === 'EAU_DOUCE' ? 'Eau douce' : 'Eau de mer' }}</span>
+                        <span class="pill status" [class.pending]="r.status==='PENDING'" [class.rejected]="r.status==='REJECTED'" *ngIf="r.status">{{ badgeLabel(r.status) }}</span>
                         <span class="pill" *ngIf="r.temperament">{{ r.temperament }}</span>
                         <span class="pill" *ngIf="r.activity">{{ r.activity }}</span>
                       </div>

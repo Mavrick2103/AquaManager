@@ -35,7 +35,7 @@ describe('RegisterComponent', () => {
   });
 
   it('ne doit pas appeler auth.register si le formulaire est invalide', fakeAsync(() => {
-    component.form.setValue({
+    component.form.patchValue({
       fullName: '',
       email: '',
       passwords: {
@@ -58,7 +58,7 @@ describe('RegisterComponent', () => {
   }));
 
   it('ne doit pas appeler auth.register si les mots de passe ne correspondent pas', fakeAsync(() => {
-    component.form.setValue({
+    component.form.patchValue({
       fullName: 'Romain',
       email: 'romain@test.com',
       passwords: {
@@ -83,7 +83,7 @@ describe('RegisterComponent', () => {
   it('doit appeler auth.register avec le bon payload quand le formulaire est valide', fakeAsync(() => {
     authSpy.register.and.returnValue(Promise.resolve(true as any));
 
-    component.form.setValue({
+    component.form.patchValue({
       fullName: 'Romain',
       email: 'romain@test.com',
       passwords: {
@@ -101,6 +101,7 @@ describe('RegisterComponent', () => {
       fullName: 'Romain',
       email: 'romain@test.com',
       password: 'Password123!',
+      notificationPreferences: { taskReminders: false, automaticNotifications: false, newsAndUpdates: false },
     });
     expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
     expect(component.loading()).toBeFalse();
@@ -112,7 +113,7 @@ describe('RegisterComponent', () => {
       Promise.reject({ error: { message: 'Email déjà utilisé' } }) as any,
     );
 
-    component.form.setValue({
+    component.form.patchValue({
       fullName: 'Romain',
       email: 'romain@test.com',
       passwords: {
@@ -143,4 +144,11 @@ describe('RegisterComponent', () => {
 
     expect(btn.disabled).toBeTrue();
   });
+  it('transmet les choix indépendants sans rendre les notifications obligatoires', fakeAsync(() => {
+    authSpy.register.and.returnValue(Promise.resolve(true as any));
+    component.form.patchValue({fullName:'Camille',email:'camille@example.test',passwords:{password:'Password123!',confirmPassword:'Password123!'},acceptTos:true,notificationPreferences:{taskReminders:true,automaticNotifications:false,newsAndUpdates:true}});
+    component.submit();tick();
+    expect(authSpy.register.calls.mostRecent().args[0].notificationPreferences).toEqual({taskReminders:true,automaticNotifications:false,newsAndUpdates:true});
+  }));
+
 });

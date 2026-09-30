@@ -217,7 +217,24 @@ async setStripeIds(userId: number, data: { stripeCustomerId?: string | null; str
       password,
     });
 
-    return this.repo.save(user);
+    if (!dto.notificationPreferences) return this.repo.save(user);
+
+    // Account and notification choices must be persisted together.
+    const preferences = dto.notificationPreferences;
+    const enabled = preferences.taskReminders || preferences.automaticNotifications || preferences.newsAndUpdates;
+    return this.repo.manager.transaction(async manager => {
+      const saved = await manager.save(User, user);
+      await manager.save(Settings, manager.create(Settings, {
+        user: saved,
+        notificationsEnabled: enabled,
+        emailNotifications: enabled,
+        pushNotifications: false,
+        taskReminders: preferences.taskReminders,
+        automaticNotifications: preferences.automaticNotifications,
+        newsAndUpdates: preferences.newsAndUpdates,
+      }));
+      return saved;
+    });
   }
 
   async deleteById(id: number) {

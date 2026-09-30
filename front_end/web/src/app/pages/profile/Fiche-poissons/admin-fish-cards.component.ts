@@ -89,6 +89,9 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
 
   // ✅ filtre admin : pending only
   showPendingOnly = false;
+  statusFilter = '';
+  onCatalogStatus(event: Event): void { this.statusFilter = (event.target as HTMLSelectElement).value; this.applyClientFilter(); this.cdr.markForCheck(); }
+  resetFilters(): void { this.search = ''; this.statusFilter = ''; this.showPendingOnly = false; this.applyClientFilter(); this.cdr.markForCheck(); }
 
   form: FormGroup;
 
@@ -229,7 +232,7 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
 
     this.ensureAuth$()
       .pipe(
-        switchMap(() => (this.isAdmin ? this.api.listAdmin(this.search) : this.api.listEditor(this.search))),
+        switchMap(() => (this.isAdmin ? this.api.listAdmin() : this.api.listEditor())),
         take(1),
         finalize(() => {
           this.loading = false;
@@ -274,7 +277,7 @@ export class AdminFishCardsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.filtered = base;
+    this.filtered = this.statusFilter ? base.filter(r => r.status === this.statusFilter) : base;
   }
 
   selectRow(r: FishCard): void {

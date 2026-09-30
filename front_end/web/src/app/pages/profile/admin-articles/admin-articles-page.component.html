@@ -3,30 +3,30 @@
 
   <!-- CONTENT -->
   <main class="content">
-    <mat-card class="admin-card">
+    <div class="page articles-page">
       <header class="admin-header admin-page-hero hero-articles">
         <div class="hero-symbol"><mat-icon>article</mat-icon></div>
         <div class="titles">
           <span class="hero-kicker">Centre éditorial</span>
-          <h2>Articles & conseils</h2>
+          <h1>Articles & conseils</h1>
           <p class="subtitle">Rédigez, relisez et publiez les contenus destinés aux aquariophiles.</p>
         </div>
 
         <div class="header-actions">
           <button mat-flat-button color="primary" type="button" (click)="newArticle()">
             <mat-icon>add</mat-icon>
-            Créer
+            Nouvel article
           </button>
 
           <button mat-stroked-button type="button" (click)="refresh()" [disabled]="loading">
             <mat-icon>refresh</mat-icon>
-            Rafraîchir
+            Actualiser
           </button>
         </div>
       </header>
 
       <section class="content-overview" aria-label="Résumé éditorial">
-        <div><span><mat-icon>library_books</mat-icon></span><p><small>Bibliothèque</small><strong>{{ items.length }}</strong><em>articles au total</em></p></div>
+        <div><span><mat-icon>library_books</mat-icon></span><p><small>Bibliothèque</small><strong>{{ items.length }}</strong><em>articles dans la sélection</em></p></div>
         <div><span class="ok"><mat-icon>public</mat-icon></span><p><small>Publiés</small><strong>{{ publishedCount }}</strong><em>accessibles au public</em></p></div>
         <div><span class="pending"><mat-icon>rate_review</mat-icon></span><p><small>À relire</small><strong>{{ pendingReviewCount }}</strong><em>en attente de validation</em></p></div>
         <div><span class="draft"><mat-icon>edit_note</mat-icon></span><p><small>Brouillons</small><strong>{{ draftCount }}</strong><em>à finaliser</em></p></div>
@@ -38,33 +38,12 @@
         <!-- ================= LISTE ================= -->
         <mat-tab label="Liste">
           <div class="tab-page">
-            <div class="toolbar">
-              <mat-form-field appearance="outline" class="search">
-                <mat-label>Rechercher</mat-label>
-                <input matInput [value]="search" (input)="onSearchChange($event)" placeholder="Titre, extrait, thème…" />
-                <mat-icon matSuffix>search</mat-icon>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="filter">
-                <mat-label>Statut</mat-label>
-                <mat-select [value]="statusFilter" (valueChange)="onStatusChange($event)">
-                  <mat-option [value]="''">Tous</mat-option>
-                  <mat-option [value]="'DRAFT'">Brouillon</mat-option>
-                  <mat-option [value]="'PENDING_REVIEW'">En validation</mat-option>
-                  <mat-option [value]="'REJECTED'">Refusé</mat-option>
-                  <mat-option [value]="'PUBLISHED'">Publié</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="filter">
-                <mat-label>Thème</mat-label>
-                <mat-select [value]="themeFilter" (valueChange)="onThemeChange($event)">
-                  <mat-option [value]="null">Tous</mat-option>
-                  <mat-option *ngFor="let t of themes" [value]="t.id">{{ t.name }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-
+<div class="catalog-filters">
+ <label class="search-control"><span>Rechercher un article</span><div><mat-icon>search</mat-icon><input type="search" [value]="search" (input)="onSearchChange($event)" placeholder="Titre, extrait, thème…" /></div></label>
+ <label><span>Statut</span><select [value]="statusFilter" (change)="onStatusChange($any($event.target).value)"><option value="">Tous les statuts</option><option value="DRAFT">Brouillons</option><option value="PENDING_REVIEW">À relire</option><option value="PUBLISHED">Publiés</option><option value="REJECTED">Refusés</option></select></label>
+ <label><span>Thème</span><select [value]="themeFilter ?? ''" (change)="onThemeChange($any($event.target).value ? +$any($event.target).value : null)"><option value="">Tous les thèmes</option><option *ngFor="let t of themes" [value]="t.id">{{ t.name }}</option></select></label>
+ <button mat-stroked-button type="button" (click)="resetFilters()" [disabled]="!search && !statusFilter && !themeFilter"><mat-icon>restart_alt</mat-icon>Réinitialiser</button>
+ </div><div class="meta"><span class="count">{{ filtered.length }} article(s) affiché(s)</span><span class="muted">Dernières créations en premier</span></div>
             <div class="loading" *ngIf="loading">
               <mat-progress-spinner mode="indeterminate" diameter="18"></mat-progress-spinner>
               <span>Chargement…</span>
@@ -74,7 +53,7 @@
               <mat-icon>tips_and_updates</mat-icon>
               <div>
                 <p class="empty-title">Aucun article</p>
-                <p class="empty-sub">Change tes filtres ou crée un article.</p>
+                <p class="empty-sub">Modifiez les filtres ou créez votre premier article.</p>
               </div>
             </div>
 
@@ -156,7 +135,7 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="span2">
-                  <mat-label>Cover image URL</mat-label>
+                  <mat-label>Adresse de l’image de couverture</mat-label>
                   <input matInput formControlName="coverImageUrl" placeholder="/uploads/xxx.jpg ou https://..." />
                 </mat-form-field>
 
@@ -181,6 +160,6 @@
           </div>
         </mat-tab>
       </mat-tab-group>
-    </mat-card>
+    </div>
   </main>
 </div>

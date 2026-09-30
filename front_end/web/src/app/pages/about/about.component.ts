@@ -28,6 +28,13 @@ export class AboutComponent {
         '@context': 'https://schema.org',
         '@graph': [
           {
+            '@type': 'WebSite',
+            '@id': 'https://aquamanager.fr/#website',
+            name: 'AquaManager',
+            url: 'https://aquamanager.fr/',
+            inLanguage: 'fr-FR',
+          },
+          {
             '@type': 'SoftwareApplication',
             '@id': 'https://aquamanager.fr/#application',
             name: 'AquaManager',

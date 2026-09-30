@@ -24,14 +24,14 @@ export const routes: Routes = [
       title: 'Connexion – AquaManager',
       description:
         "Connectez-vous à AquaManager pour suivre vos aquariums, vos paramètres d’eau et vos tâches d’entretien.",
-      robots: 'noindex',
+      robots: 'index,follow',
     },
   },
   {
     path: 'register',
     loadComponent: () =>
       import('./pages/register/register.component').then((m) => m.RegisterComponent),
-    data: { title: 'Inscription – AquaManager', robots: 'noindex' },
+    data: { title: 'Inscription – AquaManager', description: 'Créez votre compte AquaManager gratuitement pour suivre vos aquariums, enregistrer vos mesures d’eau et organiser leur entretien.', robots: 'index,follow' },
   },
 
   // ✅ Page appelée depuis le mail (OBLIGATOIREMENT publique)
@@ -65,7 +65,7 @@ export const routes: Routes = [
   {
     path: 'privacy',
     loadComponent: () => import('./pages/legal/privacy.component').then((m) => m.PrivacyComponent),
-    data: { title: 'Politique de confidentialité – AquaManager', robots: 'index,follow' },
+    data: { title: 'Politique de confidentialité – AquaManager', description: 'Découvrez comment AquaManager utilise et protège vos données personnelles et comment exercer vos droits.', robots: 'index,follow' },
   },
   {
     path: 'terms',
@@ -77,6 +77,7 @@ export const routes: Routes = [
   {
     path: 'contact',
     loadComponent: () => import('./pages/contact/contact.component').then((m) => m.ContactComponent),
+    data: { title: 'Contact – AquaManager', description: 'Contactez l’équipe AquaManager pour une question, une suggestion ou une demande d’assistance.', robots: 'index,follow' },
   },
   {
     path: 'a-propos-gestion-aquarium',

@@ -86,6 +86,11 @@ export class RegisterComponent {
       },
       { validators: passwordsMatch }
     ),
+    notificationPreferences: this.fb.nonNullable.group({
+      taskReminders: false,
+      automaticNotifications: false,
+      newsAndUpdates: false,
+    }),
     acceptTos: this.fb.control(false, {
       nonNullable: true,
       validators: [Validators.requiredTrue],
@@ -156,6 +161,7 @@ export class RegisterComponent {
         fullName: this.fullName.value,
         email: this.email.value,
         password: String(this.password?.value ?? ''),
+        notificationPreferences: this.form.controls.notificationPreferences.getRawValue(),
       };
 
       await this.authService.register(payload);
