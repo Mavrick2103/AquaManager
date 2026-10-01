@@ -1,0 +1,183 @@
+<div class="admin-layout">
+  <aside appAdminSidebar></aside>
+  <main class="content">
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">ÉCOUTE DES UTILISATEURS</span>
+          <h1>Avis &amp; satisfaction</h1>
+          <p>Comprendre ce qui plaît et ce qui peut être amélioré.</p>
+        </div>
+        <button type="button" (click)="load()" [disabled]="loading">Actualiser</button>
+      </header>
+      <section class="filters" aria-label="Filtres des avis">
+        <label
+          >Offre<select [(ngModel)]="segment" (ngModelChange)="load(true)">
+            <option value="">Classic et Premium</option>
+            <option value="CLASSIC">Classic</option>
+            <option value="PREMIUM">Premium</option>
+          </select></label
+        >
+        <label
+          >Type d’accès<select [(ngModel)]="source" (ngModelChange)="load(true)">
+            <option value="CUSTOMER">Utilisateurs (hors équipe)</option>
+            <option value="PAID">Premium payant</option>
+            <option value="GIFT">Premium offert</option>
+            <option value="FREE">Classic</option>
+            <option value="STAFF">Équipe uniquement</option>
+            <option value="ALL">Tous, équipe incluse</option>
+          </select></label
+        >
+        <label
+          >Période<select [(ngModel)]="days" (ngModelChange)="load(true)">
+            <option value="30">30 derniers jours</option>
+            <option value="90">90 derniers jours</option>
+            <option value="365">12 derniers mois</option>
+            <option value="all">Depuis le début</option>
+          </select></label
+        >
+      </section>
+      <p class="error" role="alert" *ngIf="error">{{ error }}</p>
+      <p role="status" *ngIf="loading">Chargement des avis…</p>
+      <ng-container *ngIf="data as report">
+        <div class="score-grid">
+          <ng-container *ngFor="let plan of segments"
+            ><section
+              class="score-card"
+              [class.premium]="plan === 'PREMIUM'"
+              *ngIf="!segment || segment === plan"
+            >
+              <ng-container *ngIf="summary(plan) as score"
+                ><h2>{{ plan === 'PREMIUM' ? 'Premium' : 'Classic' }}</h2>
+                <div class="score">
+                  <strong>{{
+                    +score.count ? percentage(score.satisfied, score.count) + '%' : '—'
+                  }}</strong
+                  ><span>de réponses satisfaites</span>
+                </div>
+                <p>
+                  <b>{{ score.average == null ? '—' : (score.average | number: '1.1-1') }}/5</b> ·
+                  {{ score.count }} réponse(s)
+                </p>
+                <div class="distribution" *ngFor="let n of stars">
+                  <span>{{ n }}/5</span
+                  ><progress
+                    [value]="score['n' + n] || 0"
+                    [max]="+score.count || 1"
+                    [attr.aria-label]="n + ' sur 5 : ' + (score['n' + n] || 0) + ' réponses'"
+                  ></progress
+                  ><span>{{ score['n' + n] || 0 }}</span>
+                </div>
+                <p class="hint" *ngIf="+score.count < 10">
+                  {{
+                    +score.count
+                      ? 'Peu de réponses : résultat à interpréter avec prudence.'
+                      : 'Les résultats apparaîtront après les premiers avis.'
+                  }}
+                </p>
+                <div class="premium-detail" *ngIf="plan === 'PREMIUM'">
+                  <b>Fonctionnalités Premium</b>
+                  <p>
+                    {{
+                      score.premiumAverage == null ? '—' : (score.premiumAverage | number: '1.1-1')
+                    }}/5 · {{ score.premiumCount }} réponse(s) ·
+                    {{
+                      +score.premiumCount
+                        ? percentage(score.premiumSatisfied, score.premiumCount) + '% satisfaites'
+                        : 'Pas encore de note'
+                    }}
+                  </p>
+                </div>
+              </ng-container>
+            </section></ng-container
+          >
+        </div>
+        <p class="hint">
+          Satisfaction = notes de 4 ou 5 sur 5. L’offre et le type d’accès sont ceux de la date de
+          réponse. Ces avis volontaires ne représentent pas nécessairement tous les utilisateurs.
+        </p>
+        <section class="panel">
+          <h2>Évolution mensuelle</h2>
+          <p class="hint">
+            Selon les filtres ci-dessus · jusqu’aux 24 derniers points disponibles.
+          </p>
+          <div class="table-wrap">
+            <table *ngIf="report.monthly.length; else noTrend">
+              <thead>
+                <tr>
+                  <th>Mois</th>
+                  <th>Offre</th>
+                  <th>Réponses</th>
+                  <th>Note moyenne</th>
+                  <th>Satisfaction</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of report.monthly">
+                  <td>{{ row.month }}</td>
+                  <td>{{ row.segment === 'PREMIUM' ? 'Premium' : 'Classic' }}</td>
+                  <td>{{ row.count }}</td>
+                  <td>{{ row.average | number: '1.1-1' }}/5</td>
+                  <td>{{ percentage(row.satisfied, row.count) }} %</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ng-template #noTrend><p>Aucun historique sur cette période.</p></ng-template>
+        </section>
+        <section class="panel">
+          <div class="review-heading">
+            <div>
+              <h2>Retours des utilisateurs</h2>
+              <p>{{ report.total }} réponse(s) · 20 par page</p>
+            </div>
+            <label
+              >Suivi des avis<select [(ngModel)]="status" (ngModelChange)="load(true)">
+                <option value="">Tous les statuts</option>
+                <option value="NEW">À lire</option>
+                <option value="READ">Lu</option>
+                <option value="DONE">Traité</option>
+              </select></label
+            >
+          </div>
+          <p class="hint">Ce filtre agit sur les retours ci-dessous, pas sur les indicateurs.</p>
+          <article class="review" *ngFor="let item of report.items">
+            <div class="review-heading">
+              <div>
+                <a [routerLink]="['/admin/users', item.userId]">{{
+                  item.user.fullName || 'Utilisateur'
+                }}</a
+                ><span class="badge">{{ sourceLabel(item.source) }}</span>
+                <p>
+                  {{ item.createdAt | date: 'd MMM y à HH:mm' }} · Note générale :
+                  <b>{{ item.rating }}/5</b
+                  ><span *ngIf="item.premiumRating"> · Premium : {{ item.premiumRating }}/5</span>
+                </p>
+              </div>
+              <label
+                >Statut<select
+                  [ngModel]="item.status"
+                  (ngModelChange)="review(item, $event)"
+                  [disabled]="saving !== null || loading"
+                >
+                  <option value="NEW">À lire</option>
+                  <option value="READ">Lu</option>
+                  <option value="DONE">Traité</option>
+                </select></label
+              >
+            </div>
+            <p class="comment">{{ item.comment || 'Aucun commentaire laissé.' }}</p>
+          </article>
+          <p *ngIf="!report.items.length">Aucun avis ne correspond aux filtres.</p>
+          <nav class="pagination" aria-label="Pages des avis">
+            <button (click)="move(-1)" [disabled]="page <= 1 || loading">Précédent</button
+            ><span>Page {{ page }}</span
+            ><button (click)="move(1)" [disabled]="page * 20 >= report.total || loading">
+              Suivant
+            </button>
+          </nav>
+        </section></ng-container
+      >
+    </div>
+  </main>
+</div>

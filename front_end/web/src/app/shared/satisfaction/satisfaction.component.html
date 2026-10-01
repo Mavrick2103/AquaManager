@@ -1,0 +1,105 @@
+<button
+  class="review-link"
+  type="button"
+  *ngIf="manual && !open"
+  (click)="load()"
+  [disabled]="busy"
+>
+  {{ busy ? 'Chargement…' : 'Donner mon avis' }}
+</button>
+<section
+  class="survey"
+  [class.survey--compact]="!expanded && !sent"
+  *ngIf="open"
+  aria-label="Ton avis sur AquaManager"
+>
+  <ng-container *ngIf="!sent; else thanks">
+    <header>
+      <span class="eyebrow"
+        >Ton expérience compte · {{ status?.segment === 'PREMIUM' ? 'Premium' : 'Classic' }}</span
+      >
+      <h2>Comment trouves-tu AquaManager ?</h2>
+      <p>Ton avis nous aide à améliorer l’application.</p>
+    </header>
+    <p class="error" role="alert" *ngIf="error">{{ error }}</p>
+    <div class="actions" *ngIf="status?.canSubmit && !expanded">
+      <button type="button" class="primary" (click)="expanded = true">Donner mon avis</button
+      ><button type="button" (click)="later()" [disabled]="busy">Plus tard</button>
+    </div>
+    <form *ngIf="status?.canSubmit && expanded" (ngSubmit)="submit()">
+      <fieldset [disabled]="busy">
+        <legend>Ta satisfaction générale</legend>
+        <div class="ratings">
+          <label *ngFor="let c of choices" [class.selected]="rating === c.value"
+            ><input
+              type="radio"
+              name="rating"
+              [value]="c.value"
+              [(ngModel)]="rating"
+              required
+            /><span class="face" aria-hidden="true">{{ c.face }}</span
+            ><span>{{ c.label }}</span
+            ><small>{{ c.value }}/5</small></label
+          >
+        </div>
+      </fieldset>
+      <fieldset *ngIf="status?.segment === 'PREMIUM'" [disabled]="busy">
+        <legend>Les fonctionnalités Premium répondent-elles à tes attentes ?</legend>
+        <div class="premium-ratings">
+          <label *ngFor="let c of choices" [class.selected]="premiumRating === c.value"
+            ><input
+              type="radio"
+              name="premiumRating"
+              [value]="c.value"
+              [(ngModel)]="premiumRating"
+              required
+              [attr.aria-label]="c.value + ' sur 5 : ' + c.label"
+            />{{ c.value }}/5</label
+          >
+        </div>
+        <p class="hint">1 : pas du tout · 5 : tout à fait</p>
+      </fieldset>
+      <label class="comment"
+        >Qu’aimerais-tu améliorer ? <small>Facultatif</small
+        ><textarea
+          name="comment"
+          [(ngModel)]="comment"
+          maxlength="2000"
+          rows="3"
+          [disabled]="busy"
+          placeholder="Ce qui te plaît, ce qui te manque…"
+        ></textarea>
+      </label>
+      <p class="hint">
+        Ton avis est associé à ton compte et visible uniquement par l’équipe AquaManager. N’y
+        indique pas d’informations sensibles.
+      </p>
+      <div class="actions">
+        <button
+          class="primary"
+          type="submit"
+          [disabled]="busy || !rating || (status?.segment === 'PREMIUM' && !premiumRating)"
+        >
+          {{ busy ? 'Envoi…' : 'Envoyer mon avis' }}</button
+        ><button type="button" (click)="later()" [disabled]="busy">
+          {{ manual ? 'Fermer' : 'Plus tard' }}
+        </button>
+      </div>
+    </form>
+    <ng-container *ngIf="status && !status.canSubmit"
+      ><p>
+        Merci pour ton avis ! Tu pourras répondre à nouveau à partir du
+        {{ status.nextResponseAt | date: 'd MMMM y' }}.
+      </p>
+      <button type="button" (click)="later()">Fermer</button></ng-container
+    >
+    <button *ngIf="!status && error" type="button" (click)="load()" [disabled]="busy">
+      Réessayer
+    </button>
+  </ng-container>
+  <ng-template #thanks
+    ><h2>Merci pour ton avis !</h2>
+    <p>Ta réponse a bien été enregistrée. Elle nous aidera à faire évoluer AquaManager.</p>
+    <button type="button" (click)="later()">Fermer</button></ng-template
+  >
+</section>

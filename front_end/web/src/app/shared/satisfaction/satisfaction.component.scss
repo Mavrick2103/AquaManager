@@ -1,0 +1,154 @@
+:host {
+  display: block;
+}
+.survey {
+  margin: 20px 0;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid #d5e7e5;
+  border-radius: 20px;
+  background: linear-gradient(120deg, #f0f9f8, #fff);
+  color: #25434b;
+}
+h2 {
+  margin: 8px 0;
+  font-size: 1.35rem;
+}
+p {
+  line-height: 1.5;
+}
+.eyebrow {
+  color: #397e7b;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+fieldset {
+  border: 0;
+  margin: 20px 0;
+  padding: 0;
+}
+legend {
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.ratings,
+.premium-ratings {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ratings label,
+.premium-ratings label {
+  display: flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid #cadbdc;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  flex: 1;
+  min-width: 65px;
+  font-size: 0.85rem;
+}
+label.selected {
+  border-color: #287f7b;
+  background: #e2f2ec;
+  box-shadow: 0 0 0 1px #287f7b;
+}
+input[type='radio'] {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+label:focus-within {
+  outline: 3px solid #7ab8dd;
+  outline-offset: 2px;
+}
+.face {
+  font-size: 1.8rem;
+}
+.comment {
+  display: block;
+  font-weight: 600;
+}
+small,
+.hint {
+  font-size: 0.8rem;
+  color: #576f75;
+  font-weight: 400;
+}
+textarea {
+  display: block;
+  margin-top: 8px;
+  padding: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #bacfd1;
+  border-radius: 10px;
+  font: inherit;
+  resize: vertical;
+}
+button {
+  padding: 11px 18px;
+  border: 1px solid #b4cccd;
+  border-radius: 24px;
+  background: white;
+  color: #275d63;
+  font: inherit;
+  cursor: pointer;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.primary {
+  background: #286f70;
+  color: white;
+  border-color: #286f70;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.error {
+  color: #a72f30;
+}
+.review-link {
+  margin: 12px 0;
+}
+@media (max-width: 500px) {
+  .ratings label {
+    min-width: 60px;
+    padding: 8px 4px;
+  }
+}
+
+.survey--compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.survey--compact h2 {
+  font-size: 1.15rem;
+}
+.survey--compact p {
+  margin-bottom: 0;
+}
+.premium-ratings {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.premium-ratings label {
+  min-width: 0;
+  padding: 12px 4px;
+}

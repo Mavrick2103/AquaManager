@@ -1,3 +1,4 @@
+import { SatisfactionModule } from './satisfaction/satisfaction.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
@@ -81,6 +82,7 @@ import { AdminEmailingModule } from './admin-emailing/admin-emailing.module';
     MarketingModule,
     SettingsModule,
     AdminEmailingModule,
+    SatisfactionModule,
   ],
 })
 export class AppModule {}

@@ -1,3 +1,4 @@
+import { SatisfactionComponent } from '../../shared/satisfaction/satisfaction.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -38,6 +39,7 @@ import { firstValueFrom } from 'rxjs';
   selector: 'app-home',
   standalone: true,
   imports: [
+    SatisfactionComponent,
     CommonModule,
     RouterLink,
 

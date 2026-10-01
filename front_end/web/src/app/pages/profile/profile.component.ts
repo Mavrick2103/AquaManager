@@ -1,3 +1,4 @@
+import { SatisfactionComponent } from '../../shared/satisfaction/satisfaction.component';
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -38,6 +39,7 @@ type ExtendedMe = UserMe & {
   selector: 'app-profile',
   standalone: true,
   imports: [
+    SatisfactionComponent,
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
