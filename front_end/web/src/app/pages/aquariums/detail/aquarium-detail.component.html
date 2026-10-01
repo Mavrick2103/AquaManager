@@ -988,11 +988,11 @@
                 mat-raised-button
                 color="primary"
                 type="button"
-                [disabled]="true"
-                (click)="startPremiumCheckout()"
+                routerLink="/profile"
+                [queryParams]="{ tab: 'subscription' }"
               >
                 <mat-icon>workspace_premium</mat-icon>
-                {{ checkoutLoading ? 'Redirection…' : 'Découvrir Premium' }}
+                Découvrir Premium
               </button>
               <small>Tu gardes toutes les fonctions Classic.</small>
             </div>
