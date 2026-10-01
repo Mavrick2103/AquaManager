@@ -74,7 +74,21 @@ describe('Administration reorganisée', () => {
     cy.contains('h1', 'Vue d’ensemble');
     cy.contains('Camille Martin');
     cy.contains('accès offerts inclus');
-    cy.get('nav[aria-label="Navigation de l’administration"] a').should('have.length', 9);
+    cy.get('nav[aria-label="Navigation de l’administration"] a').should(links => {
+      const destinations = [...links].map(link => link.getAttribute('href'));
+      expect(destinations).to.have.members([
+        '/admin/metrics',
+        '/admin/users',
+        '/admin/subscriptions',
+        '/admin/satisfaction',
+        '/admin/articles',
+        '/admin/species/fish',
+        '/admin/species/plant',
+        '/admin/marketing',
+        '/admin/emailing',
+        '/admin/operations',
+      ]);
+    });
     cy.get('a[aria-current="page"]').should('contain.text', 'Vue d’ensemble');
     cy.get('aside[appAdminSidebar]').then(el => expect(el[0].scrollHeight).to.be.at.most(el[0].clientHeight));
     noOverflow(1280);
