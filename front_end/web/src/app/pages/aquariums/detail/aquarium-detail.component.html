@@ -410,9 +410,8 @@
     >
       <ng-container>
         <header class="solution-choice-heading">
-          <span>Choisis ton accompagnement</span>
-          <h2>Que veux-tu utiliser ?</h2>
-          <p>L’assistant classique analyse les mesures avec des règles AquaManager. L’IA répond à des questions personnalisées et analyse les photos.</p>
+          <div><h2>Les prochaines étapes pour ton aquarium</h2>
+          <p>Consulte le bilan de tes mesures ou demande conseil à l’IA.</p></div>
         </header>
         <nav class="solution-switcher" role="tablist" aria-label="Types de solutions">
           <button
@@ -429,8 +428,8 @@
               <mat-icon>tips_and_updates</mat-icon>
             </span>
             <span class="solution-switcher__copy">
-              <strong>Assistant AquaManager</strong>
-              <small>Conseils et planning</small>
+              <strong>Bilan &amp; actions</strong>
+              <small>À partir de tes dernières mesures</small>
             </span>
             <span class="solution-switcher__access">Inclus</span>
             <mat-icon class="solution-switcher__select-icon">{{ solutionView === 'assistant' ? 'check_circle' : 'arrow_forward' }}</mat-icon>
@@ -450,8 +449,8 @@
               <mat-icon>auto_awesome</mat-icon>
             </span>
             <span class="solution-switcher__copy">
-              <strong>Assistant IA</strong>
-              <small>Analyse personnalisée</small>
+              <strong>Demander à l’IA</strong>
+              <small>Une IA connectée à ton aquarium</small>
             </span>
             <span
               class="solution-switcher__access"
@@ -463,65 +462,6 @@
             <mat-icon class="solution-switcher__select-icon">{{ solutionView === 'ai' ? 'check_circle' : 'arrow_forward' }}</mat-icon>
           </button>
         </nav>
-
-        <section class="solution-choice-empty" *ngIf="!solutionView">
-          <span class="solution-choice-empty__icon"><mat-icon>touch_app</mat-icon></span>
-          <div>
-            <h3>Aucun mode sélectionné</h3>
-            <p>Choisis l’une des deux options ci-dessus. Aucune analyse ne sera lancée automatiquement.</p>
-          </div>
-        </section>
-
-        <ng-container *ngIf="solutionView">
-
-        <section class="sol-hero" *ngIf="solutionView === 'assistant'">
-          <div class="sol-hero__left">
-            <div class="sol-hero__eyebrow">
-              <mat-icon>tips_and_updates</mat-icon>
-              Assistant AquaManager
-            </div>
-
-            <h2 class="sol-hero__title">
-              Suivi et recommandations de ton aquarium
-              <span class="sol-hero__badge">{{ isPremium ? 'Premium' : 'Classic' }}</span>
-            </h2>
-
-            <p class="sol-hero__subtitle">
-              AquaManager compare ta dernière mesure aux valeurs de référence et propose des actions concrètes.
-            </p>
-
-            <div
-              class="sol-hero__benefits"
-              aria-label="Fonctions disponibles"
-            >
-              <span>
-                <mat-icon>rule</mat-icon>
-                Analyse des mesures
-              </span>
-              <span>
-                <mat-icon>event_available</mat-icon>
-                Ajout au planning
-              </span>
-            </div>
-          </div>
-
-          <div class="sol-hero__right" *ngIf="solutionView === 'assistant'">
-            <button
-              mat-flat-button
-              color="primary"
-              type="button"
-              [disabled]="targetsLoading || recosLoading"
-              (click)="refreshSolutions()"
-            >
-              <mat-icon>refresh</mat-icon>
-              {{
-                targetsLoading || recosLoading
-                  ? 'Actualisation…'
-                  : 'Actualiser les recommandations'
-              }}
-            </button>
-          </div>
-        </section>
 
         <div
           *ngIf="solutionView === 'ai'"
@@ -971,7 +911,7 @@
               </div>
               <h3 id="premium-discovery-title">Demande directement conseil à l’IA</h3>
               <p>
-                L’assistant Classic reste disponible ci-dessous. Premium ajoute une discussion
+                Le bilan reste accessible dans le premier onglet. Premium ajoute une discussion
                 personnalisée, l’analyse de photos et des tâches intelligentes à valider.
               </p>
 
@@ -1007,37 +947,171 @@
           role="tabpanel"
           aria-labelledby="assistant-tab"
         >
-        <mat-card class="health-card" [class.health-card--ok]="isTankHealthy">
+        <section class="sol-hero" *ngIf="solutionView === 'assistant'">
+          <div class="sol-hero__left">
+            <div class="sol-hero__eyebrow">
+              <mat-icon>tips_and_updates</mat-icon>
+              Assistant AquaManager
+            </div>
+
+            <h2 class="sol-hero__title">
+              Suivi et recommandations de ton aquarium
+              <span class="sol-hero__badge">{{ isPremium ? 'Premium' : 'Classic' }}</span>
+            </h2>
+
+            <p class="sol-hero__subtitle">
+              AquaManager compare ta dernière mesure aux valeurs de référence et propose des actions concrètes.
+            </p>
+
+            <div
+              class="sol-hero__benefits"
+              aria-label="Fonctions disponibles"
+            >
+              <span>
+                <mat-icon>rule</mat-icon>
+                Analyse des mesures
+              </span>
+              <span>
+                <mat-icon>event_available</mat-icon>
+                Ajout au planning
+              </span>
+            </div>
+          </div>
+
+          <div class="sol-hero__right" *ngIf="solutionView === 'assistant'">
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="targetsLoading || recosLoading"
+              (click)="refreshSolutions()"
+            >
+              <mat-icon>refresh</mat-icon>
+              {{
+                targetsLoading || recosLoading
+                  ? 'Actualisation…'
+                  : 'Actualiser les recommandations'
+              }}
+            </button>
+          </div>
+        </section>
+
+        <mat-card class="health-card health-card--ok" *ngIf="isTankHealthy">
           <mat-card-content class="health-card__content">
-            <div class="health-card__icon">
-              <mat-icon>{{ isTankHealthy ? 'favorite' : 'monitor_heart' }}</mat-icon>
+            <div class="health-card__icon"><mat-icon>favorite</mat-icon></div>
+            <div><div class="health-card__title">Bac en bonne santé ✅</div>
+              <div class="health-card__text">Ta dernière mesure respecte les plages de référence du profil <b>{{ getProfileLabel() }}</b>.</div>
             </div>
-
-            <div class="health-card__body">
-              <div class="health-card__title">
-                {{ isTankHealthy ? 'Bac en bonne santé ✅' : 'Analyse des paramètres' }}
-              </div>
-
-              <div class="health-card__text" *ngIf="isTankHealthy; else notHealthyText">
-                Ta dernière mesure respecte les plages de référence du profil
-                <b>{{ getProfileLabel() }}</b>.
-              </div>
-
-              <ng-template #notHealthyText>
-                Des écarts peuvent être détectés selon ta dernière mesure et ton profil de référence.
-              </ng-template>
-            </div>
-
-            <div class="health-card__status">
-              <mat-icon>{{ isTankHealthy ? 'check_circle' : 'tips_and_updates' }}</mat-icon>
-              <span>{{ isTankHealthy ? 'Rien à faire' : 'Conseils disponibles' }}</span>
-            </div>
+            <div class="health-card__status"><mat-icon>check_circle</mat-icon>Rien à faire</div>
           </mat-card-content>
         </mat-card>
-
+        <div class="solution-summary" role="status" *ngIf="!isTankHealthy">
+          <mat-icon>{{ isTankHealthy ? 'check_circle' : 'monitor_heart' }}</mat-icon>
+          <div>
+            <h3>{{ targetsLoading || recosLoading ? 'Préparation du bilan…' : !lastMeasurement ? 'Une première mesure pour commencer' : !targets ? 'Bilan indisponible' : isTankHealthy ? 'Les valeurs renseignées sont dans les plages de référence' : 'Fais le point sur tes paramètres' }}</h3>
+            <p *ngIf="lastMeasurement; else firstMeasurement">Dernière mesure du {{ lastMeasurement.measuredAt | date: 'd MMMM y à HH:mm' }} · Profil {{ getProfileLabel() }}</p>
+            <ng-template #firstMeasurement><p>Enregistre tes paramètres d’eau pour obtenir des conseils adaptés.</p></ng-template>
+          </div>
+          <button *ngIf="!lastMeasurement" mat-stroked-button type="button" (click)="selectedTabIndex = 0">Ajouter une mesure</button>
+        </div>
         <div class="sol-layout">
-          <!-- TARGETS -->
+          <!-- RECOMMENDATIONS -->
           <section class="sol-panel">
+            <div class="sol-panel__head">
+              <div>
+                <h3>
+                  <mat-icon>lightbulb</mat-icon>
+                  Actions recommandées
+                </h3>
+
+                <p>Choisis une action pour l’ajouter à ton planning et suivre sa réalisation.</p>
+              </div>
+            </div>
+
+            <mat-card class="sol-card" *ngIf="recosLoading">
+              <mat-card-content class="sol-loading">
+                <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
+                <span>Analyse en cours…</span>
+              </mat-card-content>
+            </mat-card>
+
+            <ng-container *ngIf="!recosLoading">
+              <div class="reco-list" *ngIf="recos.length; else emptyRecos">
+                <mat-card
+                  class="reco-card"
+                  *ngFor="let r of recos"
+                  [ngClass]="'reco-card--' + (r.severity || 'INFO')"
+                >
+                  <mat-card-content>
+                    <div class="reco-card__top">
+                      <div class="reco-card__icon">
+                        <mat-icon>
+                          {{
+                            r.severity === 'URGENT'
+                              ? 'warning'
+                              : r.severity === 'WARN'
+                                ? 'error_outline'
+                                : 'info'
+                          }}
+                        </mat-icon>
+                      </div>
+
+                      <div class="reco-card__main">
+                        <div class="reco-card__header">
+                          <h4>{{ r.title }}</h4>
+
+                          <mat-chip
+                            class="sev-chip"
+                            [ngClass]="'sev-chip--' + (r.severity || 'INFO')"
+                          >
+                            {{ severityLabel(r.severity) }}
+                          </mat-chip>
+                        </div>
+
+                        <p>{{ r.message }}</p>
+                      </div>
+                    </div>
+
+                    <div class="reco-card__actions">
+                      <button
+                        mat-stroked-button
+                        color="warn"
+                        type="button"
+                        (click)="rejectReco(r.id)"
+                      >
+                        Refuser
+                      </button>
+
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        type="button"
+                        (click)="acceptReco(r)"
+                      >
+                        <mat-icon>event</mat-icon>
+                        Ajouter au planning
+                      </button>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+
+              <ng-template #emptyRecos>
+                <mat-card class="sol-card empty-card">
+                  <mat-card-content>
+                    <mat-icon>task_alt</mat-icon>
+                    <h3>Aucune action en attente</h3>
+                    <p>
+                      Continue à relever les paramètres de ton aquarium : les prochains conseils apparaîtront ici selon tes mesures.
+                    </p>
+                  </mat-card-content>
+                </mat-card>
+              </ng-template>
+            </ng-container>
+          </section>
+          <!-- TARGETS -->
+          <details class="sol-panel solution-reference" [open]="targetPanelExpanded">
+            <summary><mat-icon>tune</mat-icon><span>Valeurs de référence et objectifs<small>Consulter les plages utilisées pour ce bilan</small></span><mat-icon class="reference-chevron">expand_more</mat-icon></summary>
             <div class="sol-panel__head">
               <div>
                 <h3>
@@ -1224,110 +1298,15 @@
                   <mat-card-content>
                     <mat-icon>flag</mat-icon>
                     <h3>Aucun objectif trouvé</h3>
-                    <p>Clique sur “Rafraîchir l’analyse” pour créer un profil par défaut.</p>
+                    <p>Clique sur « Actualiser le bilan » pour réessayer.</p>
                   </mat-card-content>
                 </mat-card>
               </ng-template>
             </ng-template>
-          </section>
+          </details>
 
-          <!-- RECOMMENDATIONS -->
-          <section class="sol-panel">
-            <div class="sol-panel__head">
-              <div>
-                <h3>
-                  <mat-icon>lightbulb</mat-icon>
-                  Propositions
-                </h3>
-
-                <p>Actions recommandées selon les écarts détectés.</p>
-              </div>
-            </div>
-
-            <mat-card class="sol-card" *ngIf="recosLoading">
-              <mat-card-content class="sol-loading">
-                <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
-                <span>Analyse en cours…</span>
-              </mat-card-content>
-            </mat-card>
-
-            <ng-container *ngIf="!recosLoading">
-              <div class="reco-list" *ngIf="recos.length; else emptyRecos">
-                <mat-card
-                  class="reco-card"
-                  *ngFor="let r of recos"
-                  [ngClass]="'reco-card--' + (r.severity || 'INFO')"
-                >
-                  <mat-card-content>
-                    <div class="reco-card__top">
-                      <div class="reco-card__icon">
-                        <mat-icon>
-                          {{
-                            r.severity === 'URGENT'
-                              ? 'warning'
-                              : r.severity === 'WARN'
-                                ? 'error_outline'
-                                : 'info'
-                          }}
-                        </mat-icon>
-                      </div>
-
-                      <div class="reco-card__main">
-                        <div class="reco-card__header">
-                          <h4>{{ r.title }}</h4>
-
-                          <mat-chip
-                            class="sev-chip"
-                            [ngClass]="'sev-chip--' + (r.severity || 'INFO')"
-                          >
-                            {{ severityLabel(r.severity) }}
-                          </mat-chip>
-                        </div>
-
-                        <p>{{ r.message }}</p>
-                      </div>
-                    </div>
-
-                    <div class="reco-card__actions">
-                      <button
-                        mat-stroked-button
-                        color="warn"
-                        type="button"
-                        (click)="rejectReco(r.id)"
-                      >
-                        Refuser
-                      </button>
-
-                      <button
-                        mat-flat-button
-                        color="primary"
-                        type="button"
-                        (click)="acceptReco(r)"
-                      >
-                        <mat-icon>event</mat-icon>
-                        Ajouter au planning
-                      </button>
-                    </div>
-                  </mat-card-content>
-                </mat-card>
-              </div>
-
-              <ng-template #emptyRecos>
-                <mat-card class="sol-card empty-card">
-                  <mat-card-content>
-                    <mat-icon>task_alt</mat-icon>
-                    <h3>Aucune solution en attente</h3>
-                    <p>
-                      Ajoute une mesure hors objectif, par exemple NO₂ élevé, puis reviens ici pour générer des conseils.
-                    </p>
-                  </mat-card-content>
-                </mat-card>
-              </ng-template>
-            </ng-container>
-          </section>
         </div>
         </div>
-        </ng-container>
       </ng-container>
 
       <ng-template #classicPaywall>

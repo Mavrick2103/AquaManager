@@ -233,7 +233,7 @@ export class AquariumDetailComponent implements OnInit {
   protocolAquarium: Aquarium | null = null;
 
   isPremium = false;
-  solutionView: 'assistant' | 'ai' | null = null;
+  solutionView: 'assistant' | 'ai' = 'assistant';
   selectedTabIndex = 0;
   initialProtocolKey: 'STARTUP' | null = null;
   targetPanelExpanded = false;
@@ -579,7 +579,7 @@ aiChatQuestion = '';
   }
 
   openTargetConfiguration(): void {
-    this.solutionView = null;
+    this.solutionView = 'assistant';
     this.selectedTabIndex = 2;
     this.targetPanelExpanded = true;
 
