@@ -6,6 +6,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import * as argon2 from 'argon2';
 
 import { UsersService } from '../../src/users/users.service';
+import { PaypalManualGrantService } from '../../src/billing/paypal/paypal-manual-grant.service';
 import { User } from '../../src/users/user.entity';
 
 // ✅ entités injectées dans UsersService
@@ -76,6 +77,7 @@ describe('UsersService (unit)', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
+        { provide: PaypalManualGrantService, useValue: { run: jest.fn() } },
         { provide: MailService, useValue: { sendVerifyEmail: jest.fn() } },
 
         { provide: getRepositoryToken(User), useValue: repoMock },
@@ -102,6 +104,28 @@ describe('UsersService (unit)', () => {
     aqPlantRepo = module.get(getRepositoryToken(AquariumPlantCard));
 
     jest.clearAllMocks();
+  });
+
+  it('grants a manual offer only after the PayPal protection has been cleared', async () => {
+    const user = { id: 1, paypalRenewalActive: true, billingProvider: 'paypal', subscriptionStatus: 'incomplete', subscriptionEndsAt: null } as User;
+    repo.findOne.mockResolvedValue(user);
+    jest.spyOn(service, 'adminGetOne').mockResolvedValue({ id: 1 } as any);
+    const guard = (service as any).paypalManualGrant;
+    guard.run.mockImplementation(async (id: number, grant: () => Promise<any>) => {
+      expect(repo.update).not.toHaveBeenCalled();
+      user.paypalRenewalActive = false;
+      return grant();
+    });
+    await service.adminGrantSubscription(1, { plan: 'PREMIUM', duration: '1m' });
+    expect(guard.run).toHaveBeenCalledTimes(1);
+    expect(repo.update).toHaveBeenCalledWith({ id: 1 }, expect.objectContaining({ subscriptionPlan: 'PREMIUM', subscriptionStatus: 'active', billingProvider: null }));
+  });
+
+  it('does not grant when the PayPal protection refuses the operation', async () => {
+    repo.findOne.mockResolvedValue({ id: 1, paypalRenewalActive: true } as User);
+    (service as any).paypalManualGrant.run.mockRejectedValue(new ConflictException('PayPal actif'));
+    await expect(service.adminGrantSubscription(1, { plan: 'PREMIUM', duration: '1m' })).rejects.toThrow('PayPal actif');
+    expect(repo.update).not.toHaveBeenCalled();
   });
 
   it('does not invalidate an account that was activated concurrently', async () => {

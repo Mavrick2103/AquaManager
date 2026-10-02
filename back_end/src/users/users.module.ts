@@ -19,6 +19,8 @@ import { FishCard } from "../catalog/fish-cards/fish-card.entity";
 import { PlantCard } from "../catalog/plant-cards/plant-card.entity";
 import { Settings } from "../settings/settings.entity";
 import { AdminUserDossierService } from "./admin-user-dossier.service";
+import { PaypalApiService } from "../billing/paypal/paypal-api.service";
+import { PaypalManualGrantService } from "../billing/paypal/paypal-manual-grant.service";
 
 @Module({
   imports: [
@@ -37,7 +39,7 @@ import { AdminUserDossierService } from "./admin-user-dossier.service";
       Settings,
     ]),
   ],
-  providers: [UsersService, AdminUserDossierService],
+  providers: [UsersService, AdminUserDossierService, PaypalApiService, PaypalManualGrantService],
   controllers: [UsersController, AdminUsersController],
   exports: [TypeOrmModule, UsersService],
 })

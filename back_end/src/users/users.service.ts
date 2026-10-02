@@ -27,6 +27,7 @@ import { Article } from '../articles/entities/article.entity';
 import { FishCard } from '../catalog/fish-cards/fish-card.entity';
 import { PlantCard } from '../catalog/plant-cards/plant-card.entity';
 import { Settings } from '../settings/settings.entity';
+import { PaypalManualGrantService } from '../billing/paypal/paypal-manual-grant.service';
 
 type MetricsRange = '1d' | '7d' | '30d' | '365d' | 'all';
 type NewUsersPoint = { label: string; count: number };
@@ -47,6 +48,7 @@ export class UsersService {
     @InjectRepository(FishCard) private readonly fishCardRepo: Repository<FishCard>,
     @InjectRepository(PlantCard) private readonly plantCardRepo: Repository<PlantCard>,
     @InjectRepository(Settings) private readonly settingsRepo: Repository<Settings>,
+    private readonly paypalManualGrant: PaypalManualGrantService,
   ) {}
 
   findById(id: number) {
@@ -644,10 +646,16 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
 
   const plan = this.normalizePlan(data.plan);
   this.assertNoLiveStripeSubscription(user);
-  if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour attribuer une offre manuellement.');
 
   if (plan === 'CLASSIC') {
     throw new BadRequestException('Le plan offert doit être PREMIUM ou PRO');
+  }
+
+  if (!['7d', '14d', '1m', '3m', '6m', '1y', 'lifetime'].includes(data.duration)) {
+    throw new BadRequestException('Durée invalide');
+  }
+  if (user.paypalRenewalActive) {
+    return this.paypalManualGrant.run(id, () => this.adminGrantSubscription(id, data));
   }
 
   let subscriptionEndsAt: Date | null = null;
