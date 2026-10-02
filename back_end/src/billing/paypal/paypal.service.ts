@@ -36,6 +36,10 @@ export class PaypalService {
       const user = await manager.findOneBy(User, { id: userId });
       if (!user) throw new NotFoundException('Compte introuvable.');
       if (!user.emailVerifiedAt) throw new BadRequestException('Vérifie ton adresse email avant de t’abonner.');
+      if (!user.billingProvider && ['active', 'trialing'].includes(user.subscriptionStatus)
+        && (!user.subscriptionEndsAt || hasPaidAccess(user.subscriptionEndsAt))) {
+        throw new ConflictException('Tu bénéficies déjà d’un abonnement actif.');
+      }
       let local = await manager.findOne(PaypalSubscription, { where: { userId }, order: { createdAt: 'DESC' } });
       if (local && local.environment !== this.api.environment) {
         throw new ConflictException('Ce compte est lié à un autre environnement PayPal. Utilise un compte de test distinct.');
@@ -95,10 +99,11 @@ export class PaypalService {
     const user = await this.db.manager.findOneBy(User, { id: userId });
     if (!user) throw new NotFoundException();
     const local = await this.db.manager.findOne(PaypalSubscription, { where: { userId }, order: { createdAt: 'DESC' } });
+    const linkedRecurring = !!local?.paypalId && user.paypalSubscriptionId === local.paypalId && ['ACTIVE', 'SUSPENDED'].includes(local.status);
     return {
-      ready: this.api.ready, provider: user.billingProvider ?? (user.stripeSubscriptionId ? 'stripe' : null),
+      ready: this.api.ready, provider: user.billingProvider ?? (linkedRecurring ? 'paypal' : user.stripeSubscriptionId ? 'stripe' : null),
       status: local?.status ?? null, paidUntil: local?.paidUntil ?? null,
-      canCancel: user.billingProvider === 'paypal' && !!local?.paypalId && ['ACTIVE', 'SUSPENDED'].includes(local.status),
+      canCancel: linkedRecurring,
       premium: ['PREMIUM', 'PRO'].includes(user.subscriptionPlan)
         && ['active', 'trialing'].includes(user.subscriptionStatus)
         && (!user.subscriptionEndsAt || hasPaidAccess(user.subscriptionEndsAt)),
@@ -185,6 +190,9 @@ export class PaypalService {
       local.syncedAt = now;
       await tx.save(local);
       const user = await tx.findOneBy(User, { id: local.userId });
+      if (user?.paypalSubscriptionId === local.paypalId) {
+        await tx.update(User, user.id, { paypalRenewalActive: !TERMINAL_STATUSES.has(local.status) });
+      }
       // Old events cannot overwrite a later subscription or an administrator's replacement grant.
       if (user?.billingProvider === 'paypal' && user.paypalSubscriptionId === local.paypalId) {
         const paid = hasPaidAccess(local.paidUntil, now);

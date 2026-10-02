@@ -42,6 +42,19 @@ describe('PayPal API boundary', () => {
     network.mockResolvedValue(response({ secret: 'never-expose-this' }, 401));
     await expect(api.request('/v1/billing/plans/P-TEST')).rejects.toThrow('HTTP 401');
   });
+  it.each([
+    ['/v1/billing/subscriptions/I-TEST', 404, 'lecture de la souscription'],
+    ['/v1/billing/subscriptions/I-TEST/cancel', 422, 'annulation de la tentative'],
+  ])('identifies the failed operation without exposing the response body', async (path, status, operation) => {
+    network.mockResolvedValueOnce(response({ access_token: 'token', expires_in: 3600 }))
+      .mockResolvedValue(response({ message: 'private customer data', secret: 'never-expose-this' }, status));
+    let message = '';
+    try { await api.request(path); } catch (error) { message = (error as Error).message; }
+    expect(message).toContain(operation);
+    expect(message).toContain(`HTTP ${status}`);
+    expect(message).not.toContain('private customer data');
+    expect(message).not.toContain('never-expose-this');
+  });
   it.each(['https://evil.example/pay', 'javascript:alert(1)', 'https://www.paypal.com/approve'])('rejects wrong-environment or hostile approval URL %s', (url) => {
     expect(() => api.approvalUrl(url)).toThrow();
   });

@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { PaypalPayment, PaypalSubscription } from './paypal-subscription.entity';
 import { PaypalAdminAction } from './paypal-admin-action.entity';
 import { PaypalService } from './paypal.service';
-import { PaypalApiService } from './paypal-api.service';
+import { PaypalApiService, PaypalApiError } from './paypal-api.service';
 import { adminSubscriptionStatus, ADMIN_STATUS_SQL, APPROVAL_TIMEOUT_MS } from './paypal-admin-status';
 
 @Injectable()
@@ -76,8 +76,9 @@ export class PaypalAdminService {
     const action = await audit.save(audit.create({ subscriptionKey: id, actorId, outcome: 'STARTED' }));
     try {
       await this.paypal.refreshSubscription(id);
-    } catch {
+    } catch (error) {
       await audit.update(action.id, { outcome: 'FAILED' });
+      if (error instanceof PaypalApiError) throw error;
       throw new ServiceUnavailableException('La vérification PayPal a échoué. Réessaie plus tard ; cette tentative est enregistrée.');
     }
     await audit.update(action.id, { outcome: 'SUCCESS' });

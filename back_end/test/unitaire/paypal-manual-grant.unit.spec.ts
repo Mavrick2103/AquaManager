@@ -1,5 +1,6 @@
 import { PaypalManualGrantService } from '../../src/billing/paypal/paypal-manual-grant.service';
 import { User } from '../../src/users/user.entity';
+import { PaypalApiError } from '../../src/billing/paypal/paypal-api.service';
 
 describe('Manual grant after an abandoned PayPal checkout', () => {
   function setup(status = 'APPROVAL_PENDING') {
@@ -8,6 +9,7 @@ describe('Manual grant after an abandoned PayPal checkout', () => {
     const remote = { id: 'I-TEST', custom_id: 'key', plan_id: 'P-TEST', status };
     const manager: any = {
       findOneBy: jest.fn(async entity => entity === User ? user : local),
+      countBy: jest.fn(async () => 0),
       update: jest.fn(async (entity, id, patch) => Object.assign(entity === User ? user : local, patch)),
       transaction: jest.fn(async cb => cb(manager)),
     };
@@ -27,6 +29,35 @@ describe('Manual grant after an abandoned PayPal checkout', () => {
     expect(local.status).toBe('CANCELLED');
     expect(grant.mock.invocationCallOrder[0]).toBeLessThan(runner.query.mock.invocationCallOrder[1]);
     expect(runner.release).toHaveBeenCalled();
+  });
+  it('allows a separate gift on a read 404 without declaring the PayPal attempt cancelled', async () => {
+    const { service, api, user, local, runner } = setup();
+    api.request.mockRejectedValue(new PaypalApiError('Not found', 404, '/v1/billing/subscriptions/I-TEST', 'GET'));
+    const grant = jest.fn(async () => 'gift');
+    expect(await service.run(1, grant)).toBe('gift');
+    expect(local.status).toBe('APPROVAL_PENDING');
+    expect(user.paypalRenewalActive).toBe(true);
+    expect(user.paypalSubscriptionId).toBe('I-TEST');
+    expect(runner.manager.update).not.toHaveBeenCalled();
+    expect(api.request).toHaveBeenCalledTimes(1);
+  });
+  it.each([
+    [404, '/v1/oauth2/token', 'POST'],
+    [404, '/v1/billing/subscriptions/I-TEST/cancel', 'POST'],
+    [403, '/v1/billing/subscriptions/I-TEST', 'GET'],
+    [500, '/v1/billing/subscriptions/I-TEST', 'GET'],
+  ])('does not bypass unrelated provider errors (%s %s)', async (status, path, method) => {
+    const { service, api, grant } = setup();
+    api.request.mockRejectedValue(new PaypalApiError('Error', status as number, path as string, method as string));
+    await expect(service.run(1, grant)).rejects.toThrow();
+    expect(grant).not.toHaveBeenCalled();
+  });
+  it('refuses a read 404 when any payment has been recorded', async () => {
+    const { service, api, grant, runner } = setup();
+    runner.manager.countBy.mockResolvedValue(1);
+    api.request.mockRejectedValue(new PaypalApiError('Not found', 404, '/v1/billing/subscriptions/I-TEST', 'GET'));
+    await expect(service.run(1, grant)).rejects.toThrow();
+    expect(grant).not.toHaveBeenCalled();
   });
   it.each(['ACTIVE', 'APPROVED', 'SUSPENDED'])('does not cancel or override a remote %s subscription', async status => {
     const { service, grant, api, user } = setup(status);

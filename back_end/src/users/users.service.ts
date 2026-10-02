@@ -628,11 +628,19 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
   }
 
   async adminGrantSubscription(
+    id: number,
+    data: { plan: Exclude<SubscriptionPlan, 'CLASSIC'>; duration: '7d' | '14d' | '1m' | '3m' | '6m' | '1y' | 'lifetime' },
+  ) {
+    return this.applyManualSubscription(id, data);
+  }
+
+  private async applyManualSubscription(
   id: number,
   data: {
     plan: Exclude<SubscriptionPlan, 'CLASSIC'>;
     duration: '7d' | '14d' | '1m' | '3m' | '6m' | '1y' | 'lifetime';
   },
+  paypalChecked = false,
 ) {
   if (!Number.isFinite(id)) {
     throw new BadRequestException('Id invalide');
@@ -654,8 +662,8 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
   if (!['7d', '14d', '1m', '3m', '6m', '1y', 'lifetime'].includes(data.duration)) {
     throw new BadRequestException('Durée invalide');
   }
-  if (user.paypalRenewalActive) {
-    return this.paypalManualGrant.run(id, () => this.adminGrantSubscription(id, data));
+  if (user.paypalRenewalActive && !paypalChecked) {
+    return this.paypalManualGrant.run(id, () => this.applyManualSubscription(id, data, true));
   }
 
   let subscriptionEndsAt: Date | null = null;

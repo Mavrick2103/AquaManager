@@ -187,7 +187,7 @@
                 Ouvrir le portail de gestion
               </button>
               <button
-                *ngIf="paypalState?.status === 'APPROVAL_PENDING'"
+                *ngIf="paypalState?.status === 'APPROVAL_PENDING' && !isSubscribedActive"
                 mat-flat-button
                 color="primary"
                 [disabled]="billingLoading || !paypalState?.ready"

@@ -127,6 +127,18 @@ describe('UsersService (unit)', () => {
     await expect(service.adminGrantSubscription(1, { plan: 'PREMIUM', duration: '1m' })).rejects.toThrow('PayPal actif');
     expect(repo.update).not.toHaveBeenCalled();
   });
+  it('keeps the unresolved PayPal reference protected while granting an independent offer', async () => {
+    const user = { id: 1, paypalRenewalActive: true, paypalSubscriptionId: 'I-TEST', billingProvider: 'paypal', subscriptionStatus: 'incomplete', subscriptionEndsAt: null } as User;
+    repo.findOne.mockResolvedValue(user);
+    jest.spyOn(service, 'adminGetOne').mockResolvedValue({ id: 1 } as any);
+    (service as any).paypalManualGrant.run.mockImplementation(async (_id: number, grant: () => Promise<any>) => grant());
+    await service.adminGrantSubscription(1, { plan: 'PREMIUM', duration: '1m' });
+    expect(repo.update).toHaveBeenCalledTimes(1);
+    const update = repo.update.mock.calls[0][1];
+    expect(update).toMatchObject({ subscriptionPlan: 'PREMIUM', billingProvider: null });
+    expect(update).not.toHaveProperty('paypalRenewalActive');
+    expect(update).not.toHaveProperty('paypalSubscriptionId');
+  });
 
   it('does not invalidate an account that was activated concurrently', async () => {
     repo.update.mockResolvedValue({ affected: 0 } as any);

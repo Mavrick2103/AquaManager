@@ -67,8 +67,8 @@ export class AdminSubscriptionsComponent implements OnInit {
       this.detail.set(await firstValueFrom(this.http.post<Detail>(`${this.base}/${selected.id}/refresh`, {})));
       this.notice.set('Vérification terminée. Les droits reflètent les paiements confirmés.');
       await this.load();
-    } catch {
-      this.error.set('Vérification impossible. La tentative est enregistrée dans l’historique.');
+    } catch (error: any) {
+      this.error.set(typeof error?.error?.message === 'string' ? error.error.message : 'Vérification impossible. La tentative est enregistrée dans l’historique.');
       try { this.detail.set(await firstValueFrom(this.http.get<Detail>(`${this.base}/${selected.id}`))); } catch { /* keep last visible state */ }
     } finally { this.refreshing.set(false); }
   }

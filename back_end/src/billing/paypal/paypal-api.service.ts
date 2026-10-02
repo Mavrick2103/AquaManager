@@ -1,6 +1,11 @@
 import { BadGatewayException, BadRequestException, Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+// Controlled messages only: never forward provider response bodies or credentials.
+export class PaypalApiError extends BadGatewayException {
+  constructor(message: string, readonly upstreamStatus?: number, readonly requestPath?: string, readonly requestMethod?: string) { super(message); }
+}
+
 @Injectable()
 export class PaypalApiService {
   private token?: { value: string; expires: number };
@@ -64,12 +69,21 @@ export class PaypalApiService {
       if (!res.ok) {
         if (res.status === 401) this.token = undefined;
         // Never include response bodies, tokens or credentials in errors/logs.
-        throw new BadGatewayException(`PayPal temporairement indisponible (HTTP ${res.status}).`);
+        const operation = path === '/v1/oauth2/token' ? 'authentification'
+          : path.endsWith('/cancel') ? 'annulation de la tentative'
+          : path.includes('/transactions?') ? 'lecture des paiements'
+          : path.startsWith('/v1/billing/subscriptions/') ? 'lecture de la souscription' : 'requête';
+        const detail = res.status === 401 ? 'Identifiants PayPal refusés ou session expirée.'
+          : res.status === 403 ? 'Accès refusé par PayPal.'
+          : res.status === 404 ? 'Ressource introuvable avec les identifiants et l’environnement PayPal configurés.'
+          : res.status === 422 ? 'Opération refusée pour l’état actuel de la souscription.'
+          : 'Réessaie dans quelques instants.';
+        throw new PaypalApiError(`PayPal : échec de ${operation} (HTTP ${res.status}). ${detail}`, res.status, path, init.method ?? 'GET');
       }
       return res.status === 204 ? {} : await res.json();
     } catch (error) {
       if (error instanceof BadGatewayException) throw error;
-      throw new BadGatewayException('Impossible de joindre PayPal. Réessaie dans quelques instants.');
+      throw new PaypalApiError('Impossible de joindre PayPal. Réessaie dans quelques instants.');
     }
   }
   async verifyWebhook(headers: Record<string, any>, event: any): Promise<void> {

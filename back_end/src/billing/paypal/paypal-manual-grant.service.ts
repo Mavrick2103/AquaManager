@@ -1,8 +1,8 @@
 import { ConflictException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { User } from '../../users/user.entity';
-import { PaypalApiService } from './paypal-api.service';
-import { PaypalSubscription } from './paypal-subscription.entity';
+import { PaypalApiService, PaypalApiError } from './paypal-api.service';
+import { PaypalSubscription, PaypalPayment } from './paypal-subscription.entity';
 import { adminSubscriptionStatus } from './paypal-admin-status';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class PaypalManualGrantService {
       if (!user) throw new NotFoundException('Utilisateur introuvable.');
       if (user.paypalRenewalActive) {
         const local = user.paypalSubscriptionId && await runner.manager.findOneBy(PaypalSubscription, { userId, paypalId: user.paypalSubscriptionId });
-        if (!local || user.billingProvider !== 'paypal' || local.environment !== this.api.environment
+        if (!local || (user.billingProvider != null && user.billingProvider !== 'paypal') || local.environment !== this.api.environment
           || adminSubscriptionStatus(local) !== 'ABANDONED') {
           throw new ConflictException('Résilie d’abord l’abonnement PayPal pour attribuer une offre manuellement.');
         }
@@ -31,7 +31,19 @@ export class PaypalManualGrantService {
             throw new ConflictException('La tentative PayPal ne correspond pas à ce compte.');
           }
         };
-        let remote = await this.api.request(path);
+        let remote: any;
+        try {
+          remote = await this.api.request(path);
+        } catch (error) {
+          // An inaccessible unpaid attempt must not prevent a separate gift.
+          // Keep its ID, status and renewal protection: 404 is NOT proof of cancellation.
+          if (error instanceof PaypalApiError && error.upstreamStatus === 404
+            && error.requestPath === path && error.requestMethod === 'GET'
+            && await runner.manager.countBy(PaypalPayment, { subscriptionKey: local.id }) === 0) {
+            return await grant();
+          }
+          throw error;
+        }
         check(remote);
         if (remote.status === 'APPROVAL_PENDING') {
           await this.api.request(`${path}/cancel`, 'POST', { reason: 'Tentative non validée après 24 h, remplacée par une offre administrateur.' });

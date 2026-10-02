@@ -70,6 +70,26 @@ describe('PayPal subscription lifecycle (no real network/payments)', () => {
   });
   afterEach(() => jest.useRealTimers());
 
+  it('preserves a manual gift if an unresolved attempt later becomes active, and still allows cancellation', async () => {
+    Object.assign(user, { billingProvider: null, subscriptionPlan: 'PREMIUM', subscriptionStatus: 'active', subscriptionEndsAt: new Date('2027-01-01') });
+    await notify();
+    expect(user.billingProvider).toBeNull();
+    expect(user.subscriptionEndsAt).toEqual(new Date('2027-01-01'));
+    expect(await service.status(1)).toMatchObject({ provider: 'paypal', canCancel: true, premium: true });
+    await service.cancel(1);
+    expect(user.paypalRenewalActive).toBe(false);
+    expect(user.subscriptionPlan).toBe('PREMIUM');
+    expect(user.subscriptionEndsAt).toEqual(new Date('2027-01-01'));
+  });
+
+  it('does not reopen an old approval link while a manual gift is active', async () => {
+    Object.assign(user, { billingProvider: null, subscriptionPlan: 'PREMIUM', subscriptionStatus: 'active', subscriptionEndsAt: new Date('2027-01-01') });
+    remote.status = 'APPROVAL_PENDING';
+    local.approvalUrl = 'https://www.sandbox.paypal.com/approve';
+    await expect(service.checkout(1)).rejects.toThrow('déjà');
+    expect(api.request).not.toHaveBeenCalled();
+  });
+
   it('activates only from a verified, correctly priced completed payment', async () => {
     await notify();
     expect(api.verifyWebhook).toHaveBeenCalled();
