@@ -1,172 +1,147 @@
-<a class="brand" routerLink="/dashboard" aria-label="Retour au tableau de bord">
-  <img
-    src="/Logo_AquaManger.png"
-    alt="AquaManager"
-    class="logo"
-    width="280"
-    height="70"
-    loading="lazy"
-    decoding="async"
-  />
-</a>
-
-<mat-card class="settings-card" role="main" data-tour="profile-content">
-  <header class="settings-header" aria-labelledby="page-title">
-    <div class="titles">
-      <h1 id="page-title">Paramètres & Profil</h1>
-      <p class="subtitle">Personnalisez votre expérience et gérez vos informations.</p>
-    </div>
-
-    <div class="quick-actions">
-      <span class="role-pill" *ngIf="isAdmin">Admin</span>
-      <span class="role-pill -editor" *ngIf="!isAdmin && isEditorOnly">Éditeur</span>
-      <span class="role-pill -user" *ngIf="!isAdmin && !isEditorOnly">User</span>
-
-      <button mat-stroked-button color="warn" (click)="logout()" aria-label="Se déconnecter">
-        <mat-icon>logout</mat-icon>
-        Déconnexion
-      </button>
-    </div>
+<div class="profile-page">
+  <header class="page-topbar">
+    <a class="brand" routerLink="/dashboard" aria-label="Retour au tableau de bord"
+      ><img src="/Logo_AquaManger.png" alt="AquaManager" width="156" height="54"
+    /></a>
+    <a mat-stroked-button routerLink="/dashboard"
+      ><mat-icon>arrow_back</mat-icon>Retour à mon espace</a
+    >
   </header>
-
-  <app-satisfaction [manual]="true" />
-  <mat-divider class="header-divider"></mat-divider>
-
-  <mat-tab-group class="tabs-compact" animationDuration="150ms" [(selectedIndex)]="selectedTabIndex">
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon>person</mat-icon><span>Profil</span>
-      </ng-template>
-      
-
-      <section class="tab-pane">
-        <header class="profile-overview" *ngIf="me as currentUser">
-          <div class="profile-overview__avatar">
-            {{ (currentUser.fullName || currentUser.email || 'U').charAt(0).toUpperCase() }}
-          </div>
-          <div class="profile-overview__identity">
-            <span>Mon compte</span>
-            <h2>{{ currentUser.fullName || 'Utilisateur AquaManager' }}</h2>
-            <p>{{ currentUser.email }}</p>
-          </div>
-          <div class="profile-overview__badges">
-            <span><mat-icon>shield</mat-icon>{{ isAdmin ? 'Administrateur' : isEditorOnly ? 'Éditeur' : 'Utilisateur' }}</span>
-            <span><mat-icon>workspace_premium</mat-icon>{{ subscriptionLabel }}</span>
+  <header class="page-heading">
+    <span class="eyebrow">VOTRE ESPACE PERSONNEL</span>
+    <h1>Profil &amp; paramètres</h1>
+    <p>Votre compte, votre formule et vos préférences, au même endroit.</p>
+  </header>
+  <p class="load-state" role="status" *ngIf="accountLoading">Chargement de votre compte…</p>
+  <div class="load-state" role="alert" *ngIf="accountError">
+    <p>{{ accountError }}</p>
+    <button mat-stroked-button (click)="ngOnInit()">Réessayer</button>
+  </div>
+  <div class="settings-layout" *ngIf="me && !accountError" data-tour="profile-content">
+    <aside class="settings-sidebar" aria-label="Paramètres du compte">
+      <div class="account-summary">
+        <div class="avatar">{{ (me.fullName || me.email || 'U').charAt(0).toUpperCase() }}</div>
+        <strong>{{ me.fullName || 'Mon compte' }}</strong
+        ><span class="account-email">{{ me.email }}</span
+        ><span class="plan-badge">{{ subscriptionLabel }}</span>
+      </div>
+      <nav aria-label="Rubriques des paramètres">
+        <button
+          *ngFor="let item of sections"
+          type="button"
+          [class.active]="selectedTabIndex === item.index"
+          [attr.aria-current]="selectedTabIndex === item.index ? 'page' : null"
+          (click)="selectSection(item.index)"
+        >
+          <mat-icon>{{ item.icon }}</mat-icon
+          ><span>{{ item.label }}</span
+          ><mat-icon class="nav-arrow">chevron_right</mat-icon>
+        </button>
+      </nav>
+      <div class="team-access" *ngIf="isAdmin || isEditorOnly">
+        <span class="eyebrow">ESPACE {{ isAdmin ? 'ADMINISTRATEUR' : 'ÉDITEUR' }}</span
+        ><a *ngIf="isAdmin" routerLink="/admin/metrics"
+          ><mat-icon>admin_panel_settings</mat-icon>Ouvrir l’administration<mat-icon
+            >north_east</mat-icon
+          ></a
+        ><ng-container *ngIf="isEditorOnly"
+          ><a routerLink="/admin/articles">Articles &amp; conseils</a
+          ><a routerLink="/admin/species/fish">Fiches poissons</a
+          ><a routerLink="/admin/species/plant">Fiches plantes</a></ng-container
+        >
+      </div>
+      <button class="logout-button" type="button" (click)="logout()">
+        <mat-icon>logout</mat-icon>Se déconnecter
+      </button>
+    </aside>
+    <main class="settings-content">
+      <section class="tab-pane" *ngIf="selectedTabIndex === 0">
+        <header class="section-heading">
+          <div class="heading-icon"><mat-icon>person_outline</mat-icon></div>
+          <div>
+            <h2>Informations personnelles</h2>
+            <p>Modifiez les informations associées à votre compte.</p>
           </div>
         </header>
-
-        <form [formGroup]="form" class="profile-grid profile-editor" aria-describedby="profil-help">
-          <p id="profil-help" class="visually-hidden">
-            Modifiez vos informations puis cliquez sur Enregistrer.
-          </p>
-
-          <div class="profile-editor__heading">
-            <div><mat-icon>person</mat-icon></div>
-            <span><strong>Informations personnelles</strong><small>Modifiez le nom et l’adresse email associés à votre compte.</small></span>
+        <form class="settings-panel" [formGroup]="form" (ngSubmit)="saveAll()">
+          <div class="panel-title">
+            <h3>Votre identité</h3>
+            <p>Ce nom vous identifie dans AquaManager.</p>
           </div>
-
-          <div class="row">
-            <label class="label" for="fullName">
-              <mat-icon>badge</mat-icon> Nom complet
-            </label>
-            <mat-form-field appearance="fill" class="field">
-              <input id="fullName" matInput formControlName="fullName" maxlength="80" autocomplete="name" />
-              <mat-hint align="end">{{ fullNameCtrl.value?.length || 0 }} / 80</mat-hint>
-            </mat-form-field>
+          <mat-form-field appearance="outline"
+            ><mat-label>Nom complet</mat-label
+            ><input
+              matInput
+              id="fullName"
+              formControlName="fullName"
+              maxlength="60"
+              autocomplete="name"
+            /><mat-hint align="end">{{ fullNameCtrl.value?.length || 0 }} / 60</mat-hint
+            ><mat-error>Indiquez un nom de 2 à 60 caractères.</mat-error></mat-form-field
+          >
+          <div class="panel-title section-divider">
+            <h3>Adresse email</h3>
+            <p>Utilisée pour vous connecter et recevoir vos notifications.</p>
           </div>
-
-          <div class="row">
-            <label class="label" for="email">
-              <mat-icon>mail</mat-icon> Email
-            </label>
-            <mat-form-field appearance="fill" class="field">
-              <input id="email" matInput type="email" formControlName="email" maxlength="160" autocomplete="email" />
-              <mat-error *ngIf="emailCtrl.invalid && emailCtrl.touched">Email invalide</mat-error>
-            </mat-form-field>
+          <mat-form-field appearance="outline"
+            ><mat-label>Adresse email</mat-label
+            ><input
+              matInput
+              id="email"
+              type="email"
+              formControlName="email"
+              maxlength="160"
+              autocomplete="email"
+            /><mat-error>Email invalide</mat-error></mat-form-field
+          >
+          <div class="email-confirmation" *ngIf="emailChanged">
+            <p>
+              <mat-icon>verified_user</mat-icon>Confirmez ce changement avec votre mot de passe. Un
+              lien de validation sera envoyé à la nouvelle adresse.
+            </p>
+            <mat-form-field appearance="outline"
+              ><mat-label>Mot de passe actuel</mat-label
+              ><input
+                matInput
+                type="password"
+                formControlName="currentPassword"
+                autocomplete="current-password"
+            /></mat-form-field>
           </div>
-
-          <div class="row multi">
-            <div class="profile-editor__heading profile-editor__heading--password">
-              <div><mat-icon>lock</mat-icon></div>
-              <span><strong>Sécurité du compte</strong><small>Votre mot de passe actuel est requis pour changer d’adresse e-mail ou de mot de passe.</small></span>
-            </div>
-            <div class="label">
-              <mat-icon>password</mat-icon> Mot de passe
-            </div>
-            <div class="field grid-2">
-              <mat-form-field appearance="fill">
-                <mat-label>Mot de passe actuel (requis pour changer d’e-mail)</mat-label>
-                <input
-                  matInput
-                  type="password"
-                  formControlName="currentPassword"
-                  autocomplete="new-password"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                />
-              </mat-form-field>
-
-              <mat-form-field appearance="fill">
-                <mat-label>Nouveau mot de passe</mat-label>
-                <input
-                  matInput
-                  type="password"
-                  formControlName="newPassword"
-                  minlength="8"
-                  autocomplete="new-password"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                />
-                <mat-hint>8 caractères minimum, dont un caractère spécial</mat-hint>
-                <mat-error>Utilisez au moins 8 caractères, dont un caractère spécial.</mat-error>
-              </mat-form-field>
-            </div>
-          </div>
-
-          <div class="actions">
-            <button mat-button type="button" (click)="reset()" [disabled]="loading">
-              <mat-icon>refresh</mat-icon> Annuler
-            </button>
-
-            <button
+          <div class="form-actions">
+            <button mat-button type="button" (click)="reset()" [disabled]="loading || !hasChanges">
+              Annuler</button
+            ><button
               mat-flat-button
               color="primary"
-              type="button"
-              (click)="saveAll()"
-              [disabled]="loading || form.invalid || !hasChanges"
+              type="submit"
+              [disabled]="
+                loading || form.invalid || !hasChanges || (emailChanged && !currPwdCtrl.value)
+              "
             >
-              <mat-icon *ngIf="!loading">save</mat-icon>
-              <mat-progress-spinner *ngIf="loading" mode="indeterminate" diameter="18"></mat-progress-spinner>
-              Enregistrer
+              <mat-icon>save</mat-icon
+              >{{ loading ? 'Enregistrement…' : 'Enregistrer les modifications' }}
             </button>
           </div>
         </form>
-
-        <mat-card class="danger-card" aria-live="polite">
-          <h2>Zone dangereuse</h2>
+        <div class="context-note">
+          <mat-icon>lock_outline</mat-icon>
           <p>
-            La suppression de votre compte est <strong>définitive</strong>. Toutes vos données associées seront supprimées.
+            Pour changer votre mot de passe ou supprimer votre compte, rendez-vous dans
+            <button type="button" (click)="selectSection(3)">Sécurité</button>.
           </p>
-          <button mat-flat-button color="warn" (click)="deleteAccount()">
-            <mat-icon>delete_forever</mat-icon>
-            Supprimer mon compte
-          </button>
-        </mat-card>
+        </div>
       </section>
-    </mat-tab>
-
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon>workspace_premium</mat-icon><span>Abonnement</span>
-      </ng-template>
-
-      <section class="tab-pane subscription-management">
+      <section class="tab-pane subscription-management" *ngIf="selectedTabIndex === 1">
         <header class="subscription-management__hero">
           <div class="subscription-management__icon"><mat-icon>workspace_premium</mat-icon></div>
           <div>
             <span>Mon offre AquaManager</span>
             <h2>Gérer mon abonnement</h2>
-            <p>Consultez votre formule actuelle et accédez aux options de gestion de votre abonnement.</p>
+            <p>
+              Consultez votre formule actuelle et accédez aux options de gestion de votre
+              abonnement.
+            </p>
           </div>
         </header>
 
@@ -187,62 +162,180 @@
             </div>
 
             <div class="sub-actions">
-              <button *ngIf="showUpgradeButton && !paypalState?.canCancel && paypalState?.status !== 'APPROVAL_PENDING'" mat-flat-button color="primary" [disabled]="billingLoading || !paypalState?.ready" (click)="goPremium()">
+              <button
+                *ngIf="
+                  showUpgradeButton &&
+                  !paypalState?.canCancel &&
+                  paypalState?.status !== 'APPROVAL_PENDING'
+                "
+                mat-flat-button
+                color="primary"
+                [disabled]="billingLoading || !paypalState?.ready"
+                (click)="goPremium()"
+              >
                 <mat-icon>lock_open</mat-icon>
                 {{ billingLoading ? 'Redirection…' : 'Premium — 3,99 €/mois avec PayPal' }}
               </button>
-              <button *ngIf="isSubscribedActive && paypalState?.provider === 'stripe'" mat-stroked-button color="primary" [disabled]="billingLoading" (click)="manageSubscription()">
+              <button
+                *ngIf="isSubscribedActive && paypalState?.provider === 'stripe'"
+                mat-stroked-button
+                color="primary"
+                [disabled]="billingLoading"
+                (click)="manageSubscription()"
+              >
                 <mat-icon>manage_accounts</mat-icon>
                 Ouvrir le portail de gestion
               </button>
-              <button *ngIf="paypalState?.status === 'APPROVAL_PENDING'" mat-flat-button color="primary" [disabled]="billingLoading || !paypalState?.ready" (click)="goPremium()">Finaliser mon abonnement — 3,99 €/mois</button>
-              <button *ngIf="paypalState?.canCancel" mat-stroked-button color="warn" [disabled]="billingLoading" (click)="cancelSubscription()">Arrêter le renouvellement PayPal</button>
+              <button
+                *ngIf="paypalState?.status === 'APPROVAL_PENDING'"
+                mat-flat-button
+                color="primary"
+                [disabled]="billingLoading || !paypalState?.ready"
+                (click)="goPremium()"
+              >
+                Finaliser mon abonnement — 3,99 €/mois
+              </button>
+              <button
+                *ngIf="paypalState?.canCancel"
+                mat-stroked-button
+                color="warn"
+                [disabled]="billingLoading"
+                (click)="cancelSubscription()"
+              >
+                Arrêter le renouvellement PayPal
+              </button>
             </div>
           </div>
 
           <div class="subscription-management__details">
-            <div><span>Statut</span><strong>{{ isSubscribedActive ? 'Actif' : 'Gratuit' }}</strong></div>
-            <div><span>Formule</span><strong>{{ plan }}</strong></div>
-            <div><span>Accès jusqu’au</span><strong>{{ endsAtLabel }}</strong></div>
-            <div *ngIf="paypalState?.provider === 'paypal'"><span>Renouvellement PayPal</span><strong>{{ paypalState?.status === 'ACTIVE' ? 'Automatique' : paypalState?.status === 'CANCELLED' ? 'Résilié' : paypalState?.status === 'SUSPENDED' ? 'Suspendu' : 'En attente / arrêté' }}</strong></div>
+            <div>
+              <span>Statut</span><strong>{{ isSubscribedActive ? 'Actif' : 'Gratuit' }}</strong>
+            </div>
+            <div>
+              <span>Formule</span><strong>{{ plan }}</strong>
+            </div>
+            <div>
+              <span>Accès jusqu’au</span><strong>{{ endsAtLabel }}</strong>
+            </div>
+            <div *ngIf="paypalState?.provider === 'paypal'">
+              <span>Renouvellement PayPal</span
+              ><strong>{{
+                paypalState?.status === 'ACTIVE'
+                  ? 'Automatique'
+                  : paypalState?.status === 'CANCELLED'
+                    ? 'Résilié'
+                    : paypalState?.status === 'SUSPENDED'
+                      ? 'Suspendu'
+                      : 'En attente / arrêté'
+              }}</strong>
+            </div>
           </div>
 
           <div class="sub-foot" *ngIf="isSubscribedActive && paypalState?.provider === 'stripe'">
             <mat-icon>info</mat-icon>
-            <span>Le paiement, la facturation et la résiliation sont accessibles depuis le portail sécurisé Stripe.</span>
+            <span
+              >Le paiement, la facturation et la résiliation sont accessibles depuis le portail
+              sécurisé Stripe.</span
+            >
           </div>
-          <p *ngIf="paypalState?.provider === 'paypal'">Une résiliation arrête les prochains paiements. Ton accès reste disponible jusqu’à la fin de la période payée, sauf remboursement.</p>
-          <p>À la fin de Premium, seuls vos deux premiers aquariums créés restent accessibles. Les autres sont masqués et conservés pendant un an, puis supprimés définitivement avec leurs données sans réabonnement. Un réabonnement les réactive ; une nouvelle expiration de Premium démarre un nouveau délai d’un an.</p>
-          <div class="sub-foot" *ngIf="showUpgradeButton">
-            <mat-icon>auto_awesome</mat-icon>
-            <span><strong>Offre de lancement Premium : 3,99 € par mois.</strong> Prix de base : <s>7,99 € par mois</s>. Jusqu’à 5 aquariums, 30 analyses IA et 5 analyses photo par mois, et des objectifs d’eau personnalisés. L’IA s’appuie sur les caractéristiques de votre aquarium et ses 30 dernières mesures pour dresser un bilan et proposer des tâches adaptées. L’analyse prend aussi en compte jusqu’à 50 tâches passées, en distinguant les tâches réalisées de celles en attente. Renouvellement automatique, résiliable depuis ce profil. <a routerLink="/terms">Conditions d’utilisation</a>.</span>
-          </div>
-          <p *ngIf="showUpgradeButton && paypalState && !paypalState.ready">Les nouvelles souscriptions PayPal ne sont pas encore ouvertes.</p>
+          <p *ngIf="paypalState?.provider === 'paypal'">
+            Une résiliation arrête les prochains paiements. Ton accès reste disponible jusqu’à la
+            fin de la période payée, sauf remboursement.
+          </p>
+          <details class="retention-details">
+            <summary>Que deviennent mes aquariums après Premium ?</summary>
+            <p>
+              À la fin de Premium, seuls vos deux premiers aquariums créés restent accessibles. Les
+              autres sont masqués et conservés pendant un an, puis supprimés définitivement avec
+              leurs données sans réabonnement. Un réabonnement les réactive ; une nouvelle
+              expiration de Premium démarre un nouveau délai d’un an.
+            </p>
+          </details>
+          <section
+            class="premium-offer"
+            *ngIf="showUpgradeButton"
+            aria-label="Offre de lancement Premium"
+          >
+            <div class="offer-heading">
+              <div>
+                <span class="eyebrow">OFFRE DE LANCEMENT</span>
+                <h3>Allez plus loin avec Premium</h3>
+              </div>
+              <div class="offer-price">
+                <s>7,99 €</s><strong>3,99 €</strong><small>par mois au lancement</small>
+              </div>
+            </div>
+            <ul>
+              <li>
+                <mat-icon>water_drop</mat-icon
+                ><span
+                  ><strong>Jusqu’à 5 aquariums</strong
+                  ><small>Rassemblez le suivi de vos différents bacs.</small></span
+                >
+              </li>
+              <li>
+                <mat-icon>auto_awesome</mat-icon
+                ><span
+                  ><strong>30 analyses IA par mois</strong
+                  ><small>Un bilan et des tâches adaptés à votre aquarium.</small></span
+                >
+              </li>
+              <li>
+                <mat-icon>photo_camera</mat-icon
+                ><span
+                  ><strong>5 analyses photo par mois</strong
+                  ><small>Obtenez un avis sur ce que vous observez.</small></span
+                >
+              </li>
+              <li>
+                <mat-icon>tune</mat-icon
+                ><span
+                  ><strong>Objectifs d’eau personnalisés</strong
+                  ><small>Adaptez les plages de référence de vos paramètres.</small></span
+                >
+              </li>
+            </ul>
+            <p>
+              Une IA connectée à votre aquarium : ses caractéristiques, ses 30 dernières mesures et
+              jusqu’à 50 tâches passées, réalisées ou en attente.
+            </p>
+            <p class="offer-terms">
+              Renouvellement mensuel automatique, résiliable depuis cette page.
+              <a routerLink="/terms">Conditions d’utilisation</a>.
+            </p>
+          </section>
+          <p *ngIf="showUpgradeButton && paypalState && !paypalState.ready">
+            Les nouvelles souscriptions PayPal ne sont pas encore ouvertes.
+          </p>
         </mat-card>
       </section>
-    </mat-tab>
-
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon>notifications</mat-icon><span>Notifications</span>
-      </ng-template>
-
-      <section class="tab-pane notification-settings">
+      <section class="tab-pane notification-settings" *ngIf="selectedTabIndex === 2">
         <header class="notification-settings__hero">
-          <div class="notification-settings__hero-icon"><mat-icon>notifications_active</mat-icon></div>
+          <div class="notification-settings__hero-icon">
+            <mat-icon>notifications_active</mat-icon>
+          </div>
           <div>
             <span>Vos préférences</span>
             <h2>Choisissez les notifications utiles</h2>
-            <p>Vous pouvez modifier votre choix à tout moment. Aucune notification n’est envoyée lorsque le consentement général est désactivé.</p>
+            <p>
+              Choisissez les emails que vous souhaitez recevoir, puis enregistrez vos préférences.
+            </p>
           </div>
         </header>
 
-        <div class="notification-consent" [class.notification-consent--active]="notificationSettings.notificationsEnabled">
+        <div
+          class="notification-consent"
+          [class.notification-consent--active]="notificationSettings.notificationsEnabled"
+        >
           <div>
-            <mat-icon>{{ notificationSettings.notificationsEnabled ? 'notifications_active' : 'notifications_off' }}</mat-icon>
+            <mat-icon>{{
+              notificationSettings.notificationsEnabled
+                ? 'notifications_active'
+                : 'notifications_off'
+            }}</mat-icon>
             <div>
               <strong>J’accepte de recevoir des notifications</strong>
-              <span>Active ou coupe immédiatement toutes les notifications AquaManager.</span>
+              <span>Activez ou désactivez vos notifications, puis enregistrez votre choix.</span>
             </div>
           </div>
           <mat-slide-toggle
@@ -252,39 +345,79 @@
           ></mat-slide-toggle>
         </div>
 
-        <div class="notification-options" [class.notification-options--disabled]="!notificationSettings.notificationsEnabled">
+        <div
+          class="notification-options"
+          [class.notification-options--disabled]="!notificationSettings.notificationsEnabled"
+        >
           <div class="notification-settings__section-title">
             <span>Types de notifications</span>
             <small>Sélectionnez uniquement ce qui vous intéresse.</small>
           </div>
 
           <article class="notification-option">
-            <div class="notification-option__icon notification-option__icon--tasks"><mat-icon>event_repeat</mat-icon></div>
-            <div><strong>Rappels d’entretien</strong><p>Un email à partir de 9 h (heure de Paris) récapitule les tâches du jour restant à faire. Les tâches ajoutées après l’envoi ne sont pas incluses.</p></div>
-            <mat-slide-toggle [(ngModel)]="notificationSettings.taskReminders" [disabled]="!notificationSettings.notificationsEnabled"></mat-slide-toggle>
+            <div class="notification-option__icon notification-option__icon--tasks">
+              <mat-icon>event_repeat</mat-icon>
+            </div>
+            <div>
+              <strong>Rappels d’entretien</strong>
+              <p>
+                Un email à partir de 9 h (heure de Paris) récapitule les tâches du jour restant à
+                faire. Les tâches ajoutées après l’envoi ne sont pas incluses.
+              </p>
+            </div>
+            <mat-slide-toggle
+              aria-label="Rappels d’entretien"
+              [(ngModel)]="notificationSettings.taskReminders"
+              [disabled]="!notificationSettings.notificationsEnabled"
+            ></mat-slide-toggle>
           </article>
 
           <article class="notification-option">
-            <div class="notification-option__icon notification-option__icon--automatic"><mat-icon>monitor_heart</mat-icon></div>
-            <div><strong>Notifications automatiques</strong><p>Alertes utiles liées aux mesures, aux paramètres du bac et à son suivi.</p></div>
-            <mat-slide-toggle [(ngModel)]="notificationSettings.automaticNotifications" [disabled]="!notificationSettings.notificationsEnabled"></mat-slide-toggle>
+            <div class="notification-option__icon notification-option__icon--automatic">
+              <mat-icon>monitor_heart</mat-icon>
+            </div>
+            <div>
+              <strong>Notifications automatiques</strong>
+              <p>Alertes utiles liées aux mesures, aux paramètres du bac et à son suivi.</p>
+            </div>
+            <mat-slide-toggle
+              aria-label="Notifications automatiques"
+              [(ngModel)]="notificationSettings.automaticNotifications"
+              [disabled]="!notificationSettings.notificationsEnabled"
+            ></mat-slide-toggle>
           </article>
 
           <article class="notification-option">
-            <div class="notification-option__icon notification-option__icon--news"><mat-icon>campaign</mat-icon></div>
-            <div><strong>Nouveautés et mises à jour</strong><p>Nouvelles fonctionnalités, améliorations importantes et actualités AquaManager.</p></div>
-            <mat-slide-toggle [(ngModel)]="notificationSettings.newsAndUpdates" [disabled]="!notificationSettings.notificationsEnabled"></mat-slide-toggle>
+            <div class="notification-option__icon notification-option__icon--news">
+              <mat-icon>campaign</mat-icon>
+            </div>
+            <div>
+              <strong>Nouveautés et mises à jour</strong>
+              <p>Nouvelles fonctionnalités, améliorations importantes et actualités AquaManager.</p>
+            </div>
+            <mat-slide-toggle
+              aria-label="Nouveautés et mises à jour"
+              [(ngModel)]="notificationSettings.newsAndUpdates"
+              [disabled]="!notificationSettings.notificationsEnabled"
+            ></mat-slide-toggle>
           </article>
 
-          <div class="notification-settings__section-title notification-settings__section-title--channels">
+          <div
+            class="notification-settings__section-title notification-settings__section-title--channels"
+          >
             <span>Réception par email</span>
-            <small>Canal obligatoire tant qu’aucun autre moyen de contact n’est disponible.</small>
+            <small
+              >Les notifications sélectionnées sont envoyées à l’adresse de votre compte.</small
+            >
           </div>
 
           <div class="notification-channels">
             <label class="notification-channel">
               <mat-icon>mail</mat-icon>
-              <span><strong>Par email — obligatoire</strong><small *ngIf="me">{{ me.email }}</small></span>
+              <span
+                ><strong>À votre adresse email</strong
+                ><small *ngIf="me">{{ me.email }}</small></span
+              >
               <mat-slide-toggle
                 [(ngModel)]="notificationSettings.emailNotifications"
                 [disabled]="true"
@@ -295,135 +428,121 @@
         </div>
 
         <div class="notification-settings__actions">
-          <button mat-flat-button color="primary" type="button" [disabled]="notificationsLoading" (click)="saveNotificationSettings()">
-            <mat-progress-spinner *ngIf="notificationsLoading" mode="indeterminate" diameter="18"></mat-progress-spinner>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="notificationsLoading"
+            (click)="saveNotificationSettings()"
+          >
+            <mat-progress-spinner
+              *ngIf="notificationsLoading"
+              mode="indeterminate"
+              diameter="18"
+            ></mat-progress-spinner>
             <mat-icon *ngIf="!notificationsLoading">save</mat-icon>
             Enregistrer mes préférences
           </button>
         </div>
       </section>
-    </mat-tab>
-
-    <!-- ✅ ONGLET ÉDITEUR : visible si EDITOR ou ADMIN -->
-    <mat-tab *ngIf="isEditor && !isAdmin ">
-      <ng-template mat-tab-label>
-        <mat-icon>edit</mat-icon><span>Éditeur</span>
-      </ng-template>
-
-      <section class="tab-pane">
-        <div class="editor-grid">
-          <mat-card class="editor-card">
-            <div class="editor-head">
-              <mat-icon>tips_and_updates</mat-icon>
-              <h3>Articles / Conseils</h3>
-            </div>
-            <p>Créer / modifier des articles et gérer leurs thèmes.</p>
-            <div class="editor-actions">
-              <button mat-stroked-button color="primary" routerLink="/admin/articles">
-                <mat-icon>open_in_new</mat-icon>
-                Accéder
-              </button>
-            </div>
-          </mat-card>
-
-          <mat-card class="editor-card">
-            <div class="editor-head">
-              <mat-icon>pets</mat-icon>
-              <h3>Fiches poissons</h3>
-            </div>
-            <p>Créer / modifier les fiches poissons (paramètres, compatibilités, biotope…).</p>
-            <div class="editor-actions">
-              <button mat-stroked-button color="primary" routerLink="/admin/species/fish">
-                <mat-icon>open_in_new</mat-icon>
-                Accéder
-              </button>
-            </div>
-          </mat-card>
-
-          <mat-card class="editor-card">
-            <div class="editor-head">
-              <mat-icon>local_florist</mat-icon>
-              <h3>Fiches plantes</h3>
-            </div>
-            <p>Créer / modifier les fiches plantes (lumière, CO₂, sol, croissance…).</p>
-            <div class="editor-actions">
-              <button mat-stroked-button color="primary" routerLink="/admin/species/plant">
-                <mat-icon>open_in_new</mat-icon>
-                Accéder
-              </button>
-            </div>
-          </mat-card>
-        </div>
-      </section>
-    </mat-tab>
-
-    <mat-tab *ngIf="isAdmin">
-      <ng-template mat-tab-label>
-        <mat-icon>admin_panel_settings</mat-icon><span>Admin</span>
-      </ng-template>
-
-      <section class="tab-pane admin-portal">
-        <div class="admin-portal-hero">
-          <div class="admin-portal-hero__icon"><mat-icon>admin_panel_settings</mat-icon></div>
-          <div class="admin-portal-hero__copy">
-            <span>Réservé aux administrateurs</span>
-            <h2>Centre d’administration AquaManager</h2>
-            <p>Pilotez l’activité, gérez les accès, modérez les contenus et préparez la communication depuis un espace unique.</p>
+      <section class="tab-pane" *ngIf="selectedTabIndex === 3">
+        <header class="section-heading">
+          <div class="heading-icon"><mat-icon>shield</mat-icon></div>
+          <div>
+            <h2>Sécurité du compte</h2>
+            <p>Protégez votre accès et gérez les actions sensibles.</p>
           </div>
-          <a mat-flat-button routerLink="/admin/metrics">
-            Ouvrir le centre
-            <mat-icon>arrow_forward</mat-icon>
-          </a>
+        </header>
+        <form class="settings-panel" [formGroup]="securityForm" (ngSubmit)="savePassword()">
+          <div class="panel-title">
+            <h3>Changer mon mot de passe</h3>
+            <p>Vous devrez vous reconnecter après la modification.</p>
+          </div>
+          <mat-form-field appearance="outline"
+            ><mat-label>Mot de passe actuel</mat-label
+            ><input
+              matInput
+              type="password"
+              formControlName="currentPassword"
+              autocomplete="current-password"
+            /><mat-error>Le mot de passe actuel est requis.</mat-error></mat-form-field
+          >
+          <mat-form-field appearance="outline"
+            ><mat-label>Nouveau mot de passe</mat-label
+            ><input
+              matInput
+              type="password"
+              formControlName="newPassword"
+              autocomplete="new-password"
+            /><mat-hint>8 caractères minimum, dont un caractère spécial.</mat-hint
+            ><mat-error
+              >Utilisez au moins 8 caractères, dont un caractère spécial.</mat-error
+            ></mat-form-field
+          >
+          <div class="form-actions">
+            <button mat-button type="button" (click)="securityForm.reset()" [disabled]="loading">
+              Annuler</button
+            ><button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="loading || securityForm.invalid"
+            >
+              <mat-icon>lock_reset</mat-icon
+              >{{ loading ? 'Modification…' : 'Modifier le mot de passe' }}
+            </button>
+          </div>
+        </form>
+        <details class="danger-card">
+          <summary>
+            <mat-icon>delete_outline</mat-icon>Supprimer mon compte<mat-icon>expand_more</mat-icon>
+          </summary>
+          <div>
+            <p>
+              La suppression est <strong>définitive</strong>. Votre compte et toutes ses données
+              associées seront supprimés.
+            </p>
+            <button
+              mat-stroked-button
+              color="warn"
+              type="button"
+              (click)="deleteAccount()"
+              [disabled]="loading"
+            >
+              Supprimer définitivement mon compte
+            </button>
+          </div>
+        </details>
+      </section>
+      <section class="tab-pane" *ngIf="selectedTabIndex === 4">
+        <header class="section-heading">
+          <div class="heading-icon"><mat-icon>chat_bubble_outline</mat-icon></div>
+          <div>
+            <h2>Avis &amp; aide</h2>
+            <p>Partagez votre expérience ou contactez-nous.</p>
+          </div>
+        </header>
+        <div class="settings-panel">
+          <div class="panel-title">
+            <h3>Votre avis fait avancer AquaManager</h3>
+            <p>Ce qui vous plaît, ce qui pourrait être amélioré : nous vous écoutons.</p>
+          </div>
+          <app-satisfaction [manual]="true" />
         </div>
-
-        <div class="admin-shortcuts" aria-label="Raccourcis d’administration">
-          <a class="admin-shortcut" routerLink="/admin/subscriptions">
-            <span class="admin-shortcut__icon"><mat-icon>credit_card</mat-icon></span>
-            <span class="admin-shortcut__copy"><small>Paiements</small><strong>Abonnements</strong><em>PayPal, confirmations et vérifications</em></span>
-            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
-          </a>
-          <a class="admin-shortcut admin-shortcut--primary" routerLink="/admin/metrics">
-            <span class="admin-shortcut__icon"><mat-icon>monitoring</mat-icon></span>
-            <span class="admin-shortcut__copy"><small>Pilotage</small><strong>Vue d’ensemble</strong><em>Évolution, alertes et activité du site</em></span>
-            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
-          </a>
-
-          <a class="admin-shortcut" routerLink="/admin/users">
-            <span class="admin-shortcut__icon"><mat-icon>manage_accounts</mat-icon></span>
-            <span class="admin-shortcut__copy"><small>Accès</small><strong>Utilisateurs</strong><em>Rôles, abonnements et comptes</em></span>
-            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
-          </a>
-
-          <a class="admin-shortcut" routerLink="/admin/species/fish">
-            <span class="admin-shortcut__icon"><mat-icon>set_meal</mat-icon></span>
-            <span class="admin-shortcut__copy"><small>Catalogue</small><strong>Fiches poissons</strong><em>Créer, vérifier et publier</em></span>
-            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
-          </a>
-
-          <a class="admin-shortcut" routerLink="/admin/species/plant">
-            <span class="admin-shortcut__icon"><mat-icon>eco</mat-icon></span>
-            <span class="admin-shortcut__copy"><small>Catalogue</small><strong>Fiches plantes</strong><em>Maintenir le catalogue végétal</em></span>
-            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
-          </a>
-
-          <a class="admin-shortcut" routerLink="/admin/articles">
-            <span class="admin-shortcut__icon"><mat-icon>article</mat-icon></span>
-            <span class="admin-shortcut__copy"><small>Éditorial</small><strong>Articles & conseils</strong><em>Rédiger, modérer et publier</em></span>
-            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
-          </a>
-
-          <a class="admin-shortcut" routerLink="/admin/marketing">
-            <span class="admin-shortcut__icon"><mat-icon>campaign</mat-icon></span>
-            <span class="admin-shortcut__copy"><small>Rayonnement</small><strong>Communication</strong><em>Préparer les contenus sociaux</em></span>
-            <mat-icon class="admin-shortcut__arrow">north_east</mat-icon>
-          </a>
-        </div>
-
-        <div class="admin-security-note">
-          <mat-icon>verified_user</mat-icon>
-          <span><strong>Accès protégé</strong><small>Cette section et ses routes sont réservées au rôle administrateur.</small></span>
+        <div class="help-grid">
+          <a routerLink="/contact"
+            ><mat-icon>mail_outline</mat-icon><strong>Nous contacter</strong
+            ><span>Une question ou un problème ?</span><mat-icon>arrow_forward</mat-icon></a
+          ><a routerLink="/terms"
+            ><mat-icon>description</mat-icon><strong>Conditions d’utilisation</strong
+            ><span>Les conditions du service</span><mat-icon>arrow_forward</mat-icon></a
+          ><a routerLink="/privacy"
+            ><mat-icon>privacy_tip</mat-icon><strong>Confidentialité</strong
+            ><span>Comprendre l’utilisation de vos données</span
+            ><mat-icon>arrow_forward</mat-icon></a
+          >
         </div>
       </section>
-    </mat-tab>
-  </mat-tab-group>
-</mat-card>
+    </main>
+  </div>
+</div>

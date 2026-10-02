@@ -211,6 +211,8 @@ export class AdminUserDetailComponent implements OnInit, OnDestroy {
       (
         {
           USER: 'Utilisateur',
+          HELPFUL: '👍 Réponse utile',
+          NOT_HELPFUL: '👎 Hors sujet / pas utile',
           EDITOR: 'Éditeur',
           ADMIN: 'Administrateur',
           CLASSIC: 'Classic',
@@ -288,6 +290,8 @@ export class AdminUserDetailComponent implements OnInit, OnDestroy {
   }
   value(row: DossierRecord, field: DossierField): string {
     const v = row[field.key];
+    if (v == null && field.key === 'questionText') return 'Question non enregistrée pour cette ancienne analyse';
+    if (v == null && field.key === 'feedback') return 'Aucun avis';
     if (v === null || v === undefined || v === '') return 'Non renseigné';
     if (field.kind === 'date') return this.date(v);
     if (field.kind === 'boolean') return v === true || v === 1 || v === '1' ? 'Oui' : 'Non';

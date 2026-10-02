@@ -37,6 +37,15 @@ export class AiUsage {
   @Column({ type: 'longtext' })
   responseText!: string;
 
+  @Column({ type: 'text', nullable: true })
+  questionText!: string | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  feedback!: 'HELPFUL' | 'NOT_HELPFUL' | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  feedbackAt!: Date | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

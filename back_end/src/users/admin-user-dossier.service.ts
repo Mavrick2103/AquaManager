@@ -83,7 +83,7 @@ export const DOSSIER_SECTIONS: Record<string, Section> = {
     owner: "userId",
     aquarium: true,
     fields: fields(
-      "id aquariumId feature plan model inputTokens outputTokens totalTokens responseText createdAt",
+      "id aquariumId feature plan model inputTokens outputTokens totalTokens questionText responseText feedback feedbackAt createdAt",
     ),
     order: "createdAt",
   },

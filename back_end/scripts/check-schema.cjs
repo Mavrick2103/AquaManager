@@ -19,6 +19,7 @@ async function checkSchema(db, { legacy = false } = {}) {
       if (legacy && ['auth_sessions', 'satisfaction_responses', 'satisfaction_states'].includes(entity.tableName)) continue;
       for (const column of entity.columns) {
         const key = `${entity.tableName}.${column.databaseName}`;
+        if (legacy && ['ai_usage.questionText', 'ai_usage.feedback', 'ai_usage.feedbackAt'].includes(key)) continue;
         if (legacy && ['users.authVersion', 'users.pendingEmail', 'aquariums.archivedAt', 'aquariums.archiveExpiresAt'].includes(key)) continue;
         if (!actual.has(key)) missing.push(key);
       }

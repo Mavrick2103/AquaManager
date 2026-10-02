@@ -68,7 +68,34 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private billing = inject(BillingService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  selectedTabIndex = this.route.snapshot.queryParamMap.get('tab') === 'subscription' ? 1 : 0;
+  readonly sections = [
+    { index: 0, key: 'account', label: 'Mon compte', icon: 'person_outline' },
+    { index: 1, key: 'subscription', label: 'Abonnement', icon: 'workspace_premium' },
+    { index: 2, key: 'notifications', label: 'Notifications', icon: 'notifications_none' },
+    { index: 3, key: 'security', label: 'Sécurité', icon: 'shield' },
+    { index: 4, key: 'feedback', label: 'Avis & aide', icon: 'chat_bubble_outline' },
+  ];
+  selectedTabIndex = this.sections.find(section => section.key === this.route.snapshot.queryParamMap.get('tab'))?.index ?? 0;
+  accountLoading = true;
+  accountError = '';
+  securityForm!: FormGroup;
+  selectSection(index: number) {
+    this.selectedTabIndex = index;
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { tab: this.sections.find(s => s.index === index)?.key }, queryParamsHandling: 'merge', replaceUrl: true });
+  }
+  get emailChanged(): boolean { return this.emailCtrl.value?.trim() !== this.orig.email; }
+  async savePassword() {
+    if (this.loading || this.securityForm.invalid) return;
+    this.loading = true;
+    try {
+      await this.users.changePassword(this.securityForm.getRawValue());
+      this.securityForm.reset();
+      await this.auth.logout();
+      this.snack.open('Mot de passe modifié. Reconnectez-vous avec le nouveau mot de passe.', 'OK', { duration: 6000 });
+    } catch (e: any) {
+      this.snack.open(e?.error?.message || 'Impossible de modifier le mot de passe.', 'Fermer', { duration: 3200 });
+    } finally { this.loading = false; }
+  }
   paypalState: PaypalBillingStatus | null = null;
   private paymentCheckTimer?: ReturnType<typeof setTimeout>;
   private destroyed = false;
@@ -136,11 +163,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
 }
 
   async ngOnInit() {
+    this.accountLoading = true;
+    this.accountError = '';
     this.title.setTitle('Paramètres & Profil • AquaManager');
     this.meta.updateTag({
       name: 'description',
       content:
-        'Gérez votre profil, vos préférences d’affichage, notifications et exportez vos données sur AquaManager.',
+        'Gérez votre compte, votre abonnement, votre sécurité et vos notifications sur AquaManager.',
     });
 
     this.form = this.fb.group({
@@ -150,7 +179,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
       newPassword: ['', [Validators.minLength(8), Validators.pattern(/^(?=.*[!@#$%^&*(),.?":{}|<>_\-=/+]).+$/)]],
     });
 
-    await this.reloadMe();
+    this.securityForm = this.fb.group({
+      currentPassword: ['', Validators.required],
+      newPassword: ['', [Validators.required, this.newPwdCtrl.validator!]],
+    });
+    try { await this.reloadMe(); }
+    catch { this.accountError = 'Impossible de charger votre compte. Réessayez dans un instant.'; return; }
+    finally { this.accountLoading = false; }
     const paypalReturn = this.route.snapshot.queryParamMap.get('paypal');
     try {
       this.paypalState = await this.billing.paypalStatus();
@@ -358,7 +393,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   async saveAll() {
-    if (this.form.invalid || !this.hasChanges) return;
+    if (this.loading || this.form.invalid || !this.hasChanges) return;
 
     this.loading = true;
     const v = this.form.value as any;
@@ -393,6 +428,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       }
 
       this.emailCtrl.setValue(this.orig.email);
+      this.currPwdCtrl.setValue('');
       this.snack.open(profileDto.email ? 'Un lien de confirmation a été envoyé à la nouvelle adresse. Ton adresse actuelle reste active.' : 'Modifications enregistrées ✅', 'OK', { duration: 6000 });
       this.form.markAsPristine();
     } catch (e: any) {

@@ -610,7 +610,10 @@
                       <mat-icon>{{ message.role === 'user' ? 'person' : 'auto_awesome' }}</mat-icon>
                     </div>
 
-                    <div class="ai-chat-bubble" [innerText]="message.content"></div>
+                    <div class="ai-chat-bubble">
+                      <div [innerText]="message.content"></div>
+                      <app-ai-feedback *ngIf="message.analysis" [analysis]="message.analysis"></app-ai-feedback>
+                    </div>
                   </div>
 
                   <div class="ai-chat-message ai-chat-message--assistant" *ngIf="aiLoading">
@@ -840,6 +843,7 @@
                     </div>
 
                     <div class="ai-result__text" [innerText]="aiPhotoAnalysis.analysis"></div>
+                    <app-ai-feedback [analysis]="aiPhotoAnalysis"></app-ai-feedback>
                     <div class="reco-list" *ngIf="aiPhotoAnalysis.suggestedTasks?.length">
                       <mat-card class="reco-card" *ngFor="let task of aiPhotoAnalysis.suggestedTasks">
                         <mat-card-content>

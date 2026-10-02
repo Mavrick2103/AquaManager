@@ -12,6 +12,7 @@ describe('AI aquarium context', () => {
   let measurements: any;
   let aquariums: any;
   let create: jest.Mock;
+  let usage: any;
   const originalKey = process.env.OPENAI_API_KEY;
 
   beforeEach(() => {
@@ -25,7 +26,8 @@ describe('AI aquarium context', () => {
       measuredAt: `releve-${i + 1}`, ph: 7,
     }))) };
     aquariums = { findOne: jest.fn().mockResolvedValue({ id: 9, name: 'Bac de test' }) };
-    const usage = { count: jest.fn().mockResolvedValue(0), create: jest.fn(x => x), save: jest.fn() };
+    usage = { count: jest.fn().mockResolvedValue(0), create: jest.fn(x => x),
+      save: jest.fn(async x => ({ ...x, id: 42 })), update: jest.fn().mockResolvedValue({ affected: 1 }) };
     service = new AiService(usage as any, aquariums, measurements,
       { getEffectivePlan: jest.fn().mockResolvedValue('PREMIUM') } as any, tasks);
     create = (service as any).openai.responses.create;
@@ -70,5 +72,37 @@ describe('AI aquarium context', () => {
     await service.analyzeAquarium(4, 9, {} as any);
     expect(create.mock.calls[0][0].input).toContain('Aucune tâche passée enregistrée');
     expect(create.mock.calls[0][0].input).toContain('Aucune mesure récente disponible');
+  });
+
+  it.each(['text', 'photo'])('stores the question and returns the persisted response id for %s', async mode => {
+    const dto = { question: '  Pourquoi ces algues ?  ' };
+    const result = mode === 'text'
+      ? await service.analyzeAquarium(4, 9, dto)
+      : await service.analyzeAquariumPhoto(4, 9, { buffer: Buffer.from('test'), mimetype: 'image/png' } as any, dto);
+    expect(usage.save).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 4, questionText: 'Pourquoi ces algues ?', responseText: 'Bilan',
+    }));
+    expect(result).toMatchObject({ usageId: 42, questionText: 'Pourquoi ces algues ?', feedback: null });
+  });
+
+  it('replaces an existing vote on the same response, scoped to its owner', async () => {
+    await service.saveFeedback(4, 42, 'HELPFUL');
+    await service.saveFeedback(4, 42, 'NOT_HELPFUL');
+    expect(usage.update).toHaveBeenLastCalledWith({ id: 42, userId: 4 }, {
+      feedback: 'NOT_HELPFUL', feedbackAt: expect.any(Date),
+    });
+    expect(usage.save).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a missing response or another user’s response', async () => {
+    usage.update.mockResolvedValue({ affected: 0 });
+    await expect(service.saveFeedback(5, 42, 'HELPFUL')).rejects.toThrow('Analyse introuvable');
+    expect(usage.update).toHaveBeenCalledWith({ id: 42, userId: 5 }, expect.anything());
+  });
+
+  it('rejects invalid votes without writing', async () => {
+    await expect(service.saveFeedback(4, 42, 'INVALID' as any)).rejects.toThrow('Avis invalide');
+    expect(usage.update).not.toHaveBeenCalled();
   });
 });

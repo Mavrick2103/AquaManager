@@ -84,7 +84,7 @@ describe('Satisfaction utilisateur', () => {
   it('ouvre le questionnaire depuis le profil sans enregistrer une visite', () => {
     cy.intercept('GET', '**/api/satisfaction', ready).as('status');
     cy.intercept('GET', '**/api/settings', { notificationsEnabled: false });
-    cy.visit('/profile');
+    cy.visit('/profile?tab=feedback');
     cy.contains('button', 'Donner mon avis').click();
     cy.wait('@status');
     cy.get('app-satisfaction form').should('be.visible');

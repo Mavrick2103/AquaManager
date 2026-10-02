@@ -23,6 +23,9 @@ export type AiProductRecommendation = {
 };
 
 export type AiAquariumAnalysisResponse = {
+  usageId: number;
+  questionText: string;
+  feedback: 'HELPFUL' | 'NOT_HELPFUL' | null;
   model: string;
   plan: string;
   quota: number;
@@ -40,6 +43,12 @@ export class AiApi {
   private readonly baseUrl = environment.apiUrl;
 
   constructor(private readonly http: HttpClient) {}
+
+  saveFeedback(usageId: number, feedback: 'HELPFUL' | 'NOT_HELPFUL') {
+    return this.http.patch<{ feedback: 'HELPFUL' | 'NOT_HELPFUL' }>(
+      `${this.baseUrl}/ai/usages/${usageId}/feedback`, { feedback }, { withCredentials: true },
+    );
+  }
 
   analyzeAquarium(
     aquariumId: number,

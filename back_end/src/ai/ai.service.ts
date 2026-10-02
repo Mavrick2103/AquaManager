@@ -126,7 +126,7 @@ const usedThisMonth = await this.countUsageThisMonth(userId, feature);
 
     const model = this.getModel();
 
-    const question = dto.question || '';
+    const question = dto.question?.trim() || 'Fais une analyse générale de cet aquarium.';
     const wantsProductRecommendations = this.shouldRecommendProducts(question);
     const productCatalog = wantsProductRecommendations
       ? await this.getRelevantCrevettilusProducts(question)
@@ -211,7 +211,7 @@ N'invente jamais une mesure absente.
     const outputTokens = usage?.output_tokens ?? 0;
     const totalTokens = usage?.total_tokens ?? inputTokens + outputTokens;
 
-    await this.aiUsageRepo.save(
+    const savedUsage = await this.aiUsageRepo.save(
       this.aiUsageRepo.create({
         userId,
         aquariumId,
@@ -222,10 +222,14 @@ N'invente jamais une mesure absente.
         outputTokens,
         totalTokens,
         responseText: parsed.analysis,
+        questionText: question,
       }),
     );
 
     return {
+      usageId: savedUsage.id,
+      questionText: question,
+      feedback: savedUsage.feedback ?? null,
       model,
       plan,
       quota,
@@ -239,6 +243,19 @@ N'invente jamais une mesure absente.
 
   private getModel(): string {
     return process.env.OPENAI_MODEL_LUNA || 'gpt-5.6-luna';
+  }
+
+  async saveFeedback(userId: number, usageId: number, feedback: 'HELPFUL' | 'NOT_HELPFUL') {
+    if (!['HELPFUL', 'NOT_HELPFUL'].includes(feedback)) {
+      throw new BadRequestException('Avis invalide');
+    }
+    const feedbackAt = new Date();
+    const result = await this.aiUsageRepo.update(
+      { id: usageId, userId },
+      { feedback, feedbackAt },
+    );
+    if (!result.affected) throw new NotFoundException('Analyse introuvable');
+    return { usageId, feedback, feedbackAt };
   }
 
   private getQuotaByPlan(plan: string, feature: string): number {
@@ -751,7 +768,8 @@ La date actuelle est ${new Date().toISOString()}.
   const outputTokens = usage?.output_tokens ?? 0;
   const totalTokens = usage?.total_tokens ?? inputTokens + outputTokens;
 
-  await this.aiUsageRepo.save(
+  const questionText = dto.question?.trim() || 'Analyse cette photo et donne-moi une solution adaptée.';
+  const savedUsage = await this.aiUsageRepo.save(
     this.aiUsageRepo.create({
       userId,
       aquariumId,
@@ -762,10 +780,14 @@ La date actuelle est ${new Date().toISOString()}.
       outputTokens,
       totalTokens,
       responseText: parsed.analysis,
+      questionText,
     }),
   );
 
   return {
+    usageId: savedUsage.id,
+    questionText,
+    feedback: savedUsage.feedback ?? null,
     model,
     plan,
     quota,

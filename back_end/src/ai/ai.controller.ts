@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Param,
+  Patch,
+  ParseIntPipe,
   Post,
   Req,
   UploadedFile,
@@ -12,6 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AnalyzePhotoDto } from './dto/analyze-photo.dto';
 
 import { AiService } from './ai.service';
+import { AiFeedbackDto } from './dto/ai-feedback.dto';
 import { AnalyzeAquariumDto } from './dto/analyze-aquarium.dto';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -24,6 +27,16 @@ import { PlanRequired } from '../auth/decorators/plan.decorator';
 @PlanRequired('PREMIUM')
 export class AiController {
   constructor(private readonly aiService: AiService) {}
+
+  @Patch('usages/:id/feedback')
+  @PlanRequired('CLASSIC')
+  saveFeedback(
+    @Req() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AiFeedbackDto,
+  ) {
+    return this.aiService.saveFeedback(Number(req.user.userId), id, dto.feedback);
+  }
 
   @Post('aquariums/:id/analyze')
   analyzeAquarium(

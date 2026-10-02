@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AiFeedbackComponent } from './ai-feedback.component';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   FormBuilder,
@@ -177,6 +178,7 @@ type AquariumPlantRow = {
   selector: 'app-aquarium-detail',
   standalone: true,
   imports: [
+    AiFeedbackComponent,
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
@@ -330,6 +332,7 @@ aiPhotoAnalysis: AiAquariumAnalysisResponse | null = null;
 aiChatMessages: {
   role: 'user' | 'assistant';
   content: string;
+  analysis?: AiAquariumAnalysisResponse;
 }[] = [];
 
 aiChatQuestion = '';
@@ -873,6 +876,7 @@ aiChatQuestion = '';
     this.aiChatMessages.push({
       role: 'assistant',
       content: response.analysis,
+      analysis: response,
     });
 
     this.snack.open('Réponse IA générée ✅', 'OK', {
@@ -995,6 +999,7 @@ async analyzePhotoWithAi(): Promise<void> {
     this.aiChatMessages.push({
       role: 'assistant',
       content: this.aiPhotoAnalysis.analysis,
+      analysis: this.aiPhotoAnalysis,
     });
     this.aiChatQuestion = '';
     this.aiPhotoQuestion = '';
