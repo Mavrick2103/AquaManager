@@ -129,6 +129,8 @@ describe('Profil et paramètres organisés', () => {
     });
     cy.contains('button', 'Donner mon avis').click();
     cy.get('app-satisfaction form').should('be.visible');
+    cy.contains('dialog.survey button', 'Fermer').click();
+    cy.get('dialog.survey').should('not.exist');
     section('Mon compte');
     cy.get('.section-heading').scrollIntoView();
     cy.screenshot('profile-mobile', { capture: 'viewport' });
