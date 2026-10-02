@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -17,8 +17,12 @@ interface SurveyStatus {
   templateUrl: './satisfaction.component.html',
   styleUrl: './satisfaction.component.scss',
 })
-export class SatisfactionComponent implements OnInit {
+export class SatisfactionComponent implements OnInit, OnDestroy {
+  private destroyed = false;
+  ngOnDestroy() { this.destroyed = true; }
   @Input() manual = false;
+  @ViewChild('surveyDialog') dialog?: ElementRef<HTMLDialogElement>;
+  private cdr = inject(ChangeDetectorRef);
   private http = inject(HttpClient);
   private url = environment.apiUrl + '/satisfaction';
   status: SurveyStatus | null = null;
@@ -41,6 +45,7 @@ export class SatisfactionComponent implements OnInit {
     if (!this.manual) await this.load(true);
   }
   async load(visit = false) {
+    this.sent = false;
     this.busy = true;
     this.error = '';
     try {
@@ -50,7 +55,7 @@ export class SatisfactionComponent implements OnInit {
           : this.http.get<SurveyStatus>(this.url),
       );
       this.open = this.manual || this.status.prompt;
-      this.expanded = this.manual;
+      this.expanded = true;
     } catch {
       if (this.manual) {
         this.open = true;
@@ -58,6 +63,10 @@ export class SatisfactionComponent implements OnInit {
       }
     } finally {
       this.busy = false;
+      if (!this.destroyed) {
+        this.cdr.detectChanges();
+        if (this.open && this.dialog && !this.dialog.nativeElement.open) this.dialog.nativeElement.showModal();
+      }
     }
   }
   async submit() {
@@ -82,7 +91,7 @@ export class SatisfactionComponent implements OnInit {
     } catch (e: any) {
       this.error =
         e.status === 409
-          ? 'Tu as déjà donné ton avis. Tu pourras répondre à nouveau 90 jours après ta dernière réponse.'
+          ? 'Tu as déjà donné ton avis. Tu pourras répondre à nouveau un mois après ta dernière réponse.'
           : 'Ton avis n’a pas pu être enregistré. Réessaie.';
     } finally {
       this.busy = false;

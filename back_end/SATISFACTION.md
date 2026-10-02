@@ -1,8 +1,9 @@
 # Satisfaction utilisateur
 
-- Questionnaire : invitation sur le tableau de bord et bouton Donner mon avis dans le profil.
-- Invitation après 7 jours depuis la création du compte et 3 jours UTC distincts de visite du tableau de bord, comptés à partir de cette mise à jour.
-- Plus tard reporte l’invitation de 7 jours. Une réponse bloque un nouvel envoi pendant 90 jours, y compris depuis le profil. Le profil permet une première réponse sans attendre les critères d’invitation.
+- Questionnaire : fenêtre automatique à la première visite authentifiée du mois, après le tutoriel éventuel, et bouton Donner mon avis dans le profil.
+- Un mois entre deux réponses (Europe/Paris), y compris depuis le profil : un avis le 29 septembre permet de répondre le 29 octobre, à la même heure locale. Si le jour n’existe pas le mois suivant, on utilise son dernier jour (31 janvier → 28 ou 29 février). La fenêtre revient à la première visite éligible.
+- L’invitation est réservée une seule fois par mois sous verrou du compte, pour éviter les répétitions entre appareils et onglets. Plus tard ferme la fenêtre ; le profil reste disponible. Les comptes équipe ne reçoivent pas la fenêtre automatique.
+- Cette évolution réutilise les colonnes existantes : aucune nouvelle migration. Les avis déjà enregistrés sont conservés et soumis à la règle mensuelle.
 - Les écritures utilisent une transaction et verrouillent le compte pour empêcher les doubles envois concurrents.
 - L’offre effective et la source (Classic, Premium payant, offert, équipe) sont figées à l’envoi. Le type payant se fonde sur billingProvider, pas sur un rapprochement comptable de chaque paiement.
 - Les administrateurs et éditeurs sont identifiés Équipe et exclus des indicateurs par défaut.

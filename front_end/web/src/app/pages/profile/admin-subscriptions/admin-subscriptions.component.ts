@@ -19,7 +19,7 @@ interface Detail extends Subscription {
   paymentCount: number; actionCount: number;
   actions: { id: number; actorId: number; outcome: string; createdAt: string }[];
 }
-interface SubscriptionOverview { total: number; active: number; pending: number; cancelled: number; suspended: number; expired: number; }
+interface SubscriptionOverview { total: number; active: number; pending: number; cancelled: number; abandoned: number; suspended: number; expired: number; }
 @Component({
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, MatButtonModule, MatIconModule, AdminSidebarComponent],
@@ -74,7 +74,7 @@ export class AdminSubscriptionsComponent implements OnInit {
   }
   next(delta: number) { this.page += delta; void this.load(); }
   label(status: string) {
-    return ({ CREATING: 'Création en cours', APPROVAL_PENDING: 'Validation attendue', APPROVED: 'Paiement attendu', ACTIVE: 'Actif', SUSPENDED: 'Suspendu', CANCELLED: 'Résilié', EXPIRED: 'Expiré',
+    return ({ ABANDONED: 'Abandonné', CREATING: 'Création en cours', APPROVAL_PENDING: 'Validation attendue', APPROVED: 'Paiement attendu', ACTIVE: 'Actif', SUSPENDED: 'Suspendu', CANCELLED: 'Résilié', EXPIRED: 'Expiré',
       SENT: 'Envoyé', CHECK: 'Envoi à vérifier', PENDING: 'En attente', NOT_APPLICABLE: 'Sans objet', STARTED: 'Vérification commencée', SUCCESS: 'Vérification réussie', FAILED: 'Échec de vérification' } as Record<string, string>)[status] ?? status;
   }
 }

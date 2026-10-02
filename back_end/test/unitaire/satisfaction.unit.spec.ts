@@ -1,4 +1,4 @@
-import { audience, eligibility, DAY } from '../../src/satisfaction/satisfaction.policy';
+import { audience, eligibility, DAY, nextSurveyMonth, nextResponseDate } from '../../src/satisfaction/satisfaction.policy';
 import { SatisfactionService } from '../../src/satisfaction/satisfaction.service';
 import { SatisfactionState, SatisfactionResponse } from '../../src/satisfaction/satisfaction.entity';
 import { User } from '../../src/users/user.entity';
@@ -27,12 +27,24 @@ const state = (patch = {}) =>
     ...patch,
   }) as SatisfactionState;
 describe('Satisfaction policy', () => {
-  it('requires seven days AND three distinct visiting days', () => {
+  it.each([
+    ['2026-09-29T10:00:00Z', '2026-10-29T11:00:00.000Z'],
+    ['2026-01-31T11:00:00Z', '2026-02-28T11:00:00.000Z'],
+    ['2028-01-31T11:00:00Z', '2028-02-29T11:00:00.000Z'],
+    ['2026-12-29T11:00:00Z', '2027-01-29T11:00:00.000Z'],
+  ])('waits a full calendar month after %s', (date, expected) => {
+    const lastResponseAt = new Date(date);
+    const deadline = nextResponseDate(lastResponseAt);
+    expect(deadline.toISOString()).toBe(expected);
+    expect(eligibility(user(), state({ lastResponseAt }), new Date(deadline.getTime() - 1)).canSubmit).toBe(false);
+    expect(eligibility(user(), state({ lastResponseAt }), deadline).canSubmit).toBe(true);
+  });
+  it('invites on the first visit even for new accounts', () => {
     expect(eligibility(user(), state({ visitDays: 2 }), now).prompt).toBe(
-      false,
+      true,
     );
     expect(eligibility(user({ createdAt: now }), state(), now).prompt).toBe(
-      false,
+      true,
     );
     expect(eligibility(user(), state(), now).prompt).toBe(true);
   });
@@ -40,14 +52,14 @@ describe('Satisfaction policy', () => {
     expect(
       eligibility(
         user(),
-        state({ lastResponseAt: new Date(now.getTime() - 89 * DAY) }),
+        state({ lastResponseAt: new Date('2026-10-01T00:00:00Z') }),
         now,
       ).canSubmit,
     ).toBe(false);
     expect(
       eligibility(
         user(),
-        state({ lastResponseAt: new Date(now.getTime() - 90 * DAY) }),
+        state({ lastResponseAt: new Date('2026-09-01T10:00:00Z') }),
         now,
       ).canSubmit,
     ).toBe(true);
@@ -58,6 +70,14 @@ describe('Satisfaction policy', () => {
         now,
       ),
     ).toMatchObject({ prompt: false, canSubmit: true });
+  });
+  it.each([
+    ['2026-09-30T21:59:59Z', '2026-09-30T22:00:00.000Z'],
+    ['2026-09-30T22:00:00Z', '2026-10-31T23:00:00.000Z'],
+    ['2026-12-31T23:00:00Z', '2027-01-31T23:00:00.000Z'],
+    ['2028-02-29T12:00:00Z', '2028-02-29T23:00:00.000Z'],
+  ])('uses the next Paris calendar month for %s', (date, expected) => {
+    expect(nextSurveyMonth(new Date(date)).toISOString()).toBe(expected);
   });
   it('distinguishes expired access, paid, gifted and staff', () => {
     const premium = {
@@ -119,8 +139,8 @@ describe('Satisfaction persistence flow', () => {
     } as any);
   });
   it('counts reloads only once per UTC day and locks the account', async () => {
-    await service.visit(7);
-    await service.visit(7);
+    expect((await service.visit(7)).prompt).toBe(true);
+    expect((await service.visit(7)).prompt).toBe(false);
     expect(stored.visitDays).toBe(1);
     expect(manager.findOne).toHaveBeenCalledWith(
       User,
@@ -141,7 +161,7 @@ describe('Satisfaction persistence flow', () => {
     });
     await expect(
       service.submit(7, { rating: 5, premiumRating: 5 }),
-    ).rejects.toThrow('90 jours');
+    ).rejects.toThrow('un mois après');
     expect(responses).toHaveLength(1);
   });
   it('requires the premium score only for premium accounts', async () => {
@@ -157,8 +177,6 @@ describe('Satisfaction persistence flow', () => {
   it('persists the dismissal deadline', async () => {
     const before = Date.now();
     await service.dismiss(7);
-    expect(stored.dismissedUntil!.getTime()).toBeGreaterThanOrEqual(
-      before + 7 * DAY,
-    );
+    expect(stored.dismissedUntil).toEqual(nextSurveyMonth(new Date(before)));
   });
 });

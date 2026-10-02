@@ -7,7 +7,7 @@
 >
   {{ busy ? 'Chargement…' : 'Donner mon avis' }}
 </button>
-<section
+<dialog #surveyDialog (cancel)="$event.preventDefault(); later()"
   class="survey"
   [class.survey--compact]="!expanded && !sent"
   *ngIf="open"
@@ -19,7 +19,7 @@
         >Ton expérience compte · {{ status?.segment === 'PREMIUM' ? 'Premium' : 'Classic' }}</span
       >
       <h2>Comment trouves-tu AquaManager ?</h2>
-      <p>Ton avis nous aide à améliorer l’application.</p>
+      <p>Ton avis nous aide à améliorer l’application. Tu peux répondre à nouveau un mois après ton dernier avis.</p>
     </header>
     <p class="error" role="alert" *ngIf="error">{{ error }}</p>
     <div class="actions" *ngIf="status?.canSubmit && !expanded">
@@ -102,4 +102,4 @@
     <p>Ta réponse a bien été enregistrée. Elle nous aidera à faire évoluer AquaManager.</p>
     <button type="button" (click)="later()">Fermer</button></ng-template
   >
-</section>
+</dialog>

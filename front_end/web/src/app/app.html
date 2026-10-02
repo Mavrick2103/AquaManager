@@ -5,3 +5,8 @@
 
 <router-outlet />
 <app-site-tour />
+@if (auth.me && !hideChrome && !tour.opened() && !tour.suspended()) {
+  @for (user of [auth.me]; track user.id) {
+    <app-satisfaction />
+  }
+}

@@ -16,6 +16,7 @@ th { background:#f1f8f7; font-weight:700; } td,th { padding:15px 12px; border-bo
 small { display:block; color:#5b706f; margin-top:5px; overflow-wrap:anywhere; }
 .badge { padding:5px 9px; border-radius:20px; background:#dff4e8; font-weight:700; font-size:12px; }
 .badge.test { background:#fff0ce; color:#735116; }
+.badge.badge--abandoned { background:#fee2e2; color:#991b1b; }
 .muted { color:#5b706f; font-size:14px; line-height:1.6; }
 .pagination { display:flex; justify-content:flex-end; align-items:center; gap:12px; margin-top:16px; }
 .details { margin-top:24px !important; } .actions { display:flex; gap:12px; flex-wrap:wrap; }

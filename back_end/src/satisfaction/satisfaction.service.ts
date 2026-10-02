@@ -8,7 +8,7 @@ import { DataSource, EntityManager } from 'typeorm';
 import { User } from '../users/user.entity';
 import { SatisfactionResponse, SatisfactionState } from './satisfaction.entity';
 import { SubmitSatisfactionDto } from './satisfaction.dto';
-import { audience, eligibility, DAY } from './satisfaction.policy';
+import { audience, eligibility, DAY, nextSurveyMonth } from './satisfaction.policy';
 @Injectable()
 export class SatisfactionService {
   constructor(private readonly db: DataSource) {}
@@ -57,13 +57,16 @@ export class SatisfactionService {
         state.visitDays = Math.min(3, state.visitDays + 1);
         state.lastVisitDay = today;
       }
+      const access = eligibility(user, state, now);
+      // Claim the monthly invitation under the account lock, including across tabs/devices.
+      if (access.prompt) state.dismissedUntil = nextSurveyMonth(now);
       await m.save(state);
-      return eligibility(user, state, now);
+      return access;
     });
   }
   dismiss(id: number) {
     return this.locked(id, async (m, user, state) => {
-      state.dismissedUntil = new Date(Date.now() + 7 * DAY);
+      state.dismissedUntil = nextSurveyMonth(new Date());
       await m.save(state);
       return { ok: true };
     });
@@ -74,7 +77,7 @@ export class SatisfactionService {
         access = eligibility(user, state, now);
       if (!access.canSubmit)
         throw new ConflictException(
-          'Tu as déjà donné ton avis. Un nouvel avis sera possible après 90 jours.',
+          'Tu as déjà donné ton avis. Tu pourras répondre à nouveau un mois après ta dernière réponse.',
         );
       if (access.segment === 'PREMIUM' && dto.premiumRating == null)
         throw new BadRequestException(

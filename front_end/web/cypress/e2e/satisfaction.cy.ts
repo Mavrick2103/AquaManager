@@ -29,7 +29,7 @@ describe('Satisfaction utilisateur', () => {
     cy.intercept('POST', '**/api/satisfaction/visit', ready);
     cy.intercept('POST', '**/api/satisfaction', { ok: true }).as('submit');
     cy.visit('/dashboard');
-    cy.contains('button', 'Donner mon avis').click();
+    cy.get('dialog.survey').should('be.visible');
     cy.get('app-satisfaction form').should('be.visible');
     cy.get('input[name=premiumRating]').should('not.exist');
     cy.get('.ratings label').eq(3).click();
@@ -47,7 +47,7 @@ describe('Satisfaction utilisateur', () => {
     cy.intercept('POST', '**/api/satisfaction/visit', { ...ready, segment: 'PREMIUM' });
     cy.intercept('POST', '**/api/satisfaction', { ok: true }).as('submit');
     cy.visit('/dashboard');
-    cy.contains('button', 'Donner mon avis').click();
+    cy.get('dialog.survey').should('be.visible');
     cy.get('.ratings label').eq(4).click();
     cy.contains('button', 'Envoyer mon avis').should('be.disabled');
     cy.get('.premium-ratings label').eq(2).click();
@@ -74,7 +74,7 @@ describe('Satisfaction utilisateur', () => {
     cy.intercept('POST', '**/api/satisfaction/visit', ready);
     cy.intercept('POST', '**/api/satisfaction', { statusCode: 500 });
     cy.visit('/dashboard');
-    cy.contains('button', 'Donner mon avis').click();
+    cy.get('dialog.survey').should('be.visible');
     cy.get('.ratings label').eq(1).click();
     cy.get('textarea').type('Il manque une option.');
     cy.contains('button', 'Envoyer mon avis').click();
