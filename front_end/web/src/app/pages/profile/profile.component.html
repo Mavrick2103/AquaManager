@@ -133,6 +133,7 @@
         </div>
       </section>
       <section class="tab-pane subscription-management" *ngIf="selectedTabIndex === 1">
+        <p class="sub-foot" role="status" *ngIf="paypalState?.checkoutPaused && !isSubscribedActive">Les nouvelles souscriptions PayPal sont temporairement suspendues. Réessaie plus tard.</p>
         <header class="subscription-management__hero">
           <div class="subscription-management__icon"><mat-icon>workspace_premium</mat-icon></div>
           <div>
@@ -310,7 +311,7 @@
         </mat-card>
       </section>
       <section class="tab-pane notification-settings" *ngIf="selectedTabIndex === 2">
-        <header class="notification-settings__hero">
+        <header class="notification-settings__hero" data-tour="notification-settings">
           <div class="notification-settings__hero-icon">
             <mat-icon>notifications_active</mat-icon>
           </div>

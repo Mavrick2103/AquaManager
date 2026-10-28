@@ -16,7 +16,7 @@ async function checkSchema(db, { legacy = false } = {}) {
     const actual = new Set(rows.map(row => `${row.TABLE_NAME}.${row.COLUMN_NAME}`));
     const missing = [];
     for (const entity of source.entityMetadatas) {
-      if (legacy && ['auth_sessions', 'satisfaction_responses', 'satisfaction_states'].includes(entity.tableName)) continue;
+      if (legacy && ['auth_sessions', 'satisfaction_responses', 'satisfaction_states', 'paypal_checkout_settings', 'gamification_activities'].includes(entity.tableName)) continue;
       for (const column of entity.columns) {
         const key = `${entity.tableName}.${column.databaseName}`;
         if (legacy && ['ai_usage.questionText', 'ai_usage.feedback', 'ai_usage.feedbackAt'].includes(key)) continue;

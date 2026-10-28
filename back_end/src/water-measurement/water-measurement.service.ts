@@ -110,7 +110,7 @@ export class WaterMeasurementService {
      * - Classic => score de suivi, XP, streak, missions, badges
      * - Premium => score santé + analyse des objectifs
      */
-    await this.gamificationService.onMeasurementCreated(userId, aquariumId);
+    await this.gamificationService.onMeasurementCreated(userId, aquariumId, saved.id, saved.comment);
 
     // L'assistant à règles est disponible pour tous les plans.
     const recommendations = await this.recoService.generateForMeasurement({

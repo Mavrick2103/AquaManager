@@ -6,6 +6,7 @@ import { User } from '../../users/user.entity';
 import { MailService } from '../../mail/mail.service';
 import { BillingService } from '../billing.service';
 import { PaypalApiService } from './paypal-api.service';
+import { PaypalCheckoutSetting } from './paypal-checkout-setting.entity';
 import { PaypalPayment, PaypalSubscription } from './paypal-subscription.entity';
 import { assertPremiumPlan, hasPaidAccess, isPremiumPrice, paymentPeriodEnd, PAYPAL_EVENTS, TERMINAL_STATUSES, validDate } from './paypal-policy';
 
@@ -33,6 +34,8 @@ export class PaypalService {
   async checkout(userId: number) {
     this.api.requireReady();
     return this.locked(userId, async (manager) => {
+      const checkout = await manager.findOneBy(PaypalCheckoutSetting, { id: 1 });
+      if (!checkout?.enabled) throw new ServiceUnavailableException('Les nouvelles souscriptions PayPal sont temporairement suspendues. Les abonnements existants restent inchangés.');
       const user = await manager.findOneBy(User, { id: userId });
       if (!user) throw new NotFoundException('Compte introuvable.');
       if (!user.emailVerifiedAt) throw new BadRequestException('Vérifie ton adresse email avant de t’abonner.');
@@ -98,10 +101,12 @@ export class PaypalService {
   async status(userId: number) {
     const user = await this.db.manager.findOneBy(User, { id: userId });
     if (!user) throw new NotFoundException();
+    const checkout = await this.db.manager.findOneBy(PaypalCheckoutSetting, { id: 1 });
     const local = await this.db.manager.findOne(PaypalSubscription, { where: { userId }, order: { createdAt: 'DESC' } });
     const linkedRecurring = !!local?.paypalId && user.paypalSubscriptionId === local.paypalId && ['ACTIVE', 'SUSPENDED'].includes(local.status);
     return {
-      ready: this.api.ready, provider: user.billingProvider ?? (linkedRecurring ? 'paypal' : user.stripeSubscriptionId ? 'stripe' : null),
+      ready: this.api.ready && !!checkout?.enabled, checkoutPaused: !checkout?.enabled,
+      provider: user.billingProvider ?? (linkedRecurring ? 'paypal' : user.stripeSubscriptionId ? 'stripe' : null),
       status: local?.status ?? null, paidUntil: local?.paidUntil ?? null,
       canCancel: linkedRecurring,
       premium: ['PREMIUM', 'PRO'].includes(user.subscriptionPlan)

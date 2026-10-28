@@ -356,7 +356,7 @@ private readonly gamificationService: GamificationService,  ) {}
 
     const saved = await this.repo.save(task);
     await this.usersService.touchActivity(userId);
-    await this.gamificationService.onTaskCreated(userId, saved.type);
+    await this.gamificationService.onTaskCreated(userId, saved.id);
 
 
     if (dto.type === TaskType.FERTILIZATION) {
@@ -392,6 +392,9 @@ private readonly gamificationService: GamificationService,  ) {}
     });
     if (!task || task.user.id !== userId || task.aquarium?.archivedAt) throw new NotFoundException();
 
+    const wasCompleted = reference.occurrenceAt
+      ? (task.completedOccurrences ?? []).includes(reference.occurrenceAt)
+      : task.status === TaskStatus.DONE;
     let occurrenceStatusHandled = false;
     if (reference.occurrenceAt && dto.status !== undefined) {
       if (!task.isRepeat || task.repeatMode === RepeatMode.NONE) {
@@ -476,6 +479,14 @@ private readonly gamificationService: GamificationService,  ) {}
 
     const saved = await this.repo.save(task);
     await this.usersService.touchActivity(userId);
+
+    if (dto.status === TaskStatus.DONE && !wasCompleted &&
+        (reference.occurrenceAt || !saved.isRepeat || saved.repeatMode === RepeatMode.NONE)) {
+      const effectiveDate = new Date(reference.occurrenceAt ?? saved.dueAt);
+      if (effectiveDate <= new Date()) {
+        await this.gamificationService.onTaskCompleted(userId, `${saved.id}:${reference.occurrenceAt ?? 'once'}`);
+      }
+    }
 
     if (dto.fertilization !== undefined) {
       await this.fertRepo.delete({ taskId: saved.id });

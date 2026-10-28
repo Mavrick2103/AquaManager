@@ -220,8 +220,7 @@ export class HomeComponent implements OnInit {
 
   get activeMissions() {
     return (this.gamification?.missions ?? [])
-      .filter((m) => m.status === 'ACTIVE' || m.status === 'COMPLETED')
-      .slice(0, 3);
+      .filter((m) => m.status === 'ACTIVE' || m.status === 'COMPLETED');
   }
 
   scoreModeLabel(mode?: AquariumScoreMode): string {

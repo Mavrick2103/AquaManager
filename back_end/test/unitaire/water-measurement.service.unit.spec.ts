@@ -184,6 +184,8 @@ describe('WaterMeasurementService (unit)', () => {
       expect(gamificationService.onMeasurementCreated).toHaveBeenCalledWith(
         userId,
         aquariumId,
+        savedEntity.id,
+        savedEntity.comment,
       );
 
       expect(usersService.hasAtLeastPlan).not.toHaveBeenCalled();

@@ -36,7 +36,7 @@
     </div>
 
     <!-- Eau douce -->
-    <div *ngIf="data.type === 'EAU_DOUCE'" class="section">
+    <div *ngIf="!data.tutorial && data.type === 'EAU_DOUCE'" class="section">
       <div class="section-header">
         <span class="pill pill-fresh">Eau douce</span>
         <span class="section-label">Paramètres généraux</span>
@@ -91,7 +91,7 @@
     </div>
 
     <!-- Eau de mer -->
-    <div *ngIf="data.type === 'EAU_DE_MER'" class="section">
+    <div *ngIf="!data.tutorial && data.type === 'EAU_DE_MER'" class="section">
       <div class="section-header">
         <span class="pill pill-marine">Eau de mer</span>
         <span class="section-label">Paramètres généraux</span>
@@ -161,7 +161,7 @@
   >
     <ng-container *ngIf="!loading; else loadingTpl">
       <mat-icon>save</mat-icon>
-      {{ data.tutorial ? 'Valider la mesure fictive' : 'Enregistrer' }}
+      {{ data.tutorial ? 'Valider l’essai' : 'Enregistrer' }}
     </ng-container>
     <ng-template #loadingTpl>
       <mat-progress-spinner

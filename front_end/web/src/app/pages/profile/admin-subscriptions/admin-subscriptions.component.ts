@@ -34,7 +34,25 @@ export class AdminSubscriptionsComponent implements OnInit {
   overview = signal<SubscriptionOverview | null>(null);
   search = ''; mode = 'live'; status = 'all'; attention = false; page = 1;
   private selection = 0;
-  ngOnInit() { void this.load(); }
+  checkoutControl = signal<{ enabled: boolean; available: boolean } | null>(null);
+  checkoutBusy = signal(false);
+  checkoutError = signal('');
+  ngOnInit() { void this.load(); void this.loadCheckoutControl(); }
+  async loadCheckoutControl() {
+    this.checkoutBusy.set(true); this.checkoutError.set('');
+    try { this.checkoutControl.set(await firstValueFrom(this.http.get<{ enabled: boolean; available: boolean }>(`${this.base}/checkout-control`))); }
+    catch { this.checkoutError.set('Impossible de charger le réglage des souscriptions.'); }
+    finally { this.checkoutBusy.set(false); }
+  }
+  async toggleCheckout() {
+    const control = this.checkoutControl();
+    if (!control || this.checkoutBusy()) return;
+    this.checkoutBusy.set(true); this.checkoutError.set('');
+    try {
+      this.checkoutControl.set(await firstValueFrom(this.http.patch<{ enabled: boolean; available: boolean }>(`${this.base}/checkout-control`, { enabled: !control.enabled })));
+    } catch { this.checkoutError.set('Modification non confirmée. Recharge le réglage pour vérifier son état.'); this.checkoutControl.set(null); }
+    finally { this.checkoutBusy.set(false); }
+  }
   async load(reset = false) {
     if (this.loading()) return;
     if (reset) this.page = 1;

@@ -1,11 +1,11 @@
 <h2 mat-dialog-title>Nouvel aquarium</h2>
 
+<div mat-dialog-content>
 <div class="tutorial-notice" *ngIf="data?.tutorial">
   <mat-icon>school</mat-icon>
   <span><strong>Mode tutoriel</strong> — cet aquarium restera temporaire et ne sera pas enregistré.</span>
 </div>
 
-<div mat-dialog-content>
   <form [formGroup]="form" class="form">
     <!-- Nom -->
     <mat-form-field appearance="outline" class="w100">
@@ -58,24 +58,7 @@
       <mat-checkbox formControlName="setupCycling">
         Préparer le protocole de cyclage après la création
       </mat-checkbox>
-      <div class="tutorial-cycling-help" *ngIf="data?.tutorial">
-        <mat-icon>lightbulb</mat-icon>
-        <div>
-          <strong>À quoi sert cette option ?</strong>
-          <p>
-            Si elle est cochée, des tâches seront ajoutées à ton calendrier et rattachées à
-            cet aquarium. Elles te guideront étape par étape pour suivre au mieux le cyclage
-            de ton aquarium pendant ses premières semaines.
-          </p>
-          <p>
-            Si tu la décoches, l’aquarium sera créé sans proposition de protocole de cyclage.
-          </p>
-          <small>
-            Dans ce tutoriel, ton choix est seulement simulé : aucun protocole et aucune tâche
-            ne seront enregistrés.
-          </small>
-        </div>
-      </div>
+      <p *ngIf="data?.tutorial">Le cyclage concerne le démarrage d’un bac. Tu découvriras les protocoles dans une prochaine étape ; ici, ton choix est seulement simulé.</p>
       <p *ngIf="!data?.tutorial">
         AquaManager proposera les contrôles nécessaires pendant les premières semaines.
         Tu vérifieras toutes les étapes avant leur ajout au planning.
@@ -86,8 +69,8 @@
 
 <div mat-dialog-actions align="end">
   <button mat-button (click)="close()">Annuler</button>
-  <button mat-raised-button color="primary" [disabled]="submitting()" (click)="submit()">
+  <button mat-raised-button color="primary" [class.tutorial-submit]="data?.tutorial" [disabled]="submitting()" (click)="submit()">
     <mat-icon>save</mat-icon>
-    {{ data?.tutorial ? 'Créer pour le tutoriel' : 'Enregistrer' }}
+    {{ data?.tutorial ? 'Valider l’essai' : 'Enregistrer' }}
   </button>
 </div>

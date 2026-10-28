@@ -19,6 +19,7 @@ describe('TaskService (unit)', () => {
   let repo: jest.Mocked<Repository<Task>>;
   let aqRepo: jest.Mocked<Repository<Aquarium>>;
   let usersService: { touchActivity: jest.Mock };
+  let gamification: { onTaskCompleted: jest.Mock };
 
   beforeEach(async () => {
     const taskRepoMock: Partial<jest.Mocked<Repository<Task>>> = {
@@ -58,6 +59,7 @@ describe('TaskService (unit)', () => {
         {
   provide: GamificationService,
   useValue: {
+    onTaskCompleted: jest.fn().mockResolvedValue({ completed: [] }),
     onTaskCreated: jest.fn().mockResolvedValue({ completed: [] }),
   },
 },
@@ -65,6 +67,7 @@ describe('TaskService (unit)', () => {
     }).compile();
 
     service = module.get(TaskService);
+    gamification = module.get(GamificationService);
     repo = module.get(getRepositoryToken(Task));
     aqRepo = module.get(getRepositoryToken(Aquarium));
 
@@ -325,6 +328,9 @@ describe('TaskService (unit)', () => {
       expect(existing.status).toBe(TaskStatus.PENDING);
       expect(existing.completedOccurrences).toEqual([occurrenceAt]);
       expect(repo.save).toHaveBeenCalledWith(existing);
+      expect(gamification.onTaskCompleted).toHaveBeenCalledWith(1, `12:${occurrenceAt}`);
+      await service.update(1, `r:12:${occurrenceAt}`, { status: TaskStatus.DONE });
+      expect(gamification.onTaskCompleted).toHaveBeenCalledTimes(1);
     });
 
     it('reopens only the selected occurrence', async () => {
@@ -356,6 +362,7 @@ describe('TaskService (unit)', () => {
       await service.update(1, `r:12:${occurrenceAt}`, { status: TaskStatus.PENDING });
 
       expect(existing.completedOccurrences).toEqual([otherOccurrence]);
+      expect(gamification.onTaskCompleted).not.toHaveBeenCalled();
     });
   });
 

@@ -1,6 +1,7 @@
 import { PaypalService } from '../../src/billing/paypal/paypal.service';
 import { PaypalPayment, PaypalSubscription } from '../../src/billing/paypal/paypal-subscription.entity';
 import { User } from '../../src/users/user.entity';
+import { PaypalCheckoutSetting } from '../../src/billing/paypal/paypal-checkout-setting.entity';
 
 const plan = () => ({ status: 'ACTIVE', billing_cycles: [{ tenure_type: 'REGULAR', total_cycles: 0,
   frequency: { interval_unit: 'MONTH', interval_count: 1 }, pricing_scheme: { fixed_price: { currency_code: 'EUR', value: '3.99' } } }] });
@@ -33,6 +34,7 @@ describe('PayPal subscription lifecycle (no real network/payments)', () => {
     remote = { id: 'I-TEST', plan_id: 'P-PLAN', custom_id: 'local-key', status: 'ACTIVE', start_time: '2026-09-26T10:00:00Z', quantity: '1' };
     sales = [sale()];
     rows = new Map<any, Map<any, any>>([[User, new Map([[1, user]])], [PaypalSubscription, new Map([['local-key', local]])], [PaypalPayment, new Map()]]);
+    rows.set(PaypalCheckoutSetting, new Map([[1, { id: 1, enabled: true }]]));
     const find = (entity, where) => [...rows.get(entity)!.values()].filter((row) => Object.entries(where).every(([key, value]) => row[key] === value));
     manager = {
       findOneBy: jest.fn(async (entity, where) => find(entity, where)[0] ?? null),
@@ -69,6 +71,20 @@ describe('PayPal subscription lifecycle (no real network/payments)', () => {
     service = new PaypalService({ manager, createQueryRunner: () => runner } as any, api, stripe, mail);
   });
   afterEach(() => jest.useRealTimers());
+  it('blocks new checkout when paused without contacting PayPal', async () => {
+    rows.get(PaypalCheckoutSetting)!.get(1).enabled = false;
+    await expect(service.checkout(1)).rejects.toThrow('temporairement suspendues');
+    expect(api.request).not.toHaveBeenCalled();
+    expect(await service.status(1)).toMatchObject({ ready: false, checkoutPaused: true });
+  });
+  it('continues processing payments and cancellation while new checkout is paused', async () => {
+    rows.get(PaypalCheckoutSetting)!.get(1).enabled = false;
+    await notify();
+    expect(user.subscriptionPlan).toBe('PREMIUM');
+    expect(await service.status(1)).toMatchObject({ ready: false, canCancel: true, premium: true });
+    await service.cancel(1);
+    expect(remote.status).toBe('CANCELLED');
+  });
 
   it('preserves a manual gift if an unresolved attempt later becomes active, and still allows cancellation', async () => {
     Object.assign(user, { billingProvider: null, subscriptionPlan: 'PREMIUM', subscriptionStatus: 'active', subscriptionEndsAt: new Date('2027-01-01') });

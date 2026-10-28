@@ -111,7 +111,7 @@
                 <mat-icon>local_fire_department</mat-icon>
                 <span>
                   {{ gamification.profile.currentStreak }}
-                  jour{{ gamification.profile.currentStreak > 1 ? 's' : '' }} de suivi
+                  jour{{ gamification.profile.currentStreak > 1 ? 's' : '' }} de suivi ce mois-ci
                 </span>
               </div>
             </div>
@@ -119,8 +119,9 @@
             <h2>Ton suivi aquariophile</h2>
 
             <p>
-              Continue à mesurer, planifier et entretenir tes aquariums pour améliorer ton score.
+              Progresse à ton rythme en prenant soin de tes aquariums. Tes XP récompensent ton suivi, pas la santé du bac.
             </p>
+            <span class="gm-earned-title" *ngIf="gamification.currentTitle"><mat-icon>workspace_premium</mat-icon>{{ gamification.currentTitle }}</span>
 
             <div class="gm-level-box">
               <div>
@@ -179,7 +180,7 @@
             </div>
 
             <div class="gm-achievements" *ngIf="gamification.achievements.length; else noBadges">
-              <div class="gm-achievement" *ngFor="let badge of gamification.achievements">
+              <div class="gm-achievement" *ngFor="let badge of gamification.achievements" [title]="badge.description || badge.title">
                 <mat-icon>emoji_events</mat-icon>
                 <span>{{ badge.title }}</span>
               </div>
@@ -191,6 +192,28 @@
               </div>
             </ng-template>
           </div>
+          <details class="gm-collection" *ngIf="gamification.badgeCatalog?.length">
+            <summary>Ma collection de badges et mes prochains objectifs</summary>
+            <div class="gm-collection__grid">
+              <article *ngFor="let badge of gamification.badgeCatalog" [class.is-unlocked]="badge.unlockedAt">
+                <mat-icon>{{ badge.unlockedAt ? 'verified' : 'outlined_flag' }}</mat-icon>
+                <strong>{{ badge.title }}</strong>
+                <p>{{ badge.description }}</p>
+                <span>{{ badge.unlockedAt ? 'Débloqué' : badge.progress + ' / ' + badge.target }}</span>
+              </article>
+            </div>
+          </details>
+          <details class="gm-collection" *ngIf="gamification.rewards?.length">
+            <summary>Les titres que tu peux gagner</summary>
+            <p>Ton meilleur titre s’affiche sur ce tableau de bord. Les titres et badges restent acquis, même après une pause.</p>
+            <div class="gm-collection__grid">
+              <article *ngFor="let reward of gamification.rewards" [class.is-unlocked]="reward.unlocked">
+                <mat-icon>{{ reward.unlocked ? 'workspace_premium' : 'lock_outline' }}</mat-icon>
+                <strong>{{ reward.title }}</strong>
+                <span>{{ reward.xp }} XP · {{ reward.unlocked ? 'Acquis' : 'À débloquer' }}</span>
+              </article>
+            </div>
+          </details>
         </div>
       </article>
 
@@ -269,10 +292,11 @@
                 <div>
                   <div class="gm-mission__title">{{ mission.title }}</div>
                   <div class="gm-mission__desc">{{ mission.description }}</div>
+                  <small>Jusqu’au {{ mission.weekEnd | date:'dd/MM/yyyy' }}</small>
                 </div>
 
                 <div class="gm-mission__xp">
-                  +{{ mission.xpReward }} XP
+                  {{ mission.status === 'COMPLETED' ? 'Gagnés : ' : '+' }}{{ mission.xpReward }} XP
                 </div>
               </div>
 

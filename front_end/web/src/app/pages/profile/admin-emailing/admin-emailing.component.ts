@@ -39,6 +39,24 @@ export class AdminEmailingComponent implements OnInit {
     this.form.controls.userId.valueChanges.subscribe(invalidatePreview);
   }
   loadPreview(): void { const filter = this.filterPayload(); if (!filter) return; this.previewing = true; this.api.preview(filter).pipe(finalize(() => { this.previewing = false; this.cdr.markForCheck(); })).subscribe({ next: p => { this.preview = p; this.cdr.markForCheck(); }, error: e => this.snack.open(e?.error?.message || 'Aperçu impossible', 'Fermer', { duration: 4000 }) }); }
+  applyInactivityTemplate(): void {
+    const selectedDays = Number(this.form.controls.inactiveDays.value);
+    const days = Number.isInteger(selectedDays) && selectedDays >= 1 && selectedDays <= 3650 ? selectedDays : 30;
+    this.form.patchValue({
+      audience: 'INACTIVE',
+      consent: 'OPTED_IN',
+      inactiveDays: days,
+      subject: 'Ton aquarium t’attend sur AquaManager 🐠',
+      message: `Cela fait au moins ${days} ${days === 1 ? 'jour' : 'jours'} que nous ne t’avons pas vu sur AquaManager. Comment se porte ton aquarium ?\n\nPrends quelques minutes pour retrouver ton bac, noter tes dernières mesures d’eau et faire le point sur tes tâches d’entretien. Un petit suivi régulier aide à garder de bons repères et à prendre soin de tes habitants.\n\nProfites-en pour découvrir les nouveautés d’AquaManager et retrouver les conseils de la section Solutions.\n\nÀ bientôt sur AquaManager !`,
+      actionUrl: 'https://aquamanager.fr/dashboard',
+      actionLabel: 'Retrouver mon aquarium',
+    });
+    this.preview = null;
+    this.confirmationPending = false;
+    this.sendError = '';
+    this.form.markAsDirty();
+    this.snack.open('Trame ajoutée. Vérifiez la durée, le texte et les destinataires avant l’envoi.', 'OK', { duration: 5000 });
+  }
   send(): void {
     if (this.form.invalid || !this.preview?.count || this.sending) { this.form.markAllAsTouched(); return; }
     this.sendError = '';

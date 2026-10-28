@@ -5,6 +5,21 @@
       <header class="page-heading"><div><p class="eyebrow">Administration / Paiements</p><h1>Abonnements</h1><p>Suivez les souscriptions PayPal, les périodes payées et les résiliations.</p></div><button mat-stroked-button (click)="load()" [disabled]="loading()"><mat-icon>refresh</mat-icon>Actualiser</button></header>
 @if (overview(); as o) { <section class="stats" aria-label="Résumé PayPal"><article class="stat"><span>Souscriptions enregistrées</span><strong>{{ o.total }}</strong><small>Tentatives incluses</small></article><article class="stat accent"><span>État PayPal actif</span><strong>{{ o.active }}</strong><small>Dernier état synchronisé</small></article><article class="stat"><span>En attente</span><strong>{{ o.pending }}</strong><small>Création, validation ou paiement</small></article><article class="stat"><span>Résiliées / abandonnées</span><strong>{{ o.cancelled + (o.abandoned || 0) }}</strong><small>{{ o.suspended }} suspendues · {{ o.expired }} expirées</small></article></section> }
 <p class="notice">Les indicateurs suivent la recherche et l’environnement sélectionnés, avant les filtres « État » et « À vérifier ». Un état PayPal actif ne garantit pas à lui seul une période payée. Les accès offerts se consultent dans Utilisateurs.</p>
+      <section class="admin-card checkout-control" aria-label="Nouvelles souscriptions PayPal">
+        <div>
+          <h2>Nouvelles souscriptions PayPal</h2>
+          <p>Ce réglage concerne les nouvelles souscriptions depuis AquaManager. Les abonnements actuels et leurs renouvellements restent inchangés.</p>
+          <small>Un lien PayPal déjà ouvert avant le blocage peut encore être validé.</small>
+        </div>
+        @if (checkoutControl(); as control) {
+          <button type="button" class="checkout-toggle" [class.checkout-toggle--open]="control.enabled && control.available" [class.checkout-toggle--blocked]="!control.enabled || !control.available" [disabled]="checkoutBusy()" (click)="toggleCheckout()" [attr.aria-label]="control.enabled ? 'Bloquer les nouvelles souscriptions PayPal' : 'Réactiver les nouvelles souscriptions PayPal'">
+            <mat-icon>{{ control.enabled && control.available ? 'lock_open' : 'lock' }}</mat-icon>
+            <span>{{ checkoutBusy() ? 'Enregistrement…' : control.enabled && control.available ? 'Souscriptions ouvertes' : 'Souscriptions bloquées' }}<small>{{ control.enabled ? 'Cliquer pour bloquer' : 'Cliquer pour réactiver' }}</small></span>
+          </button>
+          @if (control.enabled && !control.available) { <p class="alert">Le réglage autorise les souscriptions, mais la configuration PayPal du serveur ne permet pas le paiement.</p> }
+        } @else if (!checkoutError()) { <p role="status">Chargement du réglage…</p> }
+        @if (checkoutError()) { <p class="alert" role="alert">{{ checkoutError() }}</p><button mat-button [disabled]="checkoutBusy()" (click)="loadCheckoutControl()">Réessayer</button> }
+      </section>
       <section class="admin-card">
         <form (ngSubmit)="load(true)" class="filters">
           <label>Rechercher<input name="search" [(ngModel)]="search" maxlength="160" placeholder="Nom, email ou référence PayPal"></label>

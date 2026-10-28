@@ -31,6 +31,7 @@ export class AquariumDialogComponent {
   private snack = inject(MatSnackBar);
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: any) {
+    if (data?.tutorial) this.form.patchValue({ name: 'Mon bac de découverte', setupCycling: false });
     // calcul initial du litrage
     this.updateLiters();
     // recalcule à chaque modification du formulaire

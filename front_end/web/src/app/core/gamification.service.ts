@@ -9,6 +9,9 @@ export type WeeklyMissionStatus = 'ACTIVE' | 'COMPLETED' | 'EXPIRED';
 
 export type GamificationSummary = {
   globalScore: number;
+  currentTitle?: string;
+  rewards?: Array<{ xp: number; title: string; unlocked: boolean }>;
+  badgeCatalog?: Array<{ achievementKey: string; title: string; description: string; progress: number; target: number; unlockedAt: string | null }>;
 
   profile: {
     xp: number;

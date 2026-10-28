@@ -4,11 +4,23 @@ import { PaypalPayment, PaypalSubscription } from './paypal-subscription.entity'
 import { PaypalAdminAction } from './paypal-admin-action.entity';
 import { PaypalService } from './paypal.service';
 import { PaypalApiService, PaypalApiError } from './paypal-api.service';
+import { PaypalCheckoutSetting } from './paypal-checkout-setting.entity';
 import { adminSubscriptionStatus, ADMIN_STATUS_SQL, APPROVAL_TIMEOUT_MS } from './paypal-admin-status';
 
 @Injectable()
 export class PaypalAdminService {
   constructor(private readonly db: DataSource, private readonly paypal: PaypalService, private readonly api: PaypalApiService) {}
+
+  async checkoutControl() {
+    const setting = await this.db.manager.findOneBy(PaypalCheckoutSetting, { id: 1 });
+    return { enabled: !!setting?.enabled, available: this.api.ready, updatedAt: setting?.updatedAt ?? null };
+  }
+
+  async setCheckoutControl(enabled: boolean, actorId: number) {
+    if (typeof enabled !== 'boolean') throw new BadRequestException('Réglage invalide.');
+    await this.db.manager.upsert(PaypalCheckoutSetting, { id: 1, enabled, updatedBy: actorId, updatedAt: new Date() }, ['id']);
+    return this.checkoutControl();
+  }
 
   async list(search = '', page = 1, environment = 'all', attention = false, status = 'all') {
     if (typeof search !== 'string' || !Number.isInteger(page) || page < 1 || page > 100000 || search.length > 160

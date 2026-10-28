@@ -8,9 +8,10 @@ import { TaskModule } from '../tasks/task.module';
 import { AquariumTargetsModule } from '../aquarium-targets/aquarium-targets.module';
 import { FeatureUsageEvent } from './feature-usage-event.entity';
 import { FeatureUsageController } from './feature-usage.controller';
+import { GamificationModule } from '../gamification/gamification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Recommendation, FeatureUsageEvent]), TaskModule, AquariumTargetsModule],
+  imports: [TypeOrmModule.forFeature([Recommendation, FeatureUsageEvent]), TaskModule, AquariumTargetsModule, GamificationModule],
   providers: [RecommendationService],
   controllers: [RecommendationController, FeatureUsageController],
   exports: [RecommendationService],

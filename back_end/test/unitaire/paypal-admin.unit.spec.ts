@@ -9,7 +9,7 @@ import { PaypalAdminAction } from '../../src/billing/paypal/paypal-admin-action.
 describe('PayPal admin access and audit', () => {
   it.each(['USER', 'EDITOR', undefined])('denies role %s for every endpoint', role => {
     const guard = new RolesGuard(new Reflector());
-    for (const handler of ['list', 'detail', 'refresh']) {
+    for (const handler of ['list', 'detail', 'refresh', 'checkoutControl', 'setCheckoutControl']) {
       const context: any = { getHandler: () => PaypalAdminController.prototype[handler], getClass: () => PaypalAdminController,
         switchToHttp: () => ({ getRequest: () => ({ user: role ? { role } : undefined }) }) };
       expect(() => guard.canActivate(context)).toThrow();

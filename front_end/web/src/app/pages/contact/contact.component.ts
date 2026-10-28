@@ -14,7 +14,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-type CategoryValue = 'BUG' | 'QUESTION' | 'SUGGESTION' | 'AUTRE';
+type CategoryValue = 'BUG' | 'QUESTION' | 'SUGGESTION' | 'PROPOSITION COMERCIALE' | 'AUTRE';
 
 @Component({
   selector: 'app-contact',
@@ -47,7 +47,9 @@ export class ContactComponent {
     { value: 'BUG', label: 'Problème / Bug', icon: 'bug_report' },
     { value: 'QUESTION', label: 'Question', icon: 'help' },
     { value: 'SUGGESTION', label: "Suggestion d'amélioration", icon: 'lightbulb' },
+    { value: 'PROPOSITION COMERCIALE', label: 'Proposition commerciale', icon: 'more_horiz' },
     { value: 'AUTRE', label: 'Autre', icon: 'more_horiz' },
+    
   ];
 
   loading = false;

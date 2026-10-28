@@ -9,8 +9,8 @@ import { UsersModule } from '../users/users.module';
 import { GamificationController } from './gamification.controller';
 import { GamificationService } from './gamification.service';
 import { AquariumScoreService } from './score/aquarium-score.service';
-import { WeeklyMissionService } from './missions/weekly-mission.service';
-import { AchievementService } from './achievements/achievement.service';
+import { ProgressionService } from './progression.service';
+import { GamificationActivity } from './entities/gamification-activity.entity';
 
 import { AquariumHealthScore } from './entities/aquarium-health-score.entity';
 import { GamificationProfile } from './entities/gamification-profile.entity';
@@ -26,6 +26,7 @@ import { WeeklyMission } from './entities/weekly-mission.entity';
       GamificationProfile,
       UserAchievement,
       WeeklyMission,
+      GamificationActivity,
     ]),
     UsersModule,
     forwardRef(() => AquariumTargetsModule),
@@ -34,8 +35,7 @@ import { WeeklyMission } from './entities/weekly-mission.entity';
   providers: [
     GamificationService,
     AquariumScoreService,
-    WeeklyMissionService,
-    AchievementService,
+    ProgressionService,
   ],
   exports: [GamificationService, AquariumScoreService],
 })

@@ -107,6 +107,7 @@ describe('Tasks (tests fonctionnels)', () => {
         {
   provide: GamificationService,
   useValue: {
+    onTaskCompleted: jest.fn().mockResolvedValue({ completed: [] }),
     onTaskCreated: jest.fn().mockResolvedValue({ completed: [] }),
   },
 },

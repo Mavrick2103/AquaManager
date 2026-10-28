@@ -10,7 +10,6 @@ export class GamificationController {
   @Get('summary')
   async summary(@Req() req: any) {
     const userId = this.getUserId(req);
-    await this.gamification.onAppOpened(userId);
     return this.gamification.getSummary(userId);
   }
 

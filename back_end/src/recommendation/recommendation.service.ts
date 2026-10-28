@@ -12,6 +12,7 @@ import { buildDefaultWaterRules } from './rules/default-water-rules';
 import { TaskService } from '../tasks/task.service';
 import { AquariumTargetsService } from '../aquarium-targets/aquarium-targets.service';
 import { FeatureUsageEvent } from './feature-usage-event.entity';
+import { GamificationService } from '../gamification/gamification.service';
 
 @Injectable()
 export class RecommendationService {
@@ -22,6 +23,7 @@ export class RecommendationService {
     private readonly featureUsageRepo: Repository<FeatureUsageEvent>,
     private readonly taskService: TaskService,
     private readonly aquariumTargetsService: AquariumTargetsService,
+    private readonly gamification: GamificationService,
   ) {}
 
   async trackAssistantOpen(userId: number, aquariumId: number) {
@@ -32,6 +34,7 @@ export class RecommendationService {
     await this.featureUsageRepo.save(
       this.featureUsageRepo.create({ userId, aquariumId, feature: 'ASSISTANT_OPEN' }),
     );
+    await this.gamification.onSolutionsOpened(userId);
     return { tracked: true };
   }
 

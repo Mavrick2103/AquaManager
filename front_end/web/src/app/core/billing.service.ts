@@ -7,6 +7,7 @@ type CheckoutRes = { url: string };
 type PortalRes = { url: string };
 export interface PaypalBillingStatus {
   ready: boolean;
+  checkoutPaused?: boolean;
   provider: 'paypal' | 'stripe' | null;
   status: string | null;
   paidUntil: string | null;

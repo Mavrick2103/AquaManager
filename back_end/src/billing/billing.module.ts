@@ -12,9 +12,10 @@ import { PaypalAdminAction } from './paypal/paypal-admin-action.entity';
 import { PaypalAdminController } from './paypal/paypal-admin.controller';
 import { PaypalAdminService } from './paypal/paypal-admin.service';
 import { MailModule } from '../mail/mail.module';
+import { PaypalCheckoutSetting } from './paypal/paypal-checkout-setting.entity';
 
 @Module({
-  imports: [UsersModule, MailModule, TypeOrmModule.forFeature([User, PaypalSubscription, PaypalPayment, PaypalAdminAction])],
+  imports: [UsersModule, MailModule, TypeOrmModule.forFeature([User, PaypalSubscription, PaypalPayment, PaypalAdminAction, PaypalCheckoutSetting])],
   controllers: [BillingController, PaypalController, PaypalAdminController],
   providers: [BillingService, PaypalApiService, PaypalService, PaypalAdminService],
 })
