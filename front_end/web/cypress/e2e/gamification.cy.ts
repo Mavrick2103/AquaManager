@@ -37,7 +37,8 @@ describe('Progression et récompenses', () => {
     cy.document().its('documentElement.scrollWidth').should('be.lte', 390);
     cy.screenshot('progression-mobile', { capture: 'viewport' });
     cy.contains('.gm-mission', 'Comprendre avant d’agir').scrollIntoView().should('be.visible');
-    cy.contains('a', 'Choisir un aquarium pour poursuivre').click();
-    cy.location('pathname').should('eq', '/aquariums');
+    cy.contains('a', 'Choisir un aquarium pour poursuivre').should('not.exist');
+    cy.contains('p', 'Classic ou Premium, le parcours est le même').should('not.exist');
+    cy.contains('p', 'Chaque nouveau mois, découvre 4 missions').should('not.exist');
   });
 });
