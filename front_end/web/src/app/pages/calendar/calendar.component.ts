@@ -1,3 +1,4 @@
+import { UserNavigationComponent } from '../../shared/user-navigation/user-navigation.component';
 import { Component, computed, effect, inject, signal, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -5,7 +6,7 @@ import { Title, Meta } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { MatDividerModule } from '@angular/material/divider';
 
 import {
@@ -20,16 +21,18 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-import { TasksService, Task, CreateTaskPayload } from '../../core/tasks.service';
+import { TasksService, Task } from '../../core/tasks.service';
 import { TaskDialogComponent } from './task-dialog/task-dialog.component';
 import { DayTasksDialogComponent } from './day-tasks-dialog/day-tasks-dialog.component';
 import { APP_VERSION } from '../../core/app-version';
 import { SiteTourService } from '../../core/site-tour.service';
+import { taskOverview } from '../../core/task-overview';
 
 @Component({
   selector: 'app-calendar',
   standalone: true,
   imports: [
+    UserNavigationComponent,
     CommonModule,
     FormsModule,
     MatIconModule,
@@ -47,6 +50,8 @@ export class CalendarComponent {
   private dialog = inject(MatDialog);
   private title = inject(Title);
   private meta = inject(Meta);
+  private route = inject(ActivatedRoute);
+  private contextAquariumName = '';
 
   today = new Date();
   currentMonth = signal(new Date(this.today.getFullYear(), this.today.getMonth(), 1));
@@ -55,7 +60,12 @@ export class CalendarComponent {
   readonly siteTour = inject(SiteTourService);
   loading = false;
   loadError = false;
+  summaryLoading = true;
+  summaryError = false;
+  private request = 0;
+  private overview = taskOverview([],new Date());
   changingTaskId: string | number | null = null;
+  taskUpdateError = '';
   viewMode: 'month' | 'list' = 'month';
   aquariumFilter = 'ALL';
   typeFilter: Task['type'] | 'ALL' = 'ALL';
@@ -90,6 +100,16 @@ export class CalendarComponent {
   });
 
   constructor() {
+    this.route.queryParamMap.subscribe(params => {
+      const id = Number(params.get('aquariumId'));
+      this.aquariumFilter = Number.isInteger(id) && id > 0 ? String(id) : 'ALL';
+      this.contextAquariumName = params.get('aquariumName') || '';
+      const month=params.get('month');
+      if(month && /^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+        const [year,index]=month.split('-').map(Number);
+        this.currentMonth.set(new Date(year,index-1,1));
+      }
+    });
     this.title.setTitle('Calendrier – AquaManager');
     this.meta.updateTag({
       name: 'description',
@@ -119,7 +139,7 @@ export class CalendarComponent {
     event?.stopPropagation();
     this.dialog
       .open(TaskDialogComponent, {
-        data: { date: day },
+        data: { date: day, aquariumId: this.aquariumFilter === 'ALL' ? undefined : Number(this.aquariumFilter) },
         autoFocus: false,
         restoreFocus: false,
         width: 'min(1100px, 96vw)',
@@ -127,17 +147,8 @@ export class CalendarComponent {
         panelClass: 'task-dialog-panel',
       })
       .afterClosed()
-      .subscribe((payload: CreateTaskPayload | null | undefined) => {
-        if (!payload) return;
-
-        // ✅ ICI on enregistre vraiment en base
-        this.tasksApi.create(payload).subscribe({
-          next: () => this.reloadMonth(),
-          error: (err) => {
-            console.error('Create task failed:', err);
-            alert('Erreur lors de la création de la tâche (voir console).');
-          },
-        });
+      .subscribe((created: Task | null | undefined) => {
+        if (created) void this.reloadMonth();
       });
   }
 
@@ -146,7 +157,7 @@ export class CalendarComponent {
 
     this.dialog
       .open(DayTasksDialogComponent, {
-        data: { date: day, tasks: dayTasks },
+        data: { date: day, tasks: dayTasks, aquariumId: this.aquariumFilter === 'ALL' ? undefined : Number(this.aquariumFilter) },
         autoFocus: false,
         restoreFocus: false,
         width: 'min(980px, 92vw)',
@@ -159,27 +170,31 @@ export class CalendarComponent {
       });
   }
 
-  private reloadMonth() {
-    const monthStr = format(this.currentMonth(), 'yyyy-MM');
-    this.loading = true;
-    this.loadError = false;
-    this.tasksApi.list(monthStr).subscribe({
-      next: (res) => {
-        this.tasks.set(res ?? []);
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Load tasks failed:', err);
-        this.tasks.set([]);
-        this.loading = false;
-        this.loadError = true;
-      },
-    });
+  async reloadMonth(): Promise<void> {
+    const selectedMonth = this.currentMonth();
+    const request = ++this.request;
+    const now = new Date();
+    this.today = now;
+    this.loading = true; this.loadError = false;
+    this.summaryLoading = true; this.summaryError = false;
+    const summaryStart = new Date(Math.min(startOfMonth(now).getTime(),addDays(now,-7).getTime()));
+    await Promise.all([
+      this.tasksApi.listWindow(startOfMonth(selectedMonth),endOfMonth(selectedMonth)).then(rows => {
+        if (request !== this.request) return;
+        this.tasks.set(rows.filter(task => isSameMonth(new Date(task.dueAt),selectedMonth)));
+      }).catch(() => {
+        if (request === this.request) { this.tasks.set([]); this.loadError = true; }
+      }).finally(() => { if (request === this.request) this.loading = false; }),
+      this.tasksApi.listWindow(summaryStart,addDays(now,7)).then(rows => {
+        if (request === this.request) this.overview = taskOverview(rows,now);
+      }).catch(() => { if (request === this.request) this.summaryError = true; })
+        .finally(() => { if (request === this.request) this.summaryLoading = false; }),
+    ]);
   }
 
   dayTasks(d: Date) {
     const iso = format(d, 'yyyy-MM-dd');
-    return this.filteredTasks.filter((t) => t.dueAt.startsWith(iso));
+    return this.filteredTasks.filter(t => this.localTaskDay(t) === iso);
   }
 
   get filteredTasks(): Task[] {
@@ -190,7 +205,7 @@ export class CalendarComponent {
       if (this.typeFilter !== 'ALL' && task.type !== this.typeFilter) return false;
       if (this.statusFilter === 'OVERDUE') return this.isOverdue(task);
       if (this.statusFilter !== 'ALL' && task.status !== this.statusFilter) return false;
-      if (this.dateFilter === 'TODAY' && !task.dueAt.startsWith(format(this.today, 'yyyy-MM-dd'))) {
+      if (this.dateFilter === 'TODAY' && this.localTaskDay(task) !== format(this.today, 'yyyy-MM-dd')) {
         return false;
       }
       return true;
@@ -199,6 +214,7 @@ export class CalendarComponent {
 
   get aquariumOptions(): Array<{ id: string; name: string }> {
     const aquariums = new Map<string, string>();
+    if (this.aquariumFilter !== 'ALL') aquariums.set(this.aquariumFilter, this.contextAquariumName || `Aquarium ${this.aquariumFilter}`);
     for (const task of this.tasks()) {
       if (task.aquarium?.id == null) continue;
       aquariums.set(String(task.aquarium.id), task.aquarium.name || `Aquarium ${task.aquarium.id}`);
@@ -219,24 +235,13 @@ export class CalendarComponent {
     return this.tasks().filter(task => task.status === 'PENDING').length;
   }
 
-  get overdueCount(): number {
-    return this.tasks().filter(task => this.isOverdue(task)).length;
-  }
+  get overdueCount(): number { return this.overview.overdueCount; }
+  get todayCount(): number { return this.overview.todayCount; }
+  get upcomingCount(): number { return this.overview.upcomingCount; }
 
-  get todayCount(): number {
-    const todayIso = format(this.today, 'yyyy-MM-dd');
-    return this.tasks().filter(
-      task => task.status === 'PENDING' && task.dueAt.startsWith(todayIso),
-    ).length;
-  }
-
-  get upcomingCount(): number {
-    const start = new Date(this.today.getFullYear(), this.today.getMonth(), this.today.getDate());
-    const end = addDays(start, 7).getTime();
-    return this.tasks().filter(task => {
-      const due = new Date(task.dueAt).getTime();
-      return task.status === 'PENDING' && due >= start.getTime() && due < end;
-    }).length;
+  private localTaskDay(task: Task): string {
+    const date = new Date(task.dueAt);
+    return Number.isFinite(date.getTime()) ? format(date,'yyyy-MM-dd') : '';
   }
 
   isOverdue(task: Task): boolean {
@@ -267,12 +272,15 @@ export class CalendarComponent {
   }
 
   filterOverdue(): void {
+    this.thisMonth();
+    this.resetFilters();
     this.statusFilter = 'OVERDUE';
     this.dateFilter = 'ALL';
     this.viewMode = 'list';
   }
 
   filterToday(): void {
+    this.thisMonth();
     this.resetFilters();
     this.dateFilter = 'TODAY';
     this.viewMode = 'list';
@@ -282,6 +290,7 @@ export class CalendarComponent {
     event.stopPropagation();
     if (this.changingTaskId !== null) return;
     this.changingTaskId = task.id;
+    this.taskUpdateError = '';
     this.tasksApi
       .update(task.id, { status: task.status === 'DONE' ? 'PENDING' : 'DONE' })
       .subscribe({
@@ -289,8 +298,8 @@ export class CalendarComponent {
           this.changingTaskId = null;
           this.reloadMonth();
         },
-        error: error => {
-          console.error('Update task failed:', error);
+        error: () => {
+          this.taskUpdateError = 'La tâche n’a pas pu être mise à jour. Son état est inchangé : réessaie avec son bouton de validation.';
           this.changingTaskId = null;
         },
       });

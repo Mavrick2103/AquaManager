@@ -1,3 +1,4 @@
+import { UserNavigationComponent } from '../../shared/user-navigation/user-navigation.component';
 import { SatisfactionComponent } from '../../shared/satisfaction/satisfaction.component';
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -39,6 +40,7 @@ type ExtendedMe = UserMe & {
   selector: 'app-profile',
   standalone: true,
   imports: [
+    UserNavigationComponent,
     SatisfactionComponent,
     CommonModule,
     ReactiveFormsModule,
@@ -137,6 +139,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   loading = false;
   billingLoading = false;
   notificationsLoading = false;
+  notificationSettingsLoaded = false;
+  notificationSettingsError = false;
+  notificationSettingsLoading = false;
 
   notificationSettings: Pick<
     UserSettings,
@@ -220,10 +225,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async loadNotificationSettings(): Promise<void> {
+  async loadNotificationSettings(): Promise<void> {
+    if (this.notificationSettingsLoading) return;
+    this.notificationSettingsLoading = true;
+    this.notificationSettingsError = false;
     try {
       const settings = await this.settingsApi.getMySettings();
-      if (!settings) return;
+      if (!settings) throw new Error('Missing preferences');
       this.notificationSettings = {
         notificationsEnabled: settings.notificationsEnabled,
         emailNotifications: settings.notificationsEnabled,
@@ -232,13 +240,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
         automaticNotifications: settings.automaticNotifications,
         newsAndUpdates: settings.newsAndUpdates,
       };
+      this.notificationSettingsLoaded = true;
     } catch {
-      this.snack.open('Impossible de charger les préférences de notifications', 'Fermer', { duration: 3000 });
+      this.notificationSettingsError = true;
+    } finally {
+      this.notificationSettingsLoading = false;
     }
   }
 
   async saveNotificationSettings(): Promise<void> {
-    if (this.notificationsLoading) return;
+    if (this.notificationsLoading || !this.notificationSettingsLoaded || this.notificationSettingsError) return;
     this.notificationsLoading = true;
     try {
       if (this.notificationSettings.notificationsEnabled) {

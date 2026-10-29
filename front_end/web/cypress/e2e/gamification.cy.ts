@@ -23,6 +23,9 @@ describe('Progression et récompenses', () => {
     });
     cy.viewport(1280, 900);
     cy.visit('/dashboard');
+    cy.get('.home-progression').should('not.have.attr', 'open');
+    cy.get('.grid').should('be.visible');
+    cy.contains('summary', 'Ma progression').click();
     cy.get('.gm-mission').should('have.length', 6);
     cy.get('.gm-earned-title').should('contain.text', 'Observateur du bac');
     cy.contains('.gm-mission', 'Garder le contact').should('contain.text', 'Gagnés : 40 XP');

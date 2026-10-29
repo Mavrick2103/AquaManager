@@ -64,6 +64,8 @@ export class TaskDetailDialogComponent implements OnInit {
   private aquariumsApi = inject(AquariumsService);
 
   saving = false;
+  readonly isSeries: boolean;
+  readonly seriesContextMissing: boolean;
 
   aquariums: Aquarium[] = [];
   selectedAquariumId: number | null = null;
@@ -85,6 +87,7 @@ export class TaskDetailDialogComponent implements OnInit {
 
   // ✅ NOUVEAU : durée de répétition (anti-infini)
   repeatDurationWeeks = 4;
+  repeatHasEnd = false;
 
   fertilization: FertilizerLine[] = [{ name: '', qty: 1, unit: 'ml' }];
 
@@ -92,12 +95,14 @@ export class TaskDetailDialogComponent implements OnInit {
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: { task: Task }) {
     const t = data.task;
+    this.isSeries = Boolean(t.repeat?.mode && t.repeat.mode !== 'NONE');
+    this.seriesContextMissing = Boolean(t.virtual && (!t.parentId || !t.seriesDueAt));
 
     this.editing = {
-      id: t.id,
+      id: t.virtual ? t.parentId! : t.id,
       title: t.title ?? '',
       description: t.description ?? '',
-      dueAtLocal: this.toLocalInputValue(t.dueAt),
+      dueAtLocal: this.toLocalInputValue(t.virtual ? (t.seriesDueAt ?? t.dueAt) : t.dueAt),
       type: t.type,
     };
 
@@ -111,7 +116,8 @@ export class TaskDetailDialogComponent implements OnInit {
       this.repeatDays = (t.repeat.days?.length ? t.repeat.days : ['MON']) as WeekDayKey[];
 
       // ✅ hydrate durée (si absent -> défaut 4 semaines)
-      this.repeatDurationWeeks = Math.min(260, Math.max(1, toNumber((t.repeat as any)?.durationWeeks, 4)));
+      this.repeatHasEnd = t.repeat.durationWeeks != null;
+      this.repeatDurationWeeks = Math.min(260, Math.max(1, toNumber(t.repeat.durationWeeks, 4)));
     }
 
     // hydrate fertilization
@@ -180,7 +186,9 @@ export class TaskDetailDialogComponent implements OnInit {
     const mode = this.repeatMode;
 
     // ✅ durée: 1 à 260 semaines (~5 ans)
-    const durationWeeks = Math.min(260, Math.max(1, toNumber(this.repeatDurationWeeks, 4)));
+    const durationWeeks = this.repeatHasEnd
+      ? Math.min(260, Math.max(1, toNumber(this.repeatDurationWeeks, 4)))
+      : undefined;
 
     if (mode === 'DAILY' || mode === 'EVERY_2_DAYS') {
       return { mode, durationWeeks };
@@ -238,6 +246,7 @@ export class TaskDetailDialogComponent implements OnInit {
 
   // ---------- Actions ----------
   save(): void {
+    if (this.saving || this.seriesContextMissing) return;
     const title = (this.editing.title || '').trim();
     if (!title) return alert('Titre requis.');
     if (!this.selectedAquariumId) return alert('Sélectionne un aquarium.');
@@ -245,14 +254,14 @@ export class TaskDetailDialogComponent implements OnInit {
     if (!this.isFertilizationValid()) return alert('Fertilisation invalide.');
 
     // ✅ garde-fou durée
-    if (this.repeatOn) {
+    if (this.repeatOn && this.repeatHasEnd) {
       const d = toNumber(this.repeatDurationWeeks, 0);
       if (!(d > 0)) return alert('Durée de répétition invalide.');
     }
 
     const payload: UpdateTaskPayload = {
       title,
-      description: (this.editing.description ?? '').toString().trim() || undefined,
+      description: (this.editing.description ?? '').toString().trim(),
       dueAt: this.toIsoUtcFromLocalInput(this.editing.dueAtLocal),
       type: this.editing.type,
       aquariumId: this.selectedAquariumId,
@@ -272,13 +281,18 @@ export class TaskDetailDialogComponent implements OnInit {
   }
 
   delete(): void {
-    const ok = confirm(`Supprimer la tâche « ${this.editing.title} » ?`);
+    if (this.saving || this.seriesContextMissing) return;
+    const ok = confirm(this.isSeries
+      ? `Supprimer toute la série « ${this.editing.title} » ? Toutes ses occurrences, y compris celles déjà terminées, disparaîtront du calendrier.`
+      : `Supprimer la tâche « ${this.editing.title} » ?`);
     if (!ok) return;
 
+    this.saving = true;
     this.tasksApi.delete(this.editing.id).subscribe({
       next: () => this.ref.close({ deleted: true }),
       error: (err: unknown) => {
         console.error(err);
+        this.saving = false;
         alert('Erreur lors de la suppression');
       },
     });

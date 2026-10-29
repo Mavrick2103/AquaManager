@@ -1426,3 +1426,43 @@
 }
 
 .gm-fair-play { color: #48636c; font-size: .9rem; line-height: 1.6; margin: 0 0 1rem; }
+.home-progression {
+  width:calc(100% - 32px); max-width:1100px; box-sizing:border-box; margin:28px auto;
+  border:1px solid #d9e9e7; border-radius:22px;
+  background:linear-gradient(115deg,#f2f9fd,#f4faf2); overflow:hidden;
+  box-shadow:0 8px 24px rgba(35,79,80,.045);
+}
+.home-progression > summary {
+  display:flex; align-items:center; gap:16px; padding:22px 26px;
+  color:#284953; cursor:pointer; list-style:none;
+  transition:background .18s;
+}
+.home-progression > summary::-webkit-details-marker { display:none; }
+.home-progression > summary::marker { content:''; }
+.home-progression > summary:hover { background:rgba(255,255,255,.6); }
+.home-progression > summary:focus-visible { outline:3px solid #4c98b4; outline-offset:-4px; border-radius:22px; }
+.progression-symbol { display:grid; place-items:center; width:50px; height:50px; flex-shrink:0; border-radius:16px; background:linear-gradient(135deg,#d8edf8,#e1efd8); color:#408286; }
+.progression-heading { display:flex; flex-direction:column; gap:5px; flex:1; min-width:0; }
+.progression-heading strong { font-size:1.05rem; font-weight:800; }
+.progression-heading > span { font-size:.85rem; color:#607a80; }
+.progression-level { padding:8px 13px; border:1px solid #d4e6df; border-radius:24px; font-size:.8rem; font-weight:700; color:#477c68; background:rgba(255,255,255,.75); white-space:nowrap; }
+.progression-chevron { flex-shrink:0; color:#53858b; transition:transform .2s; }
+.home-progression[open] > summary { border-bottom:1px solid #d9e9e7; }
+.home-progression[open] .progression-chevron { transform:rotate(180deg); }
+.home-progression .gamification-section { margin:0; padding:20px; box-sizing:border-box; }
+@media(max-width:600px) {
+  .home-progression { margin:20px auto; border-radius:18px; }
+  .home-progression > summary { padding:18px 14px; gap:10px; }
+  .progression-symbol { width:40px; height:40px; border-radius:12px; }
+  .progression-heading strong { font-size:.95rem; }
+  .progression-heading > span { font-size:.75rem; }
+  .progression-level { padding:6px 9px; font-size:.7rem; }
+  .home-progression .gamification-section { padding:12px; }
+}
+@media(prefers-reduced-motion:reduce) { .progression-chevron,.home-progression > summary { transition:none; } }
+.home-load-error { max-width:1068px; margin:12px auto; padding:14px 18px; border:1px solid #edd5c3; border-radius:12px; background:#fff8f1; color:#805735; }
+.activity-caption { font-size:.8rem; color:#607a80; }
+.all-tasks-link { display:inline-flex; align-items:center; gap:8px; margin-top:12px; color:#367c8a; font-weight:600; }
+.grid { grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+.next-action-label { display:block; color:#367277; font-weight:700; }
+.next-action-link { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:10px 20px; margin-bottom:16px; border-radius:24px; background:linear-gradient(110deg,#438fb3,#609d61); color:white; text-decoration:none; font-weight:700; }

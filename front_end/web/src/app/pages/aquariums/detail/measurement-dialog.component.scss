@@ -184,5 +184,16 @@
 
   .dialog-actions button {
     flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    height: auto;
+    padding-inline: 10px;
+    font-size: .85rem;
+    white-space: nowrap;
   }
+  .dialog-actions mat-icon { width:18px; height:18px; font-size:18px; margin-left:0; margin-right:6px; }
 }
+.measurement-prefill { padding:12px 14px; border-radius:10px; background:#edf7f4; color:#315c63; font-size:.85rem; line-height:1.5; }
+:host { display:flex; flex-direction:column; max-height:calc(100dvh - 32px); min-height:0; }
+.dialog-title,.dialog-actions { flex-shrink:0; }
+.dialog-content { flex:1 1 auto; min-height:0; max-height:none !important; }

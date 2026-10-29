@@ -34,6 +34,7 @@
   </div>
 </section>
 
+<app-user-navigation />
 <section class="hero" data-tour="aquarium-detail-overview" *ngIf="!loading; else loader">
   <div class="left">
     <div class="avatar" aria-hidden="true">
@@ -89,6 +90,8 @@
   <!-- ===================== Mesures ===================== -->
   <mat-tab label="Mesures">
     <div class="tab-section">
+      <p role="status" *ngIf="measurementsLoading">Chargement des mesures…</p>
+      <p class="data-error" role="alert" *ngIf="measurementsError">Impossible de charger les mesures. <span *ngIf="measurementsLoaded">Les derniers relevés affichés n’ont pas pu être actualisés.</span> <button mat-stroked-button type="button" (click)="reloadMeasurements()">Réessayer</button></p>
       <div class="tab-actions">
         <button mat-raised-button color="primary" (click)="openMeasurementDialog()">
           <mat-icon>add</mat-icon>
@@ -96,6 +99,8 @@
         </button>
       </div>
 
+      <ng-container *ngIf="measurementsLoaded">
+      <p class="data-error" role="alert" *ngIf="maintenanceError">Les repères d’entretien n’ont pas pu être actualisés. <button mat-stroked-button type="button" (click)="loadMaintenanceEvents()">Réessayer</button></p>
       <section class="chart-toolbar" aria-labelledby="chart-period-title">
         <div class="chart-toolbar__intro">
           <span class="chart-toolbar__eyebrow">Évolution des paramètres</span>
@@ -178,7 +183,7 @@
           Anomalies en premier
         </button>
 
-        <div class="measurement-overview__healthy" *ngIf="chartSummary.warning === 0">
+        <div class="measurement-overview__healthy" *ngIf="chartSummary.warning === 0 && chartSummary.ok > 0">
           <mat-icon>check_circle</mat-icon>
           <span>
             <strong>
@@ -393,12 +398,13 @@
           </button>
         </div>
       </section>
+      </ng-container>
     </div>
   </mat-tab>
 
   <!-- ===================== Tâches ===================== -->
   <mat-tab label="Tâches">
-    <app-aquarium-tasks [aquariumId]="id" />
+    <app-aquarium-tasks [aquariumId]="id" [aquariumName]="form.value.name || ''" (tasksChanged)="loadMaintenanceEvents()" />
   </mat-tab>
 
   <!-- ===================== Solutions ===================== -->
@@ -951,72 +957,31 @@
           role="tabpanel"
           aria-labelledby="assistant-tab"
         >
-        <section class="sol-hero" *ngIf="solutionView === 'assistant'">
-          <div class="sol-hero__left">
-            <div class="sol-hero__eyebrow">
-              <mat-icon>tips_and_updates</mat-icon>
-              Assistant AquaManager
-            </div>
-
-            <h2 class="sol-hero__title">
-              Suivi et recommandations de ton aquarium
-              <span class="sol-hero__badge">{{ isPremium ? 'Premium' : 'Classic' }}</span>
-            </h2>
-
-            <p class="sol-hero__subtitle">
-              AquaManager compare ta dernière mesure aux valeurs de référence et propose des actions concrètes.
-            </p>
-
-            <div
-              class="sol-hero__benefits"
-              aria-label="Fonctions disponibles"
-            >
-              <span>
-                <mat-icon>rule</mat-icon>
-                Analyse des mesures
-              </span>
-              <span>
-                <mat-icon>event_available</mat-icon>
-                Ajout au planning
-              </span>
-            </div>
-          </div>
-
-          <div class="sol-hero__right" *ngIf="solutionView === 'assistant'">
-            <button
-              mat-flat-button
-              color="primary"
-              type="button"
-              [disabled]="targetsLoading || recosLoading"
-              (click)="refreshSolutions()"
-            >
-              <mat-icon>refresh</mat-icon>
-              {{
-                targetsLoading || recosLoading
-                  ? 'Actualisation…'
-                  : 'Actualiser les recommandations'
-              }}
-            </button>
-          </div>
-        </section>
-
-        <mat-card class="health-card health-card--ok" *ngIf="isTankHealthy">
+        <div class="solution-refresh">
+          <button mat-stroked-button type="button" [disabled]="targetsLoading || recosLoading" (click)="refreshSolutions()">
+            <mat-icon>refresh</mat-icon>{{ targetsLoading || recosLoading ? 'Actualisation…' : 'Actualiser le bilan' }}
+          </button>
+        </div>
+        <p class="data-error" role="alert" *ngIf="recosError || targetsError">Impossible de charger le bilan et les actions recommandées. <button mat-stroked-button type="button" (click)="refreshSolutions()">Réessayer</button></p>
+        <p class="data-error" role="alert" *ngIf="measurementsError">Les mesures sont indisponibles : le bilan ne peut pas être actualisé. <button mat-stroked-button type="button" (click)="refreshSolutions()">Réessayer</button></p>
+        <mat-card class="health-card health-card--ok" *ngIf="isTankHealthy && !measurementsError && !targetsError && !measurementsLoading && !targetsLoading">
           <mat-card-content class="health-card__content">
             <div class="health-card__icon"><mat-icon>favorite</mat-icon></div>
-            <div><div class="health-card__title">Bac en bonne santé ✅</div>
-              <div class="health-card__text">Ta dernière mesure respecte les plages de référence du profil <b>{{ getProfileLabel() }}</b>.</div>
+            <div><div class="health-card__title">Aucun écart détecté parmi les paramètres évalués</div>
+              <div class="health-card__text">{{ waterAssessment.evaluated }} paramètre(s) évalué(s) · Relevé du {{ lastMeasurement?.measuredAt | date:'dd/MM/yyyy' }} · Profil <b>{{ getProfileLabel() }}</b>.
+                Les valeurs absentes ne sont pas évaluées. Pense aussi aux entretiens prévus.</div>
             </div>
-            <div class="health-card__status"><mat-icon>check_circle</mat-icon>Rien à faire</div>
+            <div class="health-card__status"><mat-icon>check_circle</mat-icon>Dans les plages</div>
           </mat-card-content>
         </mat-card>
-        <div class="solution-summary" role="status" *ngIf="!isTankHealthy">
+        <div class="solution-summary" role="status" *ngIf="!isTankHealthy && measurementsLoaded && !measurementsError && !targetsError && !targetsLoading">
           <mat-icon>{{ isTankHealthy ? 'check_circle' : 'monitor_heart' }}</mat-icon>
           <div>
-            <h3>{{ targetsLoading || recosLoading ? 'Préparation du bilan…' : !lastMeasurement ? 'Une première mesure pour commencer' : !targets ? 'Bilan indisponible' : isTankHealthy ? 'Les valeurs renseignées sont dans les plages de référence' : 'Fais le point sur tes paramètres' }}</h3>
-            <p *ngIf="lastMeasurement; else firstMeasurement">Dernière mesure du {{ lastMeasurement.measuredAt | date: 'd MMMM y à HH:mm' }} · Profil {{ getProfileLabel() }}</p>
+            <h3>{{ solutionSummaryTitle }}</h3>
+            <p *ngIf="lastMeasurement; else firstMeasurement">{{ waterAssessment.evaluated }} paramètre(s) évalué(s) · Dernière mesure du {{ lastMeasurement.measuredAt | date: 'd MMMM y à HH:mm' }} · Profil {{ getProfileLabel() }}</p>
             <ng-template #firstMeasurement><p>Enregistre tes paramètres d’eau pour obtenir des conseils adaptés.</p></ng-template>
           </div>
-          <button *ngIf="!lastMeasurement" mat-stroked-button type="button" (click)="selectedTabIndex = 0">Ajouter une mesure</button>
+          <button *ngIf="!lastMeasurement || !waterAssessment.recent" mat-stroked-button type="button" (click)="openMeasurementDialog()">Ajouter une mesure</button>
         </div>
         <div class="sol-layout">
           <!-- RECOMMENDATIONS -->
@@ -1039,7 +1004,7 @@
               </mat-card-content>
             </mat-card>
 
-            <ng-container *ngIf="!recosLoading">
+            <ng-container *ngIf="!recosLoading && !targetsLoading && !recosError && !targetsError">
               <div class="reco-list" *ngIf="recos.length; else emptyRecos">
                 <mat-card
                   class="reco-card"

@@ -103,7 +103,7 @@ describe('RegisterComponent', () => {
       password: 'Password123!',
       notificationPreferences: { taskReminders: false, automaticNotifications: false, newsAndUpdates: false },
     });
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/login', { state: { registeredEmail: 'romain@test.com' } });
     expect(component.loading()).toBeFalse();
     expect(component.errorMsg()).toBeNull();
   }));

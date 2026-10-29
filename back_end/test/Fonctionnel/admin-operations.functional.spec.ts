@@ -53,7 +53,7 @@ describe("Admin journal: access, real queries and pagination", () => {
     expect(
       Reflect.getMetadata(GUARDS_METADATA, AdminMetricsController),
     ).toEqual(expect.arrayContaining([JwtAuthGuard, RolesGuard]));
-    for (const method of ["operationsList", "operationsHealth"])
+    for (const method of ["operationsList", "operationsHealth", "userJourney"])
       for (const role of ["USER", "EDITOR", undefined, "ADMIN"]) {
         const context: any = {
           getHandler: () => AdminMetricsController.prototype[method],

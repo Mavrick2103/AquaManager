@@ -19,6 +19,7 @@ export class AdminSidebarComponent {
       adminOnly: true,
       links: [
         { label: 'Vue d’ensemble', icon: 'space_dashboard', route: '/admin/metrics' },
+        { label: 'Parcours utilisateur', icon: 'route', route: '/admin/journey' },
         { label: 'Utilisateurs', icon: 'group', route: '/admin/users' },
         { label: 'Abonnements', icon: 'credit_card', route: '/admin/subscriptions' },
         { label: 'Avis & satisfaction', icon: 'sentiment_satisfied', route: '/admin/satisfaction' },

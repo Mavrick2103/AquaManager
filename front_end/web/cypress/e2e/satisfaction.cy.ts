@@ -25,6 +25,15 @@ describe('Satisfaction utilisateur', () => {
     auth();
     cy.viewport(1280, 720);
   });
+  it('invite aussi les éditeurs et enregistre la fermeture par Échap', () => {
+    auth('EDITOR');
+    cy.intercept('POST', '**/api/satisfaction/visit', { ...ready, source: 'STAFF' });
+    cy.intercept('POST', '**/api/satisfaction/dismiss', { ok: true }).as('dismiss');
+    cy.visit('/dashboard');
+    cy.get('dialog.survey').should('be.visible').trigger('cancel');
+    cy.wait('@dismiss');
+    cy.get('dialog.survey').should('not.exist');
+  });
   it('envoie un avis Classic sans question Premium et affiche le remerciement', () => {
     cy.intercept('POST', '**/api/satisfaction/visit', ready);
     cy.intercept('POST', '**/api/satisfaction', { ok: true }).as('submit');
@@ -126,6 +135,7 @@ describe('Administration des avis', () => {
     let status = 'NEW';
     cy.intercept('GET', '**/api/admin/satisfaction*', (req) =>
       req.reply({
+        dismissals: { count: 4, users: 3 },
         totals: [classic, premium],
         monthly: [
           { ...classic, month: '2026-10' },
@@ -156,6 +166,7 @@ describe('Administration des avis', () => {
     }).as('review');
     cy.visit('/admin/satisfaction');
     cy.wait('@report');
+    cy.contains('section', 'Demandes fermées sans réponse').should('contain.text', '3 personne(s) · 4 invitation(s)');
     cy.contains('80%').should('be.visible');
     cy.contains('100%').should('be.visible');
     cy.screenshot('satisfaction-admin', { capture: 'viewport' });

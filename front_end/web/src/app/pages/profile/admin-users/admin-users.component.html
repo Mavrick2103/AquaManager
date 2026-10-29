@@ -15,6 +15,12 @@
       @if (loadError) {
         <p class="load-error" role="alert">{{ loadError }}</p>
       }
+      @if (subscriptionError) {
+        <p class="load-error" role="alert">{{ subscriptionError }}</p>
+      }
+      @if (subscriptionFeedback) {
+        <p role="status">{{ subscriptionFeedback }}</p>
+      }
       <section class="user-overview" aria-label="Résumé des comptes correspondant à la recherche">
         <article>
           <span class="overview-icon"><mat-icon>group</mat-icon></span

@@ -7,6 +7,9 @@
 </h2>
 
 <div mat-dialog-content class="dialog-content">
+  <p class="measurement-prefill" *ngIf="previousMeasuredAt">Valeurs reprises du relevé du {{ previousMeasuredAt | date:'dd/MM/yyyy' }}. Modifie celles qui ont changé et efface celles que tu n’as pas mesurées : toutes les valeurs conservées seront enregistrées à la nouvelle date.</p>
+  <p class="measurement-prefill" *ngIf="prefillError" role="status">Le dernier relevé n’a pas pu être chargé. Renseigne les valeurs mesurées.</p>
+  <p *ngIf="!data.tutorial && !previousMeasuredAt && !prefillError">Renseigne uniquement les paramètres que tu as mesurés.</p>
   <div class="tutorial-notice" *ngIf="data.tutorial">
     <mat-icon>school</mat-icon>
     <div>
@@ -22,16 +25,19 @@
         <input matInput [matDatepicker]="picker" formControlName="measuredAt">
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
+      <mat-error>{{ fieldError('measuredAt') }}</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>pH</mat-label>
         <input matInput type="number" step="0.1" formControlName="ph">
+      <mat-error>{{ fieldError('ph') }}</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>Température (°C)</mat-label>
         <input matInput type="number" step="1" formControlName="temp">
+      <mat-error>{{ fieldError('temp') }}</mat-error>
       </mat-form-field>
     </div>
 
@@ -46,47 +52,56 @@
         <mat-form-field appearance="outline">
           <mat-label>KH (°d)</mat-label>
           <input matInput type="number" step="1" formControlName="kh">
-        </mat-form-field>
+        <mat-error>{{ fieldError('kh') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>GH (°d)</mat-label>
           <input matInput type="number" step="1" formControlName="gh">
-        </mat-form-field>
+        <mat-error>{{ fieldError('gh') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>NO₂ (mg/L)</mat-label>
           <input matInput type="number" step="0.01" formControlName="no2">
-        </mat-form-field>
+        <mat-error>{{ fieldError('no2') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>NO₃ (mg/L)</mat-label>
           <input matInput type="number" step="1" formControlName="no3">
-        </mat-form-field>
+        <mat-error>{{ fieldError('no3') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Fer (Fe) mg/L</mat-label>
           <input matInput type="number" step="0.05" formControlName="fe">
-        </mat-form-field>
+        <mat-error>{{ fieldError('fe') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Potassium (K) mg/L</mat-label>
           <input matInput type="number" step="1" formControlName="k">
-        </mat-form-field>
+        <mat-error>{{ fieldError('k') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Silicates (SiO₂) mg/L</mat-label>
           <input matInput type="number" step="0.1" formControlName="sio2">
-        </mat-form-field>
+        <mat-error>{{ fieldError('sio2') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>PO₄ (mg/L)</mat-label>
           <input matInput type="number" step="0.01" formControlName="po4">
-        </mat-form-field>
+        <mat-error>{{ fieldError('po4') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Ammoniaque (NH₃) mg/L</mat-label>
           <input matInput type="number" step="0.01" formControlName="nh3">
-        </mat-form-field>
+        <mat-error>{{ fieldError('nh3') }}</mat-error>
+      </mat-form-field>
       </div>
     </div>
 
@@ -101,32 +116,38 @@
         <mat-form-field appearance="outline">
           <mat-label>Alcalinité (dKH)</mat-label>
           <input matInput type="number" step="0.1" formControlName="dkh">
-        </mat-form-field>
+        <mat-error>{{ fieldError('dkh') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Salinité (ppt)</mat-label>
           <input matInput type="number" step="0.1" formControlName="salinity">
-        </mat-form-field>
+        <mat-error>{{ fieldError('salinity') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Calcium (mg/L)</mat-label>
           <input matInput type="number" step="1" formControlName="ca">
-        </mat-form-field>
+        <mat-error>{{ fieldError('ca') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Magnésium (mg/L)</mat-label>
           <input matInput type="number" step="1" formControlName="mg">
-        </mat-form-field>
+        <mat-error>{{ fieldError('mg') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>NO₃ (mg/L)</mat-label>
           <input matInput type="number" step="1" formControlName="no3">
-        </mat-form-field>
+        <mat-error>{{ fieldError('no3') }}</mat-error>
+      </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>PO₄ (mg/L)</mat-label>
           <input matInput type="number" step="0.01" formControlName="po4">
-        </mat-form-field>
+        <mat-error>{{ fieldError('po4') }}</mat-error>
+      </mat-form-field>
       </div>
     </div>
 
@@ -142,7 +163,8 @@
       <mat-hint align="end">
         {{ form.value.comment?.length || 0 }} / 120
       </mat-hint>
-    </mat-form-field>
+    <mat-error>{{ fieldError('comment') }}</mat-error>
+      </mat-form-field>
   </form>
 </div>
 

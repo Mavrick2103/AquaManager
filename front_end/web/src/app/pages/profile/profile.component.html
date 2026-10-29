@@ -7,6 +7,7 @@
       ><mat-icon>arrow_back</mat-icon>Retour à mon espace</a
     >
   </header>
+  <app-user-navigation />
   <header class="page-heading">
     <span class="eyebrow">VOTRE ESPACE PERSONNEL</span>
     <h1>Profil &amp; paramètres</h1>
@@ -311,6 +312,9 @@
         </mat-card>
       </section>
       <section class="tab-pane notification-settings" *ngIf="selectedTabIndex === 2">
+        <p role="status" *ngIf="notificationSettingsLoading">Chargement de tes préférences…</p>
+        <p class="load-error" role="alert" *ngIf="notificationSettingsError">Impossible de charger tes préférences. Elles n’ont pas été modifiées. <button mat-stroked-button type="button" (click)="loadNotificationSettings()">Réessayer</button></p>
+        <ng-container *ngIf="notificationSettingsLoaded && !notificationSettingsError">
         <header class="notification-settings__hero" data-tour="notification-settings">
           <div class="notification-settings__hero-icon">
             <mat-icon>notifications_active</mat-icon>
@@ -445,6 +449,7 @@
             Enregistrer mes préférences
           </button>
         </div>
+        </ng-container>
       </section>
       <section class="tab-pane" *ngIf="selectedTabIndex === 3">
         <header class="section-heading">

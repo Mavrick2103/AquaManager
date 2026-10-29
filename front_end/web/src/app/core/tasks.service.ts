@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { firstValueFrom } from 'rxjs';
+import { eachMonthOfInterval, endOfDay, format, startOfDay } from 'date-fns';
 
 export type TaskType = 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHER';
 export type TaskStatus = 'PENDING' | 'DONE';
@@ -41,6 +43,7 @@ export type Task = {
   createdAt?: string;
   virtual?: boolean;
   parentId?: number | null;
+  seriesDueAt?: string;
 };
 
 export type CreateTaskPayload = {
@@ -72,6 +75,18 @@ export class TasksService {
   list(month?: string) {
     const params = month ? new HttpParams().set('month', month) : undefined;
     return this.http.get<Task[]>(this.base, { params });
+  }
+
+  async listWindow(from: Date, to: Date): Promise<Task[]> {
+    // The API expands occurrences by UTC month; include local boundary days as well.
+    const utcStart = startOfDay(from);
+    const utcEnd = endOfDay(to);
+    const months = [...new Set([
+      ...eachMonthOfInterval({ start: from, end: to }),
+      ...eachMonthOfInterval({ start: new Date(utcStart.getUTCFullYear(),utcStart.getUTCMonth(),1), end: new Date(utcEnd.getUTCFullYear(),utcEnd.getUTCMonth(),1) }),
+    ].map(date => format(date, 'yyyy-MM')))];
+    const lists = await Promise.all(months.map(month => firstValueFrom(this.list(month))));
+    return [...new Map(lists.flat().map(task => [`${task.id}:${task.dueAt}`, task])).values()];
   }
 
   create(payload: CreateTaskPayload) {

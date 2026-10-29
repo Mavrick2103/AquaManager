@@ -1,3 +1,4 @@
+import { UserNavigationComponent } from '../../shared/user-navigation/user-navigation.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -23,6 +24,7 @@ import { AquariumDialogComponent } from './dialog/aquarium-dialog.component';
   selector: 'app-aquariums',
   standalone: true,
   imports: [
+    UserNavigationComponent,
     CommonModule,
     RouterLink,
     MatDialogModule,
@@ -40,6 +42,9 @@ export class AquariumsComponent implements OnInit {
   items: AquariumOverview[] = [];
   retention: { archivedCount: number; nextDeletionAt: string | null } | null = null;
   loading = false;
+  loadError = false;
+  hasLoaded = false;
+  private loadRequest = 0;
   effectivePlan: 'CLASSIC' | 'PREMIUM' | 'PRO' = 'CLASSIC';
   activeFilter: 'ALL' | 'ATTENTION' | 'STABLE' = 'ALL';
 
@@ -54,22 +59,29 @@ export class AquariumsComponent implements OnInit {
   ngOnInit() { this.load(); }
 
   async load() {
+    const request = ++this.loadRequest;
     this.loading = true;
+    this.loadError = false;
     try {
       const [items, me, retention] = await Promise.all([
         firstValueFrom(this.api.overview()),
         this.users.getMe(),
         firstValueFrom(this.api.retentionStatus()),
       ]);
+      if (request !== this.loadRequest) return;
       this.items = items;
       this.retention = retention;
       this.effectivePlan = this.resolveEffectivePlan(me);
+      this.hasLoaded = true;
+    } catch {
+      if (request === this.loadRequest) this.loadError = true;
     } finally {
-      this.loading = false;
+      if (request === this.loadRequest) this.loading = false;
     }
   }
 
   openCreate() {
+    if (this.loading || this.loadError || !this.hasLoaded) return;
     if (this.isAtLimit) {
       this.snack.open(
         `La limite de ${this.aquariumLimit} aquariums du plan ${this.planLabel} est atteinte.`,

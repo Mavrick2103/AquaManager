@@ -8,6 +8,7 @@ const { User } = require('../dist/src/users/user.entity');
 const {
   SatisfactionResponse,
   SatisfactionState,
+  SatisfactionDismissal,
 } = require('../dist/src/satisfaction/satisfaction.entity');
 const {
   SatisfactionService,
@@ -59,6 +60,9 @@ async function main() {
     await runner.release();
     await migration.up(db);
     await migration.up(db);
+    const dismissalMigration = require('../migrations/managed/202610280001-satisfaction-dismissals.cjs');
+    await dismissalMigration.up(db);
+    await dismissalMigration.up(db);
     const users = db.getRepository(User);
     const first = await users.save(
       users.create({
@@ -95,14 +99,30 @@ async function main() {
       }),
     );
     const service = new SatisfactionService(db);
+    // Minimal real-action tables for the first-invitation gate; never application data.
+    await db.query('CREATE TABLE aquariums (id INT PRIMARY KEY, userId INT)');
+    await db.query('CREATE TABLE water_measurements (aquariumId INT, createdAt DATETIME)');
+    await db.query('CREATE TABLE tasks (userId INT, createdAt DATETIME)');
+    assert.equal((await service.visit(first.id)).prompt, false);
+    await db.query('INSERT INTO tasks VALUES (?, ?), (?, ?)', [first.id, new Date(Date.now() - 86400000), staff.id, new Date(Date.now() - 86400000)]);
+    for (const userId of [first.id, staff.id]) await db.getRepository(SatisfactionState).save({ userId, visitDays: 1, lastVisitDay: '2000-01-01' });
     await Promise.all([service.visit(first.id), service.visit(first.id)]);
+    await Promise.all([service.dismiss(first.id), service.dismiss(first.id)]);
+    assert.deepEqual((await service.list({ days: 'all' })).dismissals, { count: 1, users: 1 });
+    assert.deepEqual((await service.list({ days: 'all', segment: 'PREMIUM' })).dismissals, { count: 0, users: 0 });
+    await users.update(staff.id, { role: 'EDITOR' });
+    assert.equal((await service.visit(staff.id)).prompt, true);
+    await service.dismiss(staff.id);
+    assert.deepEqual((await service.list({ days: 'all', source: 'STAFF' })).dismissals, { count: 1, users: 1 });
+    assert.deepEqual((await service.list({ days: 'all', source: 'ALL' })).dismissals, { count: 2, users: 2 });
+    await users.update(staff.id, { role: 'ADMIN' });
     assert.equal(
       (
         await db
           .getRepository(SatisfactionState)
           .findOneBy({ userId: first.id })
       ).visitDays,
-      1,
+      2,
     );
     const sends = await Promise.allSettled([
       service.submit(first.id, { rating: 4, comment: 'Utile 🐟' }),
@@ -160,6 +180,7 @@ async function main() {
       1,
     );
     await users.delete(first.id);
+    assert.equal(await db.getRepository(SatisfactionDismissal).countBy({ userId: first.id }), 0);
     assert.equal(
       await db
         .getRepository(SatisfactionResponse)

@@ -59,6 +59,8 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
 
   loading = false;
   loadError = '';
+  subscriptionError = '';
+  subscriptionFeedback = '';
   registrationDaysCtrl = new FormControl<number>(0, { nonNullable: true });
   private loadSequence = 0;
 
@@ -447,6 +449,8 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     const ok = confirm(`Retirer l'accès Premium/Pro de "${u.fullName || u.email}" ?`);
     if (!ok) return;
 
+    this.subscriptionError = '';
+    this.subscriptionFeedback = '';
     this.savingSubscription.add(u.id);
 
     this.api.revokeSubscription(u.id).subscribe({
@@ -455,9 +459,13 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
 
         this.applyFilters();
         this.savingSubscription.delete(u.id);
+        this.subscriptionFeedback = updated.role === 'ADMIN'
+          ? 'L’accès offert a été retiré. Ce compte conserve toutefois les fonctionnalités Pro grâce à son rôle administrateur.'
+          : 'L’accès offert a été retiré. Le compte est revenu à Classic.';
       },
       error: (error) => {
-        console.error('Erreur retrait abonnement', error);
+        const message = error?.error?.message;
+        this.subscriptionError = Array.isArray(message) ? message.join(' ') : (message || 'Impossible de retirer l’accès offert. Réessaie dans un instant.');
         this.savingSubscription.delete(u.id);
       },
     });

@@ -36,6 +36,14 @@ describe('AquariumDialogComponent', () => {
   it('devrait être créé', () => {
     expect(component).toBeTruthy();
   });
+  it('preserves the selected civil date in both summer and winter',()=>{
+    apiSpy.create.and.returnValue(of({id:2} as Aquarium));
+    for(const [month,day] of [[0,16],[9,16]]) {
+      component.form.patchValue({name:'Bac',startDate:new Date(2026,month,day)});
+      component.submit();
+      expect(apiSpy.create.calls.mostRecent().args[0].startDate).toBe(`2026-${String(month+1).padStart(2,'0')}-16`);
+    }
+  });
 
  it('liters devrait retourner le bon litrage en fonction des dimensions', () => {
   component.form.patchValue({
@@ -78,7 +86,7 @@ describe('AquariumDialogComponent', () => {
     expect(apiSpy.create).toHaveBeenCalled();
     expect(dialogRefSpy.close).toHaveBeenCalledWith({
       aquarium: mockAquarium,
-      setupCycling: true,
+      setupCycling: false,
     });
   });
 
@@ -90,5 +98,14 @@ describe('AquariumDialogComponent', () => {
     component.submit();
 
     expect(apiSpy.create).not.toHaveBeenCalled();
+  });
+  it('propose le cyclage uniquement pour un nouveau bac et réinitialise le choix en revenant au bac existant', () => {
+    expect(component.form.controls.setupCycling.value).toBeFalse();
+    component.form.controls.aquariumStage.setValue('new');
+    component.onStageChange();
+    expect(component.form.controls.setupCycling.value).toBeTrue();
+    component.form.controls.aquariumStage.setValue('existing');
+    component.onStageChange();
+    expect(component.form.controls.setupCycling.value).toBeFalse();
   });
 });

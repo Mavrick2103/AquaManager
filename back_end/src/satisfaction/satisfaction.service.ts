@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { User } from '../users/user.entity';
-import { SatisfactionResponse, SatisfactionState } from './satisfaction.entity';
+import { SatisfactionResponse, SatisfactionState, SatisfactionDismissal } from './satisfaction.entity';
 import { SubmitSatisfactionDto } from './satisfaction.dto';
 import { audience, eligibility, DAY, nextSurveyMonth } from './satisfaction.policy';
 @Injectable()
@@ -57,7 +57,17 @@ export class SatisfactionService {
         state.visitDays = Math.min(3, state.visitDays + 1);
         state.lastVisitDay = today;
       }
-      const access = eligibility(user, state, now);
+      let hasPriorUsage = false;
+      if (!state.lastResponseAt && state.visitDays >= 2 && ['USER', 'EDITOR'].includes(user.role)) {
+        // A real measurement/task on a previous day; tutorial examples never reach these tables.
+        const dayStart = new Date(today + 'T00:00:00Z');
+        const rows = await m.query(`SELECT (
+          EXISTS(SELECT 1 FROM water_measurements wm JOIN aquariums a ON a.id = wm.aquariumId WHERE a.userId = ? AND wm.createdAt < ?)
+          OR EXISTS(SELECT 1 FROM tasks t WHERE t.userId = ? AND t.createdAt < ?)
+        ) AS used`, [id, dayStart, id, dayStart]);
+        hasPriorUsage = Number(rows[0]?.used) === 1;
+      }
+      const access = eligibility(user, state, now, hasPriorUsage);
       // Claim the monthly invitation under the account lock, including across tabs/devices.
       if (access.prompt) state.dismissedUntil = nextSurveyMonth(now);
       await m.save(state);
@@ -66,7 +76,20 @@ export class SatisfactionService {
   }
   dismiss(id: number) {
     return this.locked(id, async (m, user, state) => {
-      state.dismissedUntil = nextSurveyMonth(new Date());
+      const now = new Date();
+      const access = eligibility(user, state, now);
+      // Only an issued automatic invitation can be dismissed, once per invitation.
+      if (['USER', 'EDITOR'].includes(user.role) && access.canSubmit &&
+          state.dismissedUntil && new Date(state.dismissedUntil) > now) {
+        const existing = await m.findOneBy(SatisfactionDismissal, {
+          userId: id, invitationUntil: state.dismissedUntil,
+        });
+        if (!existing) await m.save(m.create(SatisfactionDismissal, {
+          userId: id, invitationUntil: state.dismissedUntil,
+          ...audience(user, now), createdAt: now,
+        }));
+      }
+      state.dismissedUntil = nextSurveyMonth(now);
       await m.save(state);
       return { ok: true };
     });
@@ -173,7 +196,20 @@ export class SatisfactionService {
       .skip((page - 1) * 20)
       .take(20)
       .getManyAndCount();
-    return { totals, monthly, items, total, page, pageSize: 20 };
+    const dismissals = this.db.getRepository(SatisfactionDismissal).createQueryBuilder('d');
+    if (['CLASSIC', 'PREMIUM'].includes(q.segment ?? ''))
+      dismissals.andWhere('d.segment = :segment', { segment: q.segment });
+    if (['FREE', 'PAID', 'GIFT', 'STAFF'].includes(q.source ?? ''))
+      dismissals.andWhere('d.source = :source', { source: q.source });
+    else if (q.source !== 'ALL') dismissals.andWhere('d.source != :staff', { staff: 'STAFF' });
+    if (q.days !== 'all') {
+      const days = ['30', '90', '365'].includes(q.days ?? '') ? Number(q.days) : 90;
+      dismissals.andWhere('d.createdAt >= :since', { since: new Date(Date.now() - days * DAY) });
+    }
+    const dismissalStats = await dismissals.select('COUNT(*)', 'count')
+      .addSelect('COUNT(DISTINCT d.userId)', 'users').getRawOne();
+    return { totals, monthly, items, total, page, pageSize: 20,
+      dismissals: { count: Number(dismissalStats?.count ?? 0), users: Number(dismissalStats?.users ?? 0) } };
   }
   async review(id: number, status: string) {
     const result = await this.db

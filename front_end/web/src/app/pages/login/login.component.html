@@ -24,6 +24,11 @@
 
     <mat-card class="login-card" role="form" aria-labelledby="loginTitle">
       <h2 id="loginTitle">Connexion</h2>
+      <section class="registration-confirmation" *ngIf="registeredEmail" role="status">
+        <mat-icon aria-hidden="true">mark_email_unread</mat-icon>
+        <div><strong>Ton compte est créé : vérifie ton email</strong><p>Ouvre le lien envoyé à <b>{{ registeredEmail }}</b> pour activer ton compte. Pense aussi aux courriers indésirables.</p>
+        <button mat-stroked-button type="button" (click)="resendRegistrationVerification()" [disabled]="resending()">{{ resending() ? 'Envoi…' : 'Renvoyer le lien' }}</button></div>
+      </section>
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <mat-form-field appearance="outline" class="field">

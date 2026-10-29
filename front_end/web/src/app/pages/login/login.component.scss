@@ -186,3 +186,6 @@
 @media (prefers-reduced-motion: reduce) {
   .side-pill:hover { transform: none; }
 }
+.registration-confirmation { display:flex; gap:12px; margin:16px 0 24px; padding:16px; border:1px solid #d6e8df; border-radius:14px; background:linear-gradient(120deg,#eef8fd,#f2f9ed); color:#315c63; }
+.registration-confirmation > mat-icon { flex-shrink:0; }
+.registration-confirmation p { font-size:.85rem; line-height:1.5; overflow-wrap:anywhere; }

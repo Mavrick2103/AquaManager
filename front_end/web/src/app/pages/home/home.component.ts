@@ -1,3 +1,4 @@
+import { UserNavigationComponent } from '../../shared/user-navigation/user-navigation.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -33,11 +34,13 @@ import {
 import { format, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { firstValueFrom } from 'rxjs';
+import { taskOverview } from '../../core/task-overview';
 
 @Component({
   selector: 'app-home',
   standalone: true,
   imports: [
+    UserNavigationComponent,
     CommonModule,
     RouterLink,
 
@@ -75,9 +78,19 @@ export class HomeComponent implements OnInit {
 
   todayTasksCount = 0;
   monthlyMeasurementsCount = 0;
+  upcomingTasksCount = 0;
+  overdueTasksCount = 0;
+  tasksLoading = true;
+  tasksError = false;
+  measurementsLoading = true;
+  measurementsError = false;
 
   latestActivities: Task[] = [];
   upcomingTasks: Task[] = [];
+  nextTask: Task | null = null;
+  nextTaskParams(): Record<string,string | number | undefined> {
+    return this.nextTask ? {aquariumId:this.nextTask.aquarium?.id,aquariumName:this.nextTask.aquarium?.name,month:format(new Date(this.nextTask.dueAt),'yyyy-MM')} : {};
+  }
 
   gamificationLoading = true;
   gamification: GamificationSummary | null = null;
@@ -103,78 +116,42 @@ export class HomeComponent implements OnInit {
   }
 
   private async loadHomeData() {
+    await Promise.all([this.loadTasks(), this.loadMeasurements()]);
+  }
+
+  async loadTasks() {
+    this.tasksLoading = true;
+    this.tasksError = false;
     const now = new Date();
-    const monthStr = format(now, 'yyyy-MM');
-    const todayIso = format(now, 'yyyy-MM-dd');
-    const past7 = addDays(now, -7);
-    const in7 = addDays(now, 7);
+    const from = new Date(Math.min(startOfMonth(now).getTime(), addDays(now,-7).getTime()));
+    try {
+      const tasks = await this.tasksApi.listWindow(from, addDays(now,7));
+      const overview = taskOverview(tasks,now);
+      this.nextTask = tasks.filter(task=>task.status==='PENDING' && Date.parse(task.dueAt)>=startOfMonth(now).getTime() && Date.parse(task.dueAt)<=addDays(now,7).getTime())
+        .sort((a,b)=>Date.parse(a.dueAt)-Date.parse(b.dueAt))[0] ?? null;
+      this.todayTasksCount = overview.todayCount;
+      this.overdueTasksCount = overview.overdueCount;
+      this.upcomingTasksCount = overview.upcomingCount;
+      this.upcomingTasks = overview.upcoming;
+      this.latestActivities = overview.completed;
+    } catch {
+      this.tasksError = true;
+    } finally { this.tasksLoading = false; }
+  }
 
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
-
-    this.tasksApi.list(monthStr).subscribe({
-      next: (tasks: Task[]) => {
-        const safe = tasks || [];
-
-        const todays = safe.filter((t) => t?.dueAt?.startsWith(todayIso));
-        this.todayTasksCount = todays.length;
-
-        this.latestActivities = [...safe]
-          .filter((t) => {
-            if (!t?.dueAt) return false;
-
-            const doneAt = (t as any).doneAt ? new Date((t as any).doneAt) : null;
-            const ref = doneAt ?? new Date(t.dueAt);
-
-            return ref <= now && ref >= past7;
-          })
-          .sort((a, b) => {
-            const aRef = (a as any).doneAt ? new Date((a as any).doneAt) : new Date(a.dueAt);
-            const bRef = (b as any).doneAt ? new Date((b as any).doneAt) : new Date(b.dueAt);
-
-            const byDateDesc = bRef.getTime() - aRef.getTime();
-            if (byDateDesc !== 0) return byDateDesc;
-
-            const aBoost = a.type === 'WATER_TEST' ? 1 : 0;
-            const bBoost = b.type === 'WATER_TEST' ? 1 : 0;
-
-            return bBoost - aBoost;
-          })
-          .slice(0, 5);
-
-        this.upcomingTasks = safe
-          .filter((t) => {
-            if (!t?.dueAt) return false;
-
-            const d = new Date(t.dueAt);
-            return d >= now && d <= in7;
-          })
-          .sort((a, b) => a.dueAt.localeCompare(b.dueAt))
-          .slice(0, 5);
-      },
-      error: () => {
-        this.todayTasksCount = 0;
-        this.latestActivities = [];
-        this.upcomingTasks = [];
-      },
-    });
-
+  async loadMeasurements() {
+    this.measurementsLoading = true;
+    this.measurementsError = false;
+    const now = new Date();
     try {
       const aquariums: Aquarium[] = await firstValueFrom(this.aquariumsApi.listMine());
-
-      const allArrays: Measurement[][] = await Promise.all(
-        (aquariums || []).map((aq) => this.measApi.listForAquarium(aq.id))
-      );
-
-      const all = allArrays.flat();
-
-      this.monthlyMeasurementsCount = all.filter((m) => {
-        const d = new Date(m.measuredAt);
-        return d >= monthStart && d <= monthEnd;
+      const lists: Measurement[][] = await Promise.all((aquariums || []).map(aq => this.measApi.listForAquarium(aq.id)));
+      this.monthlyMeasurementsCount = lists.flat().filter(m => {
+        const date = new Date(m.measuredAt);
+        return date >= startOfMonth(now) && date <= endOfMonth(now);
       }).length;
-    } catch {
-      this.monthlyMeasurementsCount = 0;
-    }
+    } catch { this.measurementsError = true; }
+    finally { this.measurementsLoading = false; }
   }
 
   private async loadGamification() {

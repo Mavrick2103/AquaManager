@@ -5,11 +5,14 @@
 </h2>
 
 <mat-dialog-content class="dlg-content">
-  <div class="info" *ngIf="!loadingAquariums && !aquariums().length">
+  <p class="form-error" role="alert" *ngIf="saveError">{{ saveError }}</p>
+  <div class="info" *ngIf="!loadingAquariums && !aquariumsError && !aquariums().length">
     <mat-icon>info</mat-icon>
-    <span>Vous n’avez pas encore d’aquarium. Créez-en un pour pouvoir enregistrer une tâche.</span>
+    <span>Crée ton premier aquarium pour organiser son entretien.</span>
+    <button mat-stroked-button type="button" (click)="createAquarium()">Créer un aquarium</button>
   </div>
 
+  <p class="form-error" role="alert" *ngIf="aquariumsError">Impossible de charger tes aquariums. Ferme cette fenêtre et réessaie.</p>
   <form [formGroup]="form" class="form">
     <!-- 1) Infos principales -->
     <div class="section">
@@ -21,8 +24,29 @@
         </div>
       </div>
 
+      <mat-form-field appearance="outline">
+        <mat-label>Aquarium</mat-label>
+        <mat-icon matPrefix>water</mat-icon>
+        <mat-select formControlName="aquariumId">
+          <mat-option *ngFor="let a of aquariums()" [value]="a.id">
+            {{ a.name }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('aquariumId')?.invalid">Sélectionnez un aquarium.</mat-error>
+      </mat-form-field>
       <div class="row row--2">
-        <mat-form-field appearance="outline">
+<mat-form-field appearance="outline">
+          <mat-label>Type de tâche</mat-label>
+          <mat-icon matPrefix>category</mat-icon>
+          <mat-select formControlName="type">
+            <mat-option *ngFor="let t of types" [value]="t.value">
+              <mat-icon style="margin-right: 8px; vertical-align: middle">{{ t.icon }}</mat-icon>
+              {{ t.label }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('type')?.invalid">Choisissez un type.</mat-error>
+        </mat-form-field>
+<mat-form-field appearance="outline">
           <mat-label>Titre</mat-label>
           <mat-icon matPrefix>title</mat-icon>
 
@@ -39,30 +63,9 @@
             Le titre est généré automatiquement à partir du type.
           </mat-hint>
         </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Type de tâche</mat-label>
-          <mat-icon matPrefix>category</mat-icon>
-          <mat-select formControlName="type">
-            <mat-option *ngFor="let t of types" [value]="t.value">
-              <mat-icon style="margin-right: 8px; vertical-align: middle">{{ t.icon }}</mat-icon>
-              {{ t.label }}
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="form.get('type')?.invalid">Choisissez un type.</mat-error>
-        </mat-form-field>
       </div>
 
-      <mat-form-field appearance="outline" class="fld--desc">
-        <mat-label>Description</mat-label>
-        <mat-icon matPrefix>notes</mat-icon>
-        <textarea
-          matInput
-          rows="3"
-          formControlName="description"
-          placeholder="Notes, volumes, dosages, consignes…"
-        ></textarea>
-      </mat-form-field>
+
 
       <div class="row row--2">
         <mat-form-field appearance="outline">
@@ -80,16 +83,7 @@
         </mat-form-field>
       </div>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Aquarium</mat-label>
-        <mat-icon matPrefix>water</mat-icon>
-        <mat-select formControlName="aquariumId">
-          <mat-option *ngFor="let a of aquariums()" [value]="a.id">
-            {{ a.name }}
-          </mat-option>
-        </mat-select>
-        <mat-error *ngIf="form.get('aquariumId')?.invalid">Sélectionnez un aquarium.</mat-error>
-      </mat-form-field>
+
     </div>
 
     <mat-divider class="sep"></mat-divider>
@@ -112,6 +106,7 @@
         <mat-form-field
           appearance="outline"
           class="repeat-mode"
+          *ngIf="form.controls.isRepeat.value"
           [class.disabled]="!form.get('isRepeat')?.value"
         >
           <mat-label>Fréquence</mat-label>
@@ -257,14 +252,24 @@
         </div>
       </div>
     </div>
+      <mat-form-field appearance="outline" class="fld--desc">
+        <mat-label>Notes (facultatif)</mat-label>
+        <mat-icon matPrefix>notes</mat-icon>
+        <textarea
+          matInput
+          rows="3"
+          formControlName="description"
+          placeholder="Notes, volumes, dosages, consignes…"
+        ></textarea>
+      </mat-form-field>
   </form>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="actions">
-  <button mat-button mat-dialog-close type="button">Annuler</button>
+  <button mat-button mat-dialog-close type="button" [disabled]="saving">Annuler</button>
 
-  <button mat-flat-button color="primary" type="button" (click)="save()">
+  <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving || loadingAquariums || aquariumsError || !aquariums().length">
     <mat-icon>save</mat-icon>
-    Enregistrer
+    {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
   </button>
 </mat-dialog-actions>

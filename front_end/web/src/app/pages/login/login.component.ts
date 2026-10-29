@@ -1,5 +1,5 @@
 import { Component, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -30,6 +30,8 @@ export class LoginComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private auth = inject(AuthService);
+  private location = inject(Location);
+  registeredEmail = '';
 
   verificationMessage = signal<string | null>(null);
   resending = signal(false);
@@ -55,6 +57,19 @@ export class LoginComponent {
     password: ['', [Validators.required, Validators.minLength(6)]],
     remember: [true],
   });
+
+  constructor() {
+    const state = (this.router.getCurrentNavigation()?.extras.state ?? this.location.getState()) as { registeredEmail?: unknown };
+    if (typeof state?.registeredEmail === 'string') {
+      this.form.controls.email.setValue(state.registeredEmail.trim());
+      if (this.form.controls.email.valid) this.registeredEmail = this.form.controls.email.value ?? '';
+    }
+  }
+
+  resendRegistrationVerification() {
+    this.form.controls.email.setValue(this.registeredEmail);
+    return this.resendVerification();
+  }
 
   emailErr = computed(() => {
     const c = this.form.controls.email;

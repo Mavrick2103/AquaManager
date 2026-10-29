@@ -40,6 +40,11 @@
       <p class="error" role="alert" *ngIf="error">{{ error }}</p>
       <p role="status" *ngIf="loading">Chargement des avis…</p>
       <ng-container *ngIf="data as report">
+        <section class="panel" *ngIf="report.dismissals as dismissals">
+          <h2>Demandes fermées sans réponse</h2>
+          <p><strong>{{ dismissals.users }}</strong> personne(s) · {{ dismissals.count }} invitation(s) fermée(s)</p>
+          <p class="hint">Bouton « Plus tard » ou touche Échap sur la demande automatique, une fois par invitation. Selon les filtres ci-dessus ; suivi à partir de cette mise à jour. La fermeture de l’onglet du navigateur n’est pas comptée.</p>
+        </section>
         <div class="score-grid">
           <ng-container *ngFor="let plan of segments"
             ><section

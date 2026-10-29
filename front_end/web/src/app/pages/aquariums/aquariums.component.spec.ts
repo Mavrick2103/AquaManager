@@ -4,7 +4,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { AquariumsService, Aquarium, AquariumOverview } from '../../core/aquariums.service';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { UserService } from '../../core/user.service';
 
 describe('AquariumsComponent', () => {
@@ -92,6 +92,19 @@ describe('AquariumsComponent', () => {
     component.effectivePlan = 'PRO';
     expect(component.aquariumLimit).toBeNull();
     expect(component.isAtLimit).toBeFalse();
+  });
+
+  it('shows an error instead of a first-aquarium state and recovers on retry', async () => {
+    aquariumsServiceSpy.overview.and.returnValue(throwError(()=>new Error('offline')));
+    await component.load();fixture.detectChanges();
+    expect(component.loadError).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.aquariums-load-error')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.empty-state')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-tour="aquarium-create"]').disabled).toBeTrue();
+    aquariumsServiceSpy.overview.and.returnValue(of([]));
+    await component.load();fixture.detectChanges();
+    expect(component.loadError).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.empty-state')).not.toBeNull();
   });
 
   it('litersOf() devrait calculer le volume à partir des dimensions', () => {

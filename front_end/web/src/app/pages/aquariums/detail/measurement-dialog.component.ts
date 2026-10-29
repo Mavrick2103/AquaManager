@@ -42,6 +42,8 @@ export class MeasurementDialogComponent implements OnInit {
   private snack = inject(MatSnackBar);
 
   loading = false;
+  previousMeasuredAt: string | Date | null = null;
+  prefillError = false;
   form!: FormGroup;
 
   constructor(
@@ -55,11 +57,11 @@ export class MeasurementDialogComponent implements OnInit {
 
       // communs
       ph:   [null, [Validators.min(0), Validators.max(14)]],
-      temp: [null, [Validators.min(0), Validators.max(45)]],
+      temp: [null, [Validators.min(0), Validators.max(40)]],
       no2:  [null, [Validators.min(0), Validators.max(5)]],
       no3:  [null, [Validators.min(0), Validators.max(300)]],
       po4:  [null, [Validators.min(0), Validators.max(5)]],
-      comment: [''],
+      comment: ['', Validators.maxLength(120)],
 
       // eau douce
       kh:   [null, [Validators.min(0), Validators.max(30)]],
@@ -70,10 +72,10 @@ export class MeasurementDialogComponent implements OnInit {
       nh3:  [null, [Validators.min(0), Validators.max(5)]],
 
       // eau de mer
-      dkh:      [null, [Validators.min(0), Validators.max(25)]],
+      dkh:      [null, [Validators.min(0), Validators.max(20)]],
       salinity: [null, [Validators.min(0), Validators.max(45)]],
-      ca:       [null, [Validators.min(0), Validators.max(700)]],
-      mg:       [null, [Validators.min(0), Validators.max(2000)]],
+      ca:       [null, [Validators.min(0), Validators.max(600)]],
+      mg:       [null, [Validators.min(0), Validators.max(1800)]],
     });
 
     if (this.data.tutorial) {
@@ -123,8 +125,13 @@ export class MeasurementDialogComponent implements OnInit {
         });
       }
 
-      this.form.patchValue(patch);
+      for (const [key, value] of Object.entries(patch)) {
+        const control = this.form.get(key);
+        if (control && !control.dirty) control.setValue(value);
+      }
+      this.previousMeasuredAt = last.measuredAt;
     } catch (e) {
+      this.prefillError = true;
     } finally {
       this.loading = false;
     }
@@ -132,8 +139,19 @@ export class MeasurementDialogComponent implements OnInit {
 
   close() { this.ref.close(false); }
 
+  fieldError(name: string): string {
+    const errors = this.form.get(name)?.errors;
+    if (errors?.['required']) return 'Ce champ est requis.';
+    if (errors?.['matDatepickerParse']) return 'Indique une date valide.';
+    if (errors?.['min']) return `La valeur minimale est ${errors['min'].min}.`;
+    if (errors?.['max']) return `La valeur maximale est ${errors['max'].max}.`;
+    if (errors?.['maxlength']) return 'Maximum 120 caractères.';
+    return 'Vérifie la valeur saisie.';
+  }
+
   async save() {
-    if (this.form.invalid) return;
+    if (this.loading) return;
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
     try {
       const v = this.form.value;

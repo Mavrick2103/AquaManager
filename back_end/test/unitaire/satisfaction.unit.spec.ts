@@ -1,6 +1,6 @@
 import { audience, eligibility, DAY, nextSurveyMonth, nextResponseDate } from '../../src/satisfaction/satisfaction.policy';
 import { SatisfactionService } from '../../src/satisfaction/satisfaction.service';
-import { SatisfactionState, SatisfactionResponse } from '../../src/satisfaction/satisfaction.entity';
+import { SatisfactionState, SatisfactionResponse, SatisfactionDismissal } from '../../src/satisfaction/satisfaction.entity';
 import { User } from '../../src/users/user.entity';
 import { SubmitSatisfactionDto } from '../../src/satisfaction/satisfaction.dto';
 import { plainToInstance } from 'class-transformer';
@@ -39,14 +39,12 @@ describe('Satisfaction policy', () => {
     expect(eligibility(user(), state({ lastResponseAt }), new Date(deadline.getTime() - 1)).canSubmit).toBe(false);
     expect(eligibility(user(), state({ lastResponseAt }), deadline).canSubmit).toBe(true);
   });
-  it('invites on the first visit even for new accounts', () => {
-    expect(eligibility(user(), state({ visitDays: 2 }), now).prompt).toBe(
-      true,
-    );
-    expect(eligibility(user({ createdAt: now }), state(), now).prompt).toBe(
-      true,
-    );
-    expect(eligibility(user(), state(), now).prompt).toBe(true);
+  it('waits for real prior usage and a return visit, including editors', () => {
+    expect(eligibility(user(), state({ visitDays: 1 }), now, true).prompt).toBe(false);
+    expect(eligibility(user(), state(), now, false).prompt).toBe(false);
+    expect(eligibility(user(), state(), now, true).prompt).toBe(true);
+    expect(eligibility(user({ role: 'EDITOR' }), state(), now, true)).toMatchObject({ prompt: true, canSubmit: true, source: 'STAFF' });
+    expect(eligibility(user(), state(), now).canSubmit).toBe(true);
   });
   it('applies cooldown and dismissal independently of manual access', () => {
     expect(
@@ -119,18 +117,24 @@ describe('Satisfaction persistence flow', () => {
   let account: User;
   let stored: SatisfactionState;
   let responses: SatisfactionResponse[];
+  let dismissals: SatisfactionDismissal[];
   let manager: any;
   let service: SatisfactionService;
   beforeEach(() => {
     account = user();
     stored = state({ visitDays: 0 });
     responses = [];
+    dismissals = [];
     manager = {
+      query: jest.fn(async () => [{ used: 1 }]),
       findOne: jest.fn(async () => account),
-      findOneBy: jest.fn(async () => stored),
+      findOneBy: jest.fn(async (entity, where) => entity === SatisfactionDismissal
+        ? dismissals.find(item => item.userId === where.userId && +item.invitationUntil === +where.invitationUntil) ?? null
+        : stored),
       create: (entity, input) => Object.assign(new entity(), input),
       save: jest.fn(async (entity) => {
         if (entity instanceof SatisfactionResponse) responses.push(entity);
+        if (entity instanceof SatisfactionDismissal) dismissals.push(entity);
         return entity;
       }),
     };
@@ -139,13 +143,23 @@ describe('Satisfaction persistence flow', () => {
     } as any);
   });
   it('counts reloads only once per UTC day and locks the account', async () => {
-    expect((await service.visit(7)).prompt).toBe(true);
+    expect((await service.visit(7)).prompt).toBe(false);
     expect((await service.visit(7)).prompt).toBe(false);
     expect(stored.visitDays).toBe(1);
     expect(manager.findOne).toHaveBeenCalledWith(
       User,
       expect.objectContaining({ lock: { mode: 'pessimistic_write' } }),
     );
+  });
+  it('requires a recorded real action before the return-day invitation', async () => {
+    stored.visitDays = 1;
+    stored.lastVisitDay = '2000-01-01';
+    manager.query.mockResolvedValueOnce([{ used: 0 }]);
+    expect((await service.visit(7)).prompt).toBe(false);
+    expect(stored.dismissedUntil).toBeNull();
+    expect((await service.visit(7)).prompt).toBe(true);
+    expect((await service.visit(7)).prompt).toBe(false);
+    expect(manager.query.mock.calls[0][1][0]).toBe(7);
   });
   it('stores a plan snapshot and prevents a duplicate response', async () => {
     await service.submit(7, { rating: 4, comment: ' Très utile ' });
@@ -178,5 +192,22 @@ describe('Satisfaction persistence flow', () => {
     const before = Date.now();
     await service.dismiss(7);
     expect(stored.dismissedUntil).toEqual(nextSurveyMonth(new Date(before)));
+  });
+  it('counts a dismissal once per issued invitation, including editors', async () => {
+    account.role = 'EDITOR';
+    stored.visitDays = 1;
+    stored.lastVisitDay = '2000-01-01';
+    await service.visit(7);
+    await service.dismiss(7);
+    await service.dismiss(7);
+    expect(dismissals).toHaveLength(1);
+    expect(dismissals[0]).toMatchObject({ userId: 7, segment: 'CLASSIC', source: 'STAFF' });
+  });
+  it('does not count unissued invitations or a close after submitting', async () => {
+    await service.dismiss(7);
+    expect(dismissals).toHaveLength(0);
+    await service.submit(7, { rating: 5 });
+    await service.dismiss(7);
+    expect(dismissals).toHaveLength(0);
   });
 });

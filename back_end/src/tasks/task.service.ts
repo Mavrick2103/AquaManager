@@ -267,6 +267,7 @@ private readonly gamificationService: GamificationService,  ) {}
         createdAt: t.createdAt?.toISOString?.() ?? undefined,
         virtual: true,
         parentId: t.id,
+        seriesDueAt: baseDue.toISOString(),
       });
     }
 
@@ -392,6 +393,13 @@ private readonly gamificationService: GamificationService,  ) {}
     });
     if (!task || task.user.id !== userId || task.aquarium?.archivedAt) throw new NotFoundException();
 
+    if (reference.occurrenceAt && Object.entries(dto).some(([key,value]) => key !== 'status' && value !== undefined)) {
+      throw new BadRequestException('Modifie la série depuis ses détails pour changer son contenu. La date d’une occurrence ne doit pas déplacer la série.');
+    }
+    if (!reference.occurrenceAt && task.isRepeat && dto.status !== undefined) {
+      throw new BadRequestException('Sélectionne une occurrence pour marquer cet entretien comme terminé ou à faire.');
+    }
+
     const wasCompleted = reference.occurrenceAt
       ? (task.completedOccurrences ?? []).includes(reference.occurrenceAt)
       : task.status === TaskStatus.DONE;
@@ -516,7 +524,8 @@ private readonly gamificationService: GamificationService,  ) {}
   }
 
   async remove(userId: number, rawId: string) {
-    const id = this.parseTaskReference(rawId).id;
+    const reference = this.parseTaskReference(rawId);
+    const id = reference.id;
 
     const task = await this.repo.findOne({
       where: { id },
@@ -524,6 +533,9 @@ private readonly gamificationService: GamificationService,  ) {}
     });
     if (!task || task.user.id !== userId || task.aquarium?.archivedAt) throw new NotFoundException();
 
+    if (reference.occurrenceAt) {
+      throw new BadRequestException('La suppression d’une seule occurrence n’est pas disponible. Utilise l’action Supprimer toute la série.');
+    }
     await this.repo.delete(id);
     await this.usersService.touchActivity(userId);
     return { ok: true };

@@ -7,27 +7,37 @@
 </div>
 
   <form [formGroup]="form" class="form">
+    <fieldset class="aquarium-stage"><legend>Ton aquarium</legend>
+      <mat-radio-group formControlName="aquariumStage" (change)="onStageChange()" aria-label="Situation de l’aquarium">
+        <mat-radio-button value="existing">Déjà en fonctionnement</mat-radio-button>
+        <mat-radio-button value="new">Nouveau bac en démarrage</mat-radio-button>
+      </mat-radio-group>
+    </fieldset>
     <!-- Nom -->
     <mat-form-field appearance="outline" class="w100">
       <mat-label>Nom de l’aquarium*</mat-label>
       <input matInput formControlName="name">
-    </mat-form-field>
+    <mat-error>{{ fieldError('name') }}</mat-error>
+      </mat-form-field>
 
     <!-- Dimensions -->
     <div class="dims">
       <mat-form-field appearance="outline">
         <mat-label>Longueur (cm)*</mat-label>
         <input matInput type="number" formControlName="lengthCm">
+      <mat-error>{{ fieldError('lengthCm') }}</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>Largeur (cm)*</mat-label>
         <input matInput type="number" formControlName="widthCm">
+      <mat-error>{{ fieldError('widthCm') }}</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>Hauteur (cm)*</mat-label>
         <input matInput type="number" formControlName="heightCm">
+      <mat-error>{{ fieldError('heightCm') }}</mat-error>
       </mat-form-field>
 
       <div class="liters">
@@ -44,6 +54,7 @@
           <mat-option value="EAU_DOUCE">Eau douce</mat-option>
           <mat-option value="EAU_DE_MER">Eau de mer</mat-option>
         </mat-select>
+      <mat-error>{{ fieldError('waterType') }}</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -51,10 +62,11 @@
         <input matInput [matDatepicker]="picker" formControlName="startDate">
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
+      <mat-error>{{ fieldError('startDate') }}</mat-error>
       </mat-form-field>
     </div>
 
-    <div class="cycling-offer">
+    <div class="cycling-offer" *ngIf="form.controls.aquariumStage.value === 'new'">
       <mat-checkbox formControlName="setupCycling">
         Préparer le protocole de cyclage après la création
       </mat-checkbox>

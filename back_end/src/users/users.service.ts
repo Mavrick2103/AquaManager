@@ -725,7 +725,7 @@ return { user, aquariums, measurements, fish, plants, tasks, notificationSetting
 }
 
 
-async adminRevokeSubscription(id: number) {
+async adminRevokeSubscription(id: number, paypalChecked = false) {
   if (!Number.isFinite(id)) {
     throw new BadRequestException('Id invalide');
   }
@@ -738,7 +738,10 @@ async adminRevokeSubscription(id: number) {
 
   this.assertNoLiveStripeSubscription(user);
 
-  if (user.paypalRenewalActive) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour retirer les droits.');
+  if (user.paypalRenewalActive && !paypalChecked) {
+    if (user.billingProvider != null) throw new ConflictException('Résilie d’abord l’abonnement PayPal pour retirer les droits.');
+    return this.paypalManualGrant.run(id, () => this.adminRevokeSubscription(id, true));
+  }
   await this.repo.update(
     { id },
     {

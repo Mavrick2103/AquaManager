@@ -94,7 +94,7 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     cy.contains('.mat-mdc-option, .mat-option', /eau douce/i).click();
 
     cy.get('mat-dialog-container').within(() => {
-      cy.get('mat-checkbox[formControlName="setupCycling"] input').uncheck({ force: true });
+      cy.get('mat-checkbox[formControlName="setupCycling"]').should('not.exist');
       cy.contains('button', /enregistrer/i).click();
     });
 
@@ -204,7 +204,7 @@ describe('Sécurité front — XSS & token', () => {
     cy.contains('.mat-mdc-option, .mat-option', /eau douce/i).click();
 
     cy.get('mat-dialog-container').within(() => {
-      cy.get('mat-checkbox[formControlName="setupCycling"] input').uncheck({ force: true });
+      cy.get('mat-checkbox[formControlName="setupCycling"]').should('not.exist');
       cy.contains('button', /créer|enregistrer|valider/i).click();
     });
 

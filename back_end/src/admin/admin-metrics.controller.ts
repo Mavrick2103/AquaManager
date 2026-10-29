@@ -6,12 +6,18 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { AdminOperationsService } from './admin-operations.service';
+import { AdminJourneyService } from './admin-journey.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
 export class AdminMetricsController {
-  constructor(private readonly service: AdminMetricsService, private readonly operations: AdminOperationsService) {}
+  constructor(private readonly service: AdminMetricsService, private readonly operations: AdminOperationsService, private readonly journey: AdminJourneyService) {}
+
+  @Get('journey')
+  userJourney(@Query() query: { days?: string; page?: string; stage?: string }) {
+    return this.journey.report(query);
+  }
 
   @Get('operations')
   operationsList(@Query() query: { range?: string; type?: string; page?: string; route?: string }) {

@@ -75,9 +75,9 @@ describe('Mesures et graphiques - AquaManager', () => {
     cy.get('mat-dialog-container', { timeout: 10000 }).should('be.visible');
     cy.wait('@measListAfter');
     cy.get('mat-dialog-container').within(() => {
-      // Material focuses the date after its opening animation. Wait for that
-      // focus and the asynchronous prefill before typing into another field.
-      cy.get('input[formControlName="measuredAt"]').should('be.focused').and('not.have.value', '');
+      // Focus stays on the dialog so its introductory notice remains in view.
+      cy.get('input[formControlName="measuredAt"]').should('not.have.value', '');
+      cy.contains('Valeurs reprises du relevé').should('be.visible');
       cy.get('input[formControlName="ph"]').should('have.value', '7.2').clear().type('7.2');
       cy.get('input[formControlName="temp"]').should('have.value', '25').clear().type('25');
       cy.get('input[formControlName="measuredAt"]').should('not.have.value', '');
@@ -93,6 +93,35 @@ describe('Mesures et graphiques - AquaManager', () => {
     cy.get('app-water-measurements-chart').its('length').should('be.greaterThan', 0);
     cy.get('app-water-measurements-chart .metric-name').should('contain.text', 'pH');
     cy.get('app-water-measurements-chart .metric-name').should('contain.text', 'Température');
+  });
+
+  it('explique une valeur invalide avant l’enregistrement', () => {
+    cy.contains('button', /ajouter une mesure/i).click();
+    cy.get('mat-dialog-container').should('be.visible').within(() => {
+      cy.get('input[formControlName="measuredAt"]').should('not.have.value', '');
+      cy.contains('mat-label', 'Température').click();
+      cy.get('input[formControlName="temp"]').type('41').blur();
+      cy.contains('mat-error', 'La valeur maximale est 40.').should('be.visible');
+      cy.contains('button', /enregistrer/i).should('be.disabled');
+      cy.get('input[formControlName="temp"]').clear().type('25').blur();
+      cy.contains('button', /enregistrer/i).should('not.be.disabled');
+    });
+  });
+
+  it('garde le préremplissage explicite et les actions accessibles sur petit écran', () => {
+    cy.viewport(360, 640);
+    cy.intercept('GET', '**/api/aquariums/1/measurements*', [{ id: 12, aquariumId: 1, measuredAt: new Date().toISOString(), ph: 7.2, temp: 25 }]);
+    cy.contains('button', /ajouter une mesure/i).click();
+    cy.get('mat-dialog-container').within(() => {
+      cy.contains('Valeurs reprises du relevé').should('be.visible');
+      cy.get('input[formControlName="ph"]').should('have.value', '7.2');
+      cy.contains('button', /enregistrer/i).should('be.visible').then(button => {
+        const rect = button[0].getBoundingClientRect();
+        expect(rect.top).to.be.gte(0);
+        expect(rect.bottom).to.be.lte(640);
+      });
+    });
+    cy.screenshot('measurement-mobile', { capture: 'viewport' });
   });
 
   

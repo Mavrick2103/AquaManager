@@ -209,6 +209,12 @@ export const routes: Routes = [
     canActivate: [AuthGuard, AdminOnlyGuard],
   },
   {
+    path: 'admin/journey',
+    loadComponent: () => import('./pages/admin-journey/admin-journey.component').then(m => m.AdminJourneyComponent),
+    data: { title: 'Parcours utilisateur – AquaManager', robots: 'noindex' },
+    canActivate: [AuthGuard, AdminOnlyGuard],
+  },
+  {
     path: 'admin/subscriptions',
     loadComponent: () => import('./pages/profile/admin-subscriptions/admin-subscriptions.component').then(m => m.AdminSubscriptionsComponent),
     data: { title: 'Admin – Abonnements – AquaManager', robots: 'noindex' },

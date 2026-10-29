@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { User } from '../users/user.entity';
-import { SatisfactionResponse, SatisfactionState } from './satisfaction.entity';
+import { SatisfactionResponse, SatisfactionState, SatisfactionDismissal } from './satisfaction.entity';
 import { SatisfactionService } from './satisfaction.service';
 import {
   SubmitSatisfactionDto,
@@ -65,7 +65,7 @@ export class AdminSatisfactionController {
 }
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, SatisfactionResponse, SatisfactionState]),
+    TypeOrmModule.forFeature([User, SatisfactionResponse, SatisfactionState, SatisfactionDismissal]),
   ],
   controllers: [SatisfactionController, AdminSatisfactionController],
   providers: [SatisfactionService],

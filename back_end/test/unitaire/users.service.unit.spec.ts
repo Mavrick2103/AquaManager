@@ -405,6 +405,35 @@ describe('UsersService (unit)', () => {
     expect(repo.update).not.toHaveBeenCalled();
   });
 
+  describe('manual subscription removal',()=>{
+    it('revokes a manual gift and returns the refreshed Classic account',async()=>{
+      repo.findOne.mockResolvedValue({id:2,billingProvider:null,paypalRenewalActive:false} as any);
+      const refreshed={id:2,subscriptionPlan:'CLASSIC',subscriptionStatus:'none'} as any;
+      jest.spyOn(service,'adminGetOne').mockResolvedValue(refreshed);
+      expect(await service.adminRevokeSubscription(2)).toBe(refreshed);
+      expect(repo.update).toHaveBeenCalledWith({id:2},expect.objectContaining({subscriptionPlan:'CLASSIC',subscriptionEndsAt:null}));
+    });
+    it('routes a gift with a leftover PayPal flag through the existing billing protection',async()=>{
+      repo.findOne.mockResolvedValue({id:2,billingProvider:null,paypalRenewalActive:true,paypalSubscriptionId:'I-OLD'} as any);
+      const guard=billingGuard();
+      guard.run.mockImplementation(async(_id:number,callback:()=>Promise<unknown>)=>callback());
+      jest.spyOn(service,'adminGetOne').mockResolvedValue({id:2,subscriptionPlan:'CLASSIC'} as any);
+      await service.adminRevokeSubscription(2);
+      expect(guard.run).toHaveBeenCalledWith(2,expect.any(Function));
+      expect(repo.update).toHaveBeenCalledWith({id:2},expect.not.objectContaining({paypalRenewalActive:false}));
+    });
+    it('does not remove a PayPal-managed subscription or a protected failed verification',async()=>{
+      repo.findOne.mockResolvedValue({id:2,billingProvider:'paypal',paypalRenewalActive:true} as any);
+      await expect(service.adminRevokeSubscription(2)).rejects.toThrow('Résilie');
+      expect(repo.update).not.toHaveBeenCalled();
+      repo.findOne.mockResolvedValue({id:2,billingProvider:null,paypalRenewalActive:true} as any);
+      billingGuard().run.mockRejectedValue(new ConflictException('PayPal actif'));
+      await expect(service.adminRevokeSubscription(2)).rejects.toThrow('PayPal actif');
+      expect(repo.update).not.toHaveBeenCalled();
+    });
+    function billingGuard():any { return (service as any).paypalManualGrant; }
+  });
+
   it('password reset consumes its token atomically and revokes existing sessions', async () => {
     repo.createQueryBuilder.mockReturnValue({ addSelect: jest.fn().mockReturnThis(), where: jest.fn().mockReturnThis(), getOne: jest.fn().mockResolvedValue({ id: 1, resetPasswordExpiresAt: new Date(Date.now() + 60000) }) } as any);
     repo.update.mockResolvedValue({ affected: 1 } as any);

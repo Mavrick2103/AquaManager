@@ -5,6 +5,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&family=Open+Sans:wght@400;600&display=swap');
 
 /* Thème Material 3 : génère les variables CSS */
+.data-error { padding:14px; border:1px solid #e8c8bf; border-radius:12px; background:#fff7f4; color:#844c40; line-height:1.5; }
+
 html {
   @include mat.theme((
     color: (

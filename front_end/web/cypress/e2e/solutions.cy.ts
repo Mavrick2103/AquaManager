@@ -26,7 +26,8 @@ describe('Solutions : parcours guidé', () => {
     cy.get('.solution-choice-heading').scrollIntoView();
     cy.screenshot('solutions-desktop', { capture: 'viewport' });
     cy.get('.solution-summary').contains('button', 'Ajouter une mesure').click();
-    cy.contains('[role="tab"]', 'Mesures').should('have.attr', 'aria-selected', 'true');
+    cy.contains('[role="dialog"]', 'Nouvelle mesure d’eau').should('be.visible');
+    cy.contains('button', 'Annuler').click();
     cy.get('@paidAnalysis.all').should('have.length', 0);
   });
   it('conserve la découverte Premium accessible et reste lisible sur mobile', () => {
@@ -39,4 +40,22 @@ describe('Solutions : parcours guidé', () => {
     cy.document().its('documentElement.scrollWidth').should('be.lte', 390);
     cy.screenshot('solutions-mobile', { capture: 'viewport' });
   });
+
+  for (const scenario of [
+    { name: 'partielles', measurement: { measuredAt: new Date().toISOString(), ph: 7 }, expected: 'Aucun écart détecté parmi les paramètres évalués' },
+    { name: 'absentes', measurement: { measuredAt: new Date().toISOString(), ph: null }, expected: 'Données insuffisantes' },
+    { name: 'anciennes', measurement: { measuredAt: new Date(Date.now() - 16 * 86400000).toISOString(), ph: 7 }, expected: 'Un relevé récent est nécessaire' },
+  ]) {
+    it(`nuance le bilan avec des valeurs ${scenario.name}`, () => {
+      cy.intercept('GET', '**/api/aquariums/1/measurements*', [{ id: 1, aquariumId: 1, ...scenario.measurement }]);
+      cy.visit('/aquariums/1');
+      cy.contains('[role="tab"]', 'Solutions').click();
+      cy.wait('@recommendations');
+      cy.get('#assistant-panel').should('contain.text', scenario.expected);
+      cy.contains('Bac en bonne santé').should('not.exist');
+      cy.contains('Rien à faire').should('not.exist');
+      if (scenario.name === 'partielles') cy.get('.health-card').should('contain.text', '1 paramètre(s) évalué(s)').and('contain.text', 'Les valeurs absentes ne sont pas évaluées');
+      else cy.get('.health-card').should('not.exist');
+    });
+  }
 });

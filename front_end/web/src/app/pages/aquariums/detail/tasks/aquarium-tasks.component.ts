@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, inject } from '@angular/core';
+import { addMonths, endOfMonth, format, startOfMonth } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -27,6 +29,8 @@ import { TaskDetailDialogComponent } from '../../../calendar/day-tasks-dialog/ta
 })
 export class AquariumTasksComponent implements OnChanges {
   @Input({ required: true }) aquariumId!: number;
+  @Input() aquariumName = '';
+  @Output() tasksChanged = new EventEmitter<void>();
 
   private readonly tasksApi = inject(TasksService);
   private readonly dialog = inject(MatDialog);
@@ -35,6 +39,14 @@ export class AquariumTasksComponent implements OnChanges {
 
   tasks: Task[] = [];
   loading = false;
+  loadError = false;
+  hasLoaded = false;
+  changingId: string | number | null = null;
+  month = startOfMonth(new Date());
+  private request = 0;
+  get monthLabel(): string { return format(this.month,'MMMM yyyy',{locale:fr}); }
+  changeMonth(delta: number): void { this.month=addMonths(this.month,delta); void this.load(); }
+  currentMonth(): void { this.month=startOfMonth(new Date()); void this.load(); }
 
   ngOnChanges(): void {
     if (Number.isFinite(this.aquariumId)) void this.load();
@@ -57,18 +69,22 @@ export class AquariumTasksComponent implements OnChanges {
   }
 
   async load(): Promise<void> {
+    const request=++this.request;
+    const aquariumId=this.aquariumId;
+    const from=startOfMonth(this.month),to=endOfMonth(this.month);
     this.loading = true;
+    this.loadError = false;
     try {
-      const tasks = await firstValueFrom(this.tasksApi.list());
-      this.tasks = (tasks ?? []).filter(
-        task => Number(task.aquarium?.id) === Number(this.aquariumId),
+      const tasks = await this.tasksApi.listWindow(from,to);
+      if(request!==this.request) return;
+      this.tasks = tasks.filter(
+        task => Number(task.aquarium?.id) === Number(aquariumId) && new Date(task.dueAt)>=from && new Date(task.dueAt)<=to,
       );
-    } catch (error) {
-      console.error(error);
-      this.tasks = [];
-      this.snack.open('Impossible de charger les tâches', 'Fermer', { duration: 3000 });
+      this.hasLoaded = true;
+    } catch {
+      if(request===this.request) this.loadError = true;
     } finally {
-      this.loading = false;
+      if(request===this.request) this.loading = false;
     }
   }
 
@@ -105,6 +121,8 @@ export class AquariumTasksComponent implements OnChanges {
   }
 
   async toggleStatus(task: Task): Promise<void> {
+    if(this.changingId!==null || this.loading || this.loadError) return;
+    this.changingId=task.id;
     try {
       await firstValueFrom(
         this.tasksApi.update(task.id, {
@@ -112,12 +130,15 @@ export class AquariumTasksComponent implements OnChanges {
         }),
       );
       await this.load();
+      this.tasksChanged.emit();
       this.snack.open(task.status === 'DONE' ? 'Tâche remise à faire' : 'Tâche terminée', 'OK', {
         duration: 2200,
       });
     } catch (error) {
       console.error(error);
       this.snack.open('Impossible de modifier la tâche', 'Fermer', { duration: 3000 });
+    } finally {
+      this.changingId=null;
     }
   }
 
@@ -132,11 +153,11 @@ export class AquariumTasksComponent implements OnChanges {
       })
       .afterClosed()
       .subscribe(result => {
-        if (result) void this.load();
+        if (result) { void this.load(); this.tasksChanged.emit(); }
       });
   }
 
   openCalendar(): void {
-    this.router.navigate(['/calendar']);
+    this.router.navigate(['/calendar'],{queryParams:{aquariumId:this.aquariumId,aquariumName:this.aquariumName || undefined,month:format(this.month,'yyyy-MM')}});
   }
 }

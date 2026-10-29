@@ -1,4 +1,6 @@
+import { UserNavigationComponent } from '../../../shared/user-navigation/user-navigation.component';
 import { Component, OnInit, inject } from '@angular/core';
+import { assessWaterValues } from '../../../core/water-assessment';
 import { CommonModule } from '@angular/common';
 import { AiFeedbackComponent } from './ai-feedback.component';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -178,6 +180,7 @@ type AquariumPlantRow = {
   selector: 'app-aquarium-detail',
   standalone: true,
   imports: [
+    UserNavigationComponent,
     AiFeedbackComponent,
     CommonModule,
     ReactiveFormsModule,
@@ -254,6 +257,10 @@ export class AquariumDetailComponent implements OnInit {
   });
 
   measurements: WaterMeasurement[] = [];
+  measurementsLoading = true;
+  measurementsError = false;
+  measurementsLoaded = false;
+  maintenanceError = false;
   maintenanceEvents: MaintenanceEvent[] = [];
   maintenanceImpacts: Record<string, MaintenanceImpact[]> = {};
   showMaintenanceMarkers = true;
@@ -317,6 +324,8 @@ export class AquariumDetailComponent implements OnInit {
   ];
 
   recosLoading = false;
+  recosError = false;
+  targetsError = false;
   recos: Recommendation[] = [];
 
   aiLoading = false;
@@ -400,8 +409,7 @@ aiChatQuestion = '';
 
     await this.load();
     await Promise.all([
-      this.loadMeasurements(),
-      this.loadMaintenanceEvents(),
+      this.loadMeasurements().then(() => this.loadMaintenanceEvents()),
       this.loadTargets(),
       this.loadTankItems(),
     ]);
@@ -700,6 +708,7 @@ aiChatQuestion = '';
 
   private async detectPremiumAndLoadSolutions(): Promise<void> {
     this.targetsLoading = true;
+    this.targetsError = false;
 
     try {
       const me = await this.usersApi.getMe();
@@ -713,6 +722,7 @@ aiChatQuestion = '';
       this.buildTargetsForm(this.targets);
     } catch (e: any) {
       this.targets = null;
+      this.targetsError = true;
       this.targetsForm = null;
       this.recos = [];
 
@@ -825,20 +835,20 @@ aiChatQuestion = '';
 
   async loadPendingRecos(): Promise<void> {
     this.recosLoading = true;
+    this.recosError = false;
 
     try {
       const list = await this.recosApi.listPending(this.id);
       this.recos = Array.isArray(list) ? list : [];
     } catch (e: any) {
-      this.snack.open('Impossible de charger les solutions', 'Fermer', {
-        duration: 3000,
-      });
+      this.recosError = true;
     } finally {
       this.recosLoading = false;
     }
   }
 
   async refreshSolutions(): Promise<void> {
+    if (this.measurementsError || !this.measurementsLoaded) await this.loadMeasurements();
     await this.loadTargets();
     await this.loadPendingRecos();
   }
@@ -1137,6 +1147,7 @@ async analyzePhotoWithAi(): Promise<void> {
   }
 
   async loadTargets(): Promise<void> {
+    this.targetsError = false;
     this.targetsLoading = true;
 
     try {
@@ -1145,6 +1156,7 @@ async analyzePhotoWithAi(): Promise<void> {
       this.targets = dto;
       this.buildTargetsForm(dto);
     } catch (e: any) {
+      this.targetsError = true;
       this.targets = null;
       this.targetsForm = null;
     } finally {
@@ -1253,6 +1265,7 @@ async analyzePhotoWithAi(): Promise<void> {
   openMeasurementDialog(): void {
     const ref = this.dialog.open(MeasurementDialogComponent, {
       width: '720px',
+      autoFocus: 'dialog',
       data: {
         aquariumId: this.id,
         type: this.waterType,
@@ -1358,6 +1371,9 @@ async analyzePhotoWithAi(): Promise<void> {
   }
 
   async loadMeasurements(): Promise<void> {
+    if (this.measurementsLoading && this.measurementsLoaded) return;
+    this.measurementsLoading = true;
+    this.measurementsError = false;
     try {
       const url = `${environment.apiUrl}/aquariums/${this.id}/measurements`;
       const res = await firstValueFrom(this.http.get<WaterMeasurement[]>(url));
@@ -1368,20 +1384,27 @@ async analyzePhotoWithAi(): Promise<void> {
 
       this.applyLimit();
       this.rebuildMaintenanceImpacts();
+      this.measurementsLoaded = true;
     } catch {
-      this.snack.open('Erreur lors du chargement des mesures', 'Fermer', {
-        duration: 3000,
-      });
+      this.measurementsError = true;
+    } finally {
+      this.measurementsLoading = false;
     }
   }
 
   async loadMaintenanceEvents(): Promise<void> {
+    this.maintenanceError = false;
     try {
-      const tasks = await firstValueFrom(this.tasksApi.list());
+      const now = new Date();
+      const earliest = this.measurements.reduce((min,m) => {
+        const timestamp=Date.parse(m.measuredAt);
+        return Number.isFinite(timestamp) ? Math.min(min,timestamp) : min;
+      },now.getTime());
+      const tasks = await this.tasksApi.listWindow(new Date(earliest),now);
       this.maintenanceEvents = (tasks ?? [])
         .filter(
           (task: Task) =>
-            task.status === 'DONE' && Number(task.aquarium?.id) === Number(this.id),
+            task.status === 'DONE' && Number(task.aquarium?.id) === Number(this.id) && Date.parse(task.dueAt)>=earliest && Date.parse(task.dueAt)<=now.getTime(),
         )
         .map((task: Task) => ({
           id: String(task.id),
@@ -1393,8 +1416,7 @@ async analyzePhotoWithAi(): Promise<void> {
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       this.rebuildMaintenanceImpacts();
     } catch {
-      this.maintenanceEvents = [];
-      this.maintenanceImpacts = {};
+      this.maintenanceError = true;
     }
   }
 
@@ -1416,6 +1438,7 @@ async analyzePhotoWithAi(): Promise<void> {
 
   async reloadMeasurements(): Promise<void> {
     await this.loadMeasurements();
+    await this.loadMaintenanceEvents();
   }
 
   async loadTankItems(): Promise<void> {
@@ -1731,13 +1754,27 @@ async analyzePhotoWithAi(): Promise<void> {
     return outs;
   }
 
+  get waterAssessment() {
+    return assessWaterValues(this.lastMeasurement, this.targets?.targets ?? null, this.allParams);
+  }
+
+  get solutionSummaryTitle(): string {
+    if (this.targetsLoading || this.recosLoading) return 'Préparation du bilan…';
+    if (!this.lastMeasurement) return 'Une première mesure pour commencer';
+    if (!this.targets) return 'Bilan indisponible';
+    if (!this.waterAssessment.evaluated) return 'Données insuffisantes pour évaluer tes paramètres';
+    if (!this.waterAssessment.recent) return 'Un relevé récent est nécessaire';
+    return 'Fais le point sur tes paramètres';
+  }
+
   get isTankHealthy(): boolean {
     if (this.recosLoading || this.targetsLoading) return false;
     if (!this.targets || !this.targetsForm) return false;
     if (!this.lastMeasurement) return false;
     if (this.recos?.length) return false;
 
-    return this.outOfTargetParams.length === 0;
+    const assessment = this.waterAssessment;
+    return assessment.evaluated > 0 && assessment.recent && assessment.outside === 0;
   }
 
   openEditDialog(): void {

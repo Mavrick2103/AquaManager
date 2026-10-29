@@ -38,3 +38,16 @@ export class SatisfactionState {
   @Column({ type: 'datetime', nullable: true }) lastResponseAt: Date | null;
   @Column({ type: 'datetime', nullable: true }) dismissedUntil: Date | null;
 }
+
+@Entity('satisfaction_dismissals')
+@Index(['userId', 'invitationUntil'], { unique: true })
+export class SatisfactionDismissal {
+  @PrimaryGeneratedColumn() id: number;
+  @Column() userId: number;
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' }) user: User;
+  @Column({ type: 'datetime' }) invitationUntil: Date;
+  @Column({ length: 10 }) segment: string;
+  @Column({ length: 10 }) source: string;
+  @CreateDateColumn() createdAt: Date;
+}

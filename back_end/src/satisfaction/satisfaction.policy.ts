@@ -50,6 +50,7 @@ export function eligibility(
     dismissedUntil: Date | null;
   },
   now = new Date(),
+  hasPriorUsage = false,
 ) {
   const nextResponseAt = state.lastResponseAt
     ? nextResponseDate(new Date(state.lastResponseAt))
@@ -60,7 +61,8 @@ export function eligibility(
     canSubmit,
     nextResponseAt,
     prompt:
-      user.role === 'USER' &&
+      ['USER', 'EDITOR'].includes(user.role) &&
+      (Boolean(state.lastResponseAt) || (state.visitDays >= 2 && hasPriorUsage)) &&
       canSubmit &&
       (!state.dismissedUntil || now >= new Date(state.dismissedUntil)),
   };

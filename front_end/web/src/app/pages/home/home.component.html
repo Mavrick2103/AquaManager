@@ -36,6 +36,7 @@
     <mat-icon>account_circle</mat-icon>
   </button>
 </mat-toolbar>
+<app-user-navigation />
 
 <!-- ===== Bandeau annonce ===== -->
 <div class="announce" role="status" aria-live="polite">
@@ -73,11 +74,16 @@
   <section class="hero">
     <p class="hello" *ngIf="userFullName">Bonjour {{ userFullName }} 👋</p>
 
-    <h1>Gérez vos aquariums en toute clarté</h1>
-
-    <p class="subtitle">
-      Suivi des paramètres, entretiens planifiés, historique — tout au même endroit.
-    </p>
+    <ng-container *ngIf="!tasksLoading && !tasksError && nextTask; else usualWelcome">
+      <span class="next-action-label">{{ overdueTasksCount > 0 ? 'Entretien à rattraper' : 'Ton prochain entretien' }}</span>
+      <h1>{{ nextTask.title }}</h1>
+      <p class="subtitle"><ng-container *ngIf="nextTask.aquarium?.name">{{ nextTask.aquarium?.name }} · </ng-container>{{ nextTask.dueAt | date:'EEEE d MMMM à HH:mm' }}</p>
+      <a class="next-action-link" routerLink="/calendar" [queryParams]="nextTaskParams()">Voir cet entretien <mat-icon>arrow_forward</mat-icon></a>
+    </ng-container>
+    <ng-template #usualWelcome>
+      <h1>Le suivi de tes aquariums</h1>
+      <p class="subtitle">Retrouve tes bacs, note tes mesures et prépare tes prochains entretiens.</p>
+    </ng-template>
 
     <div class="cta-row">
       <button mat-raised-button routerLink="/aquariums" data-tour="home-aquariums">
@@ -94,6 +100,88 @@
 
 
 
+  <!-- ===== KPI ===== -->
+  <p class="home-load-error" role="alert" *ngIf="tasksError">Impossible de charger les entretiens. <button mat-button type="button" (click)="loadTasks()">Réessayer</button></p>
+  <p class="home-load-error" role="alert" *ngIf="measurementsError">Impossible de charger les mesures. <button mat-button type="button" (click)="loadMeasurements()">Réessayer</button></p>
+  <p role="status" *ngIf="tasksLoading">Chargement des entretiens…</p>
+  <section class="grid">
+    <div class="card kpi -today" routerLink="/calendar">
+      <div class="kpi-value">{{ tasksLoading || tasksError ? '—' : todayTasksCount }}</div>
+      <div class="kpi-label">À faire aujourd’hui</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="kpi-value">{{ measurementsLoading || measurementsError ? '—' : monthlyMeasurementsCount }}</div>
+      <div class="kpi-label">Mesures d’eau ce mois-ci</div>
+    </div>
+
+    <div class="card kpi" routerLink="/calendar">
+      <div class="kpi-value">{{ tasksLoading || tasksError ? '—' : upcomingTasksCount }}</div>
+      <div class="kpi-label">À faire dans les 7 prochains jours</div>
+    </div>
+    <div class="card kpi" routerLink="/calendar"><div class="kpi-value">{{ tasksLoading || tasksError ? '—' : overdueTasksCount }}</div><div class="kpi-label">En retard ce mois-ci</div></div>
+  </section>
+
+  <!-- ===== ACTIVITÉS ===== -->
+  <section class="activity-grid" *ngIf="!tasksLoading && !tasksError">
+    <section class="card activity">
+      <h2>Entretiens terminés</h2>
+      <p class="activity-caption">Classés par date prévue.</p>
+
+      <ul class="activity-list">
+        <li *ngFor="let t of latestActivities">
+          <mat-icon>{{ typeIcon(t.type) }}</mat-icon>
+
+          <span class="txt">
+            <strong>{{ t.title || typeLabel(t.type) }}</strong>
+            <ng-container *ngIf="t.aquarium?.name"> — {{ t.aquarium?.name }}</ng-container>
+          </span>
+
+          <span class="time">{{ whenLabel(t) }}</span>
+        </li>
+
+        <li *ngIf="!latestActivities.length">
+          <mat-icon>info</mat-icon>
+          Aucun entretien terminé avec une échéance dans les 7 derniers jours
+        </li>
+      </ul>
+    </section>
+
+    <section class="card activity">
+      <h2>Activités à venir</h2>
+
+      <ul class="activity-list">
+        <li *ngFor="let t of upcomingTasks">
+          <mat-icon>{{ typeIcon(t.type) }}</mat-icon>
+
+          <span class="txt">
+            <strong>{{ t.title }}</strong>
+            <ng-container *ngIf="t.aquarium?.name"> — {{ t.aquarium?.name }}</ng-container>
+          </span>
+
+          <span class="time">{{ whenLabel(t) }}</span>
+        </li>
+
+        <li *ngIf="!upcomingTasks.length">
+          <mat-icon>check_circle</mat-icon>
+          Aucun entretien à faire dans les 7 prochains jours
+        </li>
+      </ul>
+      <a routerLink="/calendar" class="all-tasks-link">Voir tous les entretiens<mat-icon>arrow_forward</mat-icon></a>
+    </section>
+  </section>
+
+  <!-- ===== CALENDRIER ===== -->
+  <section class="calendar-wrap">
+    <app-week-calendar></app-week-calendar>
+  </section>
+  <details class="home-progression">
+    <summary>
+      <span class="progression-symbol"><mat-icon aria-hidden="true">emoji_events</mat-icon></span>
+      <span class="progression-heading"><strong>Ma progression</strong><span>Missions et badges</span></span>
+      <span class="progression-level" *ngIf="gamification">Niveau {{ gamification.profile.level }}</span>
+      <mat-icon class="progression-chevron" aria-hidden="true">expand_more</mat-icon>
+    </summary>
   <!-- ===== GAMIFICATION / PROGRESSION ===== -->
   <section class="gamification-section" *ngIf="!gamificationLoading && gamification">
     <div class="gm-dashboard">
@@ -331,75 +419,7 @@
     </div>
   </section>
 
-  <!-- ===== KPI ===== -->
-  <section class="grid">
-    <div class="card kpi -today" routerLink="/calendar">
-      <div class="kpi-value">{{ todayTasksCount }}</div>
-      <div class="kpi-label">Tâches aujourd’hui</div>
-    </div>
-
-    <div class="card kpi">
-      <div class="kpi-value">{{ monthlyMeasurementsCount }}</div>
-      <div class="kpi-label">Mesures d’eau ce mois-ci</div>
-    </div>
-
-    <div class="card kpi" routerLink="/calendar">
-      <div class="kpi-value">{{ upcomingTasks.length }}</div>
-      <div class="kpi-label">Tâches à venir (7j)</div>
-    </div>
-  </section>
-
-  <!-- ===== ACTIVITÉS ===== -->
-  <section class="activity-grid">
-    <section class="card activity">
-      <h2>Dernières activités</h2>
-
-      <ul class="activity-list">
-        <li *ngFor="let t of latestActivities">
-          <mat-icon>{{ typeIcon(t.type) }}</mat-icon>
-
-          <span class="txt">
-            <strong>{{ t.title || typeLabel(t.type) }}</strong>
-            <ng-container *ngIf="t.aquarium?.name"> — {{ t.aquarium?.name }}</ng-container>
-          </span>
-
-          <span class="time">{{ whenLabel(t) }}</span>
-        </li>
-
-        <li *ngIf="!latestActivities.length">
-          <mat-icon>info</mat-icon>
-          Aucune activité récente
-        </li>
-      </ul>
-    </section>
-
-    <section class="card activity">
-      <h2>Activités à venir</h2>
-
-      <ul class="activity-list">
-        <li *ngFor="let t of upcomingTasks">
-          <mat-icon>{{ typeIcon(t.type) }}</mat-icon>
-
-          <span class="txt">
-            <strong>{{ t.title }}</strong>
-            <ng-container *ngIf="t.aquarium?.name"> — {{ t.aquarium?.name }}</ng-container>
-          </span>
-
-          <span class="time">{{ whenLabel(t) }}</span>
-        </li>
-
-        <li *ngIf="!upcomingTasks.length">
-          <mat-icon>check_circle</mat-icon>
-          Aucune activité prévue dans les 7 jours
-        </li>
-      </ul>
-    </section>
-  </section>
-
-  <!-- ===== CALENDRIER ===== -->
-  <section class="calendar-wrap">
-    <app-week-calendar></app-week-calendar>
-  </section>
+  </details>
 </main>
 
 <!-- ===== FOOTER ===== -->

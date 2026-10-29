@@ -7,7 +7,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { Task, TasksService, CreateTaskPayload } from '../../../core/tasks.service';
+import { Task } from '../../../core/tasks.service';
 import { TaskDetailDialogComponent } from '../day-tasks-dialog/task-detail-dialog/task-detail-dialog.component';
 import { TaskDialogComponent } from '../task-dialog/task-dialog.component'; // ⬅️ adapte si besoin
 
@@ -31,11 +31,10 @@ type TaskType = 'WATER_CHANGE' | 'FERTILIZATION' | 'TRIM' | 'WATER_TEST' | 'OTHE
 export class DayTasksDialogComponent {
   private ref = inject(MatDialogRef<DayTasksDialogComponent>);
   private dialog = inject(MatDialog);
-  private tasksApi = inject(TasksService);
 
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public data: { date: Date; tasks: Task[] }
+    public data: { date: Date; tasks: Task[]; aquariumId?: number }
   ) {}
 
   get tasks(): Task[] {
@@ -50,7 +49,7 @@ export class DayTasksDialogComponent {
   addTask() {
     this.dialog
       .open(TaskDialogComponent, {
-        data: { date: this.data.date },
+        data: { date: this.data.date, aquariumId: this.data.aquariumId },
         width: '92vw',
         maxWidth: '900px',
         minWidth: '320px',
@@ -59,20 +58,10 @@ export class DayTasksDialogComponent {
         restoreFocus: false,
       })
       .afterClosed()
-      .subscribe((payload: CreateTaskPayload | null | undefined) => {
-        if (!payload) return;
-
-        // ✅ création API
-        this.tasksApi.create(payload).subscribe({
-          next: (created) => {
-            this.data.tasks.push(created);
-            this.close(true);
-          },
-          error: (err) => {
-            console.error(err);
-            alert('Erreur lors de la création de la tâche.');
-          },
-        });
+      .subscribe((created: Task | null | undefined) => {
+        if (!created) return;
+        this.data.tasks.push(created);
+        this.close(true);
       });
   }
 

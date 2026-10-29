@@ -1,6 +1,7 @@
 // task-dialog.component.ts
 import { Component, Inject, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import {
   FormArray,
   FormBuilder,
@@ -31,6 +32,7 @@ import {
   WeekDayKey,
   FertilizerLine,
   RepeatPayload,
+  TasksService,
 } from '../../../core/tasks.service';
 
 const WEEK_DAYS: Array<{ key: WeekDayKey; label: string }> = [
@@ -85,8 +87,12 @@ export class TaskDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<TaskDialogComponent>);
   private aquariumsApi = inject(AquariumsService);
+  private router = inject(Router);
+  private tasksApi = inject(TasksService);
+  saving = false;
+  saveError = '';
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { date?: Date } | null) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { date?: Date; aquariumId?: number } | null) {}
 
   types: Array<{ value: TaskType; label: string; icon: string }> = [
     { value: 'WATER_CHANGE', label: 'Changement d’eau', icon: 'water_drop' },
@@ -111,6 +117,12 @@ export class TaskDialogComponent implements OnInit {
     return this.aquariumsList;
   }
   loadingAquariums = true;
+  aquariumsError = false;
+
+  createAquarium(): void {
+    this.dialogRef.close();
+    void this.router.navigate(['/aquariums']);
+  }
 
   form = this.fb.group(
     {
@@ -193,7 +205,8 @@ export class TaskDialogComponent implements OnInit {
 
           // set default selection if none
           if (this.form.getRawValue().aquariumId == null) {
-            this.form.patchValue({ aquariumId: this.aquariumsList[0].id }, { emitEvent: false });
+            const selected = this.aquariumsList.find(aquarium => aquarium.id === this.data?.aquariumId) ?? this.aquariumsList[0];
+            this.form.patchValue({ aquariumId: selected.id }, { emitEvent: false });
           }
         } else {
           aquariumCtrl.disable({ emitEvent: false });
@@ -201,6 +214,7 @@ export class TaskDialogComponent implements OnInit {
         }
       },
       error: () => {
+        this.aquariumsError = true;
         this.aquariumsList = [];
         this.loadingAquariums = false;
 
@@ -209,72 +223,45 @@ export class TaskDialogComponent implements OnInit {
       },
     });
 
-    // type change => titre auto + fertil
-    this.form.get('type')!.valueChanges.subscribe((t) => {
-      const type = (t ?? 'OTHER') as TaskType;
+    const syncType = (type: TaskType) => {
       this.applyAutoTitle(type);
-
-      if (type === 'FERTILIZATION' && this.fertilizers.length === 0) {
-        this.addFertilizerLine();
-      }
-
-      this.form.updateValueAndValidity({ emitEvent: false });
-    });
-
-    // repeat toggle => active les contrôles de répétition
-    this.form.get('isRepeat')!.valueChanges.subscribe((on) => {
-      const repeatModeCtrl = this.form.get('repeatMode')!;
-      const hasEndCtrl = this.form.get('repeatHasEnd')!;
-      const durationCtrl = this.form.get('repeatDurationWeeks')!;
-      const everyCtrl = this.form.get('repeatEveryWeeks')!;
-
-      if (!on) {
-        this.form.patchValue({ repeatMode: 'NONE', repeatHasEnd: false }, { emitEvent: false });
-
-        repeatModeCtrl.disable({ emitEvent: false });
-        hasEndCtrl.disable({ emitEvent: false });
-        durationCtrl.disable({ emitEvent: false });
-        everyCtrl.disable({ emitEvent: false });
+      if (type === 'FERTILIZATION') {
+        if (!this.fertilizers.length) this.addFertilizerLine();
+        this.fertilizers.enable({ emitEvent: false });
       } else {
-        if (repeatModeCtrl.value === 'NONE') {
-          this.form.patchValue({ repeatMode: 'WEEKLY' }, { emitEvent: false });
-        }
-
-        repeatModeCtrl.enable({ emitEvent: false });
-        hasEndCtrl.enable({ emitEvent: false });
-
-        // si fin activée => durée activée, sinon indéfini => durée désactivée
-        if (hasEndCtrl.value) durationCtrl.enable({ emitEvent: false });
-        else durationCtrl.disable({ emitEvent: false });
-
-        // everyWeeks only for EVERY_X_WEEKS
-        if (repeatModeCtrl.value === 'EVERY_X_WEEKS') everyCtrl.enable({ emitEvent: false });
-        else everyCtrl.disable({ emitEvent: false });
+        this.fertilizers.disable({ emitEvent: false });
       }
+      this.form.updateValueAndValidity({ emitEvent: false });
+    };
+    this.form.controls.type.valueChanges.subscribe(type => syncType((type ?? 'OTHER') as TaskType));
+    syncType(this.form.controls.type.value as TaskType);
+    this.form.controls.isRepeat.valueChanges.subscribe(() => this.syncRepeatControls());
+    this.form.controls.repeatHasEnd.valueChanges.subscribe(() => this.syncRepeatControls());
+    this.form.controls.repeatMode.valueChanges.subscribe(mode => {
+      this.form.controls.isRepeat.setValue(mode !== 'NONE', { emitEvent: false });
+      this.syncRepeatControls();
     });
+    this.syncRepeatControls();
+  }
 
-    // fin de répétition => enable/disable durée
-    this.form.get('repeatHasEnd')!.valueChanges.subscribe((hasEnd) => {
-      const durationCtrl = this.form.get('repeatDurationWeeks')!;
-      if (hasEnd && this.form.get('isRepeat')!.value) durationCtrl.enable({ emitEvent: false });
-      else durationCtrl.disable({ emitEvent: false });
-    });
-
-    // mode => toggle everyWeeks (+ cohérence avec isRepeat)
-    this.form.get('repeatMode')!.valueChanges.subscribe((mode) => {
-      const on = !!this.form.get('isRepeat')!.value;
-
-      if (mode === 'NONE' && on) {
-        this.form.patchValue({ isRepeat: false }, { emitEvent: false });
-      }
-      if (mode !== 'NONE' && !on) {
-        this.form.patchValue({ isRepeat: true }, { emitEvent: false });
-      }
-
-      const everyCtrl = this.form.get('repeatEveryWeeks')!;
-      if (mode === 'EVERY_X_WEEKS' && this.form.get('isRepeat')!.value) everyCtrl.enable({ emitEvent: false });
-      else everyCtrl.disable({ emitEvent: false });
-    });
+  private syncRepeatControls(): void {
+    const controls = this.form.controls;
+    const enabled = Boolean(controls.isRepeat.value);
+    if (!enabled) {
+      this.form.patchValue({ repeatMode: 'NONE', repeatHasEnd: false }, { emitEvent: false });
+    } else if (controls.repeatMode.value === 'NONE') {
+      controls.repeatMode.setValue('WEEKLY', { emitEvent: false });
+    }
+    const toggle = (control: AbstractControl, active: boolean) => {
+      if (active) control.enable({ emitEvent: false });
+      else control.disable({ emitEvent: false });
+    };
+    toggle(controls.repeatMode, enabled);
+    toggle(controls.repeatHasEnd, enabled);
+    toggle(controls.repeatDurationWeeks, enabled && Boolean(controls.repeatHasEnd.value));
+    toggle(controls.repeatEveryWeeks, enabled && controls.repeatMode.value === 'EVERY_X_WEEKS');
+    toggle(controls.repeatDays, enabled && ['WEEKLY','EVERY_X_WEEKS'].includes(controls.repeatMode.value ?? ''));
+    this.form.updateValueAndValidity({ emitEvent: false });
   }
 
   addFertilizerLine(): void {
@@ -361,7 +348,7 @@ export class TaskDialogComponent implements OnInit {
     this.form.markAllAsTouched();
     this.form.updateValueAndValidity();
 
-    if (this.form.invalid) return;
+    if (this.saving || this.form.invalid || this.loadingAquariums || this.aquariumsError) return;
 
     if (!this.aquariumsList.length) {
       alert('Crée d’abord un aquarium pour associer la tâche.');
@@ -380,6 +367,16 @@ export class TaskDialogComponent implements OnInit {
       fertilization: this.buildFertilization(v),
     };
 
-    this.dialogRef.close(payload);
+    this.saving = true;
+    this.saveError = '';
+    this.dialogRef.disableClose = true;
+    this.tasksApi.create(payload).subscribe({
+      next: created => this.dialogRef.close(created),
+      error: () => {
+        this.saving = false;
+        this.dialogRef.disableClose = false;
+        this.saveError = 'La tâche n’a pas pu être enregistrée. Ta saisie est conservée : tu peux réessayer.';
+      },
+    });
   }
 }

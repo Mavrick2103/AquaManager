@@ -22,7 +22,9 @@ import { fr } from 'date-fns/locale';
       </div>
     </header>
 
-    <div class="strip">
+    <p *ngIf="loading" role="status">Chargement de la semaine…</p>
+    <p *ngIf="loadError" role="alert">Impossible de charger cette semaine. <button type="button" (click)="load()">Réessayer</button></p>
+    <div class="strip" *ngIf="!loading && !loadError">
       <ng-container *ngFor="let d of days">
         <div class="day">
           <div class="d">
@@ -31,10 +33,11 @@ import { fr } from 'date-fns/locale';
           </div>
 
           <ul class="tasks" *ngIf="dayTasks(d).length; else empty">
-            <li *ngFor="let t of dayTasks(d)" [title]="t.title">
+            <li *ngFor="let t of dayTasks(d)" [class.task-done]="t.status === 'DONE'" [title]="t.title + (t.status === 'DONE' ? ' · Terminé' : ' · À faire')">
               <span class="dot"></span>
               <span class="txt">{{ t.title }}</span>
-              <span class="due" *ngIf="t.dueAt?.length">{{ t.dueAt!.slice(11,16) }}</span>
+              <span class="done-label" *ngIf="t.status === 'DONE'">Fait</span>
+              <span class="due" *ngIf="t.dueAt?.length">{{ taskTime(t) }}</span>
             </li>
           </ul>
 
@@ -94,7 +97,7 @@ import { fr } from 'date-fns/locale';
 
     .tasks{ list-style:none; margin:0; padding-left:.9rem; display:grid; gap:.35rem; }
     .tasks li{
-      display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:.4rem;
+      display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:.4rem;
       font-size:.92rem; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
@@ -106,6 +109,9 @@ import { fr } from 'date-fns/locale';
     }
 
     .txt{ overflow:hidden; text-overflow:ellipsis; }
+    .tasks li.task-done { color:#547263; }
+    .task-done .txt { text-decoration:line-through; }
+    .done-label { font-size:.7rem; color:#34724e; }
     .due{ font-size:.8rem; color:#39B54A; }
 
     .empty{ opacity:.35; text-align:center; margin-top:.35rem; }
@@ -123,10 +129,20 @@ export class WeekCalendarComponent {
   start = startOfWeek(new Date(), { weekStartsOn: 1 });
   days = Array.from({ length: 7 }, (_, i) => addDays(this.start, i));
 
-  constructor() {
-    const monthStr = format(new Date(), 'yyyy-MM');
-    this.api.list(monthStr).subscribe(res => this.tasks = res);
+  loading = true;
+  loadError = false;
+  private request = 0;
+  constructor() { void this.load(); }
+  async load() {
+    const request = ++this.request;
+    this.loading = true; this.loadError = false;
+    try {
+      const tasks = await this.api.listWindow(this.days[0],this.days[6]);
+      if (request === this.request) this.tasks = tasks;
+    } catch { if (request === this.request) this.loadError = true; }
+    finally { if (request === this.request) this.loading = false; }
   }
+  taskTime(task: Task) { return format(new Date(task.dueAt),'HH:mm'); }
 
   fmt(d: Date, p: string) { return format(d, p, { locale: fr }); }
 
@@ -138,18 +154,21 @@ export class WeekCalendarComponent {
   prevWeek(){
     this.start = addWeeks(this.start, -1);
     this.days = Array.from({ length: 7 }, (_, i) => addDays(this.start, i));
+    void this.load();
   }
   nextWeek(){
     this.start = addWeeks(this.start, 1);
     this.days = Array.from({ length: 7 }, (_, i) => addDays(this.start, i));
+    void this.load();
   }
   goToday(){
     this.start = startOfWeek(new Date(), { weekStartsOn: 1 });
     this.days = Array.from({ length: 7 }, (_, i) => addDays(this.start, i));
+    void this.load();
   }
 
   dayTasks(d: Date): Task[] {
     const iso = this.fmt(d, 'yyyy-MM-dd');
-    return this.tasks.filter(t => t.dueAt?.startsWith(iso));
+    return this.tasks.filter(t => t.dueAt && format(new Date(t.dueAt),'yyyy-MM-dd') === iso);
   }
 }

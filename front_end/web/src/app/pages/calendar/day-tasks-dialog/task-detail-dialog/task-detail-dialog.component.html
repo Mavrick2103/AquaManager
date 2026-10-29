@@ -1,9 +1,11 @@
 <h2 mat-dialog-title class="dlg-title">
   <mat-icon>assignment</mat-icon>
-  Détails de la tâche
+  {{ isSeries ? 'Modifier la série' : 'Détails de la tâche' }}
 </h2>
 
 <mat-dialog-content class="dlg-content">
+  <p class="hint-card" *ngIf="isSeries">Les modifications s’appliquent à toute la série. La date ci-dessous est celle de son début, pas celle de l’occurrence ouverte.</p>
+  <p class="form-error" role="alert" *ngIf="seriesContextMissing">Les informations de la série sont incomplètes. Ferme cette fenêtre et actualise le calendrier avant de réessayer.</p>
   <form class="form">
     <!-- 1) Infos -->
     <div class="section">
@@ -68,7 +70,7 @@
         <mat-icon>repeat</mat-icon>
         <div>
           <div class="ttl">Répétition</div>
-          <div class="sub">Activez une routine (avec fin).</div>
+          <div class="sub">Activez une routine, avec ou sans date de fin.</div>
         </div>
       </div>
 
@@ -89,8 +91,12 @@
         </mat-form-field>
       </div>
 
+      <mat-slide-toggle *ngIf="repeatOn" [(ngModel)]="repeatHasEnd" name="repeatHasEnd" class="toggle-full">
+        Fin de répétition
+      </mat-slide-toggle>
+      <p *ngIf="repeatOn && !repeatHasEnd">Sans date de fin : la routine continue jusqu’à sa désactivation.</p>
       <!-- Durée -->
-      <div class="row row--2 repeat-duration-row" *ngIf="repeatOn">
+      <div class="row row--2 repeat-duration-row" *ngIf="repeatOn && repeatHasEnd">
         <mat-form-field appearance="outline">
           <mat-label>Durée</mat-label>
           <mat-icon matPrefix>hourglass_bottom</mat-icon>
@@ -232,14 +238,14 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="actions">
-  <button mat-button type="button" (click)="cancel()">Fermer</button>
+  <button mat-button type="button" (click)="cancel()" [disabled]="saving">Fermer</button>
 
-  <button mat-stroked-button color="warn" type="button" (click)="delete()">
+  <button mat-stroked-button color="warn" type="button" (click)="delete()" [disabled]="saving || seriesContextMissing">
     <mat-icon>delete</mat-icon>
-    Supprimer
+    {{ isSeries ? 'Supprimer toute la série' : 'Supprimer' }}
   </button>
 
-  <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving">
+  <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving || seriesContextMissing">
     <mat-icon>save</mat-icon>
     Enregistrer
   </button>

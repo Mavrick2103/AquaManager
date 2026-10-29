@@ -1,4 +1,5 @@
 import { Component, Inject, inject, signal } from '@angular/core';
+import { format } from 'date-fns';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -10,6 +11,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatRadioModule } from '@angular/material/radio';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AquariumsService, CreateAquariumDto, WaterType } from '../../../core/aquariums.service';
 
@@ -19,7 +21,7 @@ import { AquariumsService, CreateAquariumDto, WaterType } from '../../../core/aq
   imports: [
     CommonModule, ReactiveFormsModule, MatDialogModule, MatFormFieldModule,
     MatInputModule, MatSelectModule, MatDatepickerModule, MatNativeDateModule,
-    MatButtonModule, MatIconModule, MatCheckboxModule, MatSnackBarModule,
+    MatButtonModule, MatIconModule, MatCheckboxModule, MatRadioModule, MatSnackBarModule,
   ],
   templateUrl: './aquarium-dialog.component.html',
   styleUrls: ['./aquarium-dialog.component.scss'],
@@ -48,8 +50,13 @@ export class AquariumDialogComponent {
     heightCm: [35, [Validators.required, Validators.min(10), Validators.max(200)]],
     waterType: ['EAU_DOUCE' as WaterType, [Validators.required]],
     startDate: [new Date(), [Validators.required]],
-    setupCycling: [true],
+    aquariumStage: ['existing'],
+    setupCycling: [false],
   });
+
+  onStageChange(): void {
+    this.form.controls.setupCycling.setValue(this.form.controls.aquariumStage.value === 'new');
+  }
 
   private updateLiters(): void {
     const v = this.form.value;
@@ -66,6 +73,7 @@ export class AquariumDialogComponent {
   }
 
   submit() {
+    if (this.submitting()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -79,14 +87,14 @@ export class AquariumDialogComponent {
       widthCm: Number(v.widthCm),
       heightCm: Number(v.heightCm),
       waterType: v.waterType as WaterType,
-      startDate: new Date(v.startDate as Date).toISOString().slice(0, 10),
+      startDate: format(v.startDate as Date, 'yyyy-MM-dd'),
     };
 
     if (this.data?.tutorial === true) {
       this.submitting.set(false);
       this.ref.close({
         aquarium: { id: -1, ...dto },
-        setupCycling: v.setupCycling !== false,
+        setupCycling: v.aquariumStage === 'new' && v.setupCycling === true,
         tutorial: true,
       });
       return;
@@ -97,7 +105,7 @@ export class AquariumDialogComponent {
         this.submitting.set(false);
         this.ref.close({
           aquarium,
-          setupCycling: v.setupCycling !== false,
+          setupCycling: v.aquariumStage === 'new' && v.setupCycling === true,
         });
       },
       error: (error) => {
@@ -109,6 +117,16 @@ export class AquariumDialogComponent {
         );
       },
     });
+  }
+
+  fieldError(name: string): string {
+    const errors = this.form.get(name)?.errors;
+    if (errors?.['matDatepickerParse']) return 'Indique une date valide.';
+    if (errors?.['required']) return 'Ce champ est requis.';
+    if (errors?.['min']) return `Minimum : ${errors['min'].min} cm.`;
+    if (errors?.['max']) return `Maximum : ${errors['max'].max} cm.`;
+    if (errors?.['maxlength']) return 'Maximum 80 caractères.';
+    return 'Vérifie la valeur saisie.';
   }
 
   close() {

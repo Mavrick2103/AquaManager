@@ -13,6 +13,7 @@
     mat-raised-button
     class="btn-primary"
     data-tour="aquarium-create"
+    [disabled]="loading || loadError || !hasLoaded"
     [class.btn-primary--limited]="isAtLimit"
     (click)="openCreate()"
   >
@@ -20,8 +21,11 @@
     <span>{{ isAtLimit ? 'Quota atteint' : 'Nouvel aquarium' }}</span>
   </button>
 </header>
+<app-user-navigation />
 
-<ng-container *ngIf="!loading; else loadingTpl">
+<section class="aquariums-load-error" *ngIf="loadError" role="alert"><mat-icon aria-hidden="true">cloud_off</mat-icon><div><h2>Impossible de charger tes aquariums</h2><p>La liste est momentanément indisponible. Réessaie pour retrouver tes bacs.</p><button mat-stroked-button type="button" (click)="load()">Réessayer</button></div></section>
+<ng-container *ngIf="loading" [ngTemplateOutlet]="loadingTpl"></ng-container>
+<ng-container *ngIf="!loading && !loadError && hasLoaded">
   <main class="aquariums-main">
     <section class="retention-notice" *ngIf="retention && retention.archivedCount > 0" aria-label="Aquariums conservés temporairement">
       <mat-icon aria-hidden="true">inventory_2</mat-icon>

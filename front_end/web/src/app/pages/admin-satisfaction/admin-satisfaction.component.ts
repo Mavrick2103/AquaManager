@@ -29,6 +29,7 @@ interface Review {
   createdAt: string;
 }
 interface Report {
+  dismissals?: { count: number; users: number };
   totals: Summary[];
   monthly: (Summary & { month: string })[];
   items: Review[];

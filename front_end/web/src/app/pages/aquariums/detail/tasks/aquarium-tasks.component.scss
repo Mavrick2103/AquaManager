@@ -29,3 +29,5 @@ h2,h3 { margin:4px 0 0; color:#173f49; } h2 { font-size:clamp(1.35rem,2.6vw,1.8r
 .empty { display:flex; min-height:150px; flex-direction:column; align-items:center; justify-content:center; gap:5px; border:1px dashed #cbdcda; border-radius:14px; color:#70858a; background:#fbfdfc; text-align:center; }
 .empty mat-icon { width:34px; height:34px; color:#3d9674; font-size:34px; } .empty strong { color:#315760; } .empty.compact { min-height:80px; }
 @media(max-width:700px) { .tasks__header { flex-direction:column; } .tasks__header button { width:100%; } .summary { grid-template-columns:1fr; } .task { grid-template-columns:auto minmax(0,1fr) auto; align-items:start; } .type-icon { display:none; } .meta { flex-direction:column; gap:5px; } }
+.tasks-month { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:16px 0; color:#315c63; }
+.tasks-month strong { text-transform:capitalize; }

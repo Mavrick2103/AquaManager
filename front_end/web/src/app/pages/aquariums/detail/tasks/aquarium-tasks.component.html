@@ -2,7 +2,7 @@
   <header class="tasks__header">
     <div>
       <span class="eyebrow">Planning de ce bac</span>
-      <h2>Toutes les tâches de l’aquarium</h2>
+      <h2>Tâches de l’aquarium</h2>
       <p>Visualise les prochaines actions et retrouve l’historique des entretiens.</p>
     </div>
     <button mat-flat-button color="primary" type="button" (click)="openCalendar()">
@@ -11,7 +11,14 @@
     </button>
   </header>
 
-  <div class="summary" aria-label="Résumé des tâches">
+  <nav class="tasks-month" aria-label="Mois des entretiens">
+    <button mat-icon-button type="button" aria-label="Mois précédent" (click)="changeMonth(-1)"><mat-icon>chevron_left</mat-icon></button>
+    <strong>{{ monthLabel }}</strong>
+    <button mat-icon-button type="button" aria-label="Mois suivant" (click)="changeMonth(1)"><mat-icon>chevron_right</mat-icon></button>
+    <button mat-button type="button" (click)="currentMonth()">Ce mois-ci</button>
+  </nav>
+  <p role="alert" *ngIf="loadError">Impossible de charger les tâches de ce mois. <button mat-stroked-button type="button" (click)="load()">Réessayer</button></p>
+  <div class="summary" aria-label="Résumé des tâches" *ngIf="hasLoaded && !loadError && !loading">
     <div><mat-icon>pending_actions</mat-icon><span><strong>{{ pendingTasks.length }}</strong> à faire</span></div>
     <div [class.alert]="overdueCount > 0">
       <mat-icon>notification_important</mat-icon><span><strong>{{ overdueCount }}</strong> en retard</span>
@@ -24,7 +31,7 @@
     <span>Chargement des tâches…</span>
   </div>
 
-  <ng-container *ngIf="!loading">
+  <ng-container *ngIf="!loading && !loadError && hasLoaded">
     <section class="list-section">
       <div class="section-title">
         <div><span>À faire</span><h3>Prochaines actions</h3></div>
@@ -34,6 +41,7 @@
       <div class="task-list" *ngIf="pendingTasks.length; else noPending">
         <article class="task" *ngFor="let task of pendingTasks" [class.overdue]="isOverdue(task)">
           <button class="check" type="button" (click)="toggleStatus(task)"
+            [disabled]="changingId !== null"
             [attr.aria-label]="'Marquer ' + task.title + ' comme terminée'">
             <mat-icon>radio_button_unchecked</mat-icon>
           </button>
@@ -58,7 +66,7 @@
       <ng-template #noPending>
         <div class="empty">
           <mat-icon>done_all</mat-icon><strong>Tout est à jour</strong>
-          <span>Aucune tâche n’est prévue pour cet aquarium.</span>
+          <span>Aucune tâche à faire dans le mois consulté.</span>
         </div>
       </ng-template>
     </section>
@@ -71,6 +79,7 @@
       <div class="task-list" *ngIf="completedTasks.length; else noCompleted">
         <article class="task done" *ngFor="let task of completedTasks">
           <button class="check" type="button" (click)="toggleStatus(task)"
+            [disabled]="changingId !== null"
             [attr.aria-label]="'Remettre ' + task.title + ' à faire'"><mat-icon>check_circle</mat-icon></button>
           <span class="type-icon"><mat-icon>{{ icon(task.type) }}</mat-icon></span>
           <div class="content">

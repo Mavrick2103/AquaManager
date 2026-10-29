@@ -8,6 +8,7 @@
   </button>
 </section>
 
+<app-user-navigation />
 <main class="page-wrap">
   <section class="calendar-dashboard" data-tour="calendar-summary">
     <div class="calendar-dashboard__intro">
@@ -19,25 +20,28 @@
     <div class="calendar-summary">
       <button type="button" class="summary-card summary-card--late" (click)="filterOverdue()">
         <span class="summary-card__icon"><mat-icon>notification_important</mat-icon></span>
-        <span><strong>{{ overdueCount }}</strong><small>En retard</small></span>
+        <span><strong>{{ summaryLoading || summaryError ? '—' : overdueCount }}</strong><small>En retard ce mois-ci</small></span>
         <mat-icon class="summary-card__arrow">arrow_forward</mat-icon>
       </button>
       <button type="button" class="summary-card" (click)="filterToday()">
         <span class="summary-card__icon"><mat-icon>today</mat-icon></span>
-        <span><strong>{{ todayCount }}</strong><small>Aujourd’hui</small></span>
+        <span><strong>{{ summaryLoading || summaryError ? '—' : todayCount }}</strong><small>À faire aujourd’hui</small></span>
         <mat-icon class="summary-card__arrow">arrow_forward</mat-icon>
       </button>
       <div class="summary-card">
         <span class="summary-card__icon summary-card__icon--week"><mat-icon>date_range</mat-icon></span>
-        <span><strong>{{ upcomingCount }}</strong><small>7 prochains jours</small></span>
+        <span><strong>{{ summaryLoading || summaryError ? '—' : upcomingCount }}</strong><small>7 prochains jours</small></span>
       </div>
       <div class="summary-card">
         <span class="summary-card__icon summary-card__icon--pending"><mat-icon>pending_actions</mat-icon></span>
-        <span><strong>{{ pendingCount }}</strong><small>À faire ce mois</small></span>
+        <span><strong>{{ loading || loadError ? '—' : pendingCount }}</strong><small>À faire · mois affiché</small></span>
       </div>
     </div>
   </section>
 
+  <div class="calendar-feedback calendar-feedback--error" role="alert" *ngIf="summaryError"><span>Impossible de charger le résumé des entretiens.</span><button mat-stroked-button type="button" (click)="reloadMonth()">Réessayer</button></div>
+
+  <p class="calendar-feedback calendar-feedback--error" role="alert" *ngIf="taskUpdateError">{{ taskUpdateError }}</p>
   <section class="calendar-controls">
     <div class="calendar-filters">
       <label>
@@ -88,7 +92,7 @@
   </div>
   <div class="calendar-feedback calendar-feedback--error" *ngIf="loadError">
     <span>Impossible de charger les tâches.</span>
-    <button mat-stroked-button type="button" (click)="thisMonth()">Réessayer</button>
+    <button mat-stroked-button type="button" (click)="reloadMonth()">Réessayer</button>
   </div>
 
   <section class="cal -compact" data-tour="calendar-grid" *ngIf="viewMode === 'month' && !loadError">
@@ -104,7 +108,7 @@
       <div class="cal__head-actions"><button mat-stroked-button (click)="thisMonth()">Aujourd’hui</button></div>
     </header>
 
-    <div class="cal__grid" role="grid" aria-label="Calendrier mensuel">
+    <div class="cal__grid" role="grid" aria-label="Calendrier mensuel" *ngIf="!loading">
       <div class="cal__dow" *ngFor="let d of ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']">{{ d }}</div>
       <ng-container *ngFor="let week of weeks()">
         <div
@@ -141,7 +145,7 @@
               <span class="dot"></span>
               <span class="txt">{{ task.title }}</span>
               <button type="button" class="cal__task-check" (click)="toggleTask(task, $event)"
-                [disabled]="changingTaskId === task.id" [attr.aria-label]="'Terminer ' + task.title">
+                [disabled]="changingTaskId !== null" [attr.aria-label]="(task.status === 'DONE' ? 'Remettre à faire ' : 'Terminer ') + task.title">
                 <mat-icon>{{ task.status === 'DONE' ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
               </button>
             </li>
@@ -152,7 +156,7 @@
     </div>
   </section>
 
-  <section class="agenda-view" *ngIf="viewMode === 'list' && !loadError">
+  <section class="agenda-view" *ngIf="viewMode === 'list' && !loadError && !loading">
     <header class="agenda-view__header">
       <div><span>Vue chronologique</span><h2>{{ sortedTasks.length }} tâche{{ sortedTasks.length > 1 ? 's' : '' }}</h2></div>
       <button mat-raised-button class="btn-primary" type="button" (click)="openCreateQuick()">
@@ -167,7 +171,7 @@
         (click)="openDayTasks(taskDueDate(task))"
         (keydown.enter)="openDayTasks(taskDueDate(task))">
         <button type="button" class="agenda-task__check" (click)="toggleTask(task, $event)"
-          [disabled]="changingTaskId === task.id">
+          [disabled]="changingTaskId !== null" [attr.aria-label]="(task.status === 'DONE' ? 'Remettre à faire ' : 'Terminer ') + task.title">
           <mat-icon>{{ task.status === 'DONE' ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
         </button>
         <span class="agenda-task__icon"><mat-icon>{{ taskIcon(task.type) }}</mat-icon></span>

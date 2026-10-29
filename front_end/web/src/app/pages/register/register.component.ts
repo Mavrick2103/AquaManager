@@ -174,7 +174,7 @@ export class RegisterComponent {
       );
 
       // ✅ Redirection correcte
-      await this.router.navigateByUrl('/login');
+      await this.router.navigateByUrl('/login', { state: { registeredEmail: payload.email } });
     } catch (e: any) {
       this.errorMsg.set(
         e?.error?.message ?? e?.message ?? 'Échec de la création de compte'
