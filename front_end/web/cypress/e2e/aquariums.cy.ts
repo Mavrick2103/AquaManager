@@ -79,9 +79,10 @@ describe('Flow complet AquaManager (création + suppression)', () => {
     cy.visit('/aquariums');
     cy.wait('@aqListSeq');
 
-    cy.contains('button, [role="button"]', /nouvel aquarium|créer mon premier aquarium/i, { timeout: 10000 })
+    cy.get('[data-tour="aquarium-create"]', { timeout: 10000 })
       .should('be.visible')
-      .click({ force: true });
+      .and('not.be.disabled')
+      .click();
 
     cy.get('mat-dialog-container', { timeout: 10000 }).should('be.visible').within(() => {
       cy.get('input[formControlName="name"]').clear().type('Bac test');
@@ -195,7 +196,7 @@ describe('Sécurité front — XSS & token', () => {
     cy.visit('/aquariums');
     cy.wait('@aqListEmpty'); // maintenant, il se déclenche bien
 
-    cy.contains('button', /nouvel aquarium|créer mon premier aquarium/i).click({ force: true });
+    cy.get('[data-tour="aquarium-create"]').should('be.visible').and('not.be.disabled').click();
 
     cy.get('mat-dialog-container').within(() => {
       cy.get('input[formControlName="name"]').type(payload, { parseSpecialCharSequences: false });

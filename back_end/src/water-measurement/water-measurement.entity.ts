@@ -19,6 +19,8 @@ export class WaterMeasurement {
   // communs
   @Column({ type: 'float', nullable: true }) ph: number | null;
   @Column({ type: 'float', nullable: true }) temp: number | null;
+  @Column({ type: 'float', nullable: true }) tds: number | null;
+  @Column({ type: 'float', nullable: true }) conductivity: number | null;
 
   // eau douce
   @Column({ type: 'float', nullable: true }) kh: number | null;

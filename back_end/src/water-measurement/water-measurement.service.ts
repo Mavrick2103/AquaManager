@@ -80,6 +80,8 @@ export class WaterMeasurementService {
 
       ph: clean.ph ?? null,
       temp: clean.temp ?? null,
+      tds: clean.tds ?? null,
+      conductivity: clean.conductivity ?? null,
 
       kh: clean.kh ?? null,
       gh: clean.gh ?? null,

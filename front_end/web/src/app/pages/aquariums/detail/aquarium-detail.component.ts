@@ -81,7 +81,7 @@ type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER';
 type ChartGroupKey = 'essential' | 'balance' | 'plants' | 'marine';
 type ChartMetricConfig = {
   metric: MetricKey;
-  targetKey: ParamKey;
+  targetKey?: ParamKey;
   label: string;
   group: ChartGroupKey;
 };
@@ -125,6 +125,8 @@ export interface WaterMeasurement {
   fe?: number | null;
   k?: number | null;
   sio2?: number | null;
+  tds?: number | null;
+  conductivity?: number | null;
   nh3?: number | null;
   dkh?: number | null;
   salinity?: number | null;
@@ -305,6 +307,8 @@ export class AquariumDetailComponent implements OnInit {
     },
   ];
   readonly chartMetrics: ChartMetricConfig[] = [
+    { metric: 'tds', label: 'TDS', group: 'balance' },
+    { metric: 'conductivity', label: 'Conductivité', group: 'balance' },
     { metric: 'temp', targetKey: 'temp', label: 'Température', group: 'essential' },
     { metric: 'ph', targetKey: 'ph', label: 'pH', group: 'essential' },
     { metric: 'no2', targetKey: 'no2', label: 'NO₂', group: 'essential' },
@@ -427,7 +431,8 @@ aiChatQuestion = '';
     return this.profileLabels[k] ?? 'Custom';
   }
 
-  getRange(key: ParamKey): TargetRange | null {
+  getRange(key?: ParamKey): TargetRange | null {
+    if (!key) return null;
     const t = this.targets?.targets as any;
     const r = t?.[key] as TargetRange | undefined;
 
@@ -636,11 +641,15 @@ aiChatQuestion = '';
   }
 
   private get availableChartMetrics(): ChartMetricConfig[] {
-    return this.chartMetrics.filter(metric =>
+    return this.chartMetrics.filter(metric => {
+      if (metric.metric === 'tds' || metric.metric === 'conductivity') {
+        return this.measurements.some(row => row[metric.metric as 'tds' | 'conductivity'] != null);
+      }
+      return (
       this.waterType === 'EAU_DOUCE'
         ? metric.group !== 'marine'
-        : metric.group === 'essential' || metric.group === 'marine',
-    );
+        : metric.group === 'essential' || metric.group === 'marine');
+    });
   }
 
   private metricStatus(metric: ChartMetricConfig): 'ok' | 'warning' | 'unknown' {
@@ -1297,6 +1306,8 @@ async analyzePhotoWithAi(): Promise<void> {
 
   private rebuildMeasurementHistory(): void {
     const units: Partial<Record<MetricKey, string>> = {
+      tds: 'ppm',
+      conductivity: 'µS/cm',
       temp: '°C',
       no2: 'mg/L',
       no3: 'mg/L',

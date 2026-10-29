@@ -23,7 +23,7 @@ describe('AI aquarium context', () => {
       completedOccurrences: ['2026-01-01T10:00:00.000Z'],
     }]) };
     measurements = { find: jest.fn().mockResolvedValue(Array.from({ length: 30 }, (_, i) => ({
-      measuredAt: `releve-${i + 1}`, ph: 7,
+      measuredAt: `releve-${i + 1}`, ph: 7, tds: 160, conductivity: 324.5,
     }))) };
     aquariums = { findOne: jest.fn().mockResolvedValue({ id: 9, name: 'Bac de test' }) };
     usage = { count: jest.fn().mockResolvedValue(0), create: jest.fn(x => x),
@@ -51,6 +51,9 @@ describe('AI aquarium context', () => {
     }));
     const input = JSON.stringify(create.mock.calls[0][0].input);
     expect(input).toContain('releve-30');
+    expect(input).toContain('TDS (ppm, valeur de l’appareil) : 160');
+    expect(input).toContain('Conductivité (µS/cm) : 324.5');
+    expect(input).toContain('ne pas convertir sans connaître le facteur');
     expect(input).toContain('Changement d’eau');
     expect(input).toContain('2026-01-01T10:00:00.000Z');
     expect(input).toContain('PENDING');

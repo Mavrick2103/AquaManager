@@ -79,6 +79,8 @@ export type AdminUserMeasurement = {
   fe?: number | null;
   k?: number | null;
   sio2?: number | null;
+  tds?: number | null;
+  conductivity?: number | null;
   nh3?: number | null;
   dkh?: number | null;
   salinity?: number | null;

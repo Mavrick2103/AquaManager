@@ -9,6 +9,8 @@ export interface MeasurementCreateDto {
   measuredAt: string;
   ph?: number | null;
   temp?: number | null;
+  tds?: number | null;
+  conductivity?: number | null;
   // douce
   kh?: number | null;
   gh?: number | null;

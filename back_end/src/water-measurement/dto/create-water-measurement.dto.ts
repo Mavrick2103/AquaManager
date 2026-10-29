@@ -6,6 +6,8 @@ export class CreateWaterMeasurementDto {
   // communs
   @IsOptional() @IsNumber() @Min(0) @Max(14) ph?: number;
   @IsOptional() @IsNumber() @Min(0) @Max(40) temp?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(100000) tds?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(200000) conductivity?: number;
 
   // douce
   @IsOptional() @IsNumber() @Min(0) @Max(30) kh?: number;

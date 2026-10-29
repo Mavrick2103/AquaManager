@@ -41,6 +41,21 @@
       </mat-form-field>
     </div>
 
+    <div class="section" *ngIf="!data.tutorial">
+      <div class="section-header"><span class="section-label">Minéralisation · facultatif</span></div>
+      <div class="params-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>TDS (ppm)</mat-label>
+          <input matInput type="number" min="0" max="100000" step="any" formControlName="tds">
+          <mat-error>{{ fieldError('tds') }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Conductivité (µS/cm)</mat-label>
+          <input matInput type="number" min="0" max="200000" step="any" formControlName="conductivity">
+          <mat-error>{{ fieldError('conductivity') }}</mat-error>
+        </mat-form-field>
+      </div>
+    </div>
     <!-- Eau douce -->
     <div *ngIf="!data.tutorial && data.type === 'EAU_DOUCE'" class="section">
       <div class="section-header">

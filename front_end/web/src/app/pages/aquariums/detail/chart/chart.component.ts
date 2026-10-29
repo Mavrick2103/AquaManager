@@ -23,6 +23,8 @@ Chart.register(...registerables);
 
 export type WaterType = 'EAU_DOUCE' | 'EAU_DE_MER';
 export type MetricKey =
+  | 'tds'
+  | 'conductivity'
   | 'ph'
   | 'temp'
   | 'no2'
@@ -41,6 +43,8 @@ export type MetricKey =
   | 'nh3';
 
 export type MeasurementRow = {
+  tds?: number | null;
+  conductivity?: number | null;
   measuredAt: string;
   ph?: number | null;
   temp?: number | null;
@@ -100,6 +104,8 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
   private chart?: Chart<'line', (number | null)[], Date>;
 
   private readonly META: Record<MetricKey, { label: string; unit: string }> = {
+    tds: { label: 'TDS', unit: 'ppm' },
+    conductivity: { label: 'Conductivité', unit: 'µS/cm' },
     ph: { label: 'pH', unit: '' },
     temp: { label: 'Température', unit: '°C' },
     no2: { label: 'NO₂', unit: 'mg/L' },
@@ -270,6 +276,8 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
       data.map(row => (row[key] as number | undefined) ?? null);
 
     const values: Partial<Record<MetricKey, (number | null)[]>> = {
+      tds: get('tds'),
+      conductivity: get('conductivity'),
       ph: get('ph'),
       temp: get('temp'),
       no2: get('no2'),
@@ -292,6 +300,8 @@ export class WaterMeasurementsChartComponent implements AfterViewInit, OnChanges
     };
 
     const colors: Record<MetricKey, string> = {
+      tds: '#378ca3',
+      conductivity: '#629756',
       ph: '#2196f3',
       temp: '#e91e63',
       no2: '#ff9800',

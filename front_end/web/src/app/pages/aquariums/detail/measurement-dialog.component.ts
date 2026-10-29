@@ -58,6 +58,8 @@ export class MeasurementDialogComponent implements OnInit {
       // communs
       ph:   [null, [Validators.min(0), Validators.max(14)]],
       temp: [null, [Validators.min(0), Validators.max(40)]],
+      tds: [null, [Validators.min(0), Validators.max(100000)]],
+      conductivity: [null, [Validators.min(0), Validators.max(200000)]],
       no2:  [null, [Validators.min(0), Validators.max(5)]],
       no3:  [null, [Validators.min(0), Validators.max(300)]],
       po4:  [null, [Validators.min(0), Validators.max(5)]],
@@ -99,6 +101,8 @@ export class MeasurementDialogComponent implements OnInit {
         // communs
         ph: last.ph ?? null,
         temp: last.temp ?? null,
+        tds: last.tds ?? null,
+        conductivity: last.conductivity ?? null,
         no2: last.no2 ?? null,
         no3: last.no3 ?? null,
         po4: last.po4 ?? null,
@@ -163,6 +167,8 @@ export class MeasurementDialogComponent implements OnInit {
         // communs
         ph:   v.ph ?? null,
         temp: v.temp ?? null,
+        tds: v.tds ?? null,
+        conductivity: v.conductivity ?? null,
         no2:  v.no2 ?? null,
         no3:  v.no3 ?? null,
         po4:  v.po4 ?? null,

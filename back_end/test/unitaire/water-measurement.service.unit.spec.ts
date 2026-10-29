@@ -124,6 +124,15 @@ describe('WaterMeasurementService (unit)', () => {
   });
 
   describe('createForAquarium', () => {
+    it.each(['EAU_DOUCE','EAU_DE_MER'])('keeps TDS and conductivity independent for %s without converting missing values',async waterType=>{
+      aquas.findOne.mockResolvedValue({id:7,waterType,user:{id:1}} as any);
+      repo.create.mockImplementation((value:any)=>value);
+      repo.save.mockImplementation(async(value:any)=>({...value,id:42}));
+      await service.createForAquarium(1,7,{measuredAt:'2026-10-30T10:00:00Z',tds:0,conductivity:324.5});
+      expect(repo.create).toHaveBeenLastCalledWith(expect.objectContaining({tds:0,conductivity:324.5}));
+      await service.createForAquarium(1,7,{measuredAt:'2026-10-30T10:00:00Z',tds:160});
+      expect(repo.create).toHaveBeenLastCalledWith(expect.objectContaining({tds:160,conductivity:null}));
+    });
     it('crée et sauvegarde une mesure (eau douce) et nettoie les champs inadaptés', async () => {
       const userId = 1;
       const aquariumId = 7;

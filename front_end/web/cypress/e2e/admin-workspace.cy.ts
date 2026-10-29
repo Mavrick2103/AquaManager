@@ -78,6 +78,7 @@ describe('Administration reorganisée', () => {
       const destinations = [...links].map(link => link.getAttribute('href'));
       expect(destinations).to.have.members([
         '/admin/metrics',
+        '/admin/journey',
         '/admin/users',
         '/admin/subscriptions',
         '/admin/satisfaction',

@@ -539,6 +539,8 @@ Mesure ${index + 1} :
 - PO4 : ${m.po4 ?? 'non renseigné'}
 - Fe : ${m.fe ?? 'non renseigné'}
 - K : ${m.k ?? 'non renseigné'}
+- TDS (ppm, valeur de l’appareil) : ${m.tds ?? 'non renseigné'}
+- Conductivité (µS/cm) : ${m.conductivity ?? 'non renseigné'}
 - SiO2 : ${m.sio2 ?? 'non renseigné'}
 - NH3/NH4 : ${m.nh3 ?? 'non renseigné'}
 - Salinité : ${m.salinity ?? 'non renseigné'}
@@ -559,6 +561,8 @@ Aquarium :
 - Longueur : ${(aquarium as any).lengthCm ?? 'non renseigné'} cm
 - Largeur : ${(aquarium as any).widthCm ?? 'non renseigné'} cm
 - Hauteur : ${(aquarium as any).heightCm ?? 'non renseigné'} cm
+
+Pour le TDS et la conductivité : ne pas convertir sans connaître le facteur de l’appareil, ne pas déduire une pollution ou une eau saine de ces seules valeurs, ne pas remplacer GH/KH/NO2/NO3 et ne pas supposer une cible universelle.
 
 Dernières mesures :
 ${formattedMeasurements}
@@ -824,6 +828,8 @@ Mesure ${index + 1} :
 - PO4 : ${m.po4 ?? 'non renseigné'}
 - Fe : ${m.fe ?? 'non renseigné'}
 - K : ${m.k ?? 'non renseigné'}
+- TDS (ppm, valeur de l’appareil) : ${m.tds ?? 'non renseigné'}
+- Conductivité (µS/cm) : ${m.conductivity ?? 'non renseigné'}
 - SiO2 : ${m.sio2 ?? 'non renseigné'}
 - NH3/NH4 : ${m.nh3 ?? 'non renseigné'}
 - Salinité : ${m.salinity ?? 'non renseigné'}
@@ -847,6 +853,8 @@ Aquarium :
 - Longueur : ${(aquarium as any).lengthCm ?? 'non renseigné'} cm
 - Largeur : ${(aquarium as any).widthCm ?? 'non renseigné'} cm
 - Hauteur : ${(aquarium as any).heightCm ?? 'non renseigné'} cm
+
+Pour le TDS et la conductivité : ne pas convertir sans connaître le facteur de l’appareil, ne pas déduire une pollution ou une eau saine de ces seules valeurs, ne pas remplacer GH/KH/NO2/NO3 et ne pas supposer une cible universelle.
 
 Dernières mesures :
 ${formattedMeasurements}
