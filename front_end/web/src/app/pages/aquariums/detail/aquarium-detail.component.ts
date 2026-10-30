@@ -1,4 +1,3 @@
-import { UserNavigationComponent } from '../../../shared/user-navigation/user-navigation.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { assessWaterValues } from '../../../core/water-assessment';
 import { CommonModule } from '@angular/common';
@@ -182,7 +181,6 @@ type AquariumPlantRow = {
   selector: 'app-aquarium-detail',
   standalone: true,
   imports: [
-    UserNavigationComponent,
     AiFeedbackComponent,
     CommonModule,
     ReactiveFormsModule,

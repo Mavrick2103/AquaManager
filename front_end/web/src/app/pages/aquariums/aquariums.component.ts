@@ -1,4 +1,3 @@
-import { UserNavigationComponent } from '../../shared/user-navigation/user-navigation.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -24,7 +23,6 @@ import { AquariumDialogComponent } from './dialog/aquarium-dialog.component';
   selector: 'app-aquariums',
   standalone: true,
   imports: [
-    UserNavigationComponent,
     CommonModule,
     RouterLink,
     MatDialogModule,

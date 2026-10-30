@@ -1,4 +1,3 @@
-import { UserNavigationComponent } from '../../shared/user-navigation/user-navigation.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -40,7 +39,6 @@ import { taskOverview } from '../../core/task-overview';
   selector: 'app-home',
   standalone: true,
   imports: [
-    UserNavigationComponent,
     CommonModule,
     RouterLink,
 

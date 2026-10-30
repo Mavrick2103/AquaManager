@@ -1,4 +1,3 @@
-import { UserNavigationComponent } from '../../shared/user-navigation/user-navigation.component';
 import { Component, computed, effect, inject, signal, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -32,7 +31,6 @@ import { taskOverview } from '../../core/task-overview';
   selector: 'app-calendar',
   standalone: true,
   imports: [
-    UserNavigationComponent,
     CommonModule,
     FormsModule,
     MatIconModule,

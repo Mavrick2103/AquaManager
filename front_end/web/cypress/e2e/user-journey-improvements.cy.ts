@@ -18,14 +18,12 @@ describe('Parcours utilisateur : démarrage et entretien', () => {
     cy.contains('.kpi','À faire aujourd’hui').find('.kpi-value').should('have.text','0');
     cy.contains('.kpi','En retard ce mois-ci').find('.kpi-value').should('have.text','1');
     cy.contains('section.activity','Activités à venir').find('li').should('have.length',5);
-    cy.get('app-user-navigation a').should('have.length',4);
+    cy.get('app-user-navigation').should('not.exist');
     cy.get('button[aria-label="Semaine suivante"]').click();
     cy.get('app-week-calendar').should('contain.text','Entretien 1');
     cy.viewport(390,844);cy.get('.grid').scrollIntoView();
     cy.document().its('documentElement.scrollWidth').should('be.lte',390);
     cy.screenshot('home-tasks-mobile',{capture:'viewport'});
-    cy.get('app-user-navigation').scrollIntoView({offset:{top:-80,left:0}});
-    cy.screenshot('navigation-mobile',{capture:'viewport'});
   });
   it('distingue les erreurs des états vides et réessaie', () => {
     auth();cy.intercept('GET','**/api/tasks*',{statusCode:503}).as('error');

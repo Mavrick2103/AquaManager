@@ -1,4 +1,3 @@
-import { UserNavigationComponent } from '../../shared/user-navigation/user-navigation.component';
 import { SatisfactionComponent } from '../../shared/satisfaction/satisfaction.component';
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -40,7 +39,6 @@ type ExtendedMe = UserMe & {
   selector: 'app-profile',
   standalone: true,
   imports: [
-    UserNavigationComponent,
     SatisfactionComponent,
     CommonModule,
     ReactiveFormsModule,

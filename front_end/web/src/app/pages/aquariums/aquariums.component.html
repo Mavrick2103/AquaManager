@@ -21,7 +21,6 @@
     <span>{{ isAtLimit ? 'Quota atteint' : 'Nouvel aquarium' }}</span>
   </button>
 </header>
-<app-user-navigation />
 
 <section class="aquariums-load-error" *ngIf="loadError" role="alert"><mat-icon aria-hidden="true">cloud_off</mat-icon><div><h2>Impossible de charger tes aquariums</h2><p>La liste est momentanément indisponible. Réessaie pour retrouver tes bacs.</p><button mat-stroked-button type="button" (click)="load()">Réessayer</button></div></section>
 <ng-container *ngIf="loading" [ngTemplateOutlet]="loadingTpl"></ng-container>
