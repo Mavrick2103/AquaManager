@@ -73,16 +73,8 @@
   <section class="hero">
     <p class="hello" *ngIf="userFullName">Bonjour {{ userFullName }} 👋</p>
 
-    <ng-container *ngIf="!tasksLoading && !tasksError && nextTask; else usualWelcome">
-      <span class="next-action-label">{{ overdueTasksCount > 0 ? 'Entretien à rattraper' : 'Ton prochain entretien' }}</span>
-      <h1>{{ nextTask.title }}</h1>
-      <p class="subtitle"><ng-container *ngIf="nextTask.aquarium?.name">{{ nextTask.aquarium?.name }} · </ng-container>{{ nextTask.dueAt | date:'EEEE d MMMM à HH:mm' }}</p>
-      <a class="next-action-link" routerLink="/calendar" [queryParams]="nextTaskParams()">Voir cet entretien <mat-icon>arrow_forward</mat-icon></a>
-    </ng-container>
-    <ng-template #usualWelcome>
-      <h1>Le suivi de tes aquariums</h1>
-      <p class="subtitle">Retrouve tes bacs, note tes mesures et prépare tes prochains entretiens.</p>
-    </ng-template>
+    <h1>Le suivi de tes aquariums</h1>
+    <p class="subtitle">Retrouve tes bacs, note tes mesures et prépare tes prochains entretiens.</p>
 
     <div class="cta-row">
       <button mat-raised-button routerLink="/aquariums" data-tour="home-aquariums">

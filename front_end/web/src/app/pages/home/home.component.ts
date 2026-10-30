@@ -85,10 +85,6 @@ export class HomeComponent implements OnInit {
 
   latestActivities: Task[] = [];
   upcomingTasks: Task[] = [];
-  nextTask: Task | null = null;
-  nextTaskParams(): Record<string,string | number | undefined> {
-    return this.nextTask ? {aquariumId:this.nextTask.aquarium?.id,aquariumName:this.nextTask.aquarium?.name,month:format(new Date(this.nextTask.dueAt),'yyyy-MM')} : {};
-  }
 
   gamificationLoading = true;
   gamification: GamificationSummary | null = null;
@@ -125,8 +121,6 @@ export class HomeComponent implements OnInit {
     try {
       const tasks = await this.tasksApi.listWindow(from, addDays(now,7));
       const overview = taskOverview(tasks,now);
-      this.nextTask = tasks.filter(task=>task.status==='PENDING' && Date.parse(task.dueAt)>=startOfMonth(now).getTime() && Date.parse(task.dueAt)<=addDays(now,7).getTime())
-        .sort((a,b)=>Date.parse(a.dueAt)-Date.parse(b.dueAt))[0] ?? null;
       this.todayTasksCount = overview.todayCount;
       this.overdueTasksCount = overview.overdueCount;
       this.upcomingTasksCount = overview.upcomingCount;

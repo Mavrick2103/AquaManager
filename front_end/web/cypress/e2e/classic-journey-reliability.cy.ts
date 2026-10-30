@@ -73,14 +73,14 @@ describe('Parcours Classic : continuité et erreurs',()=>{
     cy.get('app-aquarium-tasks [role="alert"]').contains('button','Réessayer').click();
     cy.get('app-aquarium-tasks').should('contain.text','Tout est à jour');
   });
-  it('place la prochaine action en haut et ouvre son mois et son bac',()=>{
+  it('garde un accueil stable et l’accès au calendrier même avec un entretien prévu',()=>{
     cy.intercept('GET','**/api/tasks*',[{id:'5',title:'Contrôle de novembre',type:'OTHER',status:'PENDING',dueAt:'2026-11-03T09:00:00Z',aquarium:{id:1,name:'Bac principal'}}]);
     cy.visit('/dashboard');
-    cy.get('.hero h1').should('have.text','Contrôle de novembre');
+    cy.get('.hero h1').should('have.text','Le suivi de tes aquariums');
+    cy.get('.next-action-link').should('not.exist');
     cy.get('.hero').scrollIntoView();
-    cy.screenshot('accueil-prochaine-action-mobile',{capture:'viewport'});
-    cy.get('.next-action-link').scrollIntoView().should('be.visible').click();
-    cy.get('.cal__title').should('contain.text','Novembre');
-    cy.contains('.cal__task','Contrôle de novembre').should('exist');
+    cy.screenshot('accueil-mobile',{capture:'viewport'});
+    cy.get('.hero').contains('button','Calendrier').click();
+    cy.location('pathname').should('eq','/calendar');
   });
 });
