@@ -551,6 +551,15 @@
               <mat-icon>grass</mat-icon>
               Algues
             </button>
+            <button
+              type="button"
+              mat-stroked-button
+              [disabled]="aiLoading"
+              (click)="aiChatQuestion = 'Je cherche un conseil produit : '"
+            >
+              <mat-icon>shopping_bag</mat-icon>
+              Conseils produits
+            </button>
           </div>
 
           <div class="ai-hub__grid">
@@ -577,7 +586,7 @@
                     <span>Discussion IA</span>
                     <h4>Question personnalisée</h4>
                     <p>
-                      Écris une question précise ou utilise les raccourcis au-dessus.
+                      Pose tes questions sur ton bac, l’aquariophilie ou le choix d’un produit.
                     </p>
                   </div>
 
