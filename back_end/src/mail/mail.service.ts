@@ -38,7 +38,25 @@ export class MailService {
   }
 
   private appUrl(): string {
-    return (this.config.get<string>('APP_URL') ?? 'http://localhost:4200').replace(/\/$/, '');
+    const production = (this.config.get<string>('NODE_ENV') ?? process.env.NODE_ENV) === 'production';
+    const publicUrl = 'https://aquamanager.fr';
+    const configured = this.config.get<string>('APP_URL')?.trim();
+    const url = (configured || (production ? publicUrl : 'http://localhost:4200')).replace(/\/+$/, '');
+    if (production) {
+      try {
+        const parsed = new URL(url);
+        const hostname = parsed.hostname.toLowerCase();
+        if (parsed.protocol !== 'https:' || hostname === 'localhost' || hostname.endsWith('.localhost') ||
+            hostname === '[::1]' || hostname === '0.0.0.0' || hostname.startsWith('127.') ||
+            parsed.username || parsed.password) {
+          throw new Error('APP_URL must be a public HTTPS URL');
+        }
+      } catch {
+        this.logger.warn('APP_URL invalide pour les emails en production : utilisation de https://aquamanager.fr.');
+        return publicUrl;
+      }
+    }
+    return url;
   }
 
   private from(): string {
